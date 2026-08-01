@@ -1,0 +1,257 @@
+.search{
+  display:none!important;
+}
+
+.topbar{
+  justify-content:flex-end!important;
+}
+
+.menu-button{
+  margin-right:auto;
+}
+
+.artist-manifesto{
+  display:grid!important;
+  gap:5px!important;
+  max-width:720px!important;
+  margin:12px 0 0!important;
+  color:rgba(242,237,249,.74)!important;
+  font-size:clamp(10px,.82vw,13px)!important;
+  line-height:1.55!important;
+}
+
+.artist-manifesto span{
+  display:block;
+}
+
+.artist-manifesto .artist-dedication{
+  margin-top:4px;
+  color:#d8bdff;
+  font-weight:700;
+}
+
+.about-manifesto{
+  font-size:clamp(12px,1vw,15px)!important;
+}
+
+.albums-intro{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:24px;
+}
+
+.albums-intro>div{
+  max-width:760px;
+}
+
+.album-count{
+  flex:0 0 auto;
+  padding:10px 14px;
+  border:1px solid rgba(166,60,255,.22);
+  border-radius:999px;
+  color:#cbb7ea;
+  background:rgba(166,60,255,.07);
+  font-size:9px;
+  letter-spacing:.1em;
+}
+
+.albums-release-grid{
+  display:grid;
+  gap:18px;
+}
+
+.album-release-card{
+  display:grid;
+  grid-template-columns:minmax(220px,30%) minmax(0,1fr);
+  gap:26px;
+  padding:22px;
+  overflow:hidden;
+  border:1px solid var(--line);
+  border-radius:26px;
+  background:
+    radial-gradient(circle at 8% 18%,rgba(166,60,255,.12),transparent 32%),
+    linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.012));
+  box-shadow:0 24px 65px rgba(0,0,0,.25);
+}
+
+.album-release-cover{
+  position:relative;
+  align-self:start;
+}
+
+.album-release-cover img{
+  display:block;
+  width:100%;
+  aspect-ratio:1;
+  object-fit:cover;
+  border-radius:20px;
+  box-shadow:0 22px 50px rgba(0,0,0,.35);
+}
+
+.album-release-cover>span{
+  position:absolute;
+  top:12px;
+  left:12px;
+  padding:6px 9px;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:999px;
+  color:#fff;
+  background:rgba(5,3,11,.72);
+  backdrop-filter:blur(12px);
+  font-size:8px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+
+.album-release-copy{
+  min-width:0;
+}
+
+.album-release-heading{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:20px;
+}
+
+.album-release-heading h2{
+  margin:4px 0 0;
+  font-family:"Outfit",sans-serif;
+  font-size:clamp(25px,3vw,42px);
+}
+
+.album-release-copy>p{
+  max-width:720px;
+  margin:12px 0 14px;
+  color:var(--muted);
+  line-height:1.65;
+}
+
+.album-tag-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-bottom:15px;
+}
+
+.album-tag-row span{
+  padding:6px 9px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  color:#cbbdde;
+  background:rgba(255,255,255,.025);
+  font-size:8px;
+  letter-spacing:.06em;
+}
+
+.album-track-list{
+  display:grid;
+  gap:5px;
+  margin:0;
+  padding:0;
+  list-style:none;
+}
+
+.album-track-list button{
+  width:100%;
+  display:grid;
+  grid-template-columns:34px minmax(130px,.8fr) minmax(160px,1fr) 24px;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  border:1px solid transparent;
+  border-radius:12px;
+  color:inherit;
+  background:transparent;
+  text-align:left;
+}
+
+.album-track-list button:hover{
+  border-color:rgba(166,60,255,.22);
+  background:rgba(166,60,255,.07);
+}
+
+.album-track-list span,
+.album-track-list small{
+  color:var(--muted);
+}
+
+.album-track-list b{
+  color:var(--accent);
+}
+
+@media(min-width:981px){
+  .launchpad-banner-rail{
+    width:min(46vw,600px)!important;
+    border:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+  }
+
+  .launchpad-banner-glow{
+    display:none!important;
+  }
+
+  .hero-banner-art{
+    filter:drop-shadow(0 18px 42px rgba(22,138,255,.13))!important;
+  }
+}
+
+@media(max-width:900px){
+  .albums-intro{
+    display:block;
+  }
+
+  .album-count{
+    display:inline-flex;
+    margin-top:14px;
+  }
+
+  .album-release-card{
+    grid-template-columns:180px minmax(0,1fr);
+  }
+
+  .album-track-list button{
+    grid-template-columns:30px minmax(0,1fr) 22px;
+  }
+
+  .album-track-list small{
+    display:none;
+  }
+}
+
+@media(max-width:760px){
+  .artist-manifesto{
+    gap:4px!important;
+    margin-top:7px!important;
+    font-size:10px!important;
+    line-height:1.4!important;
+  }
+
+  .album-release-card{
+    display:block;
+    padding:14px;
+    border-radius:20px;
+  }
+
+  .album-release-cover{
+    width:min(72vw,280px);
+    margin:0 auto 18px;
+  }
+
+  .album-release-heading{
+    align-items:flex-start;
+  }
+
+  .album-release-heading .album-play{
+    min-height:36px;
+    padding:8px 10px;
+    font-size:9px;
+  }
+
+  .album-track-list button{
+    grid-template-columns:26px minmax(0,1fr) 18px;
+    padding:10px 8px;
+  }
+}
