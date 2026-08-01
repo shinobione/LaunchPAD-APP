@@ -41,7 +41,7 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
       cache.set(track.id, parsed);
       return parsed;
     } catch (error) {
-      console.warn(`Paroles indisponibles pour ${track.title}`, error);
+      console.warn(`Lyrics unavailable for ${track.title}`, error);
       cache.set(track.id, []);
       return [];
     }
@@ -49,21 +49,21 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
 
   function setLoading(track) {
     $('#home-lyrics-status').textContent = track.lyrics ? 'LOADING' : 'NO LYRICS';
-    $('#home-lyrics').innerHTML = '<p class="lyrics-placeholder">Chargement des paroles…</p>';
-    $('#lyrics-reader').innerHTML = '<p class="lyrics-placeholder">Chargement des paroles…</p>';
+    $('#home-lyrics').innerHTML = '<p class="lyrics-placeholder">Loading lyrics…</p>';
+    $('#lyrics-reader').innerHTML = '<p class="lyrics-placeholder">Loading lyrics…</p>';
   }
 
   function renderUnavailable() {
-    $('#lyrics-availability').textContent = 'PAROLES INDISPONIBLES';
+    $('#lyrics-availability').textContent = 'LYRICS UNAVAILABLE';
     $('#lyrics-availability').classList.add('unavailable');
-    $('#lyrics-reader-label').textContent = 'AUCUN FICHIER DE PAROLES';
+    $('#lyrics-reader-label').textContent = 'NO LYRICS FILE';
     $('#home-lyrics-status').textContent = 'NO LYRICS';
-    $('#home-lyrics').innerHTML = '<p class="lyrics-placeholder">Les paroles de ce morceau ne sont pas encore disponibles.</p>';
+    $('#home-lyrics').innerHTML = '<p class="lyrics-placeholder">Lyrics are not available for this track yet.</p>';
     $('#lyrics-reader').innerHTML = `
       <div class="lyrics-unavailable">
         <div>
-          <strong>Paroles bientôt disponibles</strong>
-          <span>Le morceau reste accessible dans le lecteur.</span>
+          <strong>Lyrics coming soon</strong>
+          <span>The track is still available in the player.</span>
         </div>
       </div>
     `;
@@ -89,8 +89,8 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
     $('#lyrics-availability').textContent = synchronized ? 'SYNC READY' : 'TEXT READY';
     $('#lyrics-availability').classList.remove('unavailable');
     $('#lyrics-reader-label').textContent = synchronized
-      ? `${lines.length} LIGNES HORODATÉES`
-      : `${lines.length} LIGNES • NON HORODATÉES`;
+      ? `${lines.length} TIMESTAMPED LINES`
+      : `${lines.length} LINES • NOT TIMESTAMPED`;
     $('#home-lyrics-status').textContent = synchronized ? 'SYNC' : 'TEXT';
 
     const fragment = document.createDocumentFragment();
@@ -182,7 +182,7 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
     const button = $('#lyrics-autoscroll');
     button.classList.toggle('active', autoScroll);
     button.setAttribute('aria-pressed', String(autoScroll));
-    button.textContent = autoScroll ? 'Défilement auto' : 'Défilement manuel';
+    button.textContent = autoScroll ? 'Auto-scroll' : 'Manual scroll';
   });
 
   $('#lyrics-track-select').addEventListener('change', event => {
