@@ -1,0 +1,94 @@
+@media (min-width: 981px) {
+  .launchpad-hero {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 22px !important;
+    min-height: 0 !important;
+    padding: 24px 30px 30px !important;
+  }
+
+  .launchpad-banner-rail {
+    position: relative !important;
+    inset: auto !important;
+    order: 1 !important;
+    width: clamp(540px, 44vw, 700px) !important;
+    height: auto !important;
+    aspect-ratio: 2048 / 1143 !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border-radius: 22px !important;
+    background: linear-gradient(145deg, #050914, #080511) !important;
+    box-shadow: 0 28px 75px rgba(0, 0, 0, .38), inset 0 0 55px rgba(30, 130, 255, .06) !important;
+  }
+
+  .launchpad-banner-glow {
+    position: absolute !important;
+    inset: 14% !important;
+    opacity: .55 !important;
+    pointer-events: none !important;
+  }
+
+  .hero-banner-art {
+    display: block !important;
+    position: relative !important;
+    inset: auto !important;
+    z-index: 2 !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    object-fit: contain !important;
+    object-position: center center !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: saturate(1.08) contrast(1.05) drop-shadow(0 0 20px rgba(40, 175, 255, .16)) !important;
+    pointer-events: none !important;
+  }
+
+  .launchpad-hero:hover .hero-banner-art {
+    transform: none !important;
+  }
+
+  .hero-body {
+    position: relative !important;
+    order: 2 !important;
+    width: min(100%, 980px) !important;
+    min-height: 0 !important;
+    margin: 0 auto !important;
+    padding: 18px 22px !important;
+    display: grid !important;
+    grid-template-columns: 158px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 24px !important;
+    border: 1px solid rgba(255, 255, 255, .09) !important;
+    border-radius: 24px !important;
+    background:
+      radial-gradient(circle at 12% 48%, rgba(120, 65, 255, .13), transparent 30%),
+      linear-gradient(145deg, rgba(16, 10, 29, .96), rgba(8, 5, 16, .96)) !important;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .34), inset 0 1px 0 rgba(255, 255, 255, .025) !important;
+  }
+
+  .hero-profile-card {
+    width: 158px !important;
+    margin: 0 !important;
+    justify-self: center !important;
+  }
+
+  .launchpad-hero .hero-copy {
+    min-width: 0 !important;
+    padding: 10px 14px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .hero-wordmark {
+    width: min(100%, 320px) !important;
+    height: 64px !important;
+  }
+}
