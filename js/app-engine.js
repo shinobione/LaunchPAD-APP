@@ -39,17 +39,26 @@ async function boot() {
   installCriticalStyles();
   await import('./app-main.js');
 
-  const [{ installContentV4 }, { initAudioFocus }, { applyAlbumCovers }] = await Promise.all([
+  const [
+    { installContentV4 },
+    { initAudioFocus },
+    { applyAlbumCovers },
+    { initLyricsWakeLock }
+  ] = await Promise.all([
     import('./content-v4.js'),
     import('./audio-focus.js'),
-    import('./album-covers.js')
+    import('./album-covers.js'),
+    import('./lyrics-wake-lock.js')
   ]);
 
   installContentV4();
   applyAlbumCovers();
   installDesktopHeroFix();
   installFinalLayoutFix();
-  initAudioFocus({ audio: document.querySelector('#audio') });
+
+  const audio = document.querySelector('#audio');
+  initAudioFocus({ audio });
+  initLyricsWakeLock({ audio });
 }
 
 boot().catch(error => {
