@@ -16,6 +16,15 @@ function installCriticalStyles() {
   document.head.appendChild(link);
 }
 
+function installFinalLayoutFix() {
+  if (document.querySelector('link[data-mobile-top-cleanup]')) return;
+  const stylesheet = document.createElement('link');
+  stylesheet.rel = 'stylesheet';
+  stylesheet.href = 'css/mobile-top-cleanup.css?v=20260801-1';
+  stylesheet.dataset.mobileTopCleanup = 'true';
+  document.head.appendChild(stylesheet);
+}
+
 async function boot() {
   installEarlyFavicon();
   installCriticalStyles();
@@ -27,6 +36,7 @@ async function boot() {
   ]);
 
   installContentV4();
+  installFinalLayoutFix();
   initAudioFocus({ audio: document.querySelector('#audio') });
 }
 
