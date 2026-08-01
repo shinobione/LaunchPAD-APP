@@ -16,6 +16,15 @@ function installCriticalStyles() {
   document.head.appendChild(link);
 }
 
+function installDesktopHeroFix() {
+  if (document.querySelector('link[data-desktop-hero-wide]')) return;
+  const stylesheet = document.createElement('link');
+  stylesheet.rel = 'stylesheet';
+  stylesheet.href = 'css/desktop-hero-wide.css?v=20260801-1';
+  stylesheet.dataset.desktopHeroWide = 'true';
+  document.head.appendChild(stylesheet);
+}
+
 function installFinalLayoutFix() {
   if (document.querySelector('link[data-mobile-top-cleanup]')) return;
   const stylesheet = document.createElement('link');
@@ -36,6 +45,7 @@ async function boot() {
   ]);
 
   installContentV4();
+  installDesktopHeroFix();
   installFinalLayoutFix();
   initAudioFocus({ audio: document.querySelector('#audio') });
 }
