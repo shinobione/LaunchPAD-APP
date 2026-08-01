@@ -4,7 +4,7 @@ export const albums = [
     title: 'Neon Heartbreaks',
     type: 'album',
     year: '2026',
-    cover: 'assets/before-the-noise.jpeg',
+    cover: 'assets/neon-heartbreaks.jpeg',
     description: 'Digital intimacy, nocturnal R&B and fragile connections shaped through glitch and emotion.'
   },
   {
@@ -12,7 +12,7 @@ export const albums = [
     title: 'Coal to Diamond',
     type: 'album',
     year: '2026',
-    cover: 'assets/thick.jpeg',
+    cover: 'assets/coal-to-diamond.jpeg',
     description: 'Heavy drums, cinematic pressure and hip-hop built around confidence, resilience and impact.'
   },
   {
@@ -20,7 +20,7 @@ export const albums = [
     title: 'Love Letters from Saigon',
     type: 'album',
     year: '2026',
-    cover: 'assets/saigon-bound.png',
+    cover: 'assets/love-letters.jpeg',
     description: 'Vietnam-inspired stories, distance, travel memories and love songs moving between two countries.'
   }
 ];
