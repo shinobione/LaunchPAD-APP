@@ -148,3 +148,73 @@
     height:352px!important;
   }
 }
+
+/* Desktop-only editorial composition. Mobile/tablet rules above remain untouched. */
+@media(min-width:981px){
+  .launchpad-hero{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:24px!important;
+    padding:26px 30px 32px!important;
+  }
+
+  .launchpad-banner-rail{
+    order:1!important;
+    grid-column:auto!important;
+    grid-row:auto!important;
+    width:min(72vw,840px)!important;
+    max-width:100%!important;
+    aspect-ratio:2048/1143!important;
+    margin:0 auto!important;
+    border-radius:24px!important;
+  }
+
+  .hero-body{
+    order:2!important;
+    grid-column:auto!important;
+    grid-row:auto!important;
+    width:min(100%,1060px)!important;
+    min-height:220px!important;
+    display:grid!important;
+    grid-template-columns:176px minmax(0,1fr)!important;
+    align-items:center!important;
+    gap:28px!important;
+    margin:0 auto!important;
+    padding:22px 26px!important;
+    overflow:hidden!important;
+    border:1px solid rgba(255,255,255,.1)!important;
+    border-radius:26px!important;
+    background:
+      radial-gradient(circle at 10% 50%,rgba(166,60,255,.14),transparent 30%),
+      linear-gradient(145deg,rgba(18,11,30,.96),rgba(8,5,15,.94))!important;
+    box-shadow:0 28px 70px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.025)!important;
+  }
+
+  .hero-profile-card{
+    position:relative!important;
+    z-index:2!important;
+    width:176px!important;
+    margin:0!important;
+    padding:5px!important;
+    align-self:center!important;
+    border-radius:24px!important;
+  }
+
+  .launchpad-hero .hero-copy{
+    min-width:0!important;
+    max-width:680px!important;
+    margin:0!important;
+    padding:4px 0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    backdrop-filter:none!important;
+  }
+
+  .launchpad-hero .hero-copy p{
+    max-width:620px!important;
+  }
+}
