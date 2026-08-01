@@ -230,94 +230,299 @@ h1,h2,h3,h4,.brand,.hero-tagline{
 }
 
 @media(max-width:1100px){
-  .launchpad-hero{
-    min-height:570px;
-  }
-
-  .launchpad-banner-rail{
-    height:145px;
-  }
-
+  .launchpad-hero{min-height:570px}
+  .launchpad-banner-rail{height:145px}
   .hero-body{
     min-height:570px;
     grid-template-columns:160px 1fr;
     padding:202px 34px 34px;
   }
-
-  .hero-profile-card{
-    width:160px;
-  }
+  .hero-profile-card{width:160px}
 }
 
 @media(max-width:760px){
+  .main-content{
+    padding:0 12px 158px;
+  }
+
+  .topbar{
+    height:68px;
+    gap:9px;
+    padding:8px 0;
+  }
+
+  .menu-button{
+    flex:0 0 42px;
+    width:42px;
+    height:42px;
+    border:1px solid var(--line);
+    border-radius:13px;
+    background:rgba(10,7,18,.72);
+  }
+
+  .search{
+    width:auto;
+    min-width:0;
+    height:46px;
+    border-radius:15px;
+    padding:0 13px;
+  }
+
+  .search input{
+    min-width:0;
+    font-size:15px;
+  }
+
   .launchpad-hero{
-    min-height:590px;
+    min-height:0;
+    margin-bottom:24px;
+    border-radius:22px;
+    overflow:hidden;
+  }
+
+  .launchpad-hero::before{
+    background:
+      radial-gradient(circle at 24% 35%,rgba(70,55,255,.14),transparent 32%),
+      linear-gradient(180deg,rgba(5,3,11,.08),rgba(5,3,11,.72) 72%,rgba(5,3,11,.96));
   }
 
   .launchpad-banner-rail{
-    top:16px;
-    left:16px;
-    right:16px;
-    height:116px;
-    border-radius:16px;
+    position:relative;
+    top:auto;
+    left:auto;
+    right:auto;
+    height:72px;
+    margin:12px 12px 0;
+    border-radius:14px;
+    box-shadow:inset 0 0 30px rgba(22,120,255,.08);
+  }
+
+  .launchpad-banner-glow{
+    inset:24% 15%;
+    filter:blur(22px);
   }
 
   .hero-banner-art{
-    width:98%;
-    height:76%;
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    padding:10px 12px 4px;
+    object-fit:contain;
+    object-position:center 44%;
+    transform:translateY(-4px) scale(.92);
+    filter:saturate(1.13) contrast(1.08) drop-shadow(0 0 13px rgba(44,170,255,.22));
+  }
+
+  .launchpad-hero:hover .hero-banner-art{
+    transform:translateY(-4px) scale(.92);
   }
 
   .hero-body{
-    min-height:590px;
-    display:block;
-    padding:151px 18px 20px;
+    min-height:0;
+    display:grid;
+    grid-template-columns:88px minmax(0,1fr);
+    align-items:start;
+    gap:14px;
+    padding:15px 16px 18px;
   }
 
   .hero-profile-card{
-    width:118px;
-    margin:0 0 -26px 20px;
-    z-index:3;
-    border-radius:21px;
+    width:88px;
+    margin:0;
+    padding:4px;
+    align-self:start;
+    border-radius:19px;
+    box-shadow:0 16px 36px rgba(0,0,0,.38),0 0 28px rgba(113,55,255,.12);
   }
 
   .hero-profile-card>img{
-    border-radius:16px;
+    border-radius:15px;
   }
 
   .profile-status{
-    left:9px;
-    right:9px;
-    bottom:9px;
-    min-height:24px;
-    padding:5px 7px;
-    font-size:6px;
+    display:none;
   }
 
   .launchpad-hero .hero-copy{
-    padding:42px 20px 22px;
-    border-radius:20px;
+    min-width:0;
+    padding:3px 0 0;
+    border:0;
+    border-radius:0;
+    background:transparent;
+    backdrop-filter:none;
+    box-shadow:none;
+  }
+
+  .launchpad-hero .hero-copy .eyebrow{
+    display:block;
+    overflow:hidden;
+    color:#938ba2;
+    font-size:7px;
+    line-height:1.25;
+    letter-spacing:.13em;
+    white-space:nowrap;
+    text-overflow:ellipsis;
   }
 
   .launchpad-hero .hero-copy h1{
-    font-size:clamp(34px,11vw,46px);
+    margin:6px 0 0;
+    font-size:clamp(25px,7.7vw,32px);
+    line-height:1;
+    font-weight:600;
+    letter-spacing:-.04em;
+    white-space:nowrap;
+  }
+
+  .hero-tagline{
+    margin-top:7px;
+    font-size:12px;
+    line-height:1.25;
   }
 
   .launchpad-hero .hero-copy p{
+    display:-webkit-box;
+    margin:8px 0 0;
+    overflow:hidden;
+    color:rgba(240,235,249,.68);
+    font-size:11.5px;
+    line-height:1.45;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:3;
+  }
+
+  .launchpad-hero .hero-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-top:12px;
+  }
+
+  .launchpad-hero .hero-actions .primary,
+  .launchpad-hero .hero-actions .secondary{
+    width:auto;
+    min-width:0;
+    min-height:38px;
+    padding:9px 8px;
+    border-radius:11px;
+    font-size:10px;
+    white-space:nowrap;
+  }
+
+  .player-bar{
+    left:0;
+    bottom:54px;
+    height:68px;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:8px;
+    padding:8px 12px;
+  }
+
+  .current-track{
+    min-width:0;
+    gap:9px;
+  }
+
+  .current-track img{
+    width:46px;
+    height:46px;
+    border-radius:9px;
+  }
+
+  .current-track strong{
     font-size:13px;
+  }
+
+  .current-track small{
+    max-width:46vw;
+    font-size:9px;
+  }
+
+  .transport-buttons{
+    gap:7px;
+  }
+
+  .transport-buttons button{
+    font-size:13px;
+  }
+
+  .main-play{
+    width:42px;
+    height:42px;
+  }
+
+  .mobile-nav{
+    height:54px;
+  }
+
+  .mobile-nav span{
+    font-size:8px;
+  }
+
+  .section-head{
+    align-items:flex-end;
+  }
+
+  .section-head h2{
+    margin-bottom:10px;
+    font-size:24px;
   }
 }
 
 @media(max-width:420px){
+  .main-content{padding-left:10px;padding-right:10px}
+
   .launchpad-banner-rail{
-    height:98px;
+    height:64px;
+    margin:10px 10px 0;
+  }
+
+  .hero-banner-art{
+    padding:8px 9px 3px;
+    transform:translateY(-3px) scale(.9);
+  }
+
+  .launchpad-hero:hover .hero-banner-art{
+    transform:translateY(-3px) scale(.9);
   }
 
   .hero-body{
-    padding-top:130px;
+    grid-template-columns:78px minmax(0,1fr);
+    gap:12px;
+    padding:13px 13px 16px;
   }
 
   .hero-profile-card{
-    width:104px;
+    width:78px;
+    border-radius:17px;
+  }
+
+  .hero-profile-card>img{
+    border-radius:13px;
+  }
+
+  .launchpad-hero .hero-copy h1{
+    font-size:clamp(23px,7.5vw,29px);
+  }
+
+  .hero-tagline{
+    font-size:11px;
+  }
+
+  .launchpad-hero .hero-copy p{
+    font-size:10.8px;
+    -webkit-line-clamp:2;
+  }
+
+  .launchpad-hero .hero-actions{
+    margin-top:10px;
+  }
+
+  .launchpad-hero .hero-actions .primary,
+  .launchpad-hero .hero-actions .secondary{
+    min-height:36px;
+    padding:8px 6px;
+    font-size:9px;
   }
 }
 
@@ -325,6 +530,5 @@ h1,h2,h3,h4,.brand,.hero-tagline{
   .hero-banner-art,
   .launchpad-hero:hover .hero-banner-art{
     transition:none;
-    transform:none;
   }
 }
