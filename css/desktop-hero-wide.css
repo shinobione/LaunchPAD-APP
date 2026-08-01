@@ -1,0 +1,138 @@
+@media (min-width: 981px) {
+  .launchpad-hero {
+    min-height: 520px !important;
+    padding: 0 !important;
+  }
+
+  /* Keep the Launchpad artwork centered above the artist identity bar. */
+  .launchpad-banner-rail {
+    position: absolute !important;
+    top: 18px !important;
+    left: 50% !important;
+    right: auto !important;
+    width: min(36vw, 520px) !important;
+    height: auto !important;
+    aspect-ratio: 2048 / 1143 !important;
+    margin: 0 !important;
+    transform: translateX(-50%) !important;
+  }
+
+  .hero-banner-art {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: center !important;
+  }
+
+  /* One coherent, full-width artist card. */
+  .launchpad-hero .hero-body {
+    position: absolute !important;
+    left: 24px !important;
+    right: 24px !important;
+    bottom: 20px !important;
+    width: auto !important;
+    min-height: 204px !important;
+    display: grid !important;
+    grid-template-columns: 150px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 24px !important;
+    padding: 17px 22px !important;
+    border: 1px solid rgba(255, 255, 255, .09) !important;
+    border-radius: 24px !important;
+    background:
+      radial-gradient(circle at 12% 48%, rgba(166, 60, 255, .13), transparent 27%),
+      linear-gradient(145deg, rgba(9, 5, 18, .90), rgba(17, 8, 30, .70)) !important;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .34), inset 0 0 60px rgba(111, 60, 255, .025) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+  }
+
+  .launchpad-hero .hero-profile-card {
+    width: 150px !important;
+    margin: 0 !important;
+    align-self: center !important;
+  }
+
+  .launchpad-hero .hero-copy {
+    width: 100% !important;
+    min-width: 0 !important;
+    display: grid !important;
+    grid-template-columns: minmax(190px, .72fr) minmax(330px, 1.55fr) minmax(150px, auto) !important;
+    grid-template-areas:
+      "eyebrow manifesto actions"
+      "wordmark manifesto actions" !important;
+    align-items: center !important;
+    column-gap: 28px !important;
+    row-gap: 4px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .launchpad-hero .hero-copy > .eyebrow {
+    grid-area: eyebrow !important;
+    align-self: end !important;
+  }
+
+  .launchpad-hero .hero-wordmark-heading,
+  .launchpad-hero .hero-copy > h1 {
+    grid-area: wordmark !important;
+    align-self: start !important;
+    margin: 5px 0 0 !important;
+  }
+
+  .launchpad-hero .hero-wordmark {
+    width: min(100%, 230px) !important;
+    height: 58px !important;
+  }
+
+  .launchpad-hero .artist-manifesto {
+    grid-area: manifesto !important;
+    align-self: center !important;
+    max-width: 700px !important;
+    margin: 0 !important;
+    font-size: clamp(10px, .82vw, 13px) !important;
+    line-height: 1.55 !important;
+  }
+
+  .launchpad-hero .hero-actions {
+    grid-area: actions !important;
+    align-self: center !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 9px !important;
+    width: 168px !important;
+    margin: 0 !important;
+  }
+
+  .launchpad-hero .hero-actions .primary,
+  .launchpad-hero .hero-actions .secondary {
+    width: 100% !important;
+    min-height: 42px !important;
+    padding: 10px 13px !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+  }
+}
+
+@media (min-width: 981px) and (max-width: 1240px) {
+  .launchpad-hero .hero-copy {
+    grid-template-columns: minmax(185px, .8fr) minmax(280px, 1.35fr) !important;
+    grid-template-areas:
+      "eyebrow manifesto"
+      "wordmark manifesto"
+      "actions actions" !important;
+    column-gap: 22px !important;
+  }
+
+  .launchpad-hero .hero-actions {
+    width: auto !important;
+    grid-template-columns: repeat(2, minmax(130px, 180px)) !important;
+    justify-content: start !important;
+    margin-top: 8px !important;
+  }
+}
