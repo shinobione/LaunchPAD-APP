@@ -12,6 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/header.css">
+  <link rel="stylesheet" href="css/refinements.css">
 </head>
 <body>
   <canvas id="ambient" aria-hidden="true"></canvas>
@@ -109,7 +110,7 @@
               <span class="pill">REACTIVE</span>
             </div>
             <canvas id="home-visualizer" aria-label="Reactive orbital audio spectrum"></canvas>
-            <p>A clean radial spectrum driven by the selected track in real time.</p>
+            <p id="now-visual-caption">Before the Noise is shaping a live R&amp;B signal with a digital melancholy pulse.</p>
           </article>
 
           <article class="panel discovery-panel">
@@ -178,9 +179,9 @@
           </div>
         </article>
         <div class="lab-controls">
-          <button class="chip active" data-visual="bars">Spectrum</button>
-          <button class="chip" data-visual="wave">Waveform</button>
-          <button class="chip" data-visual="circle">Orbit</button>
+          <button class="chip active" data-visual="circle">Orbit</button>
+          <button class="chip" data-visual="bars">Spectrum</button>
+          <button class="chip" data-visual="constellation">Constellation</button>
         </div>
       </section>
 
