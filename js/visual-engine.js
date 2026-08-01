@@ -3,7 +3,7 @@ export function createVisualController({ audio, $, getAccent }) {
   let analyser;
   let source;
   let frame;
-  let mode = 'bars';
+  let mode = 'circle';
 
   function setupAudio() {
     if (context) return;
@@ -113,6 +113,57 @@ export function createVisualController({ audio, $, getAccent }) {
     ctx.fill();
   }
 
+  function drawConstellation(ctx, width, height, data, accent, accent2) {
+    const time = Date.now() / 1000;
+    const count = 28;
+    const points = [];
+    const energy = data.reduce((sum, value) => sum + value, 0) / data.length / 255;
+
+    const haze = ctx.createRadialGradient(width * .5, height * .48, 0, width * .5, height * .48, Math.min(width, height) * .55);
+    haze.addColorStop(0, `${accent2}20`);
+    haze.addColorStop(.45, `${accent}10`);
+    haze.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = haze;
+    ctx.fillRect(0, 0, width, height);
+
+    for (let index = 0; index < count; index += 1) {
+      const value = data[Math.floor(index / count * data.length)] / 255;
+      const x = width * (.1 + .8 * ((Math.sin(index * 12.9898) + 1) / 2)) + Math.sin(time * (.18 + index % 5 * .025) + index) * (12 + value * 22);
+      const y = height * (.12 + .76 * ((Math.cos(index * 8.233) + 1) / 2)) + Math.cos(time * (.16 + index % 7 * .02) + index * .7) * (10 + value * 18);
+      points.push({ x, y, value });
+    }
+
+    for (let a = 0; a < points.length; a += 1) {
+      for (let b = a + 1; b < points.length; b += 1) {
+        const dx = points[a].x - points[b].x;
+        const dy = points[a].y - points[b].y;
+        const distance = Math.hypot(dx, dy);
+        const threshold = Math.min(width, height) * .24;
+        if (distance > threshold) continue;
+        ctx.strokeStyle = `${a % 2 ? accent2 : accent}${Math.round((1 - distance / threshold) * 44).toString(16).padStart(2, '0')}`;
+        ctx.lineWidth = .55 + (points[a].value + points[b].value) * .55;
+        ctx.beginPath();
+        ctx.moveTo(points[a].x, points[a].y);
+        ctx.lineTo(points[b].x, points[b].y);
+        ctx.stroke();
+      }
+    }
+
+    points.forEach((point, index) => {
+      const radius = 1.6 + point.value * 4.2 + energy * .8;
+      ctx.fillStyle = index % 2 ? accent2 : accent;
+      ctx.shadowColor = ctx.fillStyle;
+      ctx.shadowBlur = 8 + point.value * 18;
+      ctx.globalAlpha = .5 + point.value * .5;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+  }
+
   function draw(canvas, visualMode) {
     if (!canvas) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -135,45 +186,20 @@ export function createVisualController({ audio, $, getAccent }) {
     const data = getData();
     const [accent, accent2] = getAccent();
 
-    if (visualMode === 'orbital') {
+    if (visualMode === 'orbital' || visualMode === 'circle') {
       drawOrbital(ctx, width, height, data, accent, accent2);
+      return;
+    }
+
+    if (visualMode === 'constellation') {
+      drawConstellation(ctx, width, height, data, accent, accent2);
       return;
     }
 
     const gradient = ctx.createLinearGradient(0, 0, width, height);
     gradient.addColorStop(0, accent);
     gradient.addColorStop(1, accent2);
-    ctx.strokeStyle = gradient;
     ctx.fillStyle = gradient;
-    ctx.lineWidth = 2;
-
-    if (visualMode === 'wave') {
-      ctx.beginPath();
-      data.forEach((value, index) => {
-        const x = index / (data.length - 1) * width;
-        const direction = index % 2 ? 1 : -1;
-        const y = height / 2 + (value / 255 - .25) * height * .55 * direction;
-        if (index) ctx.lineTo(x, y);
-        else ctx.moveTo(x, y);
-      });
-      ctx.stroke();
-      return;
-    }
-
-    if (visualMode === 'circle') {
-      const centerX = width / 2;
-      const centerY = height / 2;
-      const radius = Math.min(width, height) * .23;
-      data.forEach((value, index) => {
-        const angle = index / data.length * Math.PI * 2;
-        const length = 12 + value / 255 * 55;
-        ctx.beginPath();
-        ctx.moveTo(centerX + Math.cos(angle) * radius, centerY + Math.sin(angle) * radius);
-        ctx.lineTo(centerX + Math.cos(angle) * (radius + length), centerY + Math.sin(angle) * (radius + length));
-        ctx.stroke();
-      });
-      return;
-    }
 
     const barWidth = width / data.length * .68;
     data.forEach((value, index) => {
