@@ -8,8 +8,7 @@ export const tracks = [
   { id:'saigon-bound', title:'Saigon Bound', file:'audio/saigon-bound.mp3', cover:'assets/saigon-bound.png', genre:'Vietnam', mood:'Travel story', album:'Love Letters from Saigon', lyrics:'assets/lyrics/saigon-bound.txt' },
   { id:'the-throne-resonates', title:'The Throne Resonates', file:'audio/the-throne-resonates.mp3', cover:'assets/the-throne-resonates.jpeg', genre:'Hip-hop', mood:'Epic energy', album:'Coal to Diamond', lyrics:'assets/lyrics/the-throne-resonates.txt' },
   { id:'carved-from-pressure', title:'Carved from Pressure', file:'audio/carved-from-pressure.mp3', cover:'assets/carved-from-pressure.jpeg', genre:'Hip-hop', mood:'Resilience', album:'Coal to Diamond', lyrics:'assets/lyrics/carved-from-pressure.txt' },
-  { id:'ligne-3', title:'Ligne 3', file:'audio/ligne-3.mp3', cover:'assets/coal-to-diamond.jpeg', genre:'Hip-hop', mood:'Urban satire', album:'Coal to Diamond', lyrics:null },
-  { id:'artist-review', title:'Artist Review', file:'audio/review-shinobiwan.mp3', cover:'assets/neon-heartbreaks.jpeg', genre:'R&B', mood:'Artist profile', album:'Editorial', lyrics:null }
+  { id:'ligne-3', title:'Ligne 3', file:'audio/ligne-3.mp3', cover:'assets/ligne3.jpeg', genre:'Hip-hop', mood:'Urban satire', album:'Coal to Diamond', lyrics:'assets/lyrics/ligne3.txt' }
 ];
 
 tracks.forEach(track => {
