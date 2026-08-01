@@ -23,6 +23,96 @@ export function createVisualController({ audio, $, getAccent }) {
     context?.resume();
   }
 
+  function getData() {
+    const size = analyser ? analyser.frequencyBinCount : 64;
+    const data = new Uint8Array(size);
+    if (analyser) {
+      analyser.getByteFrequencyData(data);
+    } else {
+      for (let index = 0; index < size; index += 1) {
+        data[index] = 34 + 22 * Math.sin(Date.now() / 620 + index * .72);
+      }
+    }
+    return data;
+  }
+
+  function drawOrbital(ctx, width, height, data, accent, accent2) {
+    const centerX = width / 2;
+    const centerY = height / 2 + 3;
+    const minSide = Math.min(width, height);
+    const baseRadius = minSide * .19;
+    const energy = data.reduce((sum, value) => sum + value, 0) / data.length / 255;
+    const time = Date.now() / 1000;
+
+    const glow = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, baseRadius * 2.15);
+    glow.addColorStop(0, `${accent}45`);
+    glow.addColorStop(.38, `${accent2}20`);
+    glow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, baseRadius * 2.15, 0, Math.PI * 2);
+    ctx.fill();
+
+    [1, 1.34, 1.72].forEach((scale, index) => {
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, baseRadius * scale, 0, Math.PI * 2);
+      ctx.strokeStyle = index === 0 ? `${accent}70` : `${accent2}${index === 1 ? '35' : '22'}`;
+      ctx.lineWidth = index === 0 ? 1.4 : 1;
+      ctx.stroke();
+    });
+
+    const samples = Math.min(72, data.length);
+    for (let index = 0; index < samples; index += 1) {
+      const sourceIndex = Math.floor(index / samples * data.length);
+      const value = data[sourceIndex] / 255;
+      const angle = index / samples * Math.PI * 2 - Math.PI / 2;
+      const inner = baseRadius * 1.08;
+      const length = 7 + value * minSide * .14;
+      const outer = inner + length;
+      const x1 = centerX + Math.cos(angle) * inner;
+      const y1 = centerY + Math.sin(angle) * inner;
+      const x2 = centerX + Math.cos(angle) * outer;
+      const y2 = centerY + Math.sin(angle) * outer;
+
+      const stroke = ctx.createLinearGradient(x1, y1, x2, y2);
+      stroke.addColorStop(0, `${accent}55`);
+      stroke.addColorStop(1, index % 2 ? accent2 : accent);
+      ctx.strokeStyle = stroke;
+      ctx.globalAlpha = .36 + value * .64;
+      ctx.lineWidth = 1.2 + value * 2.1;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    for (let index = 0; index < 5; index += 1) {
+      const orbitRadius = baseRadius * (1.38 + index * .11);
+      const speed = .18 + index * .035;
+      const angle = time * speed * (index % 2 ? -1 : 1) + index * 1.36;
+      const dotSize = 1.7 + energy * 2.5 + index * .15;
+      const x = centerX + Math.cos(angle) * orbitRadius;
+      const y = centerY + Math.sin(angle) * orbitRadius;
+      ctx.fillStyle = index % 2 ? accent2 : accent;
+      ctx.shadowColor = ctx.fillStyle;
+      ctx.shadowBlur = 12 + energy * 18;
+      ctx.beginPath();
+      ctx.arc(x, y, dotSize, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+
+    const core = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, baseRadius * .72);
+    core.addColorStop(0, 'rgba(255,255,255,.18)');
+    core.addColorStop(.18, `${accent}42`);
+    core.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = core;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, baseRadius * (.72 + energy * .08), 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   function draw(canvas, visualMode) {
     if (!canvas) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -42,16 +132,14 @@ export function createVisualController({ audio, $, getAccent }) {
     const height = rect.height;
     ctx.clearRect(0, 0, width, height);
 
-    const size = analyser ? analyser.frequencyBinCount : 64;
-    const data = new Uint8Array(size);
-    if (analyser) analyser.getByteFrequencyData(data);
-    else {
-      for (let index = 0; index < size; index += 1) {
-        data[index] = 35 + 25 * Math.sin(Date.now() / 500 + index);
-      }
+    const data = getData();
+    const [accent, accent2] = getAccent();
+
+    if (visualMode === 'orbital') {
+      drawOrbital(ctx, width, height, data, accent, accent2);
+      return;
     }
 
-    const [accent, accent2] = getAccent();
     const gradient = ctx.createLinearGradient(0, 0, width, height);
     gradient.addColorStop(0, accent);
     gradient.addColorStop(1, accent2);
@@ -99,7 +187,7 @@ export function createVisualController({ audio, $, getAccent }) {
   function start() {
     cancelAnimationFrame(frame);
     const loop = () => {
-      draw($('#home-visualizer'), 'wave');
+      draw($('#home-visualizer'), 'orbital');
       draw($('#lab-visualizer'), mode);
       frame = requestAnimationFrame(loop);
     };
