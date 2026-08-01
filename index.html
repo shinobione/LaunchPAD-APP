@@ -9,7 +9,7 @@
   <link rel="icon" href="assets/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/header.css">
 </head>
@@ -63,20 +63,32 @@
         </label>
         <div class="top-actions">
           <span class="live-badge">● ONLINE</span>
-          <div class="avatar" aria-label="SHINOBIWAN profile">S</div>
+          <img class="avatar" src="assets/shinoprofil.jpeg" alt="SHINOBIWAN profile">
         </div>
       </header>
 
       <section class="view active" id="view-home">
         <article class="hero launchpad-hero">
-          <img class="hero-banner-art" src="assets/launchpad.png" alt="SHINOBIWAN Launchpad artwork" fetchpriority="high">
-          <div class="hero-copy">
-            <span class="eyebrow">ARTIST • BEATMAKER • PRODUCER</span>
-            <h1>SHINOBIWAN</h1>
-            <p>A journey through nocturnal R&amp;B, cinematic hip-hop, digital textures and raw emotion.</p>
-            <div class="hero-actions">
-              <button class="primary" data-play-index="0">▶ Listen now</button>
-              <button class="secondary" data-view-target="library">Explore the catalog</button>
+          <div class="launchpad-banner-rail" aria-hidden="true">
+            <span class="launchpad-banner-glow"></span>
+            <img class="hero-banner-art" src="assets/launchpad.png" alt="" fetchpriority="high">
+          </div>
+
+          <div class="hero-body">
+            <div class="hero-profile-card">
+              <img src="assets/shinoprofil.jpeg" alt="Portrait of SHINOBIWAN" fetchpriority="high">
+              <span class="profile-status"><i></i> INDEPENDENT ARTIST</span>
+            </div>
+
+            <div class="hero-copy">
+              <span class="eyebrow">ARTIST • BEATMAKER • PRODUCER</span>
+              <h1>SHINOBIWAN</h1>
+              <strong class="hero-tagline">Neon emotion. Cinematic impact.</strong>
+              <p>A journey through nocturnal R&amp;B, cinematic hip-hop, digital textures and raw emotion.</p>
+              <div class="hero-actions">
+                <button class="primary" data-play-index="0">▶ Listen now</button>
+                <button class="secondary" data-view-target="library">Explore the catalog</button>
+              </div>
             </div>
           </div>
         </article>
@@ -93,11 +105,11 @@
         <div class="home-panels">
           <article class="panel now-panel">
             <div class="panel-head">
-              <h3>Active signal</h3>
-              <span class="pill">LIVE ENGINE</span>
+              <h3>Orbital spectrum</h3>
+              <span class="pill">REACTIVE</span>
             </div>
-            <canvas id="home-visualizer" aria-label="Live audio waveform"></canvas>
-            <p>The visualizer reacts in real time to the selected track.</p>
+            <canvas id="home-visualizer" aria-label="Reactive orbital audio spectrum"></canvas>
+            <p>A clean radial spectrum driven by the selected track in real time.</p>
           </article>
 
           <article class="panel discovery-panel">
@@ -178,7 +190,7 @@
           <h1>About</h1>
         </div>
         <article class="about-card">
-          <img src="assets/logo.png" alt="SHINOBIWAN logo">
+          <img src="assets/shinoprofil.jpeg" alt="Portrait of SHINOBIWAN">
           <div>
             <h2>Human emotion, amplified by technology.</h2>
             <p>SHINOBIWAN builds a hybrid musical universe: sentimental, nocturnal, sometimes ironic and often cinematic. This application is the gateway to the tracks, lyrics and interactive experiences.</p>
