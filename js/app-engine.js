@@ -39,12 +39,14 @@ async function boot() {
   installCriticalStyles();
   await import('./app-main.js');
 
-  const [{ installContentV4 }, { initAudioFocus }] = await Promise.all([
+  const [{ installContentV4 }, { initAudioFocus }, { applyAlbumCovers }] = await Promise.all([
     import('./content-v4.js'),
-    import('./audio-focus.js')
+    import('./audio-focus.js'),
+    import('./album-covers.js')
   ]);
 
   installContentV4();
+  applyAlbumCovers();
   installDesktopHeroFix();
   installFinalLayoutFix();
   initAudioFocus({ audio: document.querySelector('#audio') });
