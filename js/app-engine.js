@@ -7,8 +7,18 @@ function installEarlyFavicon() {
   document.head.appendChild(icon);
 }
 
+function installCriticalStyles() {
+  const href = 'css/audio-lab-fix.css?v=20260801-1';
+  if (document.querySelector(`link[href="${href}"]`)) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = href;
+  document.head.appendChild(link);
+}
+
 async function boot() {
   installEarlyFavicon();
+  installCriticalStyles();
   await import('./app-main.js');
 
   const [{ installContentV4 }, { initAudioFocus }] = await Promise.all([
