@@ -40,9 +40,9 @@ function card(track, index) {
   return `
     <article class="album-card" data-index="${index}" data-genre="${escapeHtml(track.genre)}">
       <div class="cover-wrap">
-        <img src="${escapeHtml(track.cover)}" alt="Pochette ${escapeHtml(track.title)}" loading="lazy">
+        <img src="${escapeHtml(track.cover)}" alt="Cover art for ${escapeHtml(track.title)}" loading="lazy">
         ${track.lyrics ? '<span class="lyrics-card-badge">LYRICS</span>' : ''}
-        <button class="play-overlay" data-play-index="${index}" aria-label="Écouter ${escapeHtml(track.title)}">▶</button>
+        <button class="play-overlay" data-play-index="${index}" aria-label="Listen to ${escapeHtml(track.title)}">▶</button>
       </div>
       <h3>${escapeHtml(track.title)}</h3>
       <p>${escapeHtml(track.genre)} • ${escapeHtml(track.mood)}</p>
@@ -71,7 +71,7 @@ function render() {
   $('#metric-tracks').textContent = String(tracks.length);
   $('#metric-lyrics').textContent = String(tracks.filter(track => track.lyrics).length);
   $('#lyrics-track-select').innerHTML = tracks.map((track, index) =>
-    `<option value="${index}">${escapeHtml(track.title)}${track.lyrics ? '' : ' — paroles indisponibles'}</option>`
+    `<option value="${index}">${escapeHtml(track.title)}${track.lyrics ? '' : ' — lyrics unavailable'}</option>`
   ).join('');
   renderGenreBars();
 }
@@ -98,7 +98,10 @@ function setTheme(track) {
 function updateTrackUI(track) {
   ['player-cover', 'mini-cover', 'lab-cover', 'lyrics-cover'].forEach(id => {
     const image = $(`#${id}`);
-    if (image) image.src = track.cover;
+    if (image) {
+      image.src = track.cover;
+      image.alt = `Cover art for ${track.title}`;
+    }
   });
 
   ['player-title', 'mini-title', 'lab-title', 'lyrics-title'].forEach(id => {
@@ -133,7 +136,7 @@ function selectTrack(index, shouldPlay = true) {
   if (shouldPlay) {
     visuals.resume();
     audio.play().catch(error => {
-      console.warn('Lecture bloquée par le navigateur', error);
+      console.warn('Playback was blocked by the browser', error);
       updatePlayButtons(false);
     });
   } else {
@@ -161,7 +164,7 @@ function togglePlayback() {
 function updatePlayButtons(playing) {
   $$('[data-action="toggle"]').forEach(button => {
     button.textContent = playing ? '❚❚' : '▶';
-    button.setAttribute('aria-label', playing ? 'Pause' : 'Lecture');
+    button.setAttribute('aria-label', playing ? 'Pause' : 'Play');
   });
 }
 
@@ -196,7 +199,7 @@ function applyLibraryVisibility() {
 
   $('#library-empty').hidden = visibleCount !== 0;
   $('#search-status').textContent = query
-    ? `${visibleCount} résultat${visibleCount > 1 ? 's' : ''}${lyrics.isSearchHydrated() ? '' : ' • indexation…'}`
+    ? `${visibleCount} result${visibleCount === 1 ? '' : 's'}${lyrics.isSearchHydrated() ? '' : ' • indexing…'}`
     : '';
 }
 
