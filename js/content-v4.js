@@ -21,13 +21,13 @@ function installFavicon() {
   const icon = document.createElement('link');
   icon.rel = 'icon';
   icon.type = 'image/svg+xml';
-  icon.href = 'assets/favicon-v5.svg?v=20260801-5';
+  icon.href = 'assets/favicon-v6.svg?v=20260801-6';
   document.head.appendChild(icon);
 
   const shortcut = document.createElement('link');
   shortcut.rel = 'shortcut icon';
   shortcut.type = 'image/svg+xml';
-  shortcut.href = 'assets/favicon-v5.svg?v=20260801-5';
+  shortcut.href = 'assets/favicon-v6.svg?v=20260801-6';
   document.head.appendChild(shortcut);
 }
 
