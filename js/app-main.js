@@ -95,6 +95,11 @@ function setTheme(track) {
   document.documentElement.style.setProperty('--accent2', accent2);
 }
 
+function buildVisualCaption(track) {
+  const mood = track.mood.charAt(0).toLowerCase() + track.mood.slice(1);
+  return `${track.title} is shaping a live ${track.genre} signal with a ${mood} pulse.`;
+}
+
 function updateTrackUI(track) {
   ['player-cover', 'mini-cover', 'lab-cover', 'lyrics-cover'].forEach(id => {
     const image = $(`#${id}`);
@@ -113,6 +118,9 @@ function updateTrackUI(track) {
   $('#lyrics-meta').textContent = `${track.genre} • ${track.mood}`;
   $('#lyrics-ep').textContent = track.album.toUpperCase();
   $('#lyrics-track-select').value = String(currentIndex);
+
+  const caption = $('#now-visual-caption');
+  if (caption) caption.textContent = buildVisualCaption(track);
 
   $$('.album-card').forEach(cardElement => {
     cardElement.classList.toggle('is-current', Number(cardElement.dataset.index) === currentIndex);
