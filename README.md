@@ -1,2 +1,1 @@
-# LaunchPAD-APP
-LaunchPAD-APP
+# ShinoBiWan-Launchpad
