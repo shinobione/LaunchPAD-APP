@@ -1,0 +1,278 @@
+.catalog-badge{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:32px;
+  padding:6px 10px;
+  border:1px solid rgba(166,60,255,.22);
+  border-radius:999px;
+  background:linear-gradient(135deg,rgba(166,60,255,.12),rgba(92,108,255,.07));
+  color:#d8c9f4;
+  white-space:nowrap;
+}
+
+.catalog-badge span{
+  color:#8f86a2;
+  font-size:8px;
+  letter-spacing:.14em;
+}
+
+.catalog-badge strong{
+  font-size:9px;
+  letter-spacing:.08em;
+}
+
+.launchpad-banner-rail{
+  background:
+    linear-gradient(180deg,rgba(3,6,15,.08),rgba(4,3,11,.32)),
+    url("../assets/launchpad.png") center 52% / 112% auto no-repeat!important;
+}
+
+.launchpad-banner-glow{
+  opacity:.62!important;
+}
+
+.hero-banner-art{
+  opacity:0!important;
+  pointer-events:none!important;
+}
+
+.streaming-grid{
+  align-items:start!important;
+}
+
+.stream-card{
+  height:max-content!important;
+  align-self:start!important;
+}
+
+.spotify-card{
+  min-height:0!important;
+}
+
+.spotify-frame{
+  display:block;
+  height:352px!important;
+  min-height:352px!important;
+}
+
+.journey-intro{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:28px;
+}
+
+.journey-intro>div{
+  max-width:760px;
+}
+
+.journey-library-link{
+  flex:0 0 auto;
+}
+
+.journey-stats{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  margin-bottom:18px;
+}
+
+.journey-stats article{
+  padding:20px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.012));
+}
+
+.journey-stats strong,
+.journey-stats span{
+  display:block;
+}
+
+.journey-stats strong{
+  font-family:"Outfit",sans-serif;
+  font-size:clamp(24px,3vw,38px);
+}
+
+.journey-stats span{
+  margin-top:5px;
+  color:var(--muted);
+  font-size:10px;
+  letter-spacing:.05em;
+}
+
+.journey-grid{
+  display:grid;
+  gap:16px;
+}
+
+.journey-card{
+  position:relative;
+  min-height:260px;
+  display:grid;
+  grid-template-columns:minmax(240px,34%) 1fr;
+  gap:28px;
+  align-items:center;
+  overflow:hidden;
+  padding:26px;
+  border:1px solid var(--line);
+  border-radius:24px;
+  background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.012));
+}
+
+.journey-card::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:.65;
+}
+
+.neon-era::after{
+  background:radial-gradient(circle at 10% 40%,rgba(110,65,255,.18),transparent 34%);
+}
+
+.pressure-era::after{
+  background:radial-gradient(circle at 10% 40%,rgba(255,75,110,.16),transparent 34%);
+}
+
+.saigon-era::after{
+  background:radial-gradient(circle at 10% 40%,rgba(255,145,70,.17),transparent 34%);
+}
+
+.journey-cover-stack{
+  position:relative;
+  z-index:1;
+  min-height:210px;
+}
+
+.journey-cover-stack img{
+  position:absolute;
+  width:150px;
+  aspect-ratio:1;
+  object-fit:cover;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:18px;
+  box-shadow:0 24px 55px rgba(0,0,0,.38);
+}
+
+.journey-cover-stack img:first-child{
+  left:8%;
+  top:8px;
+  transform:rotate(-5deg);
+}
+
+.journey-cover-stack img:last-child{
+  left:38%;
+  top:42px;
+  transform:rotate(6deg);
+}
+
+.journey-copy{
+  position:relative;
+  z-index:1;
+  max-width:680px;
+}
+
+.journey-copy small{
+  color:#a89db8;
+  font-size:9px;
+  letter-spacing:.16em;
+}
+
+.journey-copy h2{
+  margin:8px 0 10px;
+  font-size:clamp(26px,4vw,48px);
+}
+
+.journey-copy p{
+  max-width:600px;
+  color:var(--muted);
+  line-height:1.7;
+}
+
+.journey-number{
+  position:absolute;
+  right:0;
+  top:-20px;
+  color:rgba(255,255,255,.045);
+  font-family:"Outfit",sans-serif;
+  font-size:92px;
+  font-weight:700;
+  line-height:1;
+}
+
+.journey-palette{
+  margin-top:18px;
+}
+
+@media(max-width:900px){
+  .journey-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .journey-card{grid-template-columns:210px 1fr}
+  .journey-cover-stack img{width:130px}
+}
+
+@media(max-width:760px){
+  .catalog-badge{
+    min-height:30px;
+    padding:5px 8px;
+  }
+
+  .catalog-badge span{display:none}
+  .catalog-badge strong{font-size:8px}
+
+  .launchpad-banner-rail{
+    background-size:122% auto!important;
+    background-position:center 52%!important;
+  }
+
+  .journey-intro{
+    display:block;
+  }
+
+  .journey-library-link{
+    width:100%;
+    margin-top:14px;
+  }
+
+  .journey-stats{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:9px;
+  }
+
+  .journey-stats article{
+    padding:15px;
+  }
+
+  .journey-card{
+    min-height:0;
+    display:block;
+    padding:18px;
+  }
+
+  .journey-cover-stack{
+    min-height:170px;
+    margin-bottom:14px;
+  }
+
+  .journey-cover-stack img{
+    width:122px;
+  }
+
+  .journey-cover-stack img:first-child{left:9%}
+  .journey-cover-stack img:last-child{left:43%;top:30px}
+
+  .journey-copy h2{
+    font-size:30px;
+  }
+
+  .journey-number{
+    top:-2px;
+    font-size:66px;
+  }
+
+  .spotify-frame{
+    height:352px!important;
+  }
+}
