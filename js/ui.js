@@ -11,7 +11,7 @@ export function installExtendedUI() {
     const button = document.createElement('button');
     button.className = 'nav-item';
     button.dataset.view = 'lyrics';
-    button.innerHTML = '<span aria-hidden="true">≋</span><span>Paroles</span>';
+    button.innerHTML = '<span aria-hidden="true">≋</span><span>Lyrics</span>';
     mainNav.insertBefore(button, mainNav.querySelector('[data-view="analytics"]'));
   }
 
@@ -19,7 +19,7 @@ export function installExtendedUI() {
   if (mobileNav && !mobileNav.querySelector('[data-view="lyrics"]')) {
     const button = document.createElement('button');
     button.dataset.view = 'lyrics';
-    button.innerHTML = '≋<span>Paroles</span>';
+    button.innerHTML = '≋<span>Lyrics</span>';
     mobileNav.insertBefore(button, mobileNav.querySelector('[data-view="lab"]'));
   }
 
@@ -28,7 +28,7 @@ export function installExtendedUI() {
     const button = document.createElement('button');
     button.className = 'side-lyrics-link';
     button.dataset.viewTarget = 'lyrics';
-    button.textContent = 'Afficher les paroles →';
+    button.textContent = 'Open lyrics →';
     sidePlayer.appendChild(button);
   }
 
@@ -40,7 +40,7 @@ export function installExtendedUI() {
     status.setAttribute('aria-live', 'polite');
     search.appendChild(status);
     const input = search.querySelector('input');
-    if (input) input.placeholder = 'Rechercher un titre, une ambiance ou des paroles…';
+    if (input) input.placeholder = 'Search tracks, moods or lyrics…';
   }
 
   const homePanels = document.querySelector('.home-panels');
@@ -49,13 +49,13 @@ export function installExtendedUI() {
     panel.className = 'panel home-lyrics-panel';
     panel.innerHTML = `
       <div class="panel-head">
-        <h3>Paroles en direct</h3>
+        <h3>Live lyrics</h3>
         <span id="home-lyrics-status" class="pill">SYNC</span>
       </div>
       <div id="home-lyrics" class="home-lyrics" aria-live="polite">
-        <p class="lyrics-placeholder">Lance un morceau pour suivre les paroles.</p>
+        <p class="lyrics-placeholder">Start a track to follow the lyrics.</p>
       </div>
-      <button class="text-button lyrics-open-button" data-view-target="lyrics">Ouvrir la vue complète →</button>
+      <button class="text-button lyrics-open-button" data-view-target="lyrics">Open full lyrics →</button>
     `;
     homePanels.insertBefore(panel, homePanels.querySelector('.discovery-panel'));
   }
@@ -65,7 +65,7 @@ export function installExtendedUI() {
     const button = document.createElement('button');
     button.className = 'chip';
     button.dataset.filter = 'with-lyrics';
-    button.textContent = 'Avec paroles';
+    button.textContent = 'With lyrics';
     filterRow.appendChild(button);
   }
 
@@ -75,7 +75,7 @@ export function installExtendedUI() {
     empty.id = 'library-empty';
     empty.className = 'empty-state';
     empty.hidden = true;
-    empty.textContent = 'Aucun morceau ne correspond à cette recherche.';
+    empty.textContent = 'No tracks match this search.';
     libraryGrid.insertAdjacentElement('afterend', empty);
   }
 
@@ -83,7 +83,7 @@ export function installExtendedUI() {
   if (metricGrid && !document.querySelector('#metric-lyrics')) {
     const metric = document.createElement('div');
     metric.className = 'metric';
-    metric.innerHTML = '<small>Paroles disponibles</small><strong id="metric-lyrics">0</strong><span>Fichiers du catalogue</span>';
+    metric.innerHTML = '<small>Lyrics available</small><strong id="metric-lyrics">0</strong><span>Catalog files</span>';
     if (metricGrid.lastElementChild) metricGrid.lastElementChild.replaceWith(metric);
     else metricGrid.appendChild(metric);
   }
@@ -93,7 +93,7 @@ export function installExtendedUI() {
     currentTrack.dataset.viewTarget = 'lyrics';
     currentTrack.setAttribute('role', 'button');
     currentTrack.setAttribute('tabindex', '0');
-    currentTrack.setAttribute('aria-label', 'Afficher les paroles du morceau actuel');
+    currentTrack.setAttribute('aria-label', 'Show lyrics for the current track');
   }
 
   if (!document.querySelector('#view-lyrics')) {
@@ -104,8 +104,8 @@ export function installExtendedUI() {
       <div class="page-intro lyrics-intro">
         <div>
           <span class="eyebrow">SYNCHRONIZED LYRICS</span>
-          <h1>Paroles</h1>
-          <p>Les paroles suivent la lecture en temps réel. Clique sur une ligne horodatée pour naviguer dans le morceau.</p>
+          <h1>Lyrics</h1>
+          <p>Lyrics follow playback in real time. Select a timestamped line to jump directly to that moment.</p>
         </div>
         <span id="lyrics-availability" class="lyrics-availability">SYNC READY</span>
       </div>
@@ -114,16 +114,16 @@ export function installExtendedUI() {
         <aside class="lyrics-track-panel">
           <div class="lyrics-cover-wrap">
             <div class="lyrics-cover-glow"></div>
-            <img id="lyrics-cover" src="assets/before-the-noise.jpeg" alt="Pochette du morceau actuel">
+            <img id="lyrics-cover" src="assets/before-the-noise.jpeg" alt="Current track cover">
           </div>
           <span id="lyrics-ep" class="eyebrow">NEON HEARTBREAKS</span>
           <h2 id="lyrics-title">Before the Noise</h2>
           <p id="lyrics-meta">R&amp;B • Digital melancholy</p>
 
           <div class="lyrics-transport">
-            <button data-action="prev" aria-label="Titre précédent">⏮</button>
-            <button class="lyrics-main-play" data-action="toggle" aria-label="Lecture">▶</button>
-            <button data-action="next" aria-label="Titre suivant">⏭</button>
+            <button data-action="prev" aria-label="Previous track">⏮</button>
+            <button class="lyrics-main-play" data-action="toggle" aria-label="Play">▶</button>
+            <button data-action="next" aria-label="Next track">⏭</button>
           </div>
 
           <div class="lyrics-progress">
@@ -132,17 +132,17 @@ export function installExtendedUI() {
             <span id="lyrics-duration">0:00</span>
           </div>
 
-          <label class="lyrics-track-select-label" for="lyrics-track-select">Changer de morceau</label>
+          <label class="lyrics-track-select-label" for="lyrics-track-select">Choose a track</label>
           <select id="lyrics-track-select" class="lyrics-track-select"></select>
         </aside>
 
         <div class="lyrics-reader-shell">
           <div class="lyrics-reader-head">
-            <span id="lyrics-reader-label">PAROLES SYNCHRONISÉES</span>
-            <button id="lyrics-autoscroll" class="chip active" type="button" aria-pressed="true">Défilement auto</button>
+            <span id="lyrics-reader-label">SYNCHRONIZED LYRICS</span>
+            <button id="lyrics-autoscroll" class="chip active" type="button" aria-pressed="true">Auto-scroll</button>
           </div>
           <div id="lyrics-reader" class="lyrics-reader" aria-live="polite">
-            <p class="lyrics-placeholder">Chargement des paroles…</p>
+            <p class="lyrics-placeholder">Loading lyrics…</p>
           </div>
         </div>
       </article>
