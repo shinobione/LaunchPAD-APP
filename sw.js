@@ -1,5 +1,6 @@
 importScripts('./js/build-config.js');
-const VERSION = globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev';
+const RELEASE = 'cloudflare-catalog-cutover-1';
+const VERSION = `${globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev'}-${RELEASE}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
