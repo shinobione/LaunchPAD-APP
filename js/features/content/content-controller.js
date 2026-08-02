@@ -1,8 +1,10 @@
+import { ensureStylesheet } from '../../core/assets.js';
 import {
   albums,
   tracks,
   getAlbumTracks,
-  getGenreCounts
+  getGenreCounts,
+  journeyEras
 } from '../../core/catalog-store.js';
 
 const escapeHtml = value => String(value)
@@ -12,13 +14,6 @@ const escapeHtml = value => String(value)
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;');
 
-function ensureStylesheet(href) {
-  if (document.querySelector(`link[href="${href}"]`)) return;
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = href;
-  document.head.appendChild(link);
-}
 
 function installManifesto() {
   const heroCopy = document.querySelector('.launchpad-hero .hero-copy');
@@ -72,6 +67,24 @@ function syncCatalogSummary() {
   });
 }
 
+function orderedAlbums() {
+  const byId = new Map(albums.map(album => [album.id, album]));
+  const configured = journeyEras
+    .map(era => ({ era, album: byId.get(era.albumId) }))
+    .filter(entry => entry.album);
+  const configuredIds = new Set(configured.map(entry => entry.album.id));
+  const remaining = albums
+    .filter(album => !configuredIds.has(album.id))
+    .map(album => ({ era: null, album }));
+  return [...configured, ...remaining];
+}
+
+function featuredTracksForEra(era, albumTracks) {
+  if (!era?.featuredTrackIds?.length) return albumTracks.slice(0, 2);
+  const byId = new Map(albumTracks.map(track => [track.id, track]));
+  return era.featuredTrackIds.map(id => byId.get(id)).filter(Boolean);
+}
+
 function renderAlbums() {
   const navButton = document.querySelector('.main-nav [data-view="analytics"]');
   if (navButton) {
@@ -101,8 +114,9 @@ function renderAlbums() {
     </div>
 
     <div class="album-collection">
-      ${albums.map((album, albumIndex) => {
+      ${orderedAlbums().map(({ album, era }, albumIndex) => {
         const albumTracks = getAlbumTracks(album.id);
+        const featuredTracks = featuredTracksForEra(era, albumTracks);
         const tags = [...new Set(albumTracks.flatMap(track => track.tags || [track.genre]))];
 
         return `
@@ -113,7 +127,9 @@ function renderAlbums() {
                 <div class="project-album-copy">
                   <small>PROJECT ${String(albumIndex + 1).padStart(2, '0')} • ${escapeHtml(album.year || '')}</small>
                   <h2>${escapeHtml(album.title)}</h2>
-                  <p>${escapeHtml(album.description || '')}</p>
+                  <p>${escapeHtml(era?.description || album.description || '')}</p>
+                  ${era?.heading ? `<strong class="project-era-heading">${escapeHtml(era.heading)}</strong>` : ''}
+                  <div class="project-featured-covers">${featuredTracks.map(track => `<img src="${escapeHtml(track.cover)}" alt="" loading="lazy">`).join('')}</div>
                   <div class="project-tags">
                     ${tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}
                   </div>
@@ -167,7 +183,7 @@ function removeVisibleSearch() {
 }
 
 export function installContentV4() {
-  ensureStylesheet('css/content-v4.css?v=20260802-2');
+  ensureStylesheet('css/content-v4.css');
   installManifesto();
   removeVisibleSearch();
   renderAlbums();

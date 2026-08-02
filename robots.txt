@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://shinobione.github.io/LaunchPAD-APP/sitemap.xml

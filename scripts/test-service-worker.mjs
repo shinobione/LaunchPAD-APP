@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
 const ORIGIN = 'https://launchpad.test/';
@@ -92,7 +93,7 @@ const self = {
   }
 };
 
-vm.runInNewContext(source, {
+const context = vm.createContext({
   self,
   caches,
   fetch: fetchMock,
@@ -103,7 +104,16 @@ vm.runInNewContext(source, {
   Set,
   Promise,
   console
-}, { filename: 'sw.js' });
+});
+context.globalThis = context;
+context.importScripts = (...paths) => {
+  for (const resource of paths) {
+    const normalized = String(resource).replace(/^\.\//, '');
+    const imported = readFileSync(new URL(`../${normalized}`, import.meta.url), 'utf8');
+    vm.runInContext(imported, context, { filename: normalized });
+  }
+};
+vm.runInContext(source, context, { filename: 'sw.js' });
 
 async function dispatchLifecycle(type) {
   const listener = listeners.get(type);
@@ -145,7 +155,7 @@ const navigation = await dispatchFetch(new TestRequest('/#home', {
 assert.equal(navigation.status, 200, 'Offline navigation did not return the cached shell.');
 assert.match(await navigation.text(), /NETWORK:\/(?:index\.html)?$/, 'Offline navigation returned an unexpected response.');
 
-const versionedModule = await dispatchFetch(new TestRequest('/js/app-main.js?v=20260802-wave4', {
+const versionedModule = await dispatchFetch(new TestRequest('/js/app-main.js?v=20260802-wave8', {
   destination: 'script'
 }));
 assert.equal(versionedModule.status, 200, 'Versioned module was not found through ignoreSearch caching.');

@@ -1,0 +1,23 @@
+<!doctype html><meta charset="utf-8"><title>Accessibility smoke</title>
+<div id="result">ACCESSIBILITY PENDING</div>
+<iframe id="app" src="../?visual-test=1#lyrics=before-the-noise" style="width:1280px;height:900px;border:0"></iframe>
+<script>
+const result=document.querySelector('#result');
+const frame=document.querySelector('#app');
+frame.addEventListener('load',()=>setTimeout(()=>{
+  try{
+    const doc=frame.contentDocument;
+    const failures=[];
+    const ids=[...doc.querySelectorAll('[id]')].map(node=>node.id);
+    if(new Set(ids).size!==ids.length) failures.push('duplicate-ids');
+    if(!doc.querySelector('main')) failures.push('main-landmark');
+    if(!doc.querySelector('nav[aria-label]')) failures.push('nav-label');
+    if(doc.querySelector('#lyrics-reader')?.getAttribute('aria-live')!=='off') failures.push('lyrics-live-region');
+    if(!doc.querySelector('#queue-panel[role="dialog"]')) failures.push('queue-dialog');
+    if(!doc.querySelector('#visual-card-modal [role="dialog"][aria-modal="true"]')) failures.push('visual-dialog');
+    const unlabeled=[...doc.querySelectorAll('button')].filter(button=>!button.textContent.trim()&&!button.getAttribute('aria-label'));
+    if(unlabeled.length) failures.push('unlabeled-buttons');
+    result.textContent=failures.length?`ACCESSIBILITY ERROR ${failures.join(' ')}`:'ACCESSIBILITY READY';
+  }catch(error){result.textContent=`ACCESSIBILITY ERROR ${error.message}`}
+},5000));
+</script>

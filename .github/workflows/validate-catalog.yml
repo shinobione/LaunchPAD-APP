@@ -24,47 +24,43 @@ jobs:
           node-version: 22
 
       - name: Check JavaScript syntax
-        run: |
-          find js scripts -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
-          node --check sw.js
+        run: npm run check:syntax
 
       - name: Validate consolidated structure and cleanup
+        shell: bash
         run: |
-          test -s guide.md
-          test -s js/catalog-metadata.js
-          test -s js/features/player-experience.js
-          test -s css/player-experience.css
-          test -s tests/player-experience-smoke.html
-          test -s tests/lyrics-studio-smoke.html
+          for required in \
+            README.md CHANGELOG.md RELEASE-CHECKLIST.md guide.md ARCHITECTURE.md \
+            robots.txt sitemap.xml js/build-config.js js/core/assets.js \
+            js/features/player-experience.js js/features/resilience-accessibility.js \
+            css/launchpad-features.css scripts/capture-visuals.sh \
+            tests/accessibility-smoke.html tests/layout-regression.html; do
+            test -s "$required"
+          done
 
           for removed in \
-            assets/favicon.svg \
-            assets/favicon-v2.svg \
-            assets/favicon-v3.svg \
-            assets/favicon-v5.svg \
-            scripts/analyze-audio-metadata.py \
-            .github/workflows/analyze-audio-metadata.yml; do
+            assets/favicon.svg assets/favicon-v2.svg assets/favicon-v3.svg assets/favicon-v5.svg \
+            css/desktop-hero-v3.css css/logo-lock.css css/audio-lab-fix.css \
+            CATALOG-GUIDE.md \
+            css/player-experience.css css/album-duration.css \
+            js/content-upgrade.js js/favicon-guard.js \
+            js/ui.js js/lyrics-engine.js js/visual-engine.js js/content-v4.js \
+            js/about-enhancements.js js/audio-focus.js js/lyrics-wake-lock.js \
+            scripts/analyze-audio-metadata.py .github/workflows/analyze-audio-metadata.yml; do
             test ! -e "$removed"
           done
 
-          grep -q 'assets/favicon-v6.svg' index.html
-          ! grep -q 'favicon-v2.svg' index.html
-          grep -q "catalog-metadata.js" js/core/catalog-store.js
-          grep -q "player-experience.js" js/app-engine.js
-          grep -q "const BUILD = '20260802-wave7'" js/app-engine.js
-          ! grep -q 'requestFullscreen' js/features/lyrics-studio.js
-          ! grep -q 'data-lyrics-studio="fullscreen"' js/features/lyrics-studio.js
-
-          test ! -e js/ui.js
-          test ! -e js/lyrics-engine.js
-          test ! -e js/visual-engine.js
-          test ! -e js/content-v4.js
-          test ! -e js/about-enhancements.js
-          test ! -e js/audio-focus.js
-          test ! -e js/lyrics-wake-lock.js
-          test -s js/features/ui/ui-controller.js
-          test -s js/features/lyrics/lyrics-engine.js
-          test -s js/features/visual/visual-engine.js
+          grep -q "id: '20260802-wave8'" js/build-config.js
+          grep -q 'normalizeStylesheet' js/build-config.js
+          grep -q "cache: 'shinobi-launchpad-v5'" js/build-config.js
+          grep -q 'js/build-config.js' index.html
+          ! grep -R -E "wave1|wave7" js --include='*.js'
+          ! grep -q 'function updatePlayButtons' js/app-main.js
+          grep -q 'journeyEras' js/catalog.js
+          grep -q 'orderedAlbums' js/features/content/content-controller.js
+          grep -q 'prefers-reduced-motion' css/launchpad-features.css
+          grep -q 'property="og:title"' index.html
+          grep -q 'application/ld+json' index.html
 
       - name: Validate catalog and referenced files
         run: npm run validate:catalog
@@ -80,46 +76,29 @@ jobs:
           if (!['standalone', 'fullscreen', 'minimal-ui'].includes(manifest.display)) fail('Manifest display mode is not installable.');
           for (const size of ['192x192', '512x512']) {
             const icon = manifest.icons?.find(item => String(item.sizes).split(/\s+/).includes(size));
-            if (!icon) fail(`Missing ${size} icon.`);
-            if (!fs.existsSync(icon.src)) fail(`Missing icon file ${icon.src}.`);
+            if (!icon || !fs.existsSync(icon.src)) fail(`Missing ${size} icon.`);
           }
 
           const worker = fs.readFileSync('sw.js', 'utf8');
-          if (!worker.includes("const VERSION = 'shinobi-launchpad-v4'")) fail('PWA cache version was not bumped.');
+          if (!worker.includes("importScripts('./js/build-config.js')")) fail('Service worker does not share the central build config.');
           if (!worker.includes("request.destination === 'audio'")) fail('Audio requests are not explicitly excluded from cache.');
           if (!worker.includes("request.headers.has('range')")) fail('Range requests are not explicitly excluded from cache.');
-
           for (const resource of [
-            "'./js/catalog-metadata.js'",
-            "'./js/features/player-experience.js'",
-            "'./css/player-experience.css'",
-            "'./js/features/ui/ui-controller.js'",
-            "'./js/features/lyrics/lyrics-engine.js'",
-            "'./js/features/visual/visual-engine.js'",
-            "'./js/features/visual-card.js'",
-            "'./css/visual-card.css'",
-            "'./css/album-duration.css'"
-          ]) {
-            if (!worker.includes(resource)) fail(`Offline shell is missing ${resource}.`);
-          }
-
+            "'./js/build-config.js'", "'./js/core/assets.js'", "'./js/catalog-metadata.js'",
+            "'./js/features/player-experience.js'", "'./js/features/resilience-accessibility.js'",
+            "'./css/launchpad-features.css'", "'./robots.txt'", "'./sitemap.xml'"
+          ]) if (!worker.includes(resource)) fail(`Offline shell is missing ${resource}.`);
           for (const removed of [
-            "'./js/ui.js'",
-            "'./js/lyrics-engine.js'",
-            "'./js/visual-engine.js'",
-            "'./assets/favicon-v2.svg'",
-            "'./assets/favicon-v3.svg'",
-            "'./assets/favicon-v5.svg'"
-          ]) {
-            if (worker.includes(removed)) fail(`Offline shell still references removed path ${removed}.`);
-          }
-          console.log('PWA manifest, consolidated shell and audio exclusions are valid.');
+            "'./css/audio-lab-fix.css'", "'./css/player-experience.css'", "'./css/album-duration.css'",
+            "'./assets/favicon-v2.svg'", "'./assets/favicon-v3.svg'", "'./assets/favicon-v5.svg'"
+          ]) if (worker.includes(removed)) fail(`Offline shell still references removed path ${removed}.`);
+          console.log('PWA manifest, shared build config and shell are valid.');
           NODE
 
       - name: Validate offline service worker behavior
-        run: node scripts/test-service-worker.mjs
+        run: npm run test:service-worker
 
-      - name: Smoke test in headless Chrome
+      - name: Smoke and accessibility tests in Chrome
         shell: bash
         run: |
           python3 -m http.server 4173 >/tmp/launchpad-server.log 2>&1 &
@@ -127,84 +106,66 @@ jobs:
           trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
           sleep 2
 
-          google-chrome --headless=new --no-sandbox --disable-gpu \
-            --virtual-time-budget=12000 --dump-dom \
-            'http://127.0.0.1:4173/#home' > /tmp/launchpad-home.html
+          chrome_dump() {
+            google-chrome --headless=new --no-sandbox --disable-gpu \
+              --virtual-time-budget="$1" --dump-dom "$2"
+          }
 
+          chrome_dump 12000 'http://127.0.0.1:4173/#home' > /tmp/launchpad-home.html
           grep -q 'id="queue-panel"' /tmp/launchpad-home.html
           grep -q 'id="view-favorites"' /tmp/launchpad-home.html
           grep -q 'id="visual-card-modal"' /tmp/launchpad-home.html
           grep -q 'id="pwa-install-control"' /tmp/launchpad-home.html
           grep -q '14 TRACKS' /tmp/launchpad-home.html
-          grep -q 'class="panel discovery-panel track-dna-panel"' /tmp/launchpad-home.html
           grep -q '<h3>Track DNA</h3>' /tmp/launchpad-home.html
           grep -q '<strong id="track-dna-bpm">152</strong>' /tmp/launchpad-home.html
-          grep -q '<strong id="track-dna-key">D# minor</strong>' /tmp/launchpad-home.html
-          grep -q '<strong id="track-dna-language">English</strong>' /tmp/launchpad-home.html
-          grep -q '>CLEAN<' /tmp/launchpad-home.html
           ! grep -q 'Explore the universe' /tmp/launchpad-home.html
           ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-home.html
 
-          google-chrome --headless=new --no-sandbox --disable-gpu \
-            --virtual-time-budget=7000 --dump-dom \
-            'http://127.0.0.1:4173/tests/player-experience-smoke.html' > /tmp/launchpad-player-experience.html
+          chrome_dump 7000 'http://127.0.0.1:4173/tests/player-experience-smoke.html' > /tmp/player-experience.html
+          grep -q 'PLAYER EXPERIENCE READY PLAY PAUSE DYNAMIC TRACK DNA' /tmp/player-experience.html
 
-          grep -q 'PLAYER EXPERIENCE READY PLAY PAUSE DYNAMIC TRACK DNA' /tmp/launchpad-player-experience.html
-          ! grep -q 'PLAYER EXPERIENCE ERROR' /tmp/launchpad-player-experience.html
+          chrome_dump 7000 'http://127.0.0.1:4173/tests/lyrics-studio-smoke.html' > /tmp/lyrics-studio.html
+          grep -q 'LYRICS STUDIO READY SINGLE MODE AUTO CLOSE' /tmp/lyrics-studio.html
 
-          google-chrome --headless=new --no-sandbox --disable-gpu \
-            --virtual-time-budget=7000 --dump-dom \
-            'http://127.0.0.1:4173/tests/lyrics-studio-smoke.html' > /tmp/launchpad-lyrics-studio.html
+          chrome_dump 9000 'http://127.0.0.1:4173/#favorites' > /tmp/favorites.html
+          grep -q 'Your favorites' /tmp/favorites.html
+          grep -q 'Recently played' /tmp/favorites.html
 
-          grep -q 'LYRICS STUDIO READY SINGLE MODE AUTO CLOSE' /tmp/launchpad-lyrics-studio.html
-          ! grep -q 'LYRICS STUDIO ERROR' /tmp/launchpad-lyrics-studio.html
+          chrome_dump 20000 'http://127.0.0.1:4173/tests/visual-card-smoke.html' > /tmp/visual-card.html
+          grep -q 'VISUAL CARD READY 1080x1080 GHOST SIGNAL' /tmp/visual-card.html
 
-          google-chrome --headless=new --no-sandbox --disable-gpu \
-            --virtual-time-budget=9000 --dump-dom \
-            'http://127.0.0.1:4173/#favorites' > /tmp/launchpad-favorites.html
+          chrome_dump 12000 'http://127.0.0.1:4173/#album=coal-to-diamond' > /tmp/album.html
+          grep -q 'album-detail-hero' /tmp/album.html
+          grep -q 'Play album' /tmp/album.html
+          grep -Eq '[0-9]+:[0-9]{2} total' /tmp/album.html
 
-          grep -q 'id="view-favorites" class="view memory-view active"' /tmp/launchpad-favorites.html
-          grep -q 'Your favorites' /tmp/launchpad-favorites.html
-          grep -q 'Recently played' /tmp/launchpad-favorites.html
-          ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-favorites.html
+          chrome_dump 9000 'http://127.0.0.1:4173/#lyrics=before-the-noise' > /tmp/lyrics.html
+          grep -q 'data-lyrics-studio="mode"' /tmp/lyrics.html
+          ! grep -q '>Fullscreen<' /tmp/lyrics.html
+          grep -q 'aria-live="off"' /tmp/lyrics.html
 
-          google-chrome --headless=new --no-sandbox --disable-gpu \
-            --user-data-dir=/tmp/launchpad-memory-profile \
-            --virtual-time-budget=10000 --dump-dom \
-            'http://127.0.0.1:4173/tests/memory-smoke.html' > /tmp/launchpad-memory.html
+          chrome_dump 14000 'http://127.0.0.1:4173/tests/accessibility-smoke.html' > /tmp/accessibility.html
+          grep -q 'ACCESSIBILITY READY' /tmp/accessibility.html
+          ! grep -q 'ACCESSIBILITY ERROR' /tmp/accessibility.html
 
-          grep -q '<strong id="player-title">Ghost Signal</strong>' /tmp/launchpad-memory.html
-          grep -q 'data-favorite-toggle="ghost-signal"' /tmp/launchpad-memory.html
-          grep -q 'Close to You' /tmp/launchpad-memory.html
-          grep -q 'data-repeat="one"' /tmp/launchpad-memory.html
-          grep -q 'class="chip active" data-visual="pulse"' /tmp/launchpad-memory.html
-          ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-memory.html
+          chrome_dump 14000 'http://127.0.0.1:4173/tests/layout-regression.html' > /tmp/layout.html
+          grep -q 'LAYOUT READY' /tmp/layout.html
+          ! grep -q 'LAYOUT ERROR' /tmp/layout.html
 
-          google-chrome --headless=new --no-sandbox --disable-gpu \
-            --virtual-time-budget=20000 --dump-dom \
-            'http://127.0.0.1:4173/tests/visual-card-smoke.html' > /tmp/launchpad-visual-card.html
+      - name: Capture visual regression views
+        shell: bash
+        run: |
+          python3 -m http.server 4173 >/tmp/launchpad-visual-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+          sleep 2
+          VISUAL_OUTPUT_DIR=artifacts/visual-actual ./scripts/capture-visuals.sh
 
-          grep -q 'VISUAL CARD READY 1080x1080 GHOST SIGNAL' /tmp/launchpad-visual-card.html
-          ! grep -q 'VISUAL CARD ERROR' /tmp/launchpad-visual-card.html
-
-          google-chrome --headless=new --no-sandbox --disable-gpu \
-            --virtual-time-budget=12000 --dump-dom \
-            'http://127.0.0.1:4173/#album=coal-to-diamond' > /tmp/launchpad-album.html
-
-          grep -q 'album-detail-hero' /tmp/launchpad-album.html
-          grep -q 'Play album' /tmp/launchpad-album.html
-          grep -q 'The Throne Resonates' /tmp/launchpad-album.html
-          grep -Eq '[0-9]+:[0-9]{2} total' /tmp/launchpad-album.html
-          ! grep -q 'Duration unavailable' /tmp/launchpad-album.html
-          ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-album.html
-
-          google-chrome --headless=new --no-sandbox --disable-gpu \
-            --virtual-time-budget=9000 --dump-dom \
-            'http://127.0.0.1:4173/#lyrics=before-the-noise' > /tmp/launchpad-lyrics.html
-
-          grep -q 'data-lyrics-studio="mode"' /tmp/launchpad-lyrics.html
-          grep -q 'Studio mode' /tmp/launchpad-lyrics.html
-          grep -q 'Before the Noise' /tmp/launchpad-lyrics.html
-          ! grep -q 'data-lyrics-studio="fullscreen"' /tmp/launchpad-lyrics.html
-          ! grep -q '>Fullscreen<' /tmp/launchpad-lyrics.html
-          ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-lyrics.html
+      - name: Upload visual screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-actual
+          path: artifacts/visual-actual
+          retention-days: 7

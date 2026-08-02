@@ -1,9 +1,7 @@
-const BUILD = '20260802-wave7';
+const BUILD = globalThis.SHINOBIWAN_BUILD?.id || 'dev';
 
 const CRITICAL_STYLES = [
-  'css/audio-lab-fix.css',
-  'css/launchpad-features.css',
-  'css/player-experience.css'
+  'css/launchpad-features.css'
 ];
 
 const LAYOUT_STYLES = [
@@ -33,6 +31,7 @@ function installStylesheets(entries) {
 
 async function boot() {
   document.documentElement.dataset.build = BUILD;
+  if (new URLSearchParams(location.search).has('visual-test')) document.documentElement.dataset.visualTest = 'true';
   installStylesheets(CRITICAL_STYLES);
 
   const [
@@ -55,7 +54,8 @@ async function boot() {
     { initAboutEnhancements },
     { initLibraryMemory },
     { initVisualCard },
-    { createPlayerExperience }
+    { createPlayerExperience },
+    { initResilienceAccessibility }
   ] = await Promise.all([
     import(versioned('./features/content/content-controller.js')),
     import(versioned('./features/audio/audio-focus.js')),
@@ -63,7 +63,8 @@ async function boot() {
     import(versioned('./features/about/about-controller.js')),
     import(versioned('./features/library-memory.js')),
     import(versioned('./features/visual-card.js')),
-    import(versioned('./features/player-experience.js'))
+    import(versioned('./features/player-experience.js')),
+    import(versioned('./features/resilience-accessibility.js'))
   ]);
 
   installContentV4();
@@ -72,6 +73,7 @@ async function boot() {
 
   const audio = document.querySelector('#audio');
   createPlayerExperience({ audio });
+  initResilienceAccessibility({ audio });
   initLibraryMemory({ audio });
   initVisualCard({ audio });
   pwa.initPWA();

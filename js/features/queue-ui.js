@@ -1,11 +1,4 @@
-function ensureStylesheet() {
-  const href = 'css/launchpad-features.css?v=20260802-1';
-  if (document.querySelector(`link[href="${href}"]`)) return;
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = href;
-  document.head.appendChild(link);
-}
+import { ensureStylesheet } from '../core/assets.js';
 
 function repeatLabel(mode) {
   if (mode === 'one') return 'Repeat one';
@@ -14,7 +7,7 @@ function repeatLabel(mode) {
 }
 
 export function createQueueUI({ tracks, queue, onSelect, onShareCurrent }) {
-  ensureStylesheet();
+  ensureStylesheet('css/launchpad-features.css');
 
   const player = document.querySelector('.player-bar');
   const volume = player?.querySelector('.volume');
@@ -41,6 +34,8 @@ export function createQueueUI({ tracks, queue, onSelect, onShareCurrent }) {
   const panel = document.createElement('aside');
   panel.id = 'queue-panel';
   panel.className = 'queue-panel';
+  panel.setAttribute('role', 'dialog');
+  panel.setAttribute('aria-modal', 'true');
   panel.setAttribute('aria-label', 'Playback queue');
   panel.setAttribute('aria-hidden', 'true');
   panel.innerHTML = `
@@ -61,10 +56,15 @@ export function createQueueUI({ tracks, queue, onSelect, onShareCurrent }) {
   `;
   document.body.appendChild(panel);
 
+  let lastFocused = null;
+
   function setOpen(open) {
+    if (open) lastFocused = document.activeElement;
     panel.classList.toggle('open', open);
     panel.setAttribute('aria-hidden', String(!open));
     document.body.classList.toggle('queue-open', open);
+    if (open) panel.querySelector('[data-queue-action="close"]')?.focus();
+    else lastFocused?.focus?.();
   }
 
   function render(state) {

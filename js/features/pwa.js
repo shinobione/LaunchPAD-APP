@@ -1,11 +1,4 @@
-function ensureStylesheet() {
-  const href = 'css/pwa.css?v=20260802-1';
-  if (document.querySelector(`link[href="${href}"]`)) return;
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = href;
-  document.head.appendChild(link);
-}
+import { ensureStylesheet, versionedAsset } from '../core/assets.js';
 
 function ensureMeta(name, content) {
   let meta = document.head.querySelector(`meta[name="${name}"]`);
@@ -21,7 +14,7 @@ export function preparePWAHead() {
   if (!document.head.querySelector('link[rel="manifest"]')) {
     const manifest = document.createElement('link');
     manifest.rel = 'manifest';
-    manifest.href = 'manifest.webmanifest?v=20260802-1';
+    manifest.href = versionedAsset('manifest.webmanifest');
     document.head.appendChild(manifest);
   }
 
@@ -82,7 +75,7 @@ export function initPWA() {
   if (window.__shinobiPWAReady) return;
   window.__shinobiPWAReady = true;
   preparePWAHead();
-  ensureStylesheet();
+  ensureStylesheet('css/pwa.css');
 
   const notify = createToast();
   const control = createInstallControl();
@@ -156,7 +149,7 @@ export function initPWA() {
 
   async function registerServiceWorker() {
     try {
-      registration = await navigator.serviceWorker.register('./sw.js', {
+      registration = await navigator.serviceWorker.register(versionedAsset('./sw.js'), {
         scope: './',
         updateViaCache: 'none'
       });

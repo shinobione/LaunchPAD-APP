@@ -1,3 +1,76 @@
+/* === audio-lab-fix.css === */
+/* Keep the artwork locked to the exact visualizer center.
+   The title is positioned independently so it cannot shift the cover. */
+.lab-stage{
+  position:relative!important;
+  display:block!important;
+}
+
+.lab-stage canvas{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+}
+
+.lab-center{
+  position:absolute!important;
+  inset:0!important;
+  z-index:2!important;
+  display:block!important;
+  pointer-events:none!important;
+}
+
+.lab-center img{
+  position:absolute!important;
+  top:50%!important;
+  left:50%!important;
+  width:160px!important;
+  height:160px!important;
+  max-width:calc(100% - 40px)!important;
+  aspect-ratio:1!important;
+  margin:0!important;
+  object-fit:cover!important;
+  border-radius:50%!important;
+  transform:translate(-50%,-50%)!important;
+  transform-origin:center!important;
+}
+
+.lab-center span{
+  position:absolute!important;
+  top:calc(50% + 96px)!important;
+  left:50%!important;
+  width:max-content!important;
+  max-width:82%!important;
+  margin:0!important;
+  text-align:center!important;
+  line-height:1.25!important;
+  white-space:normal!important;
+  transform:translateX(-50%)!important;
+}
+
+.lab-controls{
+  margin-top:20px!important;
+}
+
+@media(max-width:760px){
+  .lab-center img{
+    width:154px!important;
+    height:154px!important;
+  }
+
+  .lab-center span{
+    top:calc(50% + 92px)!important;
+    max-width:88%!important;
+    font-size:14px!important;
+  }
+
+  .lab-controls{
+    margin-top:18px!important;
+  }
+}
+
+/* === launchpad-features.css === */
 /* Player modes and queue */
 .player-mode-controls{
   display:flex;
@@ -537,3 +610,235 @@ body.lyrics-studio-open{
     min-height:calc(100vh - 24px);
   }
 }
+
+/* === player-experience.css === */
+.track-dna-panel{
+  min-width:0;
+}
+
+.track-dna-head{
+  align-items:flex-start;
+}
+
+.track-dna-head>div{
+  min-width:0;
+}
+
+.track-dna-head .eyebrow{
+  display:block;
+  margin-bottom:5px;
+}
+
+#track-dna-explicit[data-status="clean"]{
+  color:#75efb2;
+  border-color:rgba(69,214,145,.28);
+  background:rgba(36,161,105,.1);
+}
+
+#track-dna-explicit[data-status="explicit"]{
+  color:#ff9db1;
+  border-color:rgba(255,78,115,.3);
+  background:rgba(255,61,101,.1);
+}
+
+#track-dna-explicit[data-status="unrated"]{
+  color:#ada3bb;
+}
+
+.track-dna-title{
+  display:grid;
+  gap:4px;
+  margin:17px 0 15px;
+}
+
+.track-dna-title strong,
+.track-dna-title span{
+  min-width:0;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+
+.track-dna-title strong{
+  color:#fff;
+  font-family:"Outfit",sans-serif;
+  font-size:clamp(18px,1.5vw,25px);
+}
+
+.track-dna-title span{
+  color:#8f849d;
+  font-size:9px;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+
+.track-dna-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+
+.track-dna-grid>div{
+  min-width:0;
+  padding:11px 12px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:12px;
+  background:rgba(255,255,255,.025);
+}
+
+.track-dna-grid span,
+.track-dna-grid strong{
+  display:block;
+  min-width:0;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+
+.track-dna-grid span{
+  margin-bottom:5px;
+  color:#766c84;
+  font-size:7px;
+  font-weight:800;
+  letter-spacing:.12em;
+}
+
+.track-dna-grid strong{
+  color:#eee8f4;
+  font-size:10px;
+  font-variant-numeric:tabular-nums;
+}
+
+.track-dna-album-link{
+  margin-top:16px;
+}
+
+[data-action="toggle"].is-playing{
+  box-shadow:0 0 24px color-mix(in srgb,var(--accent) 26%,transparent);
+}
+
+body.lyrics-studio-open{
+  overflow:hidden!important;
+}
+
+body.lyrics-studio-open .sidebar,
+body.lyrics-studio-open .topbar,
+body.lyrics-studio-open .player-bar,
+body.lyrics-studio-open .mobile-nav{
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
+body.lyrics-studio-open .main-content{
+  transform:none!important;
+}
+
+#view-lyrics.lyrics-studio-mode{
+  z-index:500!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  padding:24px!important;
+  overflow:hidden!important;
+  overscroll-behavior:contain;
+}
+
+#view-lyrics.lyrics-studio-mode .lyrics-stage{
+  height:calc(100dvh - 48px);
+  min-height:0!important;
+  margin:0!important;
+}
+
+#view-lyrics.lyrics-studio-mode .lyrics-track-panel,
+#view-lyrics.lyrics-studio-mode .lyrics-reader-shell{
+  min-height:0;
+  overflow:hidden;
+}
+
+#view-lyrics.lyrics-studio-mode .lyrics-track-panel{
+  overflow-y:auto;
+}
+
+#view-lyrics.lyrics-studio-mode .lyrics-reader{
+  height:auto;
+  flex:1 1 auto;
+}
+
+@media(max-width:760px){
+  .track-dna-title{
+    margin-top:13px;
+  }
+
+  .track-dna-grid>div{
+    padding:10px;
+  }
+
+  #view-lyrics.lyrics-studio-mode{
+    padding:10px!important;
+    overflow-y:auto!important;
+  }
+
+  #view-lyrics.lyrics-studio-mode .lyrics-stage{
+    height:auto;
+    min-height:calc(100dvh - 20px)!important;
+  }
+
+  #view-lyrics.lyrics-studio-mode .lyrics-track-panel,
+  #view-lyrics.lyrics-studio-mode .lyrics-reader-shell{
+    overflow:visible;
+  }
+
+  #view-lyrics.lyrics-studio-mode .lyrics-reader{
+    height:58dvh;
+  }
+}
+
+/* === album-duration.css === */
+.album-detail-duration{
+  color:#c9bfd5;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+
+.album-detail-duration.unavailable,
+[data-album-total-duration].unavailable{
+  color:#887d94;
+}
+
+/* === accessibility and resilience === */
+:where(a,button,input,select,textarea,[tabindex]):focus-visible{
+  outline:2px solid color-mix(in srgb,var(--accent) 75%,#fff);
+  outline-offset:3px;
+}
+.audio-status{
+  position:absolute;
+  right:18px;
+  bottom:calc(100% + 10px);
+  z-index:40;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  max-width:min(360px,calc(100vw - 32px));
+  padding:10px 12px;
+  border:1px solid rgba(255,122,146,.25);
+  border-radius:12px;
+  background:rgba(13,7,22,.96);
+  box-shadow:0 14px 40px rgba(0,0,0,.35);
+  color:#f4dce3;
+  font-size:10px;
+}
+.audio-status[hidden]{display:none}
+.audio-status button{border:0;border-radius:999px;padding:6px 10px;background:var(--accent);color:#fff;font-weight:800}
+.image-fallback{object-fit:contain!important;padding:14%!important;background:#090510!important}
+.project-era-heading{display:block;margin-top:10px;color:#fff;font-size:12px}
+.project-featured-covers{display:flex;gap:6px;margin-top:12px}
+.project-featured-covers img{width:34px;height:34px;border-radius:8px;object-fit:cover;border:1px solid rgba(255,255,255,.12)}
+html[data-visual-test="true"] *,html[data-visual-test="true"] *::before,html[data-visual-test="true"] *::after{
+  font-family:Arial,sans-serif!important;animation:none!important;transition:none!important;scroll-behavior:auto!important;caret-color:transparent!important
+}
+html[data-visual-test="true"] #ambient,html[data-visual-test="true"] canvas{visibility:hidden!important}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  #ambient,#home-visualizer,#lab-visualizer{opacity:.35}
+}
+@media(max-width:760px){.audio-status{position:fixed;right:12px;bottom:82px;left:12px;max-width:none}}

@@ -225,10 +225,7 @@ function selectTrack(index, shouldPlay = true, { syncQueue = true, preserveQueue
     visuals.resume();
     audio.play().catch(error => {
       console.warn('Playback was blocked by the browser', error);
-      updatePlayButtons(false);
     });
-  } else {
-    updatePlayButtons(false);
   }
 }
 
@@ -282,18 +279,12 @@ function togglePlayback() {
 
   if (audio.paused) {
     visuals.resume();
-    audio.play().catch(() => updatePlayButtons(false));
+    audio.play().catch(error => console.warn('Playback was blocked by the browser', error));
   } else {
     audio.pause();
   }
 }
 
-function updatePlayButtons(playing) {
-  $$('[data-action="toggle"]').forEach(button => {
-    button.textContent = playing ? '❚❚' : '▶';
-    button.setAttribute('aria-label', playing ? 'Pause' : 'Play');
-  });
-}
 
 function formatTime(seconds) {
   if (!Number.isFinite(seconds)) return '0:00';
@@ -505,14 +496,8 @@ audio.addEventListener('timeupdate', () => {
   mediaSession.updatePosition();
 });
 
-audio.addEventListener('play', () => {
-  updatePlayButtons(true);
-  mediaSession.updatePlaybackState();
-});
-audio.addEventListener('pause', () => {
-  updatePlayButtons(false);
-  mediaSession.updatePlaybackState();
-});
+audio.addEventListener('play', () => mediaSession.updatePlaybackState());
+audio.addEventListener('pause', () => mediaSession.updatePlaybackState());
 audio.addEventListener('ended', () => playNext({ ended: true }));
 
 document.addEventListener('keydown', event => {

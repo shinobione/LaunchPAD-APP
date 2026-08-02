@@ -1,0 +1,27 @@
+<!doctype html><meta charset="utf-8"><title>Layout regression</title>
+<div id="result">LAYOUT PENDING</div>
+<iframe id="desktop" src="../?visual-test=1#home" style="width:1440px;height:1000px;border:0"></iframe>
+<iframe id="mobile" src="../?visual-test=1#home" style="width:390px;height:844px;border:0"></iframe>
+<script>
+const result=document.querySelector('#result');
+const frames=[document.querySelector('#desktop'),document.querySelector('#mobile')];
+Promise.all(frames.map(frame=>new Promise(resolve=>frame.addEventListener('load',()=>setTimeout(()=>resolve(frame),5000))))).then(([desktop,mobile])=>{
+  const failures=[];
+  const dd=desktop.contentDocument, md=mobile.contentDocument;
+  const rect=node=>node?.getBoundingClientRect();
+  const sidebar=rect(dd.querySelector('.sidebar'));
+  const player=rect(dd.querySelector('.player-bar'));
+  const desktopGrid=dd.querySelectorAll('#featured-grid .album-card').length;
+  const mobileNav=rect(md.querySelector('.mobile-nav'));
+  const mobilePlayer=rect(md.querySelector('.player-bar'));
+  const homePanels=rect(dd.querySelector('.home-panels'));
+  if(!sidebar||sidebar.width<170||sidebar.width>280) failures.push('desktop-sidebar');
+  if(!player||player.height<65||player.height>110||player.bottom<980) failures.push('desktop-player');
+  if(desktopGrid!==5) failures.push('featured-grid');
+  if(!homePanels||homePanels.width<800) failures.push('home-panels');
+  if(!mobileNav||mobileNav.height<45||mobileNav.height>75||mobileNav.bottom<830) failures.push('mobile-nav');
+  if(!mobilePlayer||mobilePlayer.height<55||mobilePlayer.height>95||mobilePlayer.bottom>800) failures.push('mobile-player');
+  const snapshot={sidebarWidth:Math.round(sidebar?.width||0),playerHeight:Math.round(player?.height||0),homePanelsWidth:Math.round(homePanels?.width||0),mobileNavHeight:Math.round(mobileNav?.height||0),mobilePlayerHeight:Math.round(mobilePlayer?.height||0),featured:desktopGrid};
+  result.textContent=failures.length?`LAYOUT ERROR ${failures.join(' ')}`:`LAYOUT READY ${JSON.stringify(snapshot)}`;
+});
+</script>
