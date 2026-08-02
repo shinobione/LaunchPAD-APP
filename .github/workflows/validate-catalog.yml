@@ -1,0 +1,60 @@
+name: Validate Launchpad
+
+on:
+  push:
+    branches: [main, refactor/launchpad-waves]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check JavaScript syntax
+        run: find js scripts -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
+
+      - name: Validate catalog and referenced files
+        run: npm run validate:catalog
+
+      - name: Smoke test in headless Chrome
+        shell: bash
+        run: |
+          python3 -m http.server 4173 >/tmp/launchpad-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID' EXIT
+          sleep 2
+
+          google-chrome --headless=new --no-sandbox --disable-gpu \
+            --virtual-time-budget=8000 --dump-dom \
+            'http://127.0.0.1:4173/#home' > /tmp/launchpad-home.html
+
+          grep -q 'id="queue-panel"' /tmp/launchpad-home.html
+          grep -q '14 TRACKS' /tmp/launchpad-home.html
+          grep -q 'Ghost Signal' /tmp/launchpad-home.html
+          ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-home.html
+
+          google-chrome --headless=new --no-sandbox --disable-gpu \
+            --virtual-time-budget=8000 --dump-dom \
+            'http://127.0.0.1:4173/#album=coal-to-diamond' > /tmp/launchpad-album.html
+
+          grep -q 'album-detail-hero' /tmp/launchpad-album.html
+          grep -q 'Play album' /tmp/launchpad-album.html
+          grep -q 'The Throne Resonates' /tmp/launchpad-album.html
+
+          google-chrome --headless=new --no-sandbox --disable-gpu \
+            --virtual-time-budget=8000 --dump-dom \
+            'http://127.0.0.1:4173/#lyrics=before-the-noise' > /tmp/launchpad-lyrics.html
+
+          grep -q 'Studio mode' /tmp/launchpad-lyrics.html
+          grep -q 'Before the Noise' /tmp/launchpad-lyrics.html
+          ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-lyrics.html

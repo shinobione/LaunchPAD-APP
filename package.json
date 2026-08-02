@@ -1,0 +1,8 @@
+{
+  "name": "shinobiwan-launchpad",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate:catalog": "node scripts/validate-catalog.mjs"
+  }
+}
