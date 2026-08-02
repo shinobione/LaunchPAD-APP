@@ -16,6 +16,53 @@ export function initAudioFallback({ audio }) {
   audio.dataset.audioFallbackReady = 'true';
   let playbackRequested = false;
   let activeTrackId = '';
+  let pendingPlay = false;
+  let retryTimer = 0;
+  const nativePlay = audio.play.bind(audio);
+
+  audio.play = (...args) => {
+    playbackRequested = true;
+    pendingPlay = true;
+    window.clearTimeout(retryTimer);
+
+    return nativePlay(...args).then(result => {
+      pendingPlay = false;
+      return result;
+    }).catch(error => {
+      if (error?.name !== 'AbortError' || !playbackRequested) {
+        pendingPlay = false;
+        throw error;
+      }
+
+      return new Promise((resolve, reject) => {
+        let settled = false;
+        const cleanup = () => {
+          audio.removeEventListener('canplay', retry);
+          window.clearTimeout(retryTimer);
+        };
+        const finish = (callback, value) => {
+          if (settled) return;
+          settled = true;
+          pendingPlay = false;
+          cleanup();
+          callback(value);
+        };
+        const retry = () => {
+          if (settled || !playbackRequested) {
+            finish(reject, error);
+            return;
+          }
+          nativePlay().then(
+            value => finish(resolve, value),
+            retryError => finish(reject, retryError)
+          );
+        };
+
+        audio.addEventListener('canplay', retry, { once: true });
+        retryTimer = window.setTimeout(retry, 1600);
+      });
+    });
+  };
 
   audio.addEventListener('loadstart', () => {
     const trackId = audio.dataset.trackId || '';
@@ -27,14 +74,16 @@ export function initAudioFallback({ audio }) {
 
   audio.addEventListener('play', () => {
     playbackRequested = true;
+    pendingPlay = false;
   });
 
   audio.addEventListener('pause', () => {
-    if (!audio.error) playbackRequested = false;
+    if (!audio.error && !pendingPlay) playbackRequested = false;
   });
 
   audio.addEventListener('ended', () => {
     playbackRequested = false;
+    pendingPlay = false;
   });
 
   audio.addEventListener('error', () => {
