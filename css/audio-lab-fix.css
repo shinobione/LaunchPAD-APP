@@ -48,6 +48,10 @@
   transform:translateX(-50%)!important;
 }
 
+.lab-controls{
+  margin-top:20px!important;
+}
+
 @media(max-width:760px){
   .lab-center img{
     width:154px!important;
@@ -58,5 +62,9 @@
     top:calc(50% + 92px)!important;
     max-width:88%!important;
     font-size:14px!important;
+  }
+
+  .lab-controls{
+    margin-top:18px!important;
   }
 }
