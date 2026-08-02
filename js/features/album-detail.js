@@ -144,7 +144,7 @@ export function createAlbumDetail({ escapeHtml, onPlayAlbum, onPlayTrack, onBack
                 <span class="album-detail-duration" data-album-track-duration="${escapeHtml(track.id)}" aria-label="Duration loading">--:--</span>
               </small>
             </span>
-            ${track.lyrics ? '<span class="album-detail-lyrics">LYRICS</span>' : '<span aria-hidden="true"></span>'}
+            ${track.lyrics ? '<span class="album-detail-lyrics">LYRICS</span>' : '<span class="album-detail-lyrics" aria-hidden="true"></span>'}
             <span class="album-detail-play">▶</span>
           </button>
         `).join('')}
