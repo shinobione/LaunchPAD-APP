@@ -24,7 +24,7 @@ export default {
         return jsonResponse({
           ok: true,
           service: "launchpad-media",
-          version: 2.2,
+          version: 2.3,
           access: "public-read-only",
           canonicalTracks: manifests,
           routes: {
@@ -135,8 +135,6 @@ async function publicTrack(manifest, bucket, origin, includeLyrics) {
     }];
   }));
 
-  // The catalog uses a 512px WebP thumbnail for immediate UI rendering.
-  // The original artwork remains available through fullUrl for detailed views.
   if (assets.thumbnail && assets.cover) {
     assets.cover = {
       ...assets.thumbnail,
@@ -147,7 +145,7 @@ async function publicTrack(manifest, bucket, origin, includeLyrics) {
   }
 
   let lyrics = null;
-  let timestampsAvailable = false;
+  let timestampsAvailable = manifest.timestampsAvailable === true;
   if (includeLyrics && assets.lyrics) {
     const object = await bucket.get(trackPrefix(manifest.slug) + manifest.assets.lyrics);
     if (!object) {
@@ -285,37 +283,65 @@ function parseRangeHeader(value) {
   return null;
 }
 
-function parseLyricSegments(raw) {
-  const normalized = stripMetadataHeader(String(raw || "").replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n"));
-  const timestamped = [];
-  const timedPattern = /^\[(\d{1,2}):(\d{2}(?:\.\d{1,3})?)]\s*(.*)$/;
-  for (const line of normalized.split("\n")) {
-    const match = line.match(timedPattern);
-    if (match) timestamped.push({ time: Number(match[1]) * 60 + Number(match[2]), text: match[3].trim() });
-  }
-  if (timestamped.length) return timestamped;
+function stripMetadataHeader(text) {
+  const normalized = String(text || "").replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
+  const marker = normalized.match(/^LYRICS\s*:\s*$/im);
+  return marker ? normalized.slice(marker.index + marker[0].length).trim() : normalized.trim();
+}
 
-  const sections = [];
-  let current = { label: "Lyrics", lines: [] };
-  for (const rawLine of normalized.split("\n")) {
-    const line = rawLine.trim();
-    const heading = line.match(/^\[(.+)]$/);
-    if (heading) {
-      if (current.lines.length || current.label !== "Lyrics") sections.push(current);
-      current = { label: heading[1].trim(), lines: [] };
-    } else if (line) {
-      current.lines.push(line);
+function timestampSeconds(minutes, seconds, fraction = "0") {
+  const milliseconds = String(fraction || "0").padEnd(3, "0").slice(0, 3);
+  return Number(minutes) * 60 + Number(seconds) + Number(milliseconds) / 1000;
+}
+
+function parseLyricSegments(raw) {
+  const lines = stripMetadataHeader(raw).split("\n");
+  const bracketed = /\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\]/g;
+  const naked = /^(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?(?:\s+(.+))?$/;
+  const timestamped = [];
+  const plain = [];
+  let pendingTime = null;
+
+  for (const sourceLine of lines) {
+    const line = sourceLine.trim();
+    if (!line) continue;
+
+    const tags = [...line.matchAll(bracketed)];
+    if (tags.length) {
+      const text = line.replace(bracketed, "").trim();
+      if (text) {
+        for (const tag of tags) {
+          timestamped.push({ time: timestampSeconds(tag[1], tag[2], tag[3]), text });
+        }
+      }
+      pendingTime = null;
+      continue;
+    }
+
+    const nakedMatch = line.match(naked);
+    if (nakedMatch) {
+      const time = timestampSeconds(nakedMatch[1], nakedMatch[2], nakedMatch[3]);
+      const inlineText = String(nakedMatch[4] || "").trim();
+      if (inlineText) timestamped.push({ time, text: inlineText });
+      else pendingTime = time;
+      continue;
+    }
+
+    if (pendingTime !== null) {
+      timestamped.push({ time: pendingTime, text: line });
+      pendingTime = null;
+    } else if (!/^\[(.+)]$/.test(line)) {
+      plain.push(line);
     }
   }
-  if (current.lines.length || current.label !== "Lyrics") sections.push(current);
-  return sections;
+
+  if (timestamped.length) return timestamped.sort((a, b) => a.time - b.time);
+  return plain.map(text => ({ time: null, text }));
 }
 
-function stripMetadataHeader(text) {
-  const marker = text.match(/^LYRICS\s*:\s*$/im);
-  return marker ? text.slice(marker.index + marker[0].length).trim() : text.trim();
+function detectTimestamps(text) {
+  return parseLyricSegments(text).some(segment => Number.isFinite(segment.time));
 }
-function detectTimestamps(text) { return /^\[\d{1,2}:\d{2}(?:\.\d{1,3})?]/m.test(stripMetadataHeader(text)); }
 function trackPrefix(slug) { return TRACKS_PREFIX + slug + "/"; }
 function getExtension(filename) { const value = String(filename || "").toLowerCase(); const dot = value.lastIndexOf("."); return dot >= 0 ? value.slice(dot + 1).split(/[?#]/)[0] : ""; }
 function guessContentType(extension) {
