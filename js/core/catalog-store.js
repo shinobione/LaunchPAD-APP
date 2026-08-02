@@ -1,7 +1,8 @@
-import { albums as sourceAlbums, tracks as sourceTracks } from '../catalog.js?v=20260802-wave1';
-import { ALLOWED_LANGUAGES, trackMetadata } from '../catalog-metadata.js?v=20260802-wave7';
+import { albums as sourceAlbums, tracks as sourceTracks, journeyEras as sourceJourneyEras } from '../catalog.js';
+import { ALLOWED_LANGUAGES, trackMetadata } from '../catalog-metadata.js';
 
 export const albums = sourceAlbums;
+export const journeyEras = sourceJourneyEras;
 export const tracks = sourceTracks.map(track => {
   const metadata = trackMetadata[track.id] || {};
   const languages = Array.isArray(metadata.languages)

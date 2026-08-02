@@ -1,12 +1,4 @@
-function ensureStylesheet() {
-  const href = 'css/about-enhancements.css?v=20260802-2';
-  if (document.querySelector(`link[href="${href}"]`)) return;
-
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = href;
-  document.head.appendChild(link);
-}
+import { ensureStylesheet } from '../../core/assets.js';
 
 function installAboutSocialCards() {
   const actions = document.querySelector(
@@ -43,7 +35,7 @@ function installGoldenLogo() {
 }
 
 export function initAboutEnhancements() {
-  ensureStylesheet();
+  ensureStylesheet('css/about-enhancements.css');
   installAboutSocialCards();
   installGoldenLogo();
 }

@@ -1,4 +1,5 @@
 import { tracks, getTrackIndex } from '../core/catalog-store.js';
+import { ensureStylesheet } from '../core/assets.js';
 
 const STORAGE_KEY = 'shinobi-launchpad-memory-v1';
 const HISTORY_LIMIT = 12;
@@ -67,15 +68,6 @@ function writeState(state) {
   }
 }
 
-function ensureStylesheet() {
-  const href = 'css/library-memory.css?v=20260802-1';
-  if (document.querySelector(`link[href="${href}"]`)) return;
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = href;
-  document.head.appendChild(link);
-}
-
 function trackCard(track, index, isFavorite) {
   return `
     <article class="album-card memory-card" data-index="${index}" data-genre="${escapeHtml(track.genre)}">
@@ -108,7 +100,7 @@ function historyRow(track, index, isFavorite, order) {
 export function initLibraryMemory({ audio = document.querySelector('#audio') } = {}) {
   if (!audio || window.__shinobiLibraryMemoryReady) return;
   window.__shinobiLibraryMemoryReady = true;
-  ensureStylesheet();
+  ensureStylesheet('css/library-memory.css');
 
   const state = readState();
   let lastPositionWrite = 0;

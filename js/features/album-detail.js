@@ -4,16 +4,6 @@ import { shareRoute } from '../core/share.js';
 const durationCache = new Map();
 let durationHydrationId = 0;
 
-function ensureDurationStylesheet() {
-  const href = 'css/album-duration.css?v=20260802-1';
-  if (document.querySelector(`link[href="${href}"]`)) return;
-
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = href;
-  document.head.appendChild(link);
-}
-
 function formatDuration(value) {
   if (!Number.isFinite(value) || value < 0) return '--:--';
 
@@ -75,7 +65,6 @@ function ensureView() {
 }
 
 export function createAlbumDetail({ escapeHtml, onPlayAlbum, onPlayTrack, onBack }) {
-  ensureDurationStylesheet();
   const view = ensureView();
   let currentAlbumId = null;
 

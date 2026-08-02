@@ -6,12 +6,14 @@ The Launchpad uses a stable modular structure. Active application code no longer
 
 ```text
 js/
-  app-engine.js                 Boot sequence, shared build version and feature initialization
+  build-config.js               Single build and PWA cache version; loads the engine
+  app-engine.js                 Boot sequence and feature initialization
   app-main.js                   Application composition and delegated events
   catalog.js                    Album and track identity, paths and visual fields
   catalog-metadata.js           Release data, languages, BPM, key, explicit status and duration
 
   core/
+    assets.js                   Versioned asset and stylesheet helper
     catalog-store.js            Enriched catalog selectors and runtime checks
     player-queue.js             Queue, Shuffle and Repeat state
     router.js                   Hash routes and deep links
@@ -22,7 +24,8 @@ js/
     album-detail.js             Dedicated album view and media durations
     lyrics-studio.js            Single immersive Lyrics Studio mode
     media-session.js            Lock-screen and headset controls
-    player-experience.js        Play-state synchronization and live Track DNA
+    player-experience.js        Single Play-state authority and live Track DNA
+    resilience-accessibility.js Audio recovery, language, focus and motion preferences
     queue-ui.js                 Queue panel and player mode controls
     library-memory-shell.js     Early Favorites route shell
     library-memory.js           Favorites, history and playback persistence
@@ -55,7 +58,8 @@ js/
 7. Track colours come from `accent` and `accent2`, with genre fallbacks.
 8. Feature behavior lives in `js/features/`; shared state and helpers live in `js/core/`.
 9. Audio files and Range requests remain network-only in the service worker.
-10. `app-engine.js` owns the shared build version used for cache-busting dynamic resources.
+10. `build-config.js` is the only source of truth for dynamic resource and PWA cache versions.
+11. Visual baselines protect the approved desktop and mobile layout.
 
 ## Validation
 

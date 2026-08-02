@@ -37,6 +37,38 @@ export const albums = [
   }
 ];
 
+
+export const journeyEras = [
+  {
+    id: 'neon-heartbreaks',
+    albumId: 'neon-heartbreaks',
+    heading: 'Digital intimacy',
+    description: 'Glitched romance, close-mic emotion and nocturnal R&B built around fragile connections.',
+    featuredTrackIds: ['before-the-noise', 'low-bitrate-love']
+  },
+  {
+    id: 'coal-to-diamond',
+    albumId: 'coal-to-diamond',
+    heading: 'Pressure into power',
+    description: 'Heavy drums, confidence, resilience and cinematic hip-hop with a sharper, more physical edge.',
+    featuredTrackIds: ['thick', 'carved-from-pressure']
+  },
+  {
+    id: 'love-letters-from-saigon',
+    albumId: 'love-letters-from-saigon',
+    heading: 'Distance becomes a place',
+    description: 'Vietnamese influences, travel memories and love songs shaped by two countries and one relationship.',
+    featuredTrackIds: ['saigon-bound', 'tinh-bolero-cho-tran']
+  },
+  {
+    id: 'singles',
+    albumId: 'singles',
+    heading: 'Signals outside the albums',
+    description: 'Standalone releases and experiments that expand the SHINOBIWAN universe between larger projects.',
+    featuredTrackIds: ['ghost-signal', 'husband']
+  }
+];
+
 export const tracks = [
   {
     id: 'before-the-noise',

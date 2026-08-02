@@ -1,20 +1,20 @@
-export function installExtendedUI() {
-  const ensureStylesheet = href => {
-    if (document.querySelector(`link[href="${href}"]`)) return;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = href;
-    document.head.appendChild(link);
-  };
+import { ensureStylesheet } from '../../core/assets.js';
 
+export function installExtendedUI() {
   ensureStylesheet('css/lyrics.css');
   ensureStylesheet('css/fixes-v2.css');
 
   const mainNav = document.querySelector('.main-nav');
-  const journeyNav = mainNav?.querySelector('[data-view="analytics"]');
-  if (journeyNav) {
-    journeyNav.innerHTML = '<span aria-hidden="true">✦</span><span>Journey</span>';
-    journeyNav.setAttribute('aria-label', 'Artist journey');
+  const albumsNav = mainNav?.querySelector('[data-view="analytics"]');
+  const albumsView = document.querySelector('#view-analytics');
+
+  for (const [id, value] of [['metric-tracks', '14'], ['metric-lyrics', '10']]) {
+    if (!albumsView || document.querySelector(`#${id}`)) continue;
+    const metric = document.createElement('span');
+    metric.id = id;
+    metric.hidden = true;
+    metric.textContent = value;
+    albumsView.appendChild(metric);
   }
 
   if (mainNav && !mainNav.querySelector('[data-view="lyrics"]')) {
@@ -22,87 +22,7 @@ export function installExtendedUI() {
     button.className = 'nav-item';
     button.dataset.view = 'lyrics';
     button.innerHTML = '<span aria-hidden="true">≋</span><span>Lyrics</span>';
-    mainNav.insertBefore(button, journeyNav);
-  }
-
-  const topBadge = document.querySelector('.live-badge');
-  if (topBadge) {
-    topBadge.className = 'catalog-badge';
-    topBadge.innerHTML = '<span>CATALOG</span><strong>10 TRACKS</strong>';
-  }
-
-  const journeyView = document.querySelector('#view-analytics');
-  if (journeyView && !journeyView.dataset.upgraded) {
-    journeyView.dataset.upgraded = 'true';
-    journeyView.innerHTML = `
-      <div class="page-intro journey-intro">
-        <div>
-          <span class="eyebrow">ARTIST JOURNEY</span>
-          <h1>Three worlds, one signal.</h1>
-          <p>Move through the projects that shaped the current SHINOBIWAN sound — from digital intimacy to pressure-forged rap and stories inspired by Saigon.</p>
-        </div>
-        <button class="secondary journey-library-link" data-view-target="library">Explore every track →</button>
-      </div>
-
-      <div class="journey-stats" aria-label="Catalog overview">
-        <article><strong id="metric-tracks">10</strong><span>released tracks</span></article>
-        <article><strong>3</strong><span>creative eras</span></article>
-        <article><strong>4</strong><span>sonic worlds</span></article>
-        <article><strong id="metric-lyrics">10</strong><span>lyric experiences</span></article>
-      </div>
-
-      <div class="journey-grid">
-        <article class="journey-card neon-era">
-          <div class="journey-cover-stack">
-            <img src="assets/before-the-noise.jpeg" alt="Before the Noise cover">
-            <img src="assets/low-bitrate-love.jpeg" alt="Low Bitrate Love cover">
-          </div>
-          <div class="journey-copy">
-            <span class="journey-number">01</span>
-            <small>NEON HEARTBREAKS</small>
-            <h2>Digital intimacy</h2>
-            <p>Glitched romance, close-mic emotion and nocturnal R&amp;B built around fragile connections.</p>
-            <button class="text-button" data-play-index="0">Play this era →</button>
-          </div>
-        </article>
-
-        <article class="journey-card pressure-era">
-          <div class="journey-cover-stack">
-            <img src="assets/thick.jpeg" alt="THICK cover">
-            <img src="assets/carved-from-pressure.jpeg" alt="Carved from Pressure cover">
-          </div>
-          <div class="journey-copy">
-            <span class="journey-number">02</span>
-            <small>COAL TO DIAMOND</small>
-            <h2>Pressure into power</h2>
-            <p>Heavy drums, confidence, resilience and cinematic hip-hop with a sharper, more physical edge.</p>
-            <button class="text-button" data-play-index="2">Play this era →</button>
-          </div>
-        </article>
-
-        <article class="journey-card saigon-era">
-          <div class="journey-cover-stack">
-            <img src="assets/saigon-bound.png" alt="Saigon Bound cover">
-            <img src="assets/tinh-bolero-cho-tran.png" alt="Tình Bolero Cho Trân cover">
-          </div>
-          <div class="journey-copy">
-            <span class="journey-number">03</span>
-            <small>LOVE LETTERS FROM SAIGON</small>
-            <h2>Distance becomes a place</h2>
-            <p>Vietnamese influences, travel memories and love songs shaped by two countries and one relationship.</p>
-            <button class="text-button" data-play-index="5">Play this era →</button>
-          </div>
-        </article>
-      </div>
-
-      <article class="panel journey-palette">
-        <div class="panel-head">
-          <h3>The current sound palette</h3>
-          <span class="pill">CATALOG DNA</span>
-        </div>
-        <div id="genre-bars" class="genre-bars"></div>
-      </article>
-    `;
+    mainNav.insertBefore(button, albumsNav);
   }
 
   const mobileNav = document.querySelector('.mobile-nav');
@@ -142,7 +62,7 @@ export function installExtendedUI() {
         <h3>Live lyrics</h3>
         <span id="home-lyrics-status" class="pill">SYNC</span>
       </div>
-      <div id="home-lyrics" class="home-lyrics" aria-live="polite">
+      <div id="home-lyrics" class="home-lyrics" aria-live="off">
         <p class="lyrics-placeholder">Start a track to follow the lyrics.</p>
       </div>
       <button class="text-button lyrics-open-button" data-view-target="lyrics">Open full lyrics →</button>
@@ -222,7 +142,7 @@ export function installExtendedUI() {
             <span id="lyrics-reader-label">SYNCHRONIZED LYRICS</span>
             <button id="lyrics-autoscroll" class="chip active" type="button" aria-pressed="true">Auto-scroll</button>
           </div>
-          <div id="lyrics-reader" class="lyrics-reader" aria-live="polite">
+          <div id="lyrics-reader" class="lyrics-reader" aria-live="off">
             <p class="lyrics-placeholder">Loading lyrics…</p>
           </div>
         </div>
