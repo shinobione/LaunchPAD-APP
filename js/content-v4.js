@@ -192,6 +192,7 @@ function removeVisibleSearch() {
 
 export function installContentV4() {
   ensureStylesheet('css/content-v4.css');
+  ensureStylesheet('css/about-golden-logo.css?v=20260802-1');
   installFavicon();
   removeVisibleSearch();
   installManifesto();
