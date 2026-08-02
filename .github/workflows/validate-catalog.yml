@@ -6,6 +6,7 @@ on:
       - main
       - 'refactor/**'
       - 'feature/**'
+      - 'fix/**'
   pull_request:
 
 permissions:
@@ -51,14 +52,16 @@ jobs:
             test ! -e "$removed"
           done
 
-          grep -q "id: '20260802-wave9'" js/build-config.js
+          grep -q "id: '20260802-wave10'" js/build-config.js
           grep -q 'normalizeStylesheet' js/build-config.js
-          grep -q "cache: 'shinobi-launchpad-v6'" js/build-config.js
+          grep -q "cache: 'shinobi-launchpad-v7'" js/build-config.js
           grep -q 'js/build-config.js' index.html
           ! grep -R -E "wave1|wave7" js --include='*.js'
           ! grep -q 'function updatePlayButtons' js/app-main.js
           grep -q 'journeyEras' js/catalog.js
           grep -q 'orderedAlbums' js/features/content/content-controller.js
+          ! grep -q 'project-featured-covers' js/features/content/content-controller.js
+          grep -q 'margin-top:16px;column-gap:10px;row-gap:8px' js/features/content/content-controller.js
           grep -q 'initTrackDetail' js/app-engine.js
           grep -q 'data-track-cover-link' js/features/track-detail.js
           grep -q 'prefers-reduced-motion' css/launchpad-features.css
@@ -126,6 +129,11 @@ jobs:
           grep -q 'data-track-cover-link=' /tmp/launchpad-home.html
           ! grep -q 'Explore the universe' /tmp/launchpad-home.html
           ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-home.html
+
+          chrome_dump 12000 'http://127.0.0.1:4173/#albums' > /tmp/albums.html
+          grep -q 'class="album-collection"' /tmp/albums.html
+          ! grep -q 'project-featured-covers' /tmp/albums.html
+          grep -q 'margin-top:16px;column-gap:10px;row-gap:8px' /tmp/albums.html
 
           chrome_dump 10000 'http://127.0.0.1:4173/#track=husband' > /tmp/track-detail.html
           grep -q 'id="view-track" class="view track-detail-view active"' /tmp/track-detail.html
