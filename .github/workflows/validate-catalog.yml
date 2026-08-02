@@ -33,6 +33,7 @@ jobs:
             README.md CHANGELOG.md RELEASE-CHECKLIST.md guide.md ARCHITECTURE.md \
             robots.txt sitemap.xml js/build-config.js js/core/assets.js \
             js/features/player-experience.js js/features/resilience-accessibility.js \
+            js/features/track-detail.js css/track-detail.css \
             css/launchpad-features.css scripts/capture-visuals.sh \
             tests/accessibility-smoke.html tests/layout-regression.html; do
             test -s "$required"
@@ -50,14 +51,16 @@ jobs:
             test ! -e "$removed"
           done
 
-          grep -q "id: '20260802-wave8'" js/build-config.js
+          grep -q "id: '20260802-wave9'" js/build-config.js
           grep -q 'normalizeStylesheet' js/build-config.js
-          grep -q "cache: 'shinobi-launchpad-v5'" js/build-config.js
+          grep -q "cache: 'shinobi-launchpad-v6'" js/build-config.js
           grep -q 'js/build-config.js' index.html
           ! grep -R -E "wave1|wave7" js --include='*.js'
           ! grep -q 'function updatePlayButtons' js/app-main.js
           grep -q 'journeyEras' js/catalog.js
           grep -q 'orderedAlbums' js/features/content/content-controller.js
+          grep -q 'initTrackDetail' js/app-engine.js
+          grep -q 'data-track-cover-link' js/features/track-detail.js
           grep -q 'prefers-reduced-motion' css/launchpad-features.css
           grep -q 'property="og:title"' index.html
           grep -q 'application/ld+json' index.html
@@ -86,6 +89,7 @@ jobs:
           for (const resource of [
             "'./js/build-config.js'", "'./js/core/assets.js'", "'./js/catalog-metadata.js'",
             "'./js/features/player-experience.js'", "'./js/features/resilience-accessibility.js'",
+            "'./js/features/track-detail.js'", "'./css/track-detail.css'",
             "'./css/launchpad-features.css'", "'./robots.txt'", "'./sitemap.xml'"
           ]) if (!worker.includes(resource)) fail(`Offline shell is missing ${resource}.`);
           for (const removed of [
@@ -119,8 +123,18 @@ jobs:
           grep -q '14 TRACKS' /tmp/launchpad-home.html
           grep -q '<h3>Track DNA</h3>' /tmp/launchpad-home.html
           grep -q '<strong id="track-dna-bpm">152</strong>' /tmp/launchpad-home.html
+          grep -q 'data-track-cover-link=' /tmp/launchpad-home.html
           ! grep -q 'Explore the universe' /tmp/launchpad-home.html
           ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-home.html
+
+          chrome_dump 10000 'http://127.0.0.1:4173/#track=husband' > /tmp/track-detail.html
+          grep -q 'id="view-track" class="view track-detail-view active"' /tmp/track-detail.html
+          grep -q '<h1>HUSBAND</h1>' /tmp/track-detail.html
+          grep -q '>BPM<' /tmp/track-detail.html
+          grep -q '>Key<' /tmp/track-detail.html
+          grep -q '>Language<' /tmp/track-detail.html
+          grep -q '>Content rating<' /tmp/track-detail.html
+          grep -q 'track-detail-tags' /tmp/track-detail.html
 
           chrome_dump 7000 'http://127.0.0.1:4173/tests/player-experience-smoke.html' > /tmp/player-experience.html
           grep -q 'PLAYER EXPERIENCE READY PLAY PAUSE DYNAMIC TRACK DNA' /tmp/player-experience.html
@@ -149,7 +163,7 @@ jobs:
           grep -q 'ACCESSIBILITY READY' /tmp/accessibility.html
           ! grep -q 'ACCESSIBILITY ERROR' /tmp/accessibility.html
 
-          chrome_dump 14000 'http://127.0.0.1:4173/tests/layout-regression.html' > /tmp/layout.html
+          chrome_dump 17000 'http://127.0.0.1:4173/tests/layout-regression.html' > /tmp/layout.html
           grep -q 'LAYOUT READY' /tmp/layout.html
           ! grep -q 'LAYOUT ERROR' /tmp/layout.html
 
