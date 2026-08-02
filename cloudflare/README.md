@@ -5,11 +5,13 @@ The media catalog uses one private administration Worker and one public read-onl
 ## Canonical R2 layout
 
 ```text
+catalog/index.json
 tracks/<slug>/manifest.json
 tracks/<slug>/audio.<ext>
 tracks/<slug>/cover.<ext>
-tracks/<slug>/lyrics.txt      # optional
-tracks/<slug>/video.<ext>     # optional
+tracks/<slug>/thumbnail.webp # generated 512 px UI artwork
+tracks/<slug>/lyrics.txt     # optional
+tracks/<slug>/video.<ext>    # optional
 ```
 
 The public API exposes only manifests whose `status` is `published`.
@@ -18,16 +20,15 @@ The public API exposes only manifests whose `status` is `published`.
 
 - `public-worker.js` is the source for `launchpad-media`.
 - The private Track Manager is deployed to `launchpad-r2-api`, protected by Cloudflare Access, with `POLICY_AUD` and `TEAM_DOMAIN` variables.
+- Track Manager v4.2 generates WebP thumbnails and rebuilds the single `catalog/index.json` file.
+- Public Worker v2.2 reads that index in one R2 request, serves lightweight thumbnails to the app, and exposes a stable PNG brand icon for Android media controls.
 
-## Migration
+## Deployment order
 
-`migration-manifest.json` contains the legacy LaunchPAD catalog and its GitHub source URLs. The Track Manager imports one track per request, which avoids a single long-running migration request.
+1. Deploy Track Manager v4.2 to `launchpad-r2-api`.
+2. Run **Optimiser les covers** once so every published track has `thumbnail.webp` and the catalog index is rebuilt.
+3. Deploy Public Worker v2.2 to `launchpad-media`.
+4. Verify `/health`, `/tracks`, the branding PNG and mobile playback.
+5. Remove the legacy GitHub audio, per-track covers and lyrics only after the Cloudflare catalog is validated.
 
-Migration order:
-
-1. Convert temporary `media/` objects such as `Run to Me` and `Zero-SUM` into the canonical `tracks/` layout.
-2. Import the GitHub catalog from `migration-manifest.json`.
-3. Verify the public `/tracks` endpoint returns the expected catalog.
-4. Remove the old audio, per-track covers and lyrics from the GitHub application repository.
-
-Future tracks are created through the Track Manager form. Metadata is stored in `manifest.json`; no hand-written metadata TXT file is required.
+Future tracks are created through the Track Manager form. Metadata is stored in `manifest.json`; no hand-written metadata TXT file is required. New cover uploads automatically receive an optimized thumbnail.
