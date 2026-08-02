@@ -1,7 +1,7 @@
 (() => {
   const config = Object.freeze({
-    id: '20260802-wave15',
-    cache: 'shinobi-launchpad-v12',
+    id: '20260802-wave14',
+    cache: 'shinobi-launchpad-v11',
     revision: 'r2-remote-catalog-1'
   });
 
