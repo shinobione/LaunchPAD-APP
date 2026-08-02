@@ -14,54 +14,24 @@ export function initAudioFallback({ audio }) {
   if (!(audio instanceof HTMLMediaElement) || audio.dataset.audioFallbackReady === 'true') return;
 
   audio.dataset.audioFallbackReady = 'true';
+  audio.preload = 'none';
+
   let playbackRequested = false;
   let activeTrackId = '';
-  let pendingPlay = false;
-  let retryTimer = 0;
+  const nativeLoad = audio.load.bind(audio);
   const nativePlay = audio.play.bind(audio);
+
+  // app-main selects a source and then calls load() before play(). On Android that
+  // explicit load can consume the first user gesture. Setting src is sufficient:
+  // native play() will load and start playback in the same tap.
+  audio.load = () => {
+    if (audio.dataset.forceLoad !== 'true') return;
+    nativeLoad();
+  };
 
   audio.play = (...args) => {
     playbackRequested = true;
-    pendingPlay = true;
-    window.clearTimeout(retryTimer);
-
-    return nativePlay(...args).then(result => {
-      pendingPlay = false;
-      return result;
-    }).catch(error => {
-      if (error?.name !== 'AbortError' || !playbackRequested) {
-        pendingPlay = false;
-        throw error;
-      }
-
-      return new Promise((resolve, reject) => {
-        let settled = false;
-        const cleanup = () => {
-          audio.removeEventListener('canplay', retry);
-          window.clearTimeout(retryTimer);
-        };
-        const finish = (callback, value) => {
-          if (settled) return;
-          settled = true;
-          pendingPlay = false;
-          cleanup();
-          callback(value);
-        };
-        const retry = () => {
-          if (settled || !playbackRequested) {
-            finish(reject, error);
-            return;
-          }
-          nativePlay().then(
-            value => finish(resolve, value),
-            retryError => finish(reject, retryError)
-          );
-        };
-
-        audio.addEventListener('canplay', retry, { once: true });
-        retryTimer = window.setTimeout(retry, 1600);
-      });
-    });
+    return nativePlay(...args);
   };
 
   audio.addEventListener('loadstart', () => {
@@ -74,16 +44,14 @@ export function initAudioFallback({ audio }) {
 
   audio.addEventListener('play', () => {
     playbackRequested = true;
-    pendingPlay = false;
   });
 
   audio.addEventListener('pause', () => {
-    if (!audio.error && !pendingPlay) playbackRequested = false;
+    if (!audio.error) playbackRequested = false;
   });
 
   audio.addEventListener('ended', () => {
     playbackRequested = false;
-    pendingPlay = false;
   });
 
   audio.addEventListener('error', () => {
@@ -99,10 +67,12 @@ export function initAudioFallback({ audio }) {
 
     console.warn(`Remote audio unavailable for ${track.title}; using bundled audio fallback.`);
     audio.src = track.fallbackFile;
-    audio.load();
+    audio.dataset.forceLoad = 'true';
+    nativeLoad();
+    delete audio.dataset.forceLoad;
 
     if (resumeAfterFallback) {
-      audio.play().catch(error => {
+      nativePlay().catch(error => {
         console.warn(`Bundled audio fallback could not start for ${track.title}.`, error);
       });
     }
