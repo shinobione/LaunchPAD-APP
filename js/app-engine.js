@@ -37,14 +37,27 @@ async function boot() {
 
   const [
     { prepareLibraryMemoryShell },
-    pwa
+    pwa,
+    remoteCatalog
   ] = await Promise.all([
     import(versioned('./features/library-memory-shell.js')),
-    import(versioned('./features/pwa.js'))
+    import(versioned('./features/pwa.js')),
+    import(versioned('./core/remote-catalog.js'))
   ]);
 
   prepareLibraryMemoryShell();
   pwa.preparePWAHead();
+
+  try {
+    const state = await remoteCatalog.hydrateRemoteCatalog();
+    document.documentElement.dataset.remoteCatalog = state.added || state.updated
+      ? 'connected'
+      : 'empty';
+    document.documentElement.dataset.remoteTrackCount = String(state.remoteCount);
+  } catch (error) {
+    document.documentElement.dataset.remoteCatalog = 'fallback';
+    console.warn('Cloudflare R2 catalog unavailable; using bundled catalog.', error);
+  }
 
   await import(versioned('./app-main.js'));
 
