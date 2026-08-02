@@ -1,4 +1,4 @@
-const VERSION = 'shinobi-launchpad-v3';
+const VERSION = 'shinobi-launchpad-v4';
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
@@ -23,9 +23,11 @@ const SHELL_RESOURCES = [
   './css/pwa.css',
   './css/visual-card.css',
   './css/album-duration.css',
+  './css/player-experience.css',
   './js/app-engine.js',
   './js/app-main.js',
   './js/catalog.js',
+  './js/catalog-metadata.js',
   './js/core/catalog-store.js',
   './js/core/player-queue.js',
   './js/core/router.js',
@@ -38,6 +40,7 @@ const SHELL_RESOURCES = [
   './js/features/queue-ui.js',
   './js/features/album-detail.js',
   './js/features/lyrics-studio.js',
+  './js/features/player-experience.js',
   './js/features/content/content-controller.js',
   './js/features/audio/audio-focus.js',
   './js/features/lyrics/wake-lock.js',

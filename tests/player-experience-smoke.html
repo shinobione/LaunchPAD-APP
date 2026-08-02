@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Player experience smoke test</title>
+</head>
+<body>
+  <article class="discovery-panel"></article>
+  <button data-action="toggle">▶</button>
+  <div id="dynamic-controls"></div>
+  <audio id="audio"></audio>
+  <output id="result">PLAYER EXPERIENCE PENDING</output>
+
+  <script type="module">
+    import { createPlayerExperience } from '../js/features/player-experience.js';
+
+    const audio = document.querySelector('#audio');
+    const result = document.querySelector('#result');
+    const waitForFrame = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    try {
+      Object.defineProperty(audio, 'paused', { value: false, configurable: true });
+      Object.defineProperty(audio, 'ended', { value: false, configurable: true });
+      audio.dataset.trackId = 'ghost-signal';
+
+      createPlayerExperience({ audio });
+      await waitForFrame();
+
+      const staticButton = document.querySelector('[data-action="toggle"]');
+      if (staticButton.dataset.playbackState !== 'playing' || staticButton.textContent !== '❚❚') {
+        throw new Error('Static Play control did not enter playing state.');
+      }
+
+      const dynamicButton = document.createElement('button');
+      dynamicButton.dataset.action = 'toggle';
+      dynamicButton.textContent = '▶';
+      document.querySelector('#dynamic-controls').appendChild(dynamicButton);
+      await waitForFrame();
+
+      if (dynamicButton.dataset.playbackState !== 'playing' || dynamicButton.textContent !== '❚❚') {
+        throw new Error('Dynamic Play control did not inherit playing state.');
+      }
+
+      Object.defineProperty(audio, 'paused', { value: true, configurable: true });
+      audio.dispatchEvent(new Event('pause'));
+      await waitForFrame();
+
+      if ([staticButton, dynamicButton].some(button => button.dataset.playbackState !== 'paused' || button.textContent !== '▶')) {
+        throw new Error('Play controls did not return to paused state.');
+      }
+
+      const dna = document.querySelector('.track-dna-panel')?.textContent || '';
+      for (const value of ['Track DNA', 'Ghost Signal', '129', 'G# minor', 'English', 'UNRATED']) {
+        if (!dna.includes(value)) throw new Error(`Track DNA is missing ${value}.`);
+      }
+
+      result.textContent = 'PLAYER EXPERIENCE READY PLAY PAUSE DYNAMIC TRACK DNA';
+    } catch (error) {
+      result.textContent = `PLAYER EXPERIENCE ERROR ${error.message}`;
+    }
+  </script>
+</body>
+</html>
