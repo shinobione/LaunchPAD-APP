@@ -16,6 +16,7 @@ Promise.all(frames.map(frame=>new Promise(resolve=>frame.addEventListener('load'
   const failures=[];
   const td=trackFrame.contentDocument;
   const ad=albumFrame.contentDocument;
+  const albumWindow=albumFrame.contentWindow;
 
   const trackMenu=rect(td.querySelector('#menu-button'));
   const trackBack=rect(td.querySelector('.track-detail-back'));
@@ -35,7 +36,7 @@ Promise.all(frames.map(frame=>new Promise(resolve=>frame.addEventListener('load'
     if(!sidebar.classList.contains('open')) failures.push('menu-open-sidebar');
     if(!ad.body.classList.contains('mobile-menu-open')) failures.push('menu-open-body');
     if(menu.getAttribute('aria-expanded')!=='true') failures.push('menu-open-aria');
-    if(getComputedStyle(backdrop).pointerEvents==='none') failures.push('backdrop-inactive');
+    if(albumWindow.getComputedStyle(backdrop).pointerEvents==='none') failures.push('backdrop-inactive');
 
     backdrop.click();
     await sleep(250);
@@ -44,7 +45,7 @@ Promise.all(frames.map(frame=>new Promise(resolve=>frame.addEventListener('load'
 
     menu.click();
     await sleep(150);
-    ad.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+    ad.dispatchEvent(new albumWindow.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
     await sleep(200);
     if(sidebar.classList.contains('open')||ad.body.classList.contains('mobile-menu-open')) failures.push('escape-close');
   }
