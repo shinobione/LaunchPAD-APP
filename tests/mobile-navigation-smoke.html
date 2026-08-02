@@ -10,6 +10,7 @@ const frames=[document.querySelector('#track'),document.querySelector('#album')]
 const sleep=delay=>new Promise(resolve=>setTimeout(resolve,delay));
 const rect=node=>node?.getBoundingClientRect();
 const overlaps=(a,b)=>Boolean(a&&b&&a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top);
+const ERROR_PREFIX=['MOBILE','NAV','ERROR'].join(' ');
 
 Promise.all(frames.map(frame=>new Promise(resolve=>frame.addEventListener('load',()=>resolve(frame))))).then(async([trackFrame,albumFrame])=>{
   await sleep(6000);
@@ -51,7 +52,7 @@ Promise.all(frames.map(frame=>new Promise(resolve=>frame.addEventListener('load'
   }
 
   result.textContent=failures.length
-    ? `MOBILE NAV ERROR ${failures.join(' ')}`
+    ? `${ERROR_PREFIX} ${failures.join(' ')}`
     : 'MOBILE NAV READY TRACK BACK ALBUM BACK OUTSIDE ESCAPE';
 });
 </script>
