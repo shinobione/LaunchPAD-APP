@@ -1,0 +1,16 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Launchpad memory smoke fixture</title>
+<script>
+  localStorage.setItem('shinobi-launchpad-memory-v1', JSON.stringify({
+    favorites: ['ghost-signal'],
+    history: ['close-to-you'],
+    lastTrackId: 'ghost-signal',
+    lastPosition: 12,
+    volume: 0.42,
+    shuffle: true,
+    repeat: 'one',
+    visualMode: 'pulse'
+  }));
+  location.replace('/#home');
+</script>

@@ -33,18 +33,23 @@ async function boot() {
   installEarlyFavicon();
   installCriticalStyles();
 
-  await import('./app-main.js?v=20260802-wave2');
+  const { prepareLibraryMemoryShell } = await import('./features/library-memory-shell.js?v=20260802-wave3');
+  prepareLibraryMemoryShell();
+
+  await import('./app-main.js?v=20260802-wave3');
 
   const [
     { installContentV4 },
     { initAudioFocus },
     { initLyricsWakeLock },
-    { initAboutEnhancements }
+    { initAboutEnhancements },
+    { initLibraryMemory }
   ] = await Promise.all([
     import('./features/content/content-controller.js?v=20260802-wave1'),
     import('./features/audio/audio-focus.js?v=20260802-wave2'),
     import('./features/lyrics/wake-lock.js?v=20260802-wave2'),
-    import('./features/about/about-controller.js?v=20260802-wave2')
+    import('./features/about/about-controller.js?v=20260802-wave2'),
+    import('./features/library-memory.js?v=20260802-wave3')
   ]);
 
   installContentV4();
@@ -53,6 +58,7 @@ async function boot() {
   installFinalLayoutFix();
 
   const audio = document.querySelector('#audio');
+  initLibraryMemory({ audio });
   initAudioFocus({ audio });
   initLyricsWakeLock({ audio });
 }
