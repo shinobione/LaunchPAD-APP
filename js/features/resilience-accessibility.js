@@ -49,7 +49,9 @@ function installAudioStatus(audio) {
   status.addEventListener('click', event => {
     if (!event.target.closest('[data-audio-retry]')) return;
     const time = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+    audio.dataset.forceLoad = 'true';
     audio.load();
+    delete audio.dataset.forceLoad;
     audio.addEventListener('loadedmetadata', () => {
       if (time > 0 && time < audio.duration) audio.currentTime = time;
       audio.play().catch(() => show('Playback still cannot start.', true));
