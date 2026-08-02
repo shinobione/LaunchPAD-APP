@@ -8,14 +8,22 @@ mkdir -p "$OUTPUT_DIR"
 
 capture() {
   local name="$1" width="$2" height="$3" route="$4"
-  local profile
+  local profile output
   profile="$(mktemp -d)"
-  "$CHROME_BIN" --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
+  output="$OUTPUT_DIR/$name.png"
+
+  timeout --signal=TERM 25s "$CHROME_BIN" \
+    --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
+    --disable-background-networking --disable-component-update --disable-sync \
+    --metrics-recording-only --no-first-run --disable-default-apps \
     --force-device-scale-factor=1 --window-size="${width},${height}" \
-    --virtual-time-budget=14000 --run-all-compositor-stages-before-draw \
-    --user-data-dir="$profile" --screenshot="$OUTPUT_DIR/$name.png" \
-    "${BASE_URL}?visual-test=1${route}"
+    --virtual-time-budget=8000 --run-all-compositor-stages-before-draw \
+    --user-data-dir="$profile" --screenshot="$output" \
+    "${BASE_URL}?visual-test=1${route}" || test -s "$output"
+
+  test -s "$output"
   rm -rf "$profile"
+  echo "Captured $name"
 }
 
 capture home-desktop 1440 1000 '#home'
