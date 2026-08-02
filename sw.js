@@ -1,4 +1,4 @@
-const VERSION = 'shinobi-launchpad-v1';
+const VERSION = 'shinobi-launchpad-v2';
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
@@ -21,6 +21,7 @@ const SHELL_RESOURCES = [
   './css/about-enhancements.css',
   './css/library-memory.css',
   './css/pwa.css',
+  './css/visual-card.css',
   './js/app-engine.js',
   './js/app-main.js',
   './js/catalog.js',
@@ -42,7 +43,8 @@ const SHELL_RESOURCES = [
   './js/features/about/about-controller.js',
   './js/features/library-memory-shell.js',
   './js/features/library-memory.js',
-  './js/features/pwa.js'
+  './js/features/pwa.js',
+  './js/features/visual-card.js'
 ];
 
 const IMAGE_RESOURCES = [
