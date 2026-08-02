@@ -9,6 +9,10 @@
 
   if (typeof document === 'undefined') return;
 
+  if (new URLSearchParams(location.search).has('visual-test')) {
+    document.documentElement.dataset.visualTest = 'true';
+  }
+
   function findEquivalentStylesheet(link, url) {
     return [...document.querySelectorAll('link[rel="stylesheet"]')].find(candidate => {
       if (candidate === link) return false;
