@@ -11,18 +11,25 @@ const ERROR=['LAYOUT','ERROR'].join(' ');
 const frames=[document.querySelector('#desktop'),document.querySelector('#mobile'),document.querySelector('#track'),document.querySelector('#mobile-album')];
 const sleep=delay=>new Promise(resolve=>setTimeout(resolve,delay));
 const rect=node=>node?.getBoundingClientRect();
-const geometry=document=>{
-  const selectors=['.launchpad-hero','.launchpad-banner-rail','.hero-banner-art','.hero-body','.hero-wordmark'];
-  return Object.fromEntries(selectors.map(selector=>{
-    const box=rect(document.querySelector(selector));
-    return [selector,box?{left:box.left,top:box.top,width:box.width,height:box.height}:null];
+const selectors=[
+  '.launchpad-hero','.launchpad-banner-rail','.hero-banner-art','.hero-body',
+  '.hero-profile-card','.hero-copy','.hero-wordmark','.artist-manifesto','.hero-actions'
+];
+const geometry=document=>Object.fromEntries(selectors.map(selector=>{
+  const box=rect(document.querySelector(selector));
+  return [selector,box?{left:box.left,top:box.top,width:box.width,height:box.height}:null];
+}));
+const geometryChanges=(before,after)=>Object.keys(before).flatMap(selector=>{
+  if(!before[selector]||!after[selector]) return [{selector,field:'missing',delta:Infinity,before:before[selector],after:after[selector]}];
+  return ['left','top','width','height'].map(field=>({
+    selector,
+    field,
+    delta:Math.abs(before[selector][field]-after[selector][field]),
+    before:Number(before[selector][field].toFixed(2)),
+    after:Number(after[selector][field].toFixed(2))
   }));
-};
-const maximumGeometryDelta=(before,after)=>Object.keys(before).reduce((maximum,key)=>{
-  if(!before[key]||!after[key]) return Infinity;
-  const delta=Math.max(...['left','top','width','height'].map(field=>Math.abs(before[key][field]-after[key][field])));
-  return Math.max(maximum,delta);
-},0);
+}).sort((a,b)=>b.delta-a.delta);
+const failureToken=change=>`${change.selector.replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'')}-${change.field}-${Math.round(change.delta)}`;
 const localStyles=document=>[...document.querySelectorAll('link[rel="stylesheet"]')]
   .map(link=>new URL(link.href,document.location.href))
   .filter(url=>url.origin===document.location.origin&&url.pathname.includes('/css/'));
@@ -37,10 +44,12 @@ Promise.all(frames.map(frame=>new Promise(resolve=>frame.addEventListener('load'
   const failures=[];
   const finalDesktopGeometry=geometry(dd);
   const finalMobileGeometry=geometry(md);
-  const desktopHeroShift=maximumGeometryDelta(initialDesktopGeometry,finalDesktopGeometry);
-  const mobileHeroShift=maximumGeometryDelta(initialMobileGeometry,finalMobileGeometry);
-  if(desktopHeroShift>2) failures.push(`desktop-first-paint-shift-${Math.round(desktopHeroShift)}`);
-  if(mobileHeroShift>2) failures.push(`mobile-first-paint-shift-${Math.round(mobileHeroShift)}`);
+  const desktopChanges=geometryChanges(initialDesktopGeometry,finalDesktopGeometry);
+  const mobileChanges=geometryChanges(initialMobileGeometry,finalMobileGeometry);
+  const desktopHeroShift=desktopChanges[0]?.delta||0;
+  const mobileHeroShift=mobileChanges[0]?.delta||0;
+  desktopChanges.filter(change=>change.delta>2).slice(0,4).forEach(change=>failures.push(`desktop-first-paint-shift-${failureToken(change)}`));
+  mobileChanges.filter(change=>change.delta>2).slice(0,4).forEach(change=>failures.push(`mobile-first-paint-shift-${failureToken(change)}`));
 
   const expectedStyles=[
     'style.css','header.css','refinements.css','lyrics.css','fixes-v2.css','content-v4.css',
@@ -144,6 +153,7 @@ Promise.all(frames.map(frame=>new Promise(resolve=>frame.addEventListener('load'
     appReady:dd.documentElement.dataset.appReady==='true'&&md.documentElement.dataset.appReady==='true',
     trackNavigationPreserved:navigationLoadCalls===0&&homeAudio?.dataset.trackId==='thick'
   };
-  result.textContent=failures.length?`${ERROR} ${failures.join(' ')}`:`${READY} ${JSON.stringify(snapshot)}`;
+  const diagnostics={desktop:desktopChanges.slice(0,5),mobile:mobileChanges.slice(0,5)};
+  result.textContent=failures.length?`${ERROR} ${failures.join(' ')} ${JSON.stringify(diagnostics)}`:`${READY} ${JSON.stringify(snapshot)}`;
 });
 </script>
