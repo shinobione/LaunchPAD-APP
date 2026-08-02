@@ -187,6 +187,7 @@ jobs:
           grep -q '"trackNavigationPreserved":true' /tmp/layout.html
 
           chrome_dump 18000 'http://127.0.0.1:4173/tests/mobile-navigation-smoke.html' > /tmp/mobile-navigation.html
+          grep -o 'MOBILE NAV [^<]*' /tmp/mobile-navigation.html || true
           grep -q 'MOBILE NAV READY TRACK BACK ALBUM BACK OUTSIDE ESCAPE' /tmp/mobile-navigation.html
           ! grep -q 'MOBILE NAV ERROR' /tmp/mobile-navigation.html
 
