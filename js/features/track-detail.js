@@ -200,6 +200,7 @@ export function initTrackDetail({ audio = document.querySelector('#audio') } = {
       ? `${Math.round(track.keyConfidence * 100)}% analysis confidence`
       : 'Unavailable';
     const isRemoteSignal = Boolean(track.remoteMetadata);
+    const detailCover = track.fullCover || track.cover;
 
     currentTrackId = track.id;
     view.innerHTML = `
@@ -207,7 +208,7 @@ export function initTrackDetail({ audio = document.querySelector('#audio') } = {
 
       <article class="track-detail-hero${isRemoteSignal ? ' has-cloud-signal' : ''}">
         <div class="track-detail-artwork-shell">
-          <img class="track-detail-cover" src="${escapeHtml(track.cover)}" alt="Cover art for ${escapeHtml(track.title)}">
+          <img class="track-detail-cover" src="${escapeHtml(detailCover)}" alt="Cover art for ${escapeHtml(track.title)}">
           <span class="track-detail-status" data-status="${explicitStatus(track.explicit)}">${escapeHtml(explicitLabel(track.explicit))}</span>
         </div>
 
