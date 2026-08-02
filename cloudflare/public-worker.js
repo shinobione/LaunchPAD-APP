@@ -2,7 +2,7 @@ const TRACKS_PREFIX = "tracks/";
 const MANIFEST_NAME = "manifest.json";
 const MAX_LIST_PAGES = 20;
 const MAX_LYRICS_BYTES = 1024 * 1024;
-const ASSET_KINDS = new Set(["cover", "audio", "video", "lyrics"]);
+const ASSET_KINDS = ["cover", "audio", "video", "lyrics"];
 
 export default {
   async fetch(request, env) {
@@ -23,13 +23,13 @@ export default {
         return jsonResponse({
           ok: true,
           service: "launchpad-media",
-          version: 2,
+          version: 2.1,
           access: "public-read-only",
           canonicalTracks: manifests,
           routes: {
             tracks: "/tracks",
             track: "/tracks/{slug}",
-            media: "/media/{slug}/{cover|audio|video|lyrics}",
+            media: "/media/{slug}/{cover|audio|video|lyrics}/{filename}",
           },
         });
       }
@@ -37,7 +37,7 @@ export default {
       if (url.pathname === "/tracks") {
         const tracks = await listPublishedTracks(env.MEDIA_BUCKET, url.origin, false);
         return jsonResponse({ ok: true, count: tracks.length, tracks }, 200, {
-          "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+          "Cache-Control": "public, max-age=30, stale-while-revalidate=300",
         });
       }
 
@@ -46,20 +46,24 @@ export default {
         const track = await getPublishedTrack(env.MEDIA_BUCKET, trackMatch[1], url.origin, true);
         if (!track) return jsonResponse({ ok: false, error: "Track introuvable." }, 404);
         return jsonResponse({ ok: true, track }, 200, {
-          "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+          "Cache-Control": "public, max-age=30, stale-while-revalidate=300",
         });
       }
 
-      const mediaMatch = url.pathname.match(/^\/media\/([a-z0-9][a-z0-9-]{0,119})\/(cover|audio|video|lyrics)$/);
+      const mediaMatch = url.pathname.match(/^\/media\/([a-z0-9][a-z0-9-]{0,119})\/(cover|audio|video|lyrics)(?:\/([^/]+))?$/);
       if (mediaMatch) {
         const slug = mediaMatch[1];
         const kind = mediaMatch[2];
+        const requestedFilename = mediaMatch[3] ? decodeURIComponent(mediaMatch[3]) : null;
         const manifest = await readManifest(env.MEDIA_BUCKET, slug);
         if (!manifest || manifest.status !== "published") {
           return jsonResponse({ ok: false, error: "Track introuvable." }, 404);
         }
+
         const filename = manifest.assets?.[kind];
-        if (!filename) return jsonResponse({ ok: false, error: "Média introuvable." }, 404);
+        if (!filename || (requestedFilename && requestedFilename !== filename)) {
+          return jsonResponse({ ok: false, error: "Média introuvable." }, 404);
+        }
         return streamR2Object(request, env.MEDIA_BUCKET, trackPrefix(slug) + filename);
       }
 
@@ -78,14 +82,12 @@ export default {
 async function listPublishedTracks(bucket, origin, includeLyrics) {
   const objects = await listAllObjects(bucket, TRACKS_PREFIX);
   const manifestObjects = objects.filter(object => object.key.endsWith("/" + MANIFEST_NAME));
-  const tracks = [];
-
-  for (const object of manifestObjects) {
+  const tracks = (await Promise.all(manifestObjects.map(async object => {
     const slug = object.key.slice(TRACKS_PREFIX.length, -(MANIFEST_NAME.length + 1));
     const manifest = await readManifest(bucket, slug);
-    if (!manifest || manifest.status !== "published") continue;
-    tracks.push(await publicTrack(manifest, bucket, origin, includeLyrics));
-  }
+    if (!manifest || manifest.status !== "published") return null;
+    return publicTrack(manifest, bucket, origin, includeLyrics);
+  }))).filter(Boolean);
 
   tracks.sort((a, b) => {
     const aDate = Date.parse(a.releaseDate || "") || 0;
@@ -104,39 +106,33 @@ async function getPublishedTrack(bucket, slug, origin, includeLyrics) {
 }
 
 async function publicTrack(manifest, bucket, origin, includeLyrics) {
-  const assets = {};
-  for (const kind of ASSET_KINDS) {
+  const assets = Object.fromEntries(ASSET_KINDS.map(kind => {
     const filename = manifest.assets?.[kind];
-    if (!filename) {
-      assets[kind] = null;
-      continue;
-    }
-    const key = trackPrefix(manifest.slug) + filename;
-    const head = await bucket.head(key);
-    assets[kind] = head ? {
-      originalName: head.customMetadata?.originalName || filename,
+    if (!filename) return [kind, null];
+    return [kind, {
+      originalName: filename,
       filename,
-      contentType: head.httpMetadata?.contentType || guessContentType(getExtension(filename)),
-      size: head.size,
-      uploaded: head.uploaded ? head.uploaded.toISOString() : null,
-      url: origin + "/media/" + encodeURIComponent(manifest.slug) + "/" + kind,
-    } : null;
-  }
+      contentType: guessContentType(getExtension(filename)),
+      size: null,
+      uploaded: manifest.updatedAt || manifest.createdAt || null,
+      url: mediaUrl(origin, manifest, kind, filename),
+    }];
+  }));
 
   let lyrics = null;
   let timestampsAvailable = false;
-  if (includeLyrics && assets.lyrics && assets.lyrics.size <= MAX_LYRICS_BYTES) {
+  if (includeLyrics && assets.lyrics) {
     const object = await bucket.get(trackPrefix(manifest.slug) + manifest.assets.lyrics);
-    if (object) {
+    if (!object) {
+      assets.lyrics = null;
+    } else if (object.size <= MAX_LYRICS_BYTES) {
       const raw = await object.text();
       lyrics = { raw, segments: parseLyricSegments(raw) };
       timestampsAvailable = detectTimestamps(raw);
+      assets.lyrics.size = object.size;
+      assets.lyrics.uploaded = object.uploaded ? object.uploaded.toISOString() : assets.lyrics.uploaded;
+      assets.lyrics.contentType = object.httpMetadata?.contentType || assets.lyrics.contentType;
     }
-  } else if (assets.lyrics) {
-    const object = await bucket.get(trackPrefix(manifest.slug) + manifest.assets.lyrics, {
-      range: { offset: 0, length: Math.min(64 * 1024, assets.lyrics.size) },
-    });
-    if (object) timestampsAvailable = detectTimestamps(await object.text());
   }
 
   return {
@@ -169,6 +165,16 @@ async function publicTrack(manifest, bucket, origin, includeLyrics) {
   };
 }
 
+function mediaUrl(origin, manifest, kind, filename) {
+  const url = new URL(
+    "/media/" + encodeURIComponent(manifest.slug) + "/" + kind + "/" + encodeURIComponent(filename),
+    origin
+  );
+  const version = manifest.updatedAt || manifest.createdAt || manifest.schemaVersion || 1;
+  url.searchParams.set("v", String(version));
+  return url.href;
+}
+
 async function readManifest(bucket, slug) {
   const object = await bucket.get(trackPrefix(slug) + MANIFEST_NAME);
   if (!object) return null;
@@ -185,7 +191,7 @@ async function listAllObjects(bucket, prefix) {
   const objects = [];
   let cursor;
   for (let page = 0; page < MAX_LIST_PAGES; page += 1) {
-    const result = await bucket.list({ prefix, cursor, limit: 1000, include: ["httpMetadata", "customMetadata"] });
+    const result = await bucket.list({ prefix, cursor, limit: 1000 });
     objects.push(...result.objects);
     if (!result.truncated || !result.cursor) return objects;
     cursor = result.cursor;
