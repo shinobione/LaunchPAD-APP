@@ -1,0 +1,51 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>SHINOBIWAN Visual Card smoke test</title>
+<p id="status">VISUAL CARD PENDING</p>
+<iframe id="launchpad" src="../#track=ghost-signal" title="Launchpad test frame" style="position:fixed;width:8px;height:8px;opacity:.01;pointer-events:none"></iframe>
+<script>
+  const status = document.querySelector('#status');
+  const frame = document.querySelector('#launchpad');
+  const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+
+  async function waitFor(predicate, timeout = 15000) {
+    const start = performance.now();
+    while (performance.now() - start < timeout) {
+      const result = predicate();
+      if (result) return result;
+      await wait(100);
+    }
+    throw new Error('timeout');
+  }
+
+  async function verify() {
+    const api = await waitFor(() => frame.contentWindow?.__shinobiVisualCard);
+    await waitFor(() => frame.contentDocument?.querySelector('#audio')?.dataset.trackId === 'ghost-signal');
+    await api.open('ghost-signal');
+
+    const canvas = api.getCanvas();
+    await waitFor(() => canvas.dataset.trackId === 'ghost-signal' && canvas.classList.contains('ready'));
+    const context = canvas.getContext('2d');
+    const sample = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let visiblePixels = 0;
+    for (let index = 3; index < sample.length; index += 4000) {
+      if (sample[index] > 0) visiblePixels += 1;
+    }
+
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob(value => value ? resolve(value) : reject(new Error('blob')), 'image/png');
+    });
+
+    if (canvas.width !== 1080 || canvas.height !== 1080) throw new Error('size');
+    if (visiblePixels < 50) throw new Error('pixels');
+    if (blob.size < 50000) throw new Error('png');
+
+    status.textContent = `VISUAL CARD READY 1080x1080 GHOST SIGNAL ${blob.size} BYTES`;
+  }
+
+  frame.addEventListener('load', () => {
+    verify().catch(error => {
+      status.textContent = `VISUAL CARD ERROR ${error.message}`;
+    });
+  }, { once: true });
+</script>
