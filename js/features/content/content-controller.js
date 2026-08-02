@@ -79,12 +79,6 @@ function orderedAlbums() {
   return [...configured, ...remaining];
 }
 
-function featuredTracksForEra(era, albumTracks) {
-  if (!era?.featuredTrackIds?.length) return albumTracks.slice(0, 2);
-  const byId = new Map(albumTracks.map(track => [track.id, track]));
-  return era.featuredTrackIds.map(id => byId.get(id)).filter(Boolean);
-}
-
 function renderAlbums() {
   const navButton = document.querySelector('.main-nav [data-view="analytics"]');
   if (navButton) {
@@ -116,7 +110,6 @@ function renderAlbums() {
     <div class="album-collection">
       ${orderedAlbums().map(({ album, era }, albumIndex) => {
         const albumTracks = getAlbumTracks(album.id);
-        const featuredTracks = featuredTracksForEra(era, albumTracks);
         const tags = [...new Set(albumTracks.flatMap(track => track.tags || [track.genre]))];
 
         return `
@@ -129,8 +122,7 @@ function renderAlbums() {
                   <h2>${escapeHtml(album.title)}</h2>
                   <p>${escapeHtml(era?.description || album.description || '')}</p>
                   ${era?.heading ? `<strong class="project-era-heading">${escapeHtml(era.heading)}</strong>` : ''}
-                  <div class="project-featured-covers">${featuredTracks.map(track => `<img src="${escapeHtml(track.cover)}" alt="" loading="lazy">`).join('')}</div>
-                  <div class="project-tags">
+                  <div class="project-tags" style="margin-top:16px;column-gap:10px;row-gap:8px">
                     ${tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}
                   </div>
                 </div>
