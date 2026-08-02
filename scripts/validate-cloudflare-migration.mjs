@@ -40,13 +40,16 @@ const publicWorker = fs.readFileSync('cloudflare/public-worker.js', 'utf8');
 for (const required of [
   'tracks/',
   'manifest.json',
+  'catalog/index.json',
   '/tracks',
   '/media/',
+  'thumbnail',
   'Accept-Ranges',
   'request.headers.get("range")',
-  'version: 2.1',
-  'Promise.all(manifestObjects.map',
-  'function mediaUrl('
+  'version: 2.2',
+  'readCatalogIndex',
+  'caches.default',
+  '/branding/shinobiwan-256.png'
 ]) {
   if (!publicWorker.includes(required)) fail(`Public Worker is missing ${required}.`);
 }
@@ -54,7 +57,7 @@ if (publicWorker.includes('bucket.head(')) {
   fail('Public catalog listing must not issue per-asset R2 HEAD requests.');
 }
 if (!publicWorker.includes('/" + kind + "/" + encodeURIComponent(filename)')) {
-  fail('Public media URLs must end with their real filename for Android metadata artwork.');
+  fail('Public media URLs must end with their real filename.');
 }
 
 console.log(`Cloudflare migration plan is valid: ${plan.tracks.length} legacy tracks.`);
