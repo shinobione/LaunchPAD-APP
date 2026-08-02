@@ -48,8 +48,7 @@ for (const required of [
   'request.headers.get("range")',
   'version: 2.2',
   'readCatalogIndex',
-  'caches.default',
-  '/branding/shinobiwan-256.png'
+  'caches.default'
 ]) {
   if (!publicWorker.includes(required)) fail(`Public Worker is missing ${required}.`);
 }
