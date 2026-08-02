@@ -43,9 +43,18 @@ for (const required of [
   '/tracks',
   '/media/',
   'Accept-Ranges',
-  'request.headers.get("range")'
+  'request.headers.get("range")',
+  'version: 2.1',
+  'Promise.all(manifestObjects.map',
+  'function mediaUrl('
 ]) {
   if (!publicWorker.includes(required)) fail(`Public Worker is missing ${required}.`);
+}
+if (publicWorker.includes('bucket.head(')) {
+  fail('Public catalog listing must not issue per-asset R2 HEAD requests.');
+}
+if (!publicWorker.includes('/" + kind + "/" + encodeURIComponent(filename)')) {
+  fail('Public media URLs must end with their real filename for Android metadata artwork.');
 }
 
 console.log(`Cloudflare migration plan is valid: ${plan.tracks.length} legacy tracks.`);
