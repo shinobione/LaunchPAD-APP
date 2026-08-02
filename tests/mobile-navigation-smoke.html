@@ -1,0 +1,56 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Mobile navigation smoke test</title>
+<output id="result">MOBILE NAV PENDING</output>
+<iframe id="track" src="../?visual-test=1#track=thick" style="width:390px;height:900px;border:0"></iframe>
+<iframe id="album" src="../?visual-test=1#album=singles" style="width:390px;height:900px;border:0"></iframe>
+<script>
+const result=document.querySelector('#result');
+const frames=[document.querySelector('#track'),document.querySelector('#album')];
+const sleep=delay=>new Promise(resolve=>setTimeout(resolve,delay));
+const rect=node=>node?.getBoundingClientRect();
+const overlaps=(a,b)=>Boolean(a&&b&&a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top);
+
+Promise.all(frames.map(frame=>new Promise(resolve=>frame.addEventListener('load',()=>resolve(frame))))).then(async([trackFrame,albumFrame])=>{
+  await sleep(6000);
+  const failures=[];
+  const td=trackFrame.contentDocument;
+  const ad=albumFrame.contentDocument;
+
+  const trackMenu=rect(td.querySelector('#menu-button'));
+  const trackBack=rect(td.querySelector('.track-detail-back'));
+  const albumMenu=rect(ad.querySelector('#menu-button'));
+  const albumBack=rect(ad.querySelector('.album-detail-back'));
+
+  if(!trackMenu||!trackBack||overlaps(trackMenu,trackBack)||trackBack.top<trackMenu.bottom+4) failures.push('track-back-overlap');
+  if(!albumMenu||!albumBack||overlaps(albumMenu,albumBack)||albumBack.top<albumMenu.bottom+4) failures.push('album-back-overlap');
+
+  const menu=ad.querySelector('#menu-button');
+  const sidebar=ad.querySelector('.sidebar');
+  const backdrop=ad.querySelector('#mobile-menu-backdrop');
+  if(!menu||!sidebar||!backdrop) failures.push('menu-elements');
+  else{
+    menu.click();
+    await sleep(250);
+    if(!sidebar.classList.contains('open')) failures.push('menu-open-sidebar');
+    if(!ad.body.classList.contains('mobile-menu-open')) failures.push('menu-open-body');
+    if(menu.getAttribute('aria-expanded')!=='true') failures.push('menu-open-aria');
+    if(getComputedStyle(backdrop).pointerEvents==='none') failures.push('backdrop-inactive');
+
+    backdrop.click();
+    await sleep(250);
+    if(sidebar.classList.contains('open')||ad.body.classList.contains('mobile-menu-open')) failures.push('outside-close');
+    if(menu.getAttribute('aria-expanded')!=='false') failures.push('outside-close-aria');
+
+    menu.click();
+    await sleep(150);
+    ad.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+    await sleep(200);
+    if(sidebar.classList.contains('open')||ad.body.classList.contains('mobile-menu-open')) failures.push('escape-close');
+  }
+
+  result.textContent=failures.length
+    ? `MOBILE NAV ERROR ${failures.join(' ')}`
+    : 'MOBILE NAV READY TRACK BACK ALBUM BACK OUTSIDE ESCAPE';
+});
+</script>
