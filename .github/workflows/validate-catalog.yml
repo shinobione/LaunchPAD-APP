@@ -18,6 +18,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Python for temporary audio analysis
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Analyze track BPM and keys
+        run: |
+          python -m pip install --disable-pip-version-check librosa
+          python scripts/analyze-audio-metadata.py
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
