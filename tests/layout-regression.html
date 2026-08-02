@@ -42,15 +42,25 @@ Promise.all(frames.map(frame=>new Promise(resolve=>frame.addEventListener('load'
   if(directTags<2) failures.push('track-tags');
   if(!directHero||directHero.width<700) failures.push('track-hero');
 
-  const cover=dd.querySelector('#featured-grid .album-card img[data-track-cover-link]');
+  const cover=dd.querySelector('#featured-grid img[data-track-cover-link="husband"]');
   const homeAudio=dd.querySelector('#audio');
-  if(!cover) failures.push('cover-link');
+  let navigationLoadCalls=0;
+  if(!cover||!homeAudio) failures.push('cover-link');
   else{
+    homeAudio.dataset.trackId='thick';
+    Object.defineProperty(homeAudio,'paused',{value:false,configurable:true});
+    Object.defineProperty(homeAudio,'currentTime',{value:37,writable:true,configurable:true});
+    homeAudio.load=()=>{navigationLoadCalls+=1;};
+
     cover.click();
     await sleep(900);
-    if(!desktop.contentWindow.location.hash.startsWith('#track=')) failures.push('cover-navigation');
+    if(desktop.contentWindow.location.hash!=='#track=husband') failures.push('cover-navigation');
     if(!dd.querySelector('#view-track.active')) failures.push('cover-track-view');
-    if(!homeAudio?.paused) failures.push('cover-autoplay');
+    if(homeAudio.dataset.trackId!=='thick') failures.push('cover-changed-playing-track');
+    if(homeAudio.paused) failures.push('cover-paused-playback');
+    if(Math.abs(homeAudio.currentTime-37)>.01) failures.push('cover-reset-playback-position');
+    if(navigationLoadCalls!==0) failures.push('cover-reloaded-audio');
+    if(desktop.contentWindow.history.state?.shinobiTrackDetail!==true) failures.push('cover-passive-history-state');
   }
 
   const albumRows=[...ad.querySelectorAll('.album-detail-track')];
@@ -77,7 +87,8 @@ Promise.all(frames.map(frame=>new Promise(resolve=>frame.addEventListener('load'
     featured:desktopGrid,
     trackMetadata:metadataLabels.length,
     trackTags:directTags,
-    mobileAlbumRows:albumRows.length
+    mobileAlbumRows:albumRows.length,
+    trackNavigationPreserved:navigationLoadCalls===0&&homeAudio?.dataset.trackId==='thick'
   };
   result.textContent=failures.length?`${ERROR} ${failures.join(' ')}`:`${READY} ${JSON.stringify(snapshot)}`;
 });
