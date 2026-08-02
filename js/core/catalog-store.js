@@ -1,4 +1,4 @@
-import { albums as sourceAlbums, tracks as sourceTracks } from '../catalog.js';
+import { albums as sourceAlbums, tracks as sourceTracks } from '../catalog.js?v=20260802-wave1';
 
 export const albums = sourceAlbums;
 export const tracks = sourceTracks;
