@@ -43,16 +43,19 @@ async function boot() {
     { installContentV4 },
     { initAudioFocus },
     { applyAlbumCovers },
-    { initLyricsWakeLock }
+    { initLyricsWakeLock },
+    { syncCatalogCount }
   ] = await Promise.all([
     import('./content-v4.js'),
     import('./audio-focus.js'),
     import('./album-covers.js'),
-    import('./lyrics-wake-lock.js')
+    import('./lyrics-wake-lock.js'),
+    import('./catalog-count.js')
   ]);
 
   installContentV4();
   applyAlbumCovers();
+  syncCatalogCount();
   installDesktopHeroFix();
   installFinalLayoutFix();
 
