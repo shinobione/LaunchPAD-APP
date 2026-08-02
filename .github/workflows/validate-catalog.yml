@@ -52,9 +52,9 @@ jobs:
             test ! -e "$removed"
           done
 
-          grep -q "id: '20260802-wave11'" js/build-config.js
+          grep -q "id: '20260802-wave12'" js/build-config.js
           grep -q 'normalizeStylesheet' js/build-config.js
-          grep -q "cache: 'shinobi-launchpad-v8'" js/build-config.js
+          grep -q "cache: 'shinobi-launchpad-v9'" js/build-config.js
           grep -q 'js/build-config.js' index.html
           ! grep -R -E "wave1|wave7" js --include='*.js'
           ! grep -q 'function updatePlayButtons' js/app-main.js
@@ -64,6 +64,8 @@ jobs:
           grep -q 'margin-top:16px;column-gap:10px;row-gap:8px' js/features/content/content-controller.js
           grep -q 'initTrackDetail' js/app-engine.js
           grep -q 'data-track-cover-link' js/features/track-detail.js
+          grep -q 'TRACK_DETAIL_HISTORY_KEY' js/features/track-detail.js
+          grep -q 'isPassiveTrackDetail' js/core/router.js
           grep -q "album-detail-lyrics\" aria-hidden=\"true" js/features/album-detail.js
           grep -q 'prefers-reduced-motion' css/launchpad-features.css
           grep -q 'property="og:title"' index.html
@@ -175,6 +177,7 @@ jobs:
           chrome_dump 17000 'http://127.0.0.1:4173/tests/layout-regression.html' > /tmp/layout.html
           grep -q 'LAYOUT READY' /tmp/layout.html
           ! grep -q 'LAYOUT ERROR' /tmp/layout.html
+          grep -q '"trackNavigationPreserved":true' /tmp/layout.html
 
       - name: Capture visual regression views
         shell: bash

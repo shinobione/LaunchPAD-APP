@@ -3,6 +3,7 @@ import { ensureStylesheet } from '../core/assets.js';
 import { shareRoute } from '../core/share.js';
 
 const TRACK_HASH_PREFIX = '#track=';
+const TRACK_DETAIL_HISTORY_KEY = 'shinobiTrackDetail';
 
 function escapeHtml(value) {
   return String(value)
@@ -217,9 +218,20 @@ export function initTrackDetail({ audio = document.querySelector('#audio') } = {
     if (!window.location.hash.startsWith(TRACK_HASH_PREFIX)) {
       returnHash = window.location.hash || '#home';
     }
+
     const target = `${TRACK_HASH_PREFIX}${encodeURIComponent(trackId)}`;
-    if (window.location.hash === target) render(trackId);
-    else window.location.hash = target;
+    if (window.location.hash === target) {
+      render(trackId);
+      return;
+    }
+
+    const currentState = window.history.state;
+    const state = currentState && typeof currentState === 'object'
+      ? { ...currentState, [TRACK_DETAIL_HISTORY_KEY]: true }
+      : { [TRACK_DETAIL_HISTORY_KEY]: true };
+
+    window.history.pushState(state, '', target);
+    render(trackId);
   }
 
   document.addEventListener('click', event => {
@@ -265,6 +277,7 @@ export function initTrackDetail({ audio = document.querySelector('#audio') } = {
   });
 
   window.addEventListener('hashchange', openRoute);
+  window.addEventListener('popstate', openRoute);
 
   const observer = new MutationObserver(records => {
     records.forEach(record => {

@@ -3,6 +3,8 @@ const VIEW_ALIASES = {
   albums: 'albums'
 };
 
+const TRACK_DETAIL_HISTORY_KEY = 'shinobiTrackDetail';
+
 export function parseRoute(hash = window.location.hash) {
   const value = hash.replace(/^#/, '').trim();
   if (!value) return { type: 'view', value: 'home' };
@@ -28,7 +30,13 @@ export function routeToHash(route) {
 
 export function createRouter({ onRoute }) {
   function dispatch() {
-    onRoute(parseRoute());
+    const route = parseRoute();
+    const isPassiveTrackDetail =
+      route.type === 'track' &&
+      window.history.state?.[TRACK_DETAIL_HISTORY_KEY] === true;
+
+    if (isPassiveTrackDetail) return;
+    onRoute(route);
   }
 
   function navigate(route, { replace = false } = {}) {
