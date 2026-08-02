@@ -38,15 +38,20 @@ async function boot() {
   const [
     { prepareLibraryMemoryShell },
     pwa,
-    remoteCatalog
+    remoteCatalog,
+    { initAudioFallback }
   ] = await Promise.all([
     import(versioned('./features/library-memory-shell.js')),
     import(versioned('./features/pwa.js')),
-    import(versioned('./core/remote-catalog.js'))
+    import(versioned('./core/remote-catalog.js')),
+    import(versioned('./features/audio-fallback.js'))
   ]);
 
   prepareLibraryMemoryShell();
   pwa.preparePWAHead();
+
+  const audio = document.querySelector('#audio');
+  initAudioFallback({ audio });
 
   try {
     const state = await remoteCatalog.hydrateRemoteCatalog();
@@ -89,7 +94,6 @@ async function boot() {
   initAboutEnhancements();
   installStylesheets(LAYOUT_STYLES);
 
-  const audio = document.querySelector('#audio');
   createPlayerExperience({ audio });
   initResilienceAccessibility({ audio });
   initLibraryMemory({ audio });
