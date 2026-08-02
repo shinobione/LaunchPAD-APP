@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Lyrics Studio smoke test</title>
+</head>
+<body>
+  <section id="view-lyrics" class="view active">
+    <div class="lyrics-reader-head"><span>LYRICS</span></div>
+    <div id="lyrics-reader"><button class="lyric-line active">Active line</button></div>
+  </section>
+  <output id="result">LYRICS STUDIO PENDING</output>
+
+  <script type="module">
+    import { initLyricsStudio } from '../js/features/lyrics-studio.js';
+
+    const view = document.querySelector('#view-lyrics');
+    const result = document.querySelector('#result');
+    const waitForFrame = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    try {
+      initLyricsStudio();
+      const buttons = [...document.querySelectorAll('[data-lyrics-studio]')];
+      if (buttons.length !== 1 || buttons[0].dataset.lyricsStudio !== 'mode') {
+        throw new Error('Lyrics Studio must expose exactly one mode control.');
+      }
+      if (document.body.textContent.includes('Fullscreen')) {
+        throw new Error('Fullscreen control still exists.');
+      }
+
+      buttons[0].click();
+      await waitForFrame();
+      if (!view.classList.contains('lyrics-studio-mode') || !document.body.classList.contains('lyrics-studio-open')) {
+        throw new Error('Studio mode did not open cleanly.');
+      }
+
+      view.classList.remove('active');
+      await waitForFrame();
+      if (view.classList.contains('lyrics-studio-mode') || document.body.classList.contains('lyrics-studio-open')) {
+        throw new Error('Studio mode did not close after leaving Lyrics.');
+      }
+
+      result.textContent = 'LYRICS STUDIO READY SINGLE MODE AUTO CLOSE';
+    } catch (error) {
+      result.textContent = `LYRICS STUDIO ERROR ${error.message}`;
+    }
+  </script>
+</body>
+</html>
