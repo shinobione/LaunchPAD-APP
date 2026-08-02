@@ -31,6 +31,7 @@ function installStylesheets(entries) {
 
 async function boot() {
   document.documentElement.dataset.build = BUILD;
+  document.documentElement.dataset.appState = 'booting';
   if (new URLSearchParams(location.search).has('visual-test')) document.documentElement.dataset.visualTest = 'true';
   installStylesheets(CRITICAL_STYLES);
 
@@ -85,9 +86,15 @@ async function boot() {
   pwa.initPWA();
   initAudioFocus({ audio });
   initLyricsWakeLock({ audio });
+
+  const data = document.documentElement.dataset;
+  data.appState = 'ready';
+  data.appReady = 'true';
+  window.dispatchEvent(new CustomEvent('shinobi:ready'));
 }
 
 boot().catch(error => {
+  document.documentElement.dataset.appState = 'error';
   console.error('Unable to start the SHINOBIWAN App', error);
   const main = document.querySelector('.main-content');
   if (main) {

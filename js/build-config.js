@@ -1,19 +1,39 @@
 (() => {
   const config = Object.freeze({
-    id: '20260802-wave13',
-    cache: 'shinobi-launchpad-v10'
+    id: '20260802-wave14',
+    cache: 'shinobi-launchpad-v11'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
 
   if (typeof document === 'undefined') return;
 
+  function findEquivalentStylesheet(link, url) {
+    return [...document.querySelectorAll('link[rel="stylesheet"]')].find(candidate => {
+      if (candidate === link) return false;
+      const candidateUrl = new URL(candidate.getAttribute('href') || candidate.href, location.href);
+      return candidateUrl.origin === url.origin && candidateUrl.pathname === url.pathname;
+    });
+  }
+
   function normalizeStylesheet(link) {
     if (!(link instanceof HTMLLinkElement) || link.rel !== 'stylesheet') return;
     const url = new URL(link.getAttribute('href') || link.href, location.href);
-    if (url.origin !== location.origin || url.searchParams.get('v') === config.id) return;
+    if (url.origin !== location.origin) return;
+
+    const existing = findEquivalentStylesheet(link, url);
+    if (existing) {
+      Object.entries(link.dataset).forEach(([key, value]) => {
+        if (!(key in existing.dataset)) existing.dataset[key] = value;
+      });
+      link.remove();
+      return existing;
+    }
+
+    if (url.searchParams.get('v') === config.id) return link;
     url.searchParams.set('v', config.id);
     link.href = url.href;
+    return link;
   }
 
   document.querySelectorAll('link[rel="stylesheet"]').forEach(normalizeStylesheet);
