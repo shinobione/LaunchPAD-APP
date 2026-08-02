@@ -16,7 +16,8 @@ const palettes = {
   'R&B': ['#a63cff', '#5c6cff'],
   Love: ['#e64d9b', '#8a55ff'],
   'Hip-hop': ['#ff4d68', '#8d3cff'],
-  Vietnam: ['#ff9955', '#d83cff']
+  Vietnam: ['#ff9955', '#d83cff'],
+  Dancehall: ['#ff9a3c', '#ff4d8d']
 };
 
 function escapeHtml(value) {
@@ -50,6 +51,31 @@ function card(track, index) {
   `;
 }
 
+function renderLibraryFilters() {
+  const filterRow = $('#view-library .filter-row');
+  if (!filterRow) return;
+
+  const preferredOrder = ['R&B', 'Hip-hop', 'Love', 'Vietnam'];
+  const catalogTags = [...new Set(
+    tracks.flatMap(track => Array.isArray(track.tags) ? track.tags : [track.genre]).filter(Boolean)
+  )];
+
+  const orderedTags = [
+    ...preferredOrder.filter(tag => catalogTags.includes(tag)),
+    ...catalogTags
+      .filter(tag => !preferredOrder.includes(tag))
+      .sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }))
+  ];
+
+  filterRow.innerHTML = [
+    '<button class="chip active" data-filter="all">All</button>',
+    ...orderedTags.map(tag =>
+      `<button class="chip" data-filter="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`
+    ),
+    '<button class="chip" data-filter="with-lyrics">With lyrics</button>'
+  ].join('');
+}
+
 function renderGenreBars() {
   const counts = {};
   tracks.forEach(track => {
@@ -66,6 +92,7 @@ function renderGenreBars() {
 }
 
 function render() {
+  renderLibraryFilters();
   $('#featured-grid').innerHTML = tracks.slice(0, 5).map(card).join('');
   $('#library-grid').innerHTML = tracks.map(card).join('');
   $('#metric-tracks').textContent = String(tracks.length);
@@ -195,9 +222,10 @@ function applyLibraryVisibility() {
 
   $$('#library-grid .album-card').forEach(cardElement => {
     const track = tracks[Number(cardElement.dataset.index)];
+    const tags = Array.isArray(track.tags) ? track.tags : [track.genre];
     const filterMatches =
       activeFilter === 'all' ||
-      activeFilter === track.genre ||
+      tags.includes(activeFilter) ||
       (activeFilter === 'with-lyrics' && Boolean(track.lyrics));
     const queryMatches = !query || track.searchText.includes(query);
     const visible = filterMatches && queryMatches;
