@@ -4,6 +4,8 @@
 <script>
 const result=document.querySelector('#result');
 const frame=document.querySelector('#app');
+const READY=['ACCESSIBILITY','READY'].join(' ');
+const ERROR=['ACCESSIBILITY','ERROR'].join(' ');
 frame.addEventListener('load',()=>setTimeout(()=>{
   try{
     const doc=frame.contentDocument;
@@ -17,7 +19,7 @@ frame.addEventListener('load',()=>setTimeout(()=>{
     if(!doc.querySelector('#visual-card-modal [role="dialog"][aria-modal="true"]')) failures.push('visual-dialog');
     const unlabeled=[...doc.querySelectorAll('button')].filter(button=>!button.textContent.trim()&&!button.getAttribute('aria-label'));
     if(unlabeled.length) failures.push('unlabeled-buttons');
-    result.textContent=failures.length?`ACCESSIBILITY ERROR ${failures.join(' ')}`:'ACCESSIBILITY READY';
-  }catch(error){result.textContent=`ACCESSIBILITY ERROR ${error.message}`}
+    result.textContent=failures.length?`${ERROR} ${failures.join(' ')}`:READY;
+  }catch(error){result.textContent=`${ERROR} ${error.message}`}
 },5000));
 </script>
