@@ -194,6 +194,7 @@ jobs:
           ! grep -q 'ACCESSIBILITY ERROR' /tmp/accessibility.html
 
           chrome_dump 17000 'http://127.0.0.1:4173/tests/layout-regression.html' > /tmp/layout.html
+          grep -o 'LAYOUT [^<]*' /tmp/layout.html || true
           grep -q 'LAYOUT READY' /tmp/layout.html
           ! grep -q 'LAYOUT ERROR' /tmp/layout.html
           grep -q '"appReady":true' /tmp/layout.html
