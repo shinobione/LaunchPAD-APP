@@ -59,6 +59,18 @@ jobs:
           ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-favorites.html
 
           google-chrome --headless=new --no-sandbox --disable-gpu \
+            --user-data-dir=/tmp/launchpad-memory-profile \
+            --virtual-time-budget=10000 --dump-dom \
+            'http://127.0.0.1:4173/tests/memory-smoke.html' > /tmp/launchpad-memory.html
+
+          grep -q '<strong id="player-title">Ghost Signal</strong>' /tmp/launchpad-memory.html
+          grep -q 'data-favorite-toggle="ghost-signal"' /tmp/launchpad-memory.html
+          grep -q 'Close to You' /tmp/launchpad-memory.html
+          grep -q 'data-repeat="one"' /tmp/launchpad-memory.html
+          grep -q 'class="chip active" data-visual="pulse"' /tmp/launchpad-memory.html
+          ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-memory.html
+
+          google-chrome --headless=new --no-sandbox --disable-gpu \
             --virtual-time-budget=9000 --dump-dom \
             'http://127.0.0.1:4173/#album=coal-to-diamond' > /tmp/launchpad-album.html
 
