@@ -1,5 +1,5 @@
 importScripts('./js/build-config.js');
-const RELEASE = 'r2-mobile-playback-performance-1';
+const RELEASE = 'r2-thumbnail-one-tap-media-1';
 const VERSION = `${globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev'}-${RELEASE}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;

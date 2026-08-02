@@ -1,11 +1,12 @@
 const TRACKS_PREFIX = "tracks/";
 const MANIFEST_NAME = "manifest.json";
+const CATALOG_INDEX_KEY = "catalog/index.json";
 const MAX_LIST_PAGES = 20;
 const MAX_LYRICS_BYTES = 1024 * 1024;
-const ASSET_KINDS = ["cover", "audio", "video", "lyrics"];
+const ASSET_KINDS = ["cover", "thumbnail", "audio", "video", "lyrics"];
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     try {
@@ -23,22 +24,29 @@ export default {
         return jsonResponse({
           ok: true,
           service: "launchpad-media",
-          version: 2.1,
+          version: 2.2,
           access: "public-read-only",
           canonicalTracks: manifests,
           routes: {
             tracks: "/tracks",
             track: "/tracks/{slug}",
-            media: "/media/{slug}/{cover|audio|video|lyrics}/{filename}",
+            media: "/media/{slug}/{cover|thumbnail|audio|video|lyrics}/{filename}",
           },
         });
       }
 
       if (url.pathname === "/tracks") {
+        const cache = caches.default;
+        const cacheKey = new Request(url.origin + "/tracks", request);
+        const cached = await cache.match(cacheKey);
+        if (cached) return cached;
+
         const tracks = await listPublishedTracks(env.MEDIA_BUCKET, url.origin, false);
-        return jsonResponse({ ok: true, count: tracks.length, tracks }, 200, {
-          "Cache-Control": "public, max-age=30, stale-while-revalidate=300",
+        const response = jsonResponse({ ok: true, count: tracks.length, tracks }, 200, {
+          "Cache-Control": "public, max-age=60, s-maxage=60, stale-while-revalidate=600",
         });
+        ctx?.waitUntil(cache.put(cacheKey, response.clone()));
+        return response;
       }
 
       const trackMatch = url.pathname.match(/^\/tracks\/([a-z0-9][a-z0-9-]{0,119})$/);
@@ -46,11 +54,11 @@ export default {
         const track = await getPublishedTrack(env.MEDIA_BUCKET, trackMatch[1], url.origin, true);
         if (!track) return jsonResponse({ ok: false, error: "Track introuvable." }, 404);
         return jsonResponse({ ok: true, track }, 200, {
-          "Cache-Control": "public, max-age=30, stale-while-revalidate=300",
+          "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
         });
       }
 
-      const mediaMatch = url.pathname.match(/^\/media\/([a-z0-9][a-z0-9-]{0,119})\/(cover|audio|video|lyrics)(?:\/([^/]+))?$/);
+      const mediaMatch = url.pathname.match(/^\/media\/([a-z0-9][a-z0-9-]{0,119})\/(cover|thumbnail|audio|video|lyrics)(?:\/([^/]+))?$/);
       if (mediaMatch) {
         const slug = mediaMatch[1];
         const kind = mediaMatch[2];
@@ -80,11 +88,19 @@ export default {
 };
 
 async function listPublishedTracks(bucket, origin, includeLyrics) {
-  const objects = await listAllObjects(bucket, TRACKS_PREFIX);
-  const manifestObjects = objects.filter(object => object.key.endsWith("/" + MANIFEST_NAME));
-  const tracks = (await Promise.all(manifestObjects.map(async object => {
-    const slug = object.key.slice(TRACKS_PREFIX.length, -(MANIFEST_NAME.length + 1));
-    const manifest = await readManifest(bucket, slug);
+  const index = await readCatalogIndex(bucket);
+  let manifests = index?.tracks;
+
+  if (!Array.isArray(manifests)) {
+    const objects = await listAllObjects(bucket, TRACKS_PREFIX);
+    const manifestObjects = objects.filter(object => object.key.endsWith("/" + MANIFEST_NAME));
+    manifests = (await Promise.all(manifestObjects.map(async object => {
+      const slug = object.key.slice(TRACKS_PREFIX.length, -(MANIFEST_NAME.length + 1));
+      return readManifest(bucket, slug);
+    }))).filter(Boolean);
+  }
+
+  const tracks = (await Promise.all(manifests.map(async manifest => {
     if (!manifest || manifest.status !== "published") return null;
     return publicTrack(manifest, bucket, origin, includeLyrics);
   }))).filter(Boolean);
@@ -118,6 +134,17 @@ async function publicTrack(manifest, bucket, origin, includeLyrics) {
       url: mediaUrl(origin, manifest, kind, filename),
     }];
   }));
+
+  // The catalog uses a 512px WebP thumbnail for immediate UI rendering.
+  // The original artwork remains available through fullUrl for detailed views.
+  if (assets.thumbnail && assets.cover) {
+    assets.cover = {
+      ...assets.thumbnail,
+      originalName: assets.cover.originalName,
+      fullUrl: assets.cover.url,
+      optimized: true,
+    };
+  }
 
   let lyrics = null;
   let timestampsAvailable = false;
@@ -175,6 +202,18 @@ function mediaUrl(origin, manifest, kind, filename) {
   return url.href;
 }
 
+async function readCatalogIndex(bucket) {
+  const object = await bucket.get(CATALOG_INDEX_KEY);
+  if (!object) return null;
+  try {
+    const index = JSON.parse(await object.text());
+    if (index?.schemaVersion !== 1 || !Array.isArray(index.tracks)) return null;
+    return index;
+  } catch {
+    return null;
+  }
+}
+
 async function readManifest(bucket, slug) {
   const object = await bucket.get(trackPrefix(slug) + MANIFEST_NAME);
   if (!object) return null;
@@ -218,6 +257,8 @@ async function streamR2Object(request, bucket, key) {
   headers.set("ETag", object.httpEtag);
   headers.set("Accept-Ranges", "bytes");
   headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("Cross-Origin-Resource-Policy", "cross-origin");
+  headers.set("Timing-Allow-Origin", "*");
   headers.set("Cache-Control", "public, max-age=31536000, immutable");
 
   const body = request.method === "HEAD" ? null : object.body;

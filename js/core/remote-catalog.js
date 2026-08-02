@@ -81,13 +81,15 @@ function mapRemoteTrack(item) {
   const languages = normalizeLanguages(item.languages);
   const albumId = item.album?.id || 'singles';
   const album = item.album?.title || 'Singles';
+  const cover = item.assets.cover?.url || FALLBACK_COVER;
 
   const track = {
     id: item.slug,
     title: item.title || item.slug,
     file: item.assets.audio.url,
     audioContentType: item.assets.audio?.contentType || null,
-    cover: item.assets.cover?.url || FALLBACK_COVER,
+    cover,
+    fullCover: item.assets.cover?.fullUrl || cover,
     coverContentType: item.assets.cover?.contentType || null,
     coverFilename: item.assets.cover?.filename || null,
     genre: genres[0],
@@ -136,7 +138,7 @@ export async function fetchRemoteTracks({
     const response = await fetch(`${normalizeApiUrl(apiUrl)}/tracks`, {
       method: 'GET',
       headers: { Accept: 'application/json' },
-      cache: 'no-store',
+      cache: 'default',
       signal: controller.signal
     });
 
