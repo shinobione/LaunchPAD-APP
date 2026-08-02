@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - refactor/visual-safety-seo-accessibility
+  pull_request:
 
 permissions:
   contents: read
