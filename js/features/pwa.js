@@ -7,6 +7,31 @@ function ensureStylesheet() {
   document.head.appendChild(link);
 }
 
+function ensureMeta(name, content) {
+  let meta = document.head.querySelector(`meta[name="${name}"]`);
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.name = name;
+    document.head.appendChild(meta);
+  }
+  meta.content = content;
+}
+
+export function preparePWAHead() {
+  if (!document.head.querySelector('link[rel="manifest"]')) {
+    const manifest = document.createElement('link');
+    manifest.rel = 'manifest';
+    manifest.href = 'manifest.webmanifest?v=20260802-1';
+    document.head.appendChild(manifest);
+  }
+
+  ensureMeta('theme-color', '#07040f');
+  ensureMeta('mobile-web-app-capable', 'yes');
+  ensureMeta('apple-mobile-web-app-capable', 'yes');
+  ensureMeta('apple-mobile-web-app-status-bar-style', 'black-translucent');
+  ensureMeta('apple-mobile-web-app-title', 'SHINOBIWAN');
+}
+
 function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches
     || window.navigator.standalone === true;
@@ -56,6 +81,7 @@ function createInstallControl() {
 export function initPWA() {
   if (window.__shinobiPWAReady) return;
   window.__shinobiPWAReady = true;
+  preparePWAHead();
   ensureStylesheet();
 
   const notify = createToast();
@@ -128,25 +154,28 @@ export function initPWA() {
     }
   });
 
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', async () => {
-      try {
-        registration = await navigator.serviceWorker.register('./sw.js', {
-          scope: './',
-          updateViaCache: 'none'
-        });
+  async function registerServiceWorker() {
+    try {
+      registration = await navigator.serviceWorker.register('./sw.js', {
+        scope: './',
+        updateViaCache: 'none'
+      });
 
-        if (registration.waiting && navigator.serviceWorker.controller) setUpdateState();
-        registration.addEventListener('updatefound', () => {
-          const worker = registration.installing;
-          worker?.addEventListener('statechange', () => {
-            if (worker.state === 'installed' && navigator.serviceWorker.controller) setUpdateState();
-          });
+      if (registration.waiting && navigator.serviceWorker.controller) setUpdateState();
+      registration.addEventListener('updatefound', () => {
+        const worker = registration.installing;
+        worker?.addEventListener('statechange', () => {
+          if (worker.state === 'installed' && navigator.serviceWorker.controller) setUpdateState();
         });
-      } catch (error) {
-        console.warn('PWA service worker registration failed', error);
-      }
-    }, { once: true });
+      });
+    } catch (error) {
+      console.warn('PWA service worker registration failed', error);
+    }
+  }
+
+  if ('serviceWorker' in navigator) {
+    if (document.readyState === 'complete') registerServiceWorker();
+    else window.addEventListener('load', registerServiceWorker, { once: true });
 
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
