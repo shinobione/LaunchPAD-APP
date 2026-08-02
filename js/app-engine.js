@@ -33,8 +33,16 @@ async function boot() {
   installEarlyFavicon();
   installCriticalStyles();
 
-  const { prepareLibraryMemoryShell } = await import('./features/library-memory-shell.js?v=20260802-wave3');
+  const [
+    { prepareLibraryMemoryShell },
+    pwa
+  ] = await Promise.all([
+    import('./features/library-memory-shell.js?v=20260802-wave3'),
+    import('./features/pwa.js?v=20260802-wave4')
+  ]);
+
   prepareLibraryMemoryShell();
+  pwa.preparePWAHead();
 
   await import('./app-main.js?v=20260802-wave3');
 
@@ -59,6 +67,7 @@ async function boot() {
 
   const audio = document.querySelector('#audio');
   initLibraryMemory({ audio });
+  pwa.initPWA();
   initAudioFocus({ audio });
   initLyricsWakeLock({ audio });
 }
