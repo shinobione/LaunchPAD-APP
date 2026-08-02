@@ -48,7 +48,9 @@ jobs:
           const worker = fs.readFileSync('sw.js', 'utf8');
           if (!worker.includes("request.destination === 'audio'")) fail('Audio requests are not explicitly excluded from cache.');
           if (!worker.includes("request.headers.has('range')")) fail('Range requests are not explicitly excluded from cache.');
-          console.log('PWA manifest and audio cache exclusions are valid.');
+          if (!worker.includes("'./js/features/visual-card.js'")) fail('Visual Card module is missing from the offline shell.');
+          if (!worker.includes("'./css/visual-card.css'")) fail('Visual Card stylesheet is missing from the offline shell.');
+          console.log('PWA manifest, Visual Card shell and audio cache exclusions are valid.');
           NODE
 
       - name: Validate offline service worker behavior
@@ -70,6 +72,8 @@ jobs:
           grep -q 'id="view-favorites"' /tmp/launchpad-home.html
           grep -q 'data-favorite-toggle="ghost-signal"' /tmp/launchpad-home.html
           grep -q 'data-favorite-current="true"' /tmp/launchpad-home.html
+          grep -q 'id="visual-card-modal"' /tmp/launchpad-home.html
+          grep -q 'data-visual-card-action="open"' /tmp/launchpad-home.html
           grep -q 'rel="manifest" href="manifest.webmanifest' /tmp/launchpad-home.html
           grep -q 'id="pwa-install-control"' /tmp/launchpad-home.html
           grep -q '14 TRACKS' /tmp/launchpad-home.html
@@ -96,6 +100,13 @@ jobs:
           grep -q 'data-repeat="one"' /tmp/launchpad-memory.html
           grep -q 'class="chip active" data-visual="pulse"' /tmp/launchpad-memory.html
           ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-memory.html
+
+          google-chrome --headless=new --no-sandbox --disable-gpu \
+            --virtual-time-budget=20000 --dump-dom \
+            'http://127.0.0.1:4173/tests/visual-card-smoke.html' > /tmp/launchpad-visual-card.html
+
+          grep -q 'VISUAL CARD READY 1080x1080 GHOST SIGNAL' /tmp/launchpad-visual-card.html
+          ! grep -q 'VISUAL CARD ERROR' /tmp/launchpad-visual-card.html
 
           google-chrome --headless=new --no-sandbox --disable-gpu \
             --virtual-time-budget=9000 --dump-dom \
