@@ -24,27 +24,54 @@ jobs:
           node-version: 22
 
       - name: Check JavaScript syntax
-        run: find js scripts -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
+        run: |
+          find js scripts -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
+          node --check sw.js
 
       - name: Validate catalog and referenced files
         run: npm run validate:catalog
+
+      - name: Validate PWA manifest
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const manifest = JSON.parse(fs.readFileSync('manifest.webmanifest', 'utf8'));
+          const fail = message => { throw new Error(message); };
+          if (!manifest.name || !manifest.short_name) fail('Manifest names are required.');
+          if (!manifest.start_url || !manifest.scope) fail('Manifest start_url and scope are required.');
+          if (!['standalone', 'fullscreen', 'minimal-ui'].includes(manifest.display)) fail('Manifest display mode is not installable.');
+          for (const size of ['192x192', '512x512']) {
+            const icon = manifest.icons?.find(item => String(item.sizes).split(/\s+/).includes(size));
+            if (!icon) fail(`Missing ${size} icon.`);
+            if (!fs.existsSync(icon.src)) fail(`Missing icon file ${icon.src}.`);
+          }
+          const worker = fs.readFileSync('sw.js', 'utf8');
+          if (!worker.includes("request.destination === 'audio'")) fail('Audio requests are not explicitly excluded from cache.');
+          if (!worker.includes("request.headers.has('range')")) fail('Range requests are not explicitly excluded from cache.');
+          console.log('PWA manifest and audio cache exclusions are valid.');
+          NODE
+
+      - name: Validate offline service worker behavior
+        run: node scripts/test-service-worker.mjs
 
       - name: Smoke test in headless Chrome
         shell: bash
         run: |
           python3 -m http.server 4173 >/tmp/launchpad-server.log 2>&1 &
           SERVER_PID=$!
-          trap 'kill $SERVER_PID' EXIT
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
           sleep 2
 
           google-chrome --headless=new --no-sandbox --disable-gpu \
-            --virtual-time-budget=9000 --dump-dom \
+            --virtual-time-budget=10000 --dump-dom \
             'http://127.0.0.1:4173/#home' > /tmp/launchpad-home.html
 
           grep -q 'id="queue-panel"' /tmp/launchpad-home.html
           grep -q 'id="view-favorites"' /tmp/launchpad-home.html
           grep -q 'data-favorite-toggle="ghost-signal"' /tmp/launchpad-home.html
           grep -q 'data-favorite-current="true"' /tmp/launchpad-home.html
+          grep -q 'rel="manifest" href="manifest.webmanifest' /tmp/launchpad-home.html
+          grep -q 'id="pwa-install-control"' /tmp/launchpad-home.html
           grep -q '14 TRACKS' /tmp/launchpad-home.html
           grep -q 'Ghost Signal' /tmp/launchpad-home.html
           ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-home.html
