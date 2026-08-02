@@ -86,10 +86,71 @@ function colorItem(label, color) {
   `;
 }
 
+function normaliseList(value) {
+  return Array.isArray(value) ? value.filter(Boolean) : [];
+}
+
+function remoteSignalSection(track) {
+  const metadata = track.remoteMetadata;
+  if (!metadata) return '';
+
+  const moods = normaliseList(metadata.moods);
+  const themes = normaliseList(metadata.themes);
+  const year = Number.isInteger(metadata.year) ? String(metadata.year) : 'Unknown';
+  const type = metadata.type || 'Release';
+  const era = metadata.era || 'Independent catalog';
+  const energy = metadata.energy || 'Unspecified';
+  const timedLyrics = metadata.timestampsAvailable ? 'Timestamped' : 'Not timestamped';
+  const sourceLabel = track.remoteAvailable ? 'R2 + bundled fallback' : 'Cloudflare R2';
+
+  return `
+    <section class="track-detail-section track-detail-cloud-section" aria-labelledby="track-detail-cloud-heading">
+      <div class="track-detail-section-head">
+        <div>
+          <span class="eyebrow">LIVE CATALOG SIGNAL</span>
+          <h2 id="track-detail-cloud-heading">R2 release profile</h2>
+        </div>
+        <span class="pill track-detail-cloud-pill">CLOUDFLARE R2</span>
+      </div>
+
+      <div class="track-detail-data-grid track-detail-cloud-grid">
+        ${metadataItem('Release year', year)}
+        ${metadataItem('Release type', type)}
+        ${metadataItem('Era', era)}
+        ${metadataItem('Energy', energy)}
+        ${metadataItem('Lyrics timing', timedLyrics)}
+        ${metadataItem('Media source', sourceLabel)}
+      </div>
+
+      ${moods.length || themes.length ? `
+        <div class="track-detail-signal-groups">
+          ${moods.length ? `
+            <div class="track-detail-signal-group">
+              <span>Moods</span>
+              <div class="track-detail-signal-chips">
+                ${moods.map(item => `<span>${escapeHtml(item)}</span>`).join('')}
+              </div>
+            </div>
+          ` : ''}
+          ${themes.length ? `
+            <div class="track-detail-signal-group">
+              <span>Themes</span>
+              <div class="track-detail-signal-chips">
+                ${themes.map(item => `<span>${escapeHtml(item)}</span>`).join('')}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      ` : ''}
+    </section>
+  `;
+}
+
 export function initTrackDetail({ audio = document.querySelector('#audio') } = {}) {
   if (window.__shinobiTrackDetailReady) return;
   window.__shinobiTrackDetailReady = true;
   ensureStylesheet('css/track-detail.css');
+  ensureStylesheet('css/r2-track-details.css');
 
   const view = ensureView();
   const coverPaths = new Map(tracks.map(track => [new URL(track.cover, window.location.href).pathname, track]));
@@ -136,19 +197,21 @@ export function initTrackDetail({ audio = document.querySelector('#audio') } = {
     const languages = Array.isArray(track.languages) && track.languages.length
       ? track.languages.join(', ')
       : 'Unavailable';
-    const lyricsLabel = track.lyrics ? 'Synchronized lyrics available' : 'Lyrics unavailable';
+    const lyricsLabel = track.lyrics ? 'Lyrics available' : 'Lyrics unavailable';
     const confidence = Number.isFinite(track.keyConfidence)
       ? `${Math.round(track.keyConfidence * 100)}% analysis confidence`
       : 'Unavailable';
+    const isRemoteSignal = Boolean(track.remoteMetadata);
 
     currentTrackId = track.id;
     view.innerHTML = `
       <button type="button" class="track-detail-back text-button" data-track-detail-action="back">← Back</button>
 
-      <article class="track-detail-hero">
+      <article class="track-detail-hero${isRemoteSignal ? ' has-cloud-signal' : ''}">
         <div class="track-detail-artwork-shell">
           <img class="track-detail-cover" src="${escapeHtml(track.cover)}" alt="Cover art for ${escapeHtml(track.title)}">
           <span class="track-detail-status" data-status="${explicitStatus(track.explicit)}">${escapeHtml(explicitLabel(track.explicit))}</span>
+          ${isRemoteSignal ? '<span class="track-detail-cloud-badge">R2 LIVE</span>' : ''}
         </div>
 
         <div class="track-detail-copy">
@@ -165,11 +228,13 @@ export function initTrackDetail({ audio = document.querySelector('#audio') } = {
 
           <div class="track-detail-actions">
             <button type="button" class="primary" data-play-index="${index}">▶ Play track</button>
-            ${track.lyrics ? `<button type="button" class="secondary" data-track-detail-route="lyrics">Open lyrics</button>` : ''}
+            ${track.lyrics ? '<button type="button" class="secondary" data-track-detail-route="lyrics">Open lyrics</button>' : ''}
             <button type="button" class="secondary" data-track-detail-action="share">Share track ↗</button>
           </div>
         </div>
       </article>
+
+      ${remoteSignalSection(track)}
 
       <section class="track-detail-section" aria-labelledby="track-detail-dna-heading">
         <div class="track-detail-section-head">
