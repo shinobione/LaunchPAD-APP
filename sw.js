@@ -102,7 +102,7 @@ async function trimCache(cacheName, maximumEntries) {
 
 async function cacheFirst(request, cacheName, maximumEntries = 80) {
   const cache = await caches.open(cacheName);
-  const cached = await cache.match(request);
+  const cached = await cache.match(request, { ignoreSearch: true });
   if (cached) return cached;
 
   const response = await fetch(request);
@@ -115,8 +115,8 @@ async function cacheFirst(request, cacheName, maximumEntries = 80) {
 
 async function staleWhileRevalidate(request) {
   const cache = await caches.open(RUNTIME_CACHE);
-  const cached = await cache.match(request);
-  const network = fetch(request)
+  const cached = await cache.match(request, { ignoreSearch: true });
+  const networkPromise = fetch(request)
     .then(async response => {
       if (response.ok) {
         await cache.put(request, response.clone());
@@ -126,7 +126,8 @@ async function staleWhileRevalidate(request) {
     })
     .catch(() => null);
 
-  return cached || network || new Response('', { status: 504, statusText: 'Offline' });
+  if (cached) return cached;
+  return (await networkPromise) || new Response('', { status: 504, statusText: 'Offline' });
 }
 
 async function navigationResponse(request) {
@@ -138,8 +139,9 @@ async function navigationResponse(request) {
     }
     return response;
   } catch {
-    return (await caches.match('./index.html'))
-      || (await caches.match('./'))
+    const shell = await caches.open(SHELL_CACHE);
+    return (await shell.match('./index.html', { ignoreSearch: true }))
+      || (await shell.match('./', { ignoreSearch: true }))
       || new Response('SHINOBIWAN Launchpad is offline.', {
         status: 503,
         headers: { 'Content-Type': 'text/plain; charset=utf-8' }
