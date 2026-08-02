@@ -65,6 +65,24 @@ function installManifesto() {
   }
 }
 
+function installGoldenAboutLogo() {
+  const aboutCard = document.querySelector('#view-about .about-card');
+  if (!aboutCard || aboutCard.querySelector('.about-golden-logo-wrap')) return;
+
+  const logoWrap = document.createElement('div');
+  logoWrap.className = 'about-golden-logo-wrap';
+  logoWrap.innerHTML = `
+    <img
+      class="about-golden-logo"
+      src="assets/ShinoBiWan-Golden-LOGO-clean.svg?v=20260802-1"
+      alt="SHINOBIWAN golden logo"
+      loading="lazy"
+      decoding="async"
+    >
+  `;
+  aboutCard.appendChild(logoWrap);
+}
+
 function groupTracksByAlbum() {
   const albums = new Map();
 
@@ -177,5 +195,6 @@ export function installContentV4() {
   installFavicon();
   removeVisibleSearch();
   installManifesto();
+  installGoldenAboutLogo();
   renderAlbums();
 }
