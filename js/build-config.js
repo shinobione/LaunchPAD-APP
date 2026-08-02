@@ -2,7 +2,7 @@
   const config = Object.freeze({
     id: '20260802-wave14',
     cache: 'shinobi-launchpad-v11',
-    revision: 'r2-remote-catalog-1'
+    revision: 'hero-first-paint-1'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
