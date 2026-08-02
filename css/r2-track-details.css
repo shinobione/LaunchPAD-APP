@@ -1,0 +1,108 @@
+.track-detail-hero.has-cloud-signal{
+  border-color:color-mix(in srgb,#1db954 30%,rgba(255,255,255,.09));
+  box-shadow:
+    0 28px 80px rgba(0,0,0,.3),
+    0 0 55px color-mix(in srgb,#1db954 10%,transparent);
+}
+
+.track-detail-cloud-badge{
+  position:absolute;
+  left:14px;
+  bottom:14px;
+  padding:7px 11px;
+  border:1px solid rgba(29,185,84,.34);
+  border-radius:999px;
+  color:#7ff0a6;
+  background:rgba(4,18,10,.84);
+  backdrop-filter:blur(16px);
+  box-shadow:0 0 26px rgba(29,185,84,.16);
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.12em;
+}
+
+.track-detail-cloud-section{
+  position:relative;
+  overflow:hidden;
+  border-color:rgba(29,185,84,.18);
+  background:
+    radial-gradient(circle at 100% 0,rgba(29,185,84,.13),transparent 35%),
+    linear-gradient(145deg,rgba(29,185,84,.045),rgba(255,255,255,.015));
+}
+
+.track-detail-cloud-section::before{
+  content:"";
+  position:absolute;
+  inset:0 auto 0 0;
+  width:3px;
+  background:linear-gradient(180deg,#1db954,transparent);
+}
+
+.track-detail-cloud-pill{
+  color:#7ff0a6;
+  border-color:rgba(29,185,84,.28);
+  background:rgba(29,185,84,.08);
+}
+
+.track-detail-cloud-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+
+.track-detail-signal-groups{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin-top:14px;
+}
+
+.track-detail-signal-group{
+  min-width:0;
+  padding:16px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:16px;
+  background:rgba(255,255,255,.022);
+}
+
+.track-detail-signal-group>span{
+  display:block;
+  margin-bottom:11px;
+  color:#776c84;
+  font-size:7px;
+  font-weight:800;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+
+.track-detail-signal-chips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+}
+
+.track-detail-signal-chips span{
+  padding:7px 10px;
+  border:1px solid rgba(29,185,84,.2);
+  border-radius:999px;
+  color:#dff8e7;
+  background:rgba(29,185,84,.07);
+  font-size:9px;
+  line-height:1.25;
+}
+
+@media(max-width:900px){
+  .track-detail-cloud-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media(max-width:760px){
+  .track-detail-signal-groups{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:430px){
+  .track-detail-cloud-grid{
+    grid-template-columns:1fr;
+  }
+}
