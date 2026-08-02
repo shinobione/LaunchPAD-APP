@@ -114,12 +114,14 @@ async function cacheFirst(request, cacheName, maximumEntries = 80) {
 }
 
 async function staleWhileRevalidate(request) {
-  const cache = await caches.open(RUNTIME_CACHE);
-  const cached = await cache.match(request, { ignoreSearch: true });
+  const runtime = await caches.open(RUNTIME_CACHE);
+  const shell = await caches.open(SHELL_CACHE);
+  const cached = (await runtime.match(request, { ignoreSearch: true }))
+    || (await shell.match(request, { ignoreSearch: true }));
   const networkPromise = fetch(request)
     .then(async response => {
       if (response.ok) {
-        await cache.put(request, response.clone());
+        await runtime.put(request, response.clone());
         trimCache(RUNTIME_CACHE, 120);
       }
       return response;
