@@ -1,16 +1,23 @@
 const TRACKS_PREFIX = "tracks/";
 const MANIFEST_NAME = "manifest.json";
+const CATALOG_INDEX_KEY = "catalog/index.json";
+const BRAND_ICON_PATH = "/branding/shinobiwan-256.png";
+const BRAND_ICON_BASE64 = "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";
 const MAX_LIST_PAGES = 20;
 const MAX_LYRICS_BYTES = 1024 * 1024;
-const ASSET_KINDS = ["cover", "audio", "video", "lyrics"];
+const ASSET_KINDS = ["cover", "thumbnail", "audio", "video", "lyrics"];
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     try {
       if (request.method === "OPTIONS") {
         return new Response(null, { status: 204, headers: corsHeaders() });
+      }
+
+      if (url.pathname === BRAND_ICON_PATH && ["GET", "HEAD"].includes(request.method)) {
+        return brandingIconResponse(request);
       }
 
       if (!["GET", "HEAD"].includes(request.method)) {
@@ -23,22 +30,30 @@ export default {
         return jsonResponse({
           ok: true,
           service: "launchpad-media",
-          version: 2.1,
+          version: 2.2,
           access: "public-read-only",
           canonicalTracks: manifests,
           routes: {
             tracks: "/tracks",
             track: "/tracks/{slug}",
-            media: "/media/{slug}/{cover|audio|video|lyrics}/{filename}",
+            media: "/media/{slug}/{cover|thumbnail|audio|video|lyrics}/{filename}",
+            branding: BRAND_ICON_PATH,
           },
         });
       }
 
       if (url.pathname === "/tracks") {
+        const cache = caches.default;
+        const cacheKey = new Request(url.origin + "/tracks", request);
+        const cached = await cache.match(cacheKey);
+        if (cached) return cached;
+
         const tracks = await listPublishedTracks(env.MEDIA_BUCKET, url.origin, false);
-        return jsonResponse({ ok: true, count: tracks.length, tracks }, 200, {
-          "Cache-Control": "public, max-age=30, stale-while-revalidate=300",
+        const response = jsonResponse({ ok: true, count: tracks.length, tracks }, 200, {
+          "Cache-Control": "public, max-age=60, s-maxage=60, stale-while-revalidate=600",
         });
+        ctx?.waitUntil(cache.put(cacheKey, response.clone()));
+        return response;
       }
 
       const trackMatch = url.pathname.match(/^\/tracks\/([a-z0-9][a-z0-9-]{0,119})$/);
@@ -46,11 +61,11 @@ export default {
         const track = await getPublishedTrack(env.MEDIA_BUCKET, trackMatch[1], url.origin, true);
         if (!track) return jsonResponse({ ok: false, error: "Track introuvable." }, 404);
         return jsonResponse({ ok: true, track }, 200, {
-          "Cache-Control": "public, max-age=30, stale-while-revalidate=300",
+          "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
         });
       }
 
-      const mediaMatch = url.pathname.match(/^\/media\/([a-z0-9][a-z0-9-]{0,119})\/(cover|audio|video|lyrics)(?:\/([^/]+))?$/);
+      const mediaMatch = url.pathname.match(/^\/media\/([a-z0-9][a-z0-9-]{0,119})\/(cover|thumbnail|audio|video|lyrics)(?:\/([^/]+))?$/);
       if (mediaMatch) {
         const slug = mediaMatch[1];
         const kind = mediaMatch[2];
@@ -80,11 +95,19 @@ export default {
 };
 
 async function listPublishedTracks(bucket, origin, includeLyrics) {
-  const objects = await listAllObjects(bucket, TRACKS_PREFIX);
-  const manifestObjects = objects.filter(object => object.key.endsWith("/" + MANIFEST_NAME));
-  const tracks = (await Promise.all(manifestObjects.map(async object => {
-    const slug = object.key.slice(TRACKS_PREFIX.length, -(MANIFEST_NAME.length + 1));
-    const manifest = await readManifest(bucket, slug);
+  const index = await readCatalogIndex(bucket);
+  let manifests = index?.tracks;
+
+  if (!Array.isArray(manifests)) {
+    const objects = await listAllObjects(bucket, TRACKS_PREFIX);
+    const manifestObjects = objects.filter(object => object.key.endsWith("/" + MANIFEST_NAME));
+    manifests = (await Promise.all(manifestObjects.map(async object => {
+      const slug = object.key.slice(TRACKS_PREFIX.length, -(MANIFEST_NAME.length + 1));
+      return readManifest(bucket, slug);
+    }))).filter(Boolean);
+  }
+
+  const tracks = (await Promise.all(manifests.map(async manifest => {
     if (!manifest || manifest.status !== "published") return null;
     return publicTrack(manifest, bucket, origin, includeLyrics);
   }))).filter(Boolean);
@@ -118,6 +141,17 @@ async function publicTrack(manifest, bucket, origin, includeLyrics) {
       url: mediaUrl(origin, manifest, kind, filename),
     }];
   }));
+
+  // The catalog uses a 512px WebP thumbnail for immediate UI rendering.
+  // The original artwork remains available through fullUrl for detailed views.
+  if (assets.thumbnail && assets.cover) {
+    assets.cover = {
+      ...assets.thumbnail,
+      originalName: assets.cover.originalName,
+      fullUrl: assets.cover.url,
+      optimized: true,
+    };
+  }
 
   let lyrics = null;
   let timestampsAvailable = false;
@@ -175,6 +209,18 @@ function mediaUrl(origin, manifest, kind, filename) {
   return url.href;
 }
 
+async function readCatalogIndex(bucket) {
+  const object = await bucket.get(CATALOG_INDEX_KEY);
+  if (!object) return null;
+  try {
+    const index = JSON.parse(await object.text());
+    if (index?.schemaVersion !== 1 || !Array.isArray(index.tracks)) return null;
+    return index;
+  } catch {
+    return null;
+  }
+}
+
 async function readManifest(bucket, slug) {
   const object = await bucket.get(trackPrefix(slug) + MANIFEST_NAME);
   if (!object) return null;
@@ -218,6 +264,8 @@ async function streamR2Object(request, bucket, key) {
   headers.set("ETag", object.httpEtag);
   headers.set("Accept-Ranges", "bytes");
   headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("Cross-Origin-Resource-Policy", "cross-origin");
+  headers.set("Timing-Allow-Origin", "*");
   headers.set("Cache-Control", "public, max-age=31536000, immutable");
 
   const body = request.method === "HEAD" ? null : object.body;
@@ -231,6 +279,23 @@ async function streamR2Object(request, bucket, key) {
 
   headers.set("Content-Length", String(object.size));
   return new Response(body, { status: 200, headers });
+}
+
+let brandIconBytes = null;
+function decodeBase64(value) {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes;
+}
+function brandingIconResponse(request) {
+  brandIconBytes ||= decodeBase64(BRAND_ICON_BASE64);
+  const headers = new Headers(corsHeaders());
+  headers.set("Content-Type", "image/png");
+  headers.set("Content-Length", String(brandIconBytes.byteLength));
+  headers.set("Cache-Control", "public, max-age=31536000, immutable");
+  headers.set("Cross-Origin-Resource-Policy", "cross-origin");
+  return new Response(request.method === "HEAD" ? null : brandIconBytes, { status: 200, headers });
 }
 
 function parseRangeHeader(value) {
