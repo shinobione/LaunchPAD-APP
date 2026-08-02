@@ -3,7 +3,7 @@ export function createVisualController({ audio, $, getAccent }) {
   let analyser;
   let source;
   let frame;
-  let mode = 'circle';
+  let mode = 'nebula';
 
   const EXTRA_MODES = [
     { id: 'vortex', label: 'Vortex' },
@@ -413,7 +413,7 @@ export function createVisualController({ audio, $, getAccent }) {
   function start() {
     cancelAnimationFrame(frame);
     const loop = () => {
-      draw($('#home-visualizer'), 'orbital');
+      draw($('#home-visualizer'), 'nebula');
       draw($('#lab-visualizer'), mode);
       frame = requestAnimationFrame(loop);
     };
@@ -476,6 +476,7 @@ export function createVisualController({ audio, $, getAccent }) {
   installModeButtons();
 
   document.querySelectorAll('[data-visual]').forEach(button => {
+    button.classList.toggle('active', button.dataset.visual === mode);
     button.addEventListener('click', () => {
       mode = button.dataset.visual;
       document.querySelectorAll('[data-visual]').forEach(item => {
@@ -483,6 +484,9 @@ export function createVisualController({ audio, $, getAccent }) {
       });
     });
   });
+
+  const homeTitle = document.querySelector('.now-panel .panel-head h3');
+  if (homeTitle) homeTitle.textContent = 'Nebula spectrum';
 
   start();
   startAmbient();
