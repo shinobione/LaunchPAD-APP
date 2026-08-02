@@ -136,7 +136,7 @@ export async function fetchRemoteTracks({
     const response = await fetch(`${normalizeApiUrl(apiUrl)}/tracks`, {
       method: 'GET',
       headers: { Accept: 'application/json' },
-      cache: 'no-store',
+      cache: 'default',
       signal: controller.signal
     });
 
