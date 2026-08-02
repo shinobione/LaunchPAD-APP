@@ -52,7 +52,7 @@ async function boot() {
     import('./album-covers.js'),
     import('./lyrics-wake-lock.js'),
     import('./catalog-count.js'),
-    import('./about-enhancements.js?v=20260802-1')
+    import('./about-enhancements.js?v=20260802-2')
   ]);
 
   installContentV4();
