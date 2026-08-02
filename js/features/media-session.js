@@ -1,16 +1,11 @@
-function guessArtworkType(url, explicitType = '') {
-  if (explicitType && explicitType.startsWith('image/')) return explicitType;
-  const pathname = new URL(url, window.location.href).pathname.toLowerCase();
-  if (pathname.endsWith('.png')) return 'image/png';
-  if (pathname.endsWith('.webp')) return 'image/webp';
-  if (pathname.endsWith('.gif')) return 'image/gif';
-  if (pathname.endsWith('.svg')) return 'image/svg+xml';
-  return 'image/jpeg';
-}
+const BRAND_ARTWORK_URL = 'https://launchpad-media.jerryquinet.workers.dev/branding/shinobiwan-256.png?v=1';
 
-function artworkEntry(src, explicitType = '') {
-  const url = new URL(src, window.location.href).href;
-  return { src: url, type: guessArtworkType(url, explicitType) };
+function brandArtwork() {
+  return [{
+    src: BRAND_ARTWORK_URL,
+    sizes: '256x256',
+    type: 'image/png'
+  }];
 }
 
 export function createMediaSessionController({
@@ -28,7 +23,6 @@ export function createMediaSessionController({
 
   const session = navigator.mediaSession;
   let lastPositionSecond = -1;
-  let metadataToken = 0;
 
   function safeSetAction(action, handler) {
     try {
@@ -59,45 +53,17 @@ export function createMediaSessionController({
     audio.currentTime = 0;
   });
 
-  function applyMetadata(track, artwork) {
+  function update(track = getTrack()) {
+    if (!track || typeof MediaMetadata === 'undefined') return;
+
+    // Android media controls are more reliable with one small square PNG than
+    // with large per-track covers served from a remote endpoint.
     session.metadata = new MediaMetadata({
       title: track.title,
       artist: 'SHINOBIWAN',
       album: track.album,
-      artwork
+      artwork: brandArtwork()
     });
-  }
-
-  function update(track = getTrack()) {
-    if (!track || typeof MediaMetadata === 'undefined') return;
-
-    const token = ++metadataToken;
-    const artwork = [];
-    const seen = new Set();
-    const addArtwork = (src, type = '') => {
-      if (!src) return;
-      const entry = artworkEntry(src, type);
-      if (seen.has(entry.src)) return;
-      seen.add(entry.src);
-      artwork.push(entry);
-    };
-
-    addArtwork(track.cover, track.coverContentType);
-    addArtwork('assets/logo.png', 'image/png');
-    applyMetadata(track, artwork);
-
-    // Android occasionally snapshots metadata before a remote image has decoded.
-    // Re-apply it once the primary cover is ready so the notification and lock screen refresh.
-    const primary = artwork[0];
-    if (!primary || !track.cover?.startsWith?.('http')) return;
-
-    const image = new Image();
-    image.decoding = 'async';
-    image.onload = () => {
-      if (token !== metadataToken) return;
-      applyMetadata(track, artwork);
-    };
-    image.src = primary.src;
   }
 
   function updatePlaybackState() {
