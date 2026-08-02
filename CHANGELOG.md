@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add dedicated track pages with complete tags, catalog metadata and shareable `#track=` routes.
+- Make every track cover navigate to its detail page without starting playback.
 - Add visual-regression protection for key desktop and mobile views.
 - Centralize build and PWA cache versioning.
 - Make the Albums editorial order data-driven.
