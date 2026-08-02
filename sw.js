@@ -49,6 +49,7 @@ const SHELL_RESOURCES = [
   './js/features/lyrics-studio.js',
   './js/features/player-experience.js',
   './js/features/resilience-accessibility.js',
+  './js/features/audio-fallback.js',
   './js/features/content/content-controller.js',
   './js/features/audio/audio-focus.js',
   './js/features/lyrics/wake-lock.js',
