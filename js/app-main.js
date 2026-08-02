@@ -51,6 +51,37 @@ function card(track, index) {
   `;
 }
 
+function releaseTimestamp(track) {
+  const value = track.releaseDate || track.releasedAt || track.date;
+  if (!value) return null;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+function latestTrackEntries(limit = 5) {
+  return tracks
+    .map((track, index) => ({
+      track,
+      index,
+      timestamp: releaseTimestamp(track)
+    }))
+    .sort((a, b) => {
+      const aHasDate = a.timestamp !== null;
+      const bHasDate = b.timestamp !== null;
+
+      if (aHasDate && bHasDate && a.timestamp !== b.timestamp) {
+        return b.timestamp - a.timestamp;
+      }
+
+      if (aHasDate !== bHasDate) {
+        return aHasDate ? -1 : 1;
+      }
+
+      return b.index - a.index;
+    })
+    .slice(0, limit);
+}
+
 function renderLibraryFilters() {
   const filterRow = $('#view-library .filter-row');
   if (!filterRow) return;
@@ -93,7 +124,11 @@ function renderGenreBars() {
 
 function render() {
   renderLibraryFilters();
-  $('#featured-grid').innerHTML = tracks.slice(0, 5).map(card).join('');
+
+  $('#featured-grid').innerHTML = latestTrackEntries()
+    .map(({ track, index }) => card(track, index))
+    .join('');
+
   $('#library-grid').innerHTML = tracks.map(card).join('');
   $('#metric-tracks').textContent = String(tracks.length);
   $('#metric-lyrics').textContent = String(tracks.filter(track => track.lyrics).length);
