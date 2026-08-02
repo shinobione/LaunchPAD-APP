@@ -1,0 +1,103 @@
+.pwa-install-control{
+  margin:-10px 0 0;
+}
+
+.pwa-install-control[hidden]{
+  display:none!important;
+}
+
+.pwa-install-button{
+  display:grid;
+  grid-template-columns:28px minmax(0,1fr);
+  align-items:center;
+  gap:9px;
+  width:100%;
+  padding:9px 11px;
+  border:1px solid color-mix(in srgb,var(--accent) 34%,rgba(255,255,255,.08));
+  border-radius:12px;
+  color:#f7f2fb;
+  background:
+    linear-gradient(120deg,color-mix(in srgb,var(--accent) 14%,transparent),color-mix(in srgb,var(--accent2) 7%,transparent)),
+    rgba(255,255,255,.025);
+  text-align:left;
+  transition:transform .2s,border-color .2s,background .2s;
+}
+
+.pwa-install-button:hover{
+  transform:translateY(-2px);
+  border-color:color-mix(in srgb,var(--accent) 58%,transparent);
+  background:
+    linear-gradient(120deg,color-mix(in srgb,var(--accent) 22%,transparent),color-mix(in srgb,var(--accent2) 10%,transparent)),
+    rgba(255,255,255,.035);
+}
+
+.pwa-install-button>span:first-child{
+  display:grid;
+  place-items:center;
+  width:28px;
+  height:28px;
+  border-radius:9px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  box-shadow:0 7px 20px color-mix(in srgb,var(--accent) 22%,transparent);
+  font-weight:800;
+}
+
+.pwa-install-button strong,
+.pwa-install-button small{
+  display:block;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+
+.pwa-install-button strong{
+  font-size:10px;
+}
+
+.pwa-install-button small{
+  margin-top:2px;
+  color:#8f859d;
+  font-size:8px;
+}
+
+.pwa-toast{
+  position:fixed;
+  z-index:220;
+  right:22px;
+  bottom:110px;
+  max-width:min(360px,calc(100vw - 28px));
+  padding:12px 15px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:13px;
+  color:#f8f4fb;
+  background:rgba(8,5,15,.94);
+  box-shadow:0 20px 55px rgba(0,0,0,.42);
+  backdrop-filter:blur(20px);
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(10px);
+  transition:opacity .22s,transform .22s;
+  font-size:10px;
+  line-height:1.5;
+}
+
+.pwa-toast.show{
+  opacity:1;
+  transform:none;
+}
+
+html[data-connectivity="offline"] .catalog-badge span::after{
+  content:" • OFFLINE";
+  color:#ffb764;
+}
+
+@media(max-width:760px){
+  .pwa-install-control{
+    margin:-8px 0 2px;
+  }
+
+  .pwa-toast{
+    right:14px;
+    bottom:148px;
+  }
+}
