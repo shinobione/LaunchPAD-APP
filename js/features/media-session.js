@@ -1,13 +1,3 @@
-const BRAND_ARTWORK_URL = 'https://launchpad-media.jerryquinet.workers.dev/branding/shinobiwan-256.png?v=1';
-
-function brandArtwork() {
-  return [{
-    src: BRAND_ARTWORK_URL,
-    sizes: '256x256',
-    type: 'image/png'
-  }];
-}
-
 export function createMediaSessionController({
   audio,
   getTrack,
@@ -56,13 +46,12 @@ export function createMediaSessionController({
   function update(track = getTrack()) {
     if (!track || typeof MediaMetadata === 'undefined') return;
 
-    // Android media controls are more reliable with one small square PNG than
-    // with large per-track covers served from a remote endpoint.
+    // Do not provide per-track artwork here. Android then uses the installed
+    // LaunchPAD PWA icon, which is faster and more reliable on lock screens.
     session.metadata = new MediaMetadata({
       title: track.title,
       artist: 'SHINOBIWAN',
-      album: track.album,
-      artwork: brandArtwork()
+      album: track.album
     });
   }
 
