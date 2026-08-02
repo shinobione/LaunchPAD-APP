@@ -7,10 +7,19 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
   let searchHydrated = false;
   let searchPromise = null;
 
+  function extractLyricsBody(rawText) {
+    const normalized = String(rawText || '').replace(/^\uFEFF/, '');
+    const marker = normalized.match(/^LYRICS\s*:\s*$/im);
+    return marker
+      ? normalized.slice(marker.index + marker[0].length).trim()
+      : normalized;
+  }
+
   function parse(rawText) {
     const timestamped = [];
     const pattern = /\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\]/g;
-    const rawLines = rawText.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    const lyricsText = extractLyricsBody(rawText);
+    const rawLines = lyricsText.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
 
     rawLines.forEach(rawLine => {
       const text = rawLine.replace(pattern, '').trim();
