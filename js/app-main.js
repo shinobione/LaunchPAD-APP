@@ -1,24 +1,35 @@
-import { tracks } from './catalog.js';
+import {
+  tracks,
+  getTrackIndex,
+  getAlbumTrackIndexes,
+  getCatalogTags,
+  getGenreCounts,
+  getLatestTrackEntries,
+  validateCatalogRuntime
+} from './core/catalog-store.js';
+import { createQueueController } from './core/player-queue.js';
+import { createRouter } from './core/router.js';
+import { applyTrackTheme } from './core/theme.js';
+import { shareRoute } from './core/share.js';
 import { installExtendedUI } from './ui.js';
 import { createLyricsController } from './lyrics-engine.js';
 import { createVisualController } from './visual-engine.js';
+import { createMediaSessionController } from './features/media-session.js';
+import { createQueueUI } from './features/queue-ui.js';
+import { createAlbumDetail } from './features/album-detail.js';
+import { initLyricsStudio } from './features/lyrics-studio.js';
 
 installExtendedUI();
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
 const audio = $('#audio');
+const allTrackIndexes = tracks.map((_, index) => index);
 
 let currentIndex = 0;
 let activeFilter = 'all';
-
-const palettes = {
-  'R&B': ['#a63cff', '#5c6cff'],
-  Love: ['#e64d9b', '#8a55ff'],
-  'Hip-hop': ['#ff4d68', '#8d3cff'],
-  Vietnam: ['#ff9955', '#d83cff'],
-  Dancehall: ['#ff9a3c', '#ff4d8d']
-};
+let activeView = 'home';
+let router;
 
 function escapeHtml(value) {
   return String(value)
@@ -51,46 +62,12 @@ function card(track, index) {
   `;
 }
 
-function releaseTimestamp(track) {
-  const value = track.releaseDate || track.releasedAt || track.date;
-  if (!value) return null;
-  const timestamp = Date.parse(value);
-  return Number.isFinite(timestamp) ? timestamp : null;
-}
-
-function latestTrackEntries(limit = 5) {
-  return tracks
-    .map((track, index) => ({
-      track,
-      index,
-      timestamp: releaseTimestamp(track)
-    }))
-    .sort((a, b) => {
-      const aHasDate = a.timestamp !== null;
-      const bHasDate = b.timestamp !== null;
-
-      if (aHasDate && bHasDate && a.timestamp !== b.timestamp) {
-        return b.timestamp - a.timestamp;
-      }
-
-      if (aHasDate !== bHasDate) {
-        return aHasDate ? -1 : 1;
-      }
-
-      return b.index - a.index;
-    })
-    .slice(0, limit);
-}
-
 function renderLibraryFilters() {
   const filterRow = $('#view-library .filter-row');
   if (!filterRow) return;
 
   const preferredOrder = ['R&B', 'Hip-hop', 'Love', 'Vietnam'];
-  const catalogTags = [...new Set(
-    tracks.flatMap(track => Array.isArray(track.tags) ? track.tags : [track.genre]).filter(Boolean)
-  )];
-
+  const catalogTags = getCatalogTags();
   const orderedTags = [
     ...preferredOrder.filter(tag => catalogTags.includes(tag)),
     ...catalogTags
@@ -108,12 +85,12 @@ function renderLibraryFilters() {
 }
 
 function renderGenreBars() {
-  const counts = {};
-  tracks.forEach(track => {
-    counts[track.genre] = (counts[track.genre] || 0) + 1;
-  });
-  const max = Math.max(...Object.values(counts));
-  $('#genre-bars').innerHTML = Object.entries(counts).map(([genre, value]) => `
+  const target = $('#genre-bars');
+  if (!target) return;
+
+  const counts = getGenreCounts();
+  const max = Math.max(1, ...Object.values(counts));
+  target.innerHTML = Object.entries(counts).map(([genre, value]) => `
     <div class="bar-row">
       <span>${escapeHtml(genre)}</span>
       <div class="bar-track"><div class="bar-fill" style="width:${value / max * 100}%"></div></div>
@@ -125,7 +102,7 @@ function renderGenreBars() {
 function render() {
   renderLibraryFilters();
 
-  $('#featured-grid').innerHTML = latestTrackEntries()
+  $('#featured-grid').innerHTML = getLatestTrackEntries()
     .map(({ track, index }) => card(track, index))
     .join('');
 
@@ -138,7 +115,38 @@ function render() {
   renderGenreBars();
 }
 
+const queue = createQueueController({ allIndexes: allTrackIndexes });
 const visuals = createVisualController({ audio, $, getAccent });
+
+function normalizeView(name) {
+  if (name === 'albums') return 'analytics';
+  return name;
+}
+
+function viewRoute(name) {
+  const normalized = normalizeView(name);
+  if (normalized === 'analytics') return { type: 'view', value: 'albums' };
+  if (normalized === 'lyrics') return { type: 'lyrics', id: tracks[currentIndex]?.id };
+  return { type: 'view', value: normalized };
+}
+
+function switchView(name, { syncRoute = true, replaceRoute = false } = {}) {
+  const normalized = normalizeView(name);
+  const target = $(`#view-${normalized}`);
+  if (!target) return false;
+
+  activeView = normalized;
+  $$('.view').forEach(view => view.classList.toggle('active', view === target));
+  $$('[data-view]').forEach(button => {
+    button.classList.toggle('active', normalizeView(button.dataset.view) === normalized);
+  });
+  $('.sidebar')?.classList.remove('open');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (normalized === 'lyrics') window.setTimeout(() => lyrics.scrollToActive(), 120);
+  if (syncRoute && router) router.write(viewRoute(normalized), { replace: replaceRoute });
+  return true;
+}
 
 const lyrics = createLyricsController({
   tracks,
@@ -151,12 +159,6 @@ const lyrics = createLyricsController({
   escapeHtml
 });
 
-function setTheme(track) {
-  const [accent, accent2] = palettes[track.genre] || palettes['R&B'];
-  document.documentElement.style.setProperty('--accent', accent);
-  document.documentElement.style.setProperty('--accent2', accent2);
-}
-
 function buildVisualCaption(track) {
   const mood = track.mood.charAt(0).toLowerCase() + track.mood.slice(1);
   return `${track.title} is shaping a live ${track.genre} signal with a ${mood} pulse.`;
@@ -165,10 +167,9 @@ function buildVisualCaption(track) {
 function updateTrackUI(track) {
   ['player-cover', 'mini-cover', 'lab-cover', 'lyrics-cover'].forEach(id => {
     const image = $(`#${id}`);
-    if (image) {
-      image.src = track.cover;
-      image.alt = `Cover art for ${track.title}`;
-    }
+    if (!image) return;
+    image.src = track.cover;
+    image.alt = `Cover art for ${track.title}`;
   });
 
   ['player-title', 'mini-title', 'lab-title', 'lyrics-title'].forEach(id => {
@@ -184,17 +185,29 @@ function updateTrackUI(track) {
   const caption = $('#now-visual-caption');
   if (caption) caption.textContent = buildVisualCaption(track);
 
-  $$('.album-card').forEach(cardElement => {
-    cardElement.classList.toggle('is-current', Number(cardElement.dataset.index) === currentIndex);
+  $$('.album-card, .album-detail-track, .project-track').forEach(element => {
+    const index = Number(
+      element.dataset.index
+      ?? element.dataset.albumDetailTrack
+      ?? element.dataset.playIndex
+    );
+    element.classList.toggle('is-current', index === currentIndex);
   });
+
+  document.title = `${track.title} — SHINOBIWAN`;
+  mediaSession.update(track);
 }
 
-function selectTrack(index, shouldPlay = true) {
-  currentIndex = (index + tracks.length) % tracks.length;
-  const track = tracks[currentIndex];
-  setTheme(track);
+function selectTrack(index, shouldPlay = true, { syncQueue = true, preserveQueue = true } = {}) {
+  if (!Number.isInteger(index) || !tracks[index]) return;
 
-  if (audio.dataset.trackId !== track.id) {
+  if (syncQueue) queue.select(index, { preserveContext: preserveQueue });
+  currentIndex = index;
+  const track = tracks[currentIndex];
+  applyTrackTheme(track);
+
+  const sameTrack = audio.dataset.trackId === track.id;
+  if (!sameTrack) {
     audio.src = track.file;
     audio.dataset.trackId = track.id;
     audio.load();
@@ -203,7 +216,12 @@ function selectTrack(index, shouldPlay = true) {
   updateTrackUI(track);
   lyrics.load(track);
 
+  if (activeView === 'lyrics' && router) {
+    router.write({ type: 'lyrics', id: track.id }, { replace: true });
+  }
+
   if (shouldPlay) {
+    if (sameTrack && audio.ended) audio.currentTime = 0;
     visuals.resume();
     audio.play().catch(error => {
       console.warn('Playback was blocked by the browser', error);
@@ -214,8 +232,46 @@ function selectTrack(index, shouldPlay = true) {
   }
 }
 
-function playTrack(index) {
-  selectTrack(index, true);
+function playTrack(index, { albumId = null } = {}) {
+  if (albumId) {
+    const albumIndexes = getAlbumTrackIndexes(albumId);
+    queue.setContext(albumIndexes, index, { type: 'album', id: albumId });
+    selectTrack(index, true, { syncQueue: false });
+    return;
+  }
+
+  queue.setContext(allTrackIndexes, index, { type: 'catalog', id: 'all' });
+  selectTrack(index, true, { syncQueue: false });
+}
+
+function playAlbum(albumId, startIndex = null) {
+  const indexes = getAlbumTrackIndexes(albumId);
+  if (!indexes.length) return;
+  const firstIndex = indexes.includes(startIndex) ? startIndex : indexes[0];
+  queue.setContext(indexes, firstIndex, { type: 'album', id: albumId });
+  selectTrack(firstIndex, true, { syncQueue: false });
+}
+
+function playNext({ ended = false } = {}) {
+  const nextIndex = queue.next({ ended });
+  if (nextIndex === null) {
+    audio.pause();
+    audio.currentTime = 0;
+    return;
+  }
+
+  if (nextIndex === currentIndex) audio.currentTime = 0;
+  selectTrack(nextIndex, true, { syncQueue: false });
+}
+
+function playPrevious() {
+  if (audio.currentTime > 3) {
+    audio.currentTime = 0;
+    return;
+  }
+
+  const previousIndex = queue.previous();
+  selectTrack(previousIndex, true, { syncQueue: false });
 }
 
 function togglePlayback() {
@@ -223,6 +279,7 @@ function togglePlayback() {
     playTrack(currentIndex);
     return;
   }
+
   if (audio.paused) {
     visuals.resume();
     audio.play().catch(() => updatePlayButtons(false));
@@ -241,14 +298,6 @@ function updatePlayButtons(playing) {
 function formatTime(seconds) {
   if (!Number.isFinite(seconds)) return '0:00';
   return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
-}
-
-function switchView(name) {
-  $$('.view').forEach(view => view.classList.toggle('active', view.id === `view-${name}`));
-  $$('[data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === name));
-  $('.sidebar').classList.remove('open');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  if (name === 'lyrics') window.setTimeout(() => lyrics.scrollToActive(), 120);
 }
 
 function applyLibraryVisibility() {
@@ -283,33 +332,144 @@ function applyFilter(filter) {
   applyLibraryVisibility();
 }
 
+const albumDetail = createAlbumDetail({
+  escapeHtml,
+  onPlayAlbum: albumId => playAlbum(albumId),
+  onPlayTrack: (index, albumId) => playTrack(index, { albumId }),
+  onBack: () => router.navigate({ type: 'view', value: 'albums' })
+});
+
+function openAlbum(albumId, { syncRoute = true } = {}) {
+  if (!albumDetail.render(albumId)) return false;
+  switchView('album', { syncRoute: false });
+  if (syncRoute && router) router.write({ type: 'album', id: albumId }, { replace: false });
+  return true;
+}
+
+const mediaSession = createMediaSessionController({
+  audio,
+  getTrack: () => tracks[currentIndex],
+  onPlay: () => {
+    visuals.resume();
+    audio.play().catch(() => {});
+  },
+  onPause: () => audio.pause(),
+  onNext: () => playNext(),
+  onPrevious: () => playPrevious(),
+  onSeekTo: time => { audio.currentTime = time; }
+});
+
+createQueueUI({
+  tracks,
+  queue,
+  onSelect: index => selectTrack(index, true),
+  onShareCurrent: () => {
+    const track = tracks[currentIndex];
+    shareRoute({
+      title: `${track.title} — SHINOBIWAN`,
+      text: `Listen to ${track.title} on the SHINOBIWAN Launchpad.`,
+      route: { type: 'track', id: track.id }
+    });
+  }
+});
+
+initLyricsStudio();
 render();
 
-$$('[data-play-index]').forEach(button => {
-  button.addEventListener('click', () => playTrack(Number(button.dataset.playIndex)));
-});
+const catalogHealth = validateCatalogRuntime();
+if (!catalogHealth.valid) console.error('Catalog validation errors:', catalogHealth.errors);
+if (catalogHealth.warnings.length) console.info('Catalog notes:', catalogHealth.warnings);
 
-$$('[data-action]').forEach(button => {
-  button.addEventListener('click', () => {
-    const action = button.dataset.action;
-    if (action === 'toggle') togglePlayback();
-    else playTrack(currentIndex + (action === 'next' ? 1 : -1));
-  });
-});
+function handleRoute(route) {
+  if (route.type === 'track') {
+    const index = getTrackIndex(route.id);
+    if (index < 0) {
+      router.navigate({ type: 'view', value: 'home' }, { replace: true });
+      return;
+    }
+    selectTrack(index, false, { preserveQueue: false });
+    switchView('home', { syncRoute: false });
+    return;
+  }
 
-$$('[data-view]').forEach(button => {
-  button.addEventListener('click', () => switchView(button.dataset.view));
-});
+  if (route.type === 'lyrics') {
+    const index = getTrackIndex(route.id);
+    if (index < 0) {
+      router.navigate({ type: 'view', value: 'home' }, { replace: true });
+      return;
+    }
+    selectTrack(index, false, { preserveQueue: false });
+    switchView('lyrics', { syncRoute: false });
+    return;
+  }
 
-$$('[data-view-target]').forEach(element => {
-  element.addEventListener('click', event => {
+  if (route.type === 'album') {
+    if (!openAlbum(route.id, { syncRoute: false })) {
+      router.navigate({ type: 'view', value: 'albums' }, { replace: true });
+    }
+    return;
+  }
+
+  const requestedView = normalizeView(route.value || 'home');
+  if (!switchView(requestedView, { syncRoute: false })) {
+    router.navigate({ type: 'view', value: 'home' }, { replace: true });
+  }
+}
+
+router = createRouter({ onRoute: handleRoute });
+
+document.addEventListener('click', event => {
+  if (event.defaultPrevented) return;
+
+  const playButton = event.target.closest('[data-play-index]');
+  if (playButton) {
     event.preventDefault();
-    switchView(element.dataset.viewTarget);
-  });
-});
+    const albumId = playButton.dataset.albumContext || null;
+    playTrack(Number(playButton.dataset.playIndex), { albumId });
+    return;
+  }
 
-$$('[data-filter]').forEach(button => {
-  button.addEventListener('click', () => applyFilter(button.dataset.filter));
+  const playAlbumButton = event.target.closest('[data-play-album]');
+  if (playAlbumButton) {
+    event.preventDefault();
+    playAlbum(playAlbumButton.dataset.playAlbum);
+    return;
+  }
+
+  const openAlbumButton = event.target.closest('[data-open-album]');
+  if (openAlbumButton) {
+    event.preventDefault();
+    router.navigate({ type: 'album', id: openAlbumButton.dataset.openAlbum });
+    return;
+  }
+
+  const actionButton = event.target.closest('[data-action]');
+  if (actionButton) {
+    const action = actionButton.dataset.action;
+    if (action === 'toggle') togglePlayback();
+    if (action === 'next') playNext();
+    if (action === 'prev') playPrevious();
+    return;
+  }
+
+  const viewButton = event.target.closest('[data-view]');
+  if (viewButton) {
+    event.preventDefault();
+    const view = normalizeView(viewButton.dataset.view);
+    router.navigate(viewRoute(view));
+    return;
+  }
+
+  const viewTarget = event.target.closest('[data-view-target]');
+  if (viewTarget) {
+    event.preventDefault();
+    const view = normalizeView(viewTarget.dataset.viewTarget);
+    router.navigate(viewRoute(view));
+    return;
+  }
+
+  const filterButton = event.target.closest('[data-filter]');
+  if (filterButton) applyFilter(filterButton.dataset.filter);
 });
 
 $('#menu-button').addEventListener('click', () => $('.sidebar').classList.toggle('open'));
@@ -342,11 +502,18 @@ audio.addEventListener('timeupdate', () => {
   $('#lyrics-current-time').textContent = formatTime(audio.currentTime);
   $('#lyrics-duration').textContent = formatTime(audio.duration);
   lyrics.update(audio.currentTime);
+  mediaSession.updatePosition();
 });
 
-audio.addEventListener('play', () => updatePlayButtons(true));
-audio.addEventListener('pause', () => updatePlayButtons(false));
-audio.addEventListener('ended', () => playTrack(currentIndex + 1));
+audio.addEventListener('play', () => {
+  updatePlayButtons(true);
+  mediaSession.updatePlaybackState();
+});
+audio.addEventListener('pause', () => {
+  updatePlayButtons(false);
+  mediaSession.updatePlaybackState();
+});
+audio.addEventListener('ended', () => playNext({ ended: true }));
 
 document.addEventListener('keydown', event => {
   const target = event.target;
@@ -354,7 +521,7 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape') $('.sidebar').classList.remove('open');
   if ((event.key === 'Enter' || event.key === ' ') && target?.classList?.contains('current-track')) {
     event.preventDefault();
-    switchView('lyrics');
+    router.navigate({ type: 'lyrics', id: tracks[currentIndex].id });
   }
   if (event.code === 'Space' && !typing && !(target instanceof HTMLButtonElement) && !target?.classList?.contains('current-track')) {
     event.preventDefault();
@@ -362,5 +529,7 @@ document.addEventListener('keydown', event => {
   }
 });
 
-selectTrack(0, false);
+queue.setContext(allTrackIndexes, 0, { type: 'catalog', id: 'all' });
+selectTrack(0, false, { syncQueue: false });
 lyrics.hydrateSearchIndex();
+router.start();
