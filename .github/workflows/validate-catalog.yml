@@ -113,9 +113,11 @@ jobs:
           google-chrome --headless=new --no-sandbox --disable-gpu \
             --user-data-dir=/tmp/launchpad-pwa-profile \
             --virtual-time-budget=20000 --dump-dom \
-            'http://127.0.0.1:4173/tests/pwa-smoke.html' > /tmp/launchpad-pwa-ready.html
+            'http://127.0.0.1:4173/#home' > /tmp/launchpad-pwa-warm.html
 
-          grep -q 'SERVICE WORKER READY' /tmp/launchpad-pwa-ready.html
+          grep -q '14 TRACKS' /tmp/launchpad-pwa-warm.html
+          grep -q 'id="pwa-install-control"' /tmp/launchpad-pwa-warm.html
+          sleep 3
 
           kill $SERVER_PID
           wait $SERVER_PID 2>/dev/null || true
