@@ -33,6 +33,9 @@ async function boot() {
   installEarlyFavicon();
   installCriticalStyles();
 
+  const { prepareLibraryMemoryShell } = await import('./features/library-memory-shell.js?v=20260802-wave3');
+  prepareLibraryMemoryShell();
+
   await import('./app-main.js?v=20260802-wave3');
 
   const [
