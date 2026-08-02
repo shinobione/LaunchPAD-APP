@@ -51,13 +51,15 @@ async function boot() {
     { initAudioFocus },
     { initLyricsWakeLock },
     { initAboutEnhancements },
-    { initLibraryMemory }
+    { initLibraryMemory },
+    { initVisualCard }
   ] = await Promise.all([
     import('./features/content/content-controller.js?v=20260802-wave1'),
     import('./features/audio/audio-focus.js?v=20260802-wave2'),
     import('./features/lyrics/wake-lock.js?v=20260802-wave2'),
     import('./features/about/about-controller.js?v=20260802-wave2'),
-    import('./features/library-memory.js?v=20260802-wave3')
+    import('./features/library-memory.js?v=20260802-wave3'),
+    import('./features/visual-card.js?v=20260802-wave5')
   ]);
 
   installContentV4();
@@ -67,6 +69,7 @@ async function boot() {
 
   const audio = document.querySelector('#audio');
   initLibraryMemory({ audio });
+  initVisualCard({ audio });
   pwa.initPWA();
   initAudioFocus({ audio });
   initLyricsWakeLock({ audio });
