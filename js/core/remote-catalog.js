@@ -23,6 +23,12 @@ function normalizeApiUrl(value) {
   return String(value || DEFAULT_API_URL).replace(/\/+$/, '');
 }
 
+function shouldUseBundledCatalog() {
+  if (globalThis.SHINOBIWAN_MEDIA_API) return false;
+  const hostname = globalThis.location?.hostname;
+  return hostname === '127.0.0.1' || hostname === 'localhost';
+}
+
 function normalizeLanguages(values) {
   const source = Array.isArray(values) ? values : [];
   return [...new Set(
@@ -107,6 +113,8 @@ export async function fetchRemoteTracks({
   apiUrl = globalThis.SHINOBIWAN_MEDIA_API || DEFAULT_API_URL,
   timeoutMs = FETCH_TIMEOUT_MS
 } = {}) {
+  if (shouldUseBundledCatalog()) return [];
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
