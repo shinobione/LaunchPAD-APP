@@ -10,11 +10,61 @@ const READY=['LAYOUT','READY'].join(' ');
 const ERROR=['LAYOUT','ERROR'].join(' ');
 const frames=[document.querySelector('#desktop'),document.querySelector('#mobile'),document.querySelector('#track'),document.querySelector('#mobile-album')];
 const sleep=delay=>new Promise(resolve=>setTimeout(resolve,delay));
+const rect=node=>node?.getBoundingClientRect();
+const geometry=document=>{
+  const selectors=['.launchpad-hero','.launchpad-banner-rail','.hero-banner-art','.hero-body','.hero-wordmark'];
+  return Object.fromEntries(selectors.map(selector=>{
+    const box=rect(document.querySelector(selector));
+    return [selector,box?{left:box.left,top:box.top,width:box.width,height:box.height}:null];
+  }));
+};
+const maximumGeometryDelta=(before,after)=>Object.keys(before).reduce((maximum,key)=>{
+  if(!before[key]||!after[key]) return Infinity;
+  const delta=Math.max(...['left','top','width','height'].map(field=>Math.abs(before[key][field]-after[key][field])));
+  return Math.max(maximum,delta);
+},0);
+const localStyles=document=>[...document.querySelectorAll('link[rel="stylesheet"]')]
+  .map(link=>new URL(link.href,document.location.href))
+  .filter(url=>url.origin===document.location.origin&&url.pathname.includes('/css/'));
+
 Promise.all(frames.map(frame=>new Promise(resolve=>frame.addEventListener('load',()=>resolve(frame))))).then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
-  await sleep(5000);
-  const failures=[];
+  await sleep(150);
   const dd=desktop.contentDocument, md=mobile.contentDocument, td=trackFrame.contentDocument, ad=mobileAlbum.contentDocument;
-  const rect=node=>node?.getBoundingClientRect();
+  const initialDesktopGeometry=geometry(dd);
+  const initialMobileGeometry=geometry(md);
+
+  await sleep(4850);
+  const failures=[];
+  const finalDesktopGeometry=geometry(dd);
+  const finalMobileGeometry=geometry(md);
+  const desktopHeroShift=maximumGeometryDelta(initialDesktopGeometry,finalDesktopGeometry);
+  const mobileHeroShift=maximumGeometryDelta(initialMobileGeometry,finalMobileGeometry);
+  if(desktopHeroShift>2) failures.push(`desktop-first-paint-shift-${Math.round(desktopHeroShift)}`);
+  if(mobileHeroShift>2) failures.push(`mobile-first-paint-shift-${Math.round(mobileHeroShift)}`);
+
+  const expectedStyles=[
+    'style.css','header.css','refinements.css','lyrics.css','fixes-v2.css','content-v4.css',
+    'desktop-hero-wide.css','mobile-top-cleanup.css','mobile-navigation.css','launchpad-features.css',
+    'about-enhancements.css','library-memory.css','pwa.css','visual-card.css','track-detail.css'
+  ];
+  for(const document of [dd,md]){
+    const styles=localStyles(document);
+    const names=styles.map(url=>url.pathname.split('/').pop());
+    const duplicates=names.filter((name,index)=>names.indexOf(name)!==index);
+    if(duplicates.length) failures.push(`duplicate-css-${[...new Set(duplicates)].join('-')}`);
+    expectedStyles.forEach(name=>{if(!names.includes(name)) failures.push(`missing-initial-css-${name}`);});
+    if(!styles.every(url=>url.searchParams.get('v')==='20260802-wave14')) failures.push('unversioned-initial-css');
+  }
+
+  if(dd.documentElement.dataset.appReady!=='true'||md.documentElement.dataset.appReady!=='true') failures.push('app-ready-state');
+  if(!dd.querySelector('.artist-manifesto')||!md.querySelector('.artist-manifesto')) failures.push('initial-final-manifesto');
+  const banner=dd.querySelector('.hero-banner-art');
+  const wordmark=dd.querySelector('.hero-wordmark');
+  const profile=dd.querySelector('.hero-profile-card>img');
+  if(banner?.getAttribute('width')!=='2048'||banner?.getAttribute('height')!=='1143') failures.push('banner-intrinsic-size');
+  if(wordmark?.getAttribute('width')!=='720'||wordmark?.getAttribute('height')!=='330') failures.push('wordmark-intrinsic-size');
+  if(profile?.getAttribute('width')!=='500'||profile?.getAttribute('height')!=='500') failures.push('profile-intrinsic-size');
+
   const sidebar=rect(dd.querySelector('.sidebar'));
   const player=rect(dd.querySelector('.player-bar'));
   const desktopGrid=dd.querySelectorAll('#featured-grid .album-card').length;
@@ -88,6 +138,10 @@ Promise.all(frames.map(frame=>new Promise(resolve=>frame.addEventListener('load'
     trackMetadata:metadataLabels.length,
     trackTags:directTags,
     mobileAlbumRows:albumRows.length,
+    desktopHeroShift:Number(desktopHeroShift.toFixed(2)),
+    mobileHeroShift:Number(mobileHeroShift.toFixed(2)),
+    initialStyles:localStyles(dd).length,
+    appReady:dd.documentElement.dataset.appReady==='true'&&md.documentElement.dataset.appReady==='true',
     trackNavigationPreserved:navigationLoadCalls===0&&homeAudio?.dataset.trackId==='thick'
   };
   result.textContent=failures.length?`${ERROR} ${failures.join(' ')}`:`${READY} ${JSON.stringify(snapshot)}`;
