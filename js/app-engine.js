@@ -7,58 +7,48 @@ function installEarlyFavicon() {
   document.head.appendChild(icon);
 }
 
-function installCriticalStyles() {
-  const href = 'css/audio-lab-fix.css?v=20260801-1';
+function installStylesheet(href, dataAttribute) {
   if (document.querySelector(`link[href="${href}"]`)) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
   link.href = href;
+  if (dataAttribute) link.dataset[dataAttribute] = 'true';
   document.head.appendChild(link);
 }
 
+function installCriticalStyles() {
+  installStylesheet('css/audio-lab-fix.css?v=20260801-1');
+  installStylesheet('css/launchpad-features.css?v=20260802-1');
+}
+
 function installDesktopHeroFix() {
-  if (document.querySelector('link[data-desktop-hero-wide]')) return;
-  const stylesheet = document.createElement('link');
-  stylesheet.rel = 'stylesheet';
-  stylesheet.href = 'css/desktop-hero-wide.css?v=20260801-1';
-  stylesheet.dataset.desktopHeroWide = 'true';
-  document.head.appendChild(stylesheet);
+  installStylesheet('css/desktop-hero-wide.css?v=20260801-1', 'desktopHeroWide');
 }
 
 function installFinalLayoutFix() {
-  if (document.querySelector('link[data-mobile-top-cleanup]')) return;
-  const stylesheet = document.createElement('link');
-  stylesheet.rel = 'stylesheet';
-  stylesheet.href = 'css/mobile-top-cleanup.css?v=20260801-1';
-  stylesheet.dataset.mobileTopCleanup = 'true';
-  document.head.appendChild(stylesheet);
+  installStylesheet('css/mobile-top-cleanup.css?v=20260801-1', 'mobileTopCleanup');
 }
 
 async function boot() {
   installEarlyFavicon();
   installCriticalStyles();
-  await import('./app-main.js');
+
+  await import('./app-main.js?v=20260802-wave1');
 
   const [
     { installContentV4 },
     { initAudioFocus },
-    { applyAlbumCovers },
     { initLyricsWakeLock },
-    { syncCatalogCount },
     { initAboutEnhancements }
   ] = await Promise.all([
-    import('./content-v4.js?v=20260802-2'),
+    import('./features/content/content-controller.js?v=20260802-wave1'),
     import('./audio-focus.js'),
-    import('./album-covers.js'),
     import('./lyrics-wake-lock.js'),
-    import('./catalog-count.js'),
     import('./about-enhancements.js?v=20260802-2')
   ]);
 
   installContentV4();
   initAboutEnhancements();
-  applyAlbumCovers();
-  syncCatalogCount();
   installDesktopHeroFix();
   installFinalLayoutFix();
 
