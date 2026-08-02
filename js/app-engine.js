@@ -1,50 +1,52 @@
-function installEarlyFavicon() {
-  document.querySelectorAll('link[rel~="icon"]').forEach(link => link.remove());
-  const icon = document.createElement('link');
-  icon.rel = 'icon';
-  icon.type = 'image/svg+xml';
-  icon.href = 'assets/favicon-v6.svg?v=20260801-6';
-  document.head.appendChild(icon);
+const BUILD = '20260802-wave7';
+
+const CRITICAL_STYLES = [
+  'css/audio-lab-fix.css',
+  'css/launchpad-features.css',
+  'css/player-experience.css'
+];
+
+const LAYOUT_STYLES = [
+  ['css/desktop-hero-wide.css', 'desktopHeroWide'],
+  ['css/mobile-top-cleanup.css', 'mobileTopCleanup']
+];
+
+function versioned(path) {
+  return `${path}?v=${BUILD}`;
 }
 
-function installStylesheet(href, dataAttribute) {
-  if (document.querySelector(`link[href="${href}"]`)) return;
+function installStylesheet(path, dataAttribute) {
+  if (document.querySelector(`link[href^="${path}"]`)) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = href;
+  link.href = versioned(path);
   if (dataAttribute) link.dataset[dataAttribute] = 'true';
   document.head.appendChild(link);
 }
 
-function installCriticalStyles() {
-  installStylesheet('css/audio-lab-fix.css?v=20260801-1');
-  installStylesheet('css/launchpad-features.css?v=20260802-1');
-}
-
-function installDesktopHeroFix() {
-  installStylesheet('css/desktop-hero-wide.css?v=20260801-1', 'desktopHeroWide');
-}
-
-function installFinalLayoutFix() {
-  installStylesheet('css/mobile-top-cleanup.css?v=20260801-1', 'mobileTopCleanup');
+function installStylesheets(entries) {
+  entries.forEach(entry => {
+    if (Array.isArray(entry)) installStylesheet(entry[0], entry[1]);
+    else installStylesheet(entry);
+  });
 }
 
 async function boot() {
-  installEarlyFavicon();
-  installCriticalStyles();
+  document.documentElement.dataset.build = BUILD;
+  installStylesheets(CRITICAL_STYLES);
 
   const [
     { prepareLibraryMemoryShell },
     pwa
   ] = await Promise.all([
-    import('./features/library-memory-shell.js?v=20260802-wave3'),
-    import('./features/pwa.js?v=20260802-wave4')
+    import(versioned('./features/library-memory-shell.js')),
+    import(versioned('./features/pwa.js'))
   ]);
 
   prepareLibraryMemoryShell();
   pwa.preparePWAHead();
 
-  await import('./app-main.js?v=20260802-wave6');
+  await import(versioned('./app-main.js'));
 
   const [
     { installContentV4 },
@@ -52,22 +54,24 @@ async function boot() {
     { initLyricsWakeLock },
     { initAboutEnhancements },
     { initLibraryMemory },
-    { initVisualCard }
+    { initVisualCard },
+    { createPlayerExperience }
   ] = await Promise.all([
-    import('./features/content/content-controller.js?v=20260802-wave1'),
-    import('./features/audio/audio-focus.js?v=20260802-wave2'),
-    import('./features/lyrics/wake-lock.js?v=20260802-wave2'),
-    import('./features/about/about-controller.js?v=20260802-wave2'),
-    import('./features/library-memory.js?v=20260802-wave3'),
-    import('./features/visual-card.js?v=20260802-wave5')
+    import(versioned('./features/content/content-controller.js')),
+    import(versioned('./features/audio/audio-focus.js')),
+    import(versioned('./features/lyrics/wake-lock.js')),
+    import(versioned('./features/about/about-controller.js')),
+    import(versioned('./features/library-memory.js')),
+    import(versioned('./features/visual-card.js')),
+    import(versioned('./features/player-experience.js'))
   ]);
 
   installContentV4();
   initAboutEnhancements();
-  installDesktopHeroFix();
-  installFinalLayoutFix();
+  installStylesheets(LAYOUT_STYLES);
 
   const audio = document.querySelector('#audio');
+  createPlayerExperience({ audio });
   initLibraryMemory({ audio });
   initVisualCard({ audio });
   pwa.initPWA();
