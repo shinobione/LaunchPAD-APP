@@ -48,7 +48,9 @@ export const tracks = [
     mood: 'Digital melancholy',
     albumId: 'neon-heartbreaks',
     album: 'Neon Heartbreaks',
-    lyrics: 'assets/lyrics/before-the-noise.txt'
+    lyrics: 'assets/lyrics/before-the-noise.txt',
+    accent: '#b746ff',
+    accent2: '#4c7dff'
   },
   {
     id: 'low-bitrate-love',
@@ -60,7 +62,9 @@ export const tracks = [
     mood: 'Romantic glitch',
     albumId: 'neon-heartbreaks',
     album: 'Neon Heartbreaks',
-    lyrics: 'assets/lyrics/low-bitrate-love.txt'
+    lyrics: 'assets/lyrics/low-bitrate-love.txt',
+    accent: '#ff4fd8',
+    accent2: '#7c4dff'
   },
   {
     id: 'thick',
@@ -72,7 +76,9 @@ export const tracks = [
     mood: 'Heavy confidence',
     albumId: 'coal-to-diamond',
     album: 'Coal to Diamond',
-    lyrics: 'assets/lyrics/thick.txt'
+    lyrics: 'assets/lyrics/thick.txt',
+    accent: '#ff3f5f',
+    accent2: '#7d34ff'
   },
   {
     id: 'real-love-doesnt-rush',
@@ -84,7 +90,9 @@ export const tracks = [
     mood: 'Slow soul',
     albumId: 'neon-heartbreaks',
     album: 'Neon Heartbreaks',
-    lyrics: 'assets/lyrics/real-love-doesnt-rush.txt'
+    lyrics: 'assets/lyrics/real-love-doesnt-rush.txt',
+    accent: '#ff5a9d',
+    accent2: '#8e5bff'
   },
   {
     id: 'jusquau-dernier-souffle',
@@ -96,7 +104,9 @@ export const tracks = [
     mood: 'French Tango',
     albumId: 'love-letters-from-saigon',
     album: 'Love Letters from Saigon',
-    lyrics: 'assets/lyrics/jusquau-dernier-souffle.txt'
+    lyrics: 'assets/lyrics/jusquau-dernier-souffle.txt',
+    accent: '#d13cff',
+    accent2: '#ff4b74'
   },
   {
     id: 'tinh-bolero-cho-tran',
@@ -108,7 +118,9 @@ export const tracks = [
     mood: 'Vietnamese love',
     albumId: 'love-letters-from-saigon',
     album: 'Love Letters from Saigon',
-    lyrics: 'assets/lyrics/tinh-bolero-cho-tran.txt'
+    lyrics: 'assets/lyrics/tinh-bolero-cho-tran.txt',
+    accent: '#f2b84b',
+    accent2: '#e45585'
   },
   {
     id: 'saigon-bound',
@@ -120,7 +132,9 @@ export const tracks = [
     mood: 'Travel story',
     albumId: 'love-letters-from-saigon',
     album: 'Love Letters from Saigon',
-    lyrics: 'assets/lyrics/saigon-bound.txt'
+    lyrics: 'assets/lyrics/saigon-bound.txt',
+    accent: '#ff8a3d',
+    accent2: '#d93cff'
   },
   {
     id: 'the-throne-resonates',
@@ -132,7 +146,9 @@ export const tracks = [
     mood: 'Epic energy',
     albumId: 'coal-to-diamond',
     album: 'Coal to Diamond',
-    lyrics: 'assets/lyrics/the-throne-resonates.txt'
+    lyrics: 'assets/lyrics/the-throne-resonates.txt',
+    accent: '#f0b34a',
+    accent2: '#7c47ff'
   },
   {
     id: 'carved-from-pressure',
@@ -144,7 +160,9 @@ export const tracks = [
     mood: 'Resilience',
     albumId: 'coal-to-diamond',
     album: 'Coal to Diamond',
-    lyrics: 'assets/lyrics/carved-from-pressure.txt'
+    lyrics: 'assets/lyrics/carved-from-pressure.txt',
+    accent: '#ff4f52',
+    accent2: '#9b3dff'
   },
   {
     id: 'ligne-3',
@@ -156,7 +174,9 @@ export const tracks = [
     mood: 'Urban satire',
     albumId: 'singles',
     album: 'Singles',
-    lyrics: 'assets/lyrics/ligne3.txt'
+    lyrics: 'assets/lyrics/ligne3.txt',
+    accent: '#f1c75b',
+    accent2: '#e14f4f'
   },
   {
     id: 'obey',
@@ -168,7 +188,9 @@ export const tracks = [
     mood: 'Puppet Master',
     albumId: 'coal-to-diamond',
     album: 'Coal to Diamond',
-    lyrics: null
+    lyrics: null,
+    accent: '#d4a63a',
+    accent2: '#b41f3c'
   },
   {
     id: 'close-to-you',
@@ -180,7 +202,9 @@ export const tracks = [
     mood: 'Tropical House, Reggae Fusion',
     albumId: 'singles',
     album: 'Singles',
-    lyrics: null
+    lyrics: null,
+    accent: '#ff9c45',
+    accent2: '#ff4f8b'
   },
   {
     id: 'ghost-signal',
@@ -192,7 +216,9 @@ export const tracks = [
     mood: 'Future R&B, Synthwave, Electronic Pop',
     albumId: 'singles',
     album: 'Singles',
-    lyrics: null
+    lyrics: null,
+    accent: '#41d6ff',
+    accent2: '#8a52ff'
   },
   {
     id: 'husband',
@@ -204,7 +230,9 @@ export const tracks = [
     mood: 'Female Trap, Superman Husband',
     albumId: 'singles',
     album: 'Singles',
-    lyrics: null
+    lyrics: null,
+    accent: '#ff4d8d',
+    accent2: '#4b6fff'
   }
 ];
 
