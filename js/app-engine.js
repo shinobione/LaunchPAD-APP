@@ -44,7 +44,7 @@ async function boot() {
   prepareLibraryMemoryShell();
   pwa.preparePWAHead();
 
-  await import('./app-main.js?v=20260802-wave3');
+  await import('./app-main.js?v=20260802-wave6');
 
   const [
     { installContentV4 },

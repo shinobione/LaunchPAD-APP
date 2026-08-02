@@ -1,6 +1,66 @@
 import { getAlbum, getAlbumTracks } from '../core/catalog-store.js';
 import { shareRoute } from '../core/share.js';
 
+const durationCache = new Map();
+let durationHydrationId = 0;
+
+function ensureDurationStylesheet() {
+  const href = 'css/album-duration.css?v=20260802-1';
+  if (document.querySelector(`link[href="${href}"]`)) return;
+
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = href;
+  document.head.appendChild(link);
+}
+
+function formatDuration(value) {
+  if (!Number.isFinite(value) || value < 0) return '--:--';
+
+  const totalSeconds = Math.round(value);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor(totalSeconds % 3600 / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+function readDuration(track) {
+  if (Number.isFinite(track.duration) && track.duration > 0) {
+    return Promise.resolve(track.duration);
+  }
+
+  if (durationCache.has(track.id)) return durationCache.get(track.id);
+
+  const request = new Promise(resolve => {
+    const probe = document.createElement('audio');
+    probe.preload = 'metadata';
+    let settled = false;
+
+    const finish = value => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeout);
+      probe.removeAttribute('src');
+      probe.load();
+      resolve(Number.isFinite(value) && value > 0 ? value : null);
+    };
+
+    const timeout = window.setTimeout(() => finish(null), 15000);
+    probe.addEventListener('loadedmetadata', () => finish(probe.duration), { once: true });
+    probe.addEventListener('error', () => finish(null), { once: true });
+    probe.src = track.file;
+    probe.load();
+  });
+
+  durationCache.set(track.id, request);
+  return request;
+}
+
 function ensureView() {
   let view = document.querySelector('#view-album');
   if (view) return view;
@@ -15,8 +75,43 @@ function ensureView() {
 }
 
 export function createAlbumDetail({ escapeHtml, onPlayAlbum, onPlayTrack, onBack }) {
+  ensureDurationStylesheet();
   const view = ensureView();
   let currentAlbumId = null;
+
+  async function hydrateDurations(albumId, albumTracks) {
+    const hydrationId = ++durationHydrationId;
+
+    const durations = await Promise.all(albumTracks.map(async track => {
+      const duration = await readDuration(track);
+      if (hydrationId !== durationHydrationId || currentAlbumId !== albumId) return duration;
+
+      const target = view.querySelector(`[data-album-track-duration="${track.id}"]`);
+      if (target) {
+        target.textContent = formatDuration(duration);
+        target.classList.toggle('unavailable', !Number.isFinite(duration));
+        target.setAttribute(
+          'aria-label',
+          Number.isFinite(duration) ? `Duration ${formatDuration(duration)}` : 'Duration unavailable'
+        );
+      }
+      return duration;
+    }));
+
+    if (hydrationId !== durationHydrationId || currentAlbumId !== albumId) return;
+
+    const totalTarget = view.querySelector('[data-album-total-duration]');
+    if (!totalTarget) return;
+
+    const available = durations.filter(Number.isFinite);
+    if (available.length === albumTracks.length) {
+      totalTarget.textContent = `${formatDuration(available.reduce((sum, value) => sum + value, 0))} total`;
+      totalTarget.classList.remove('unavailable');
+    } else {
+      totalTarget.textContent = 'Duration unavailable';
+      totalTarget.classList.add('unavailable');
+    }
+  }
 
   function render(albumId) {
     const album = getAlbum(albumId);
@@ -37,6 +132,7 @@ export function createAlbumDetail({ escapeHtml, onPlayAlbum, onPlayTrack, onBack
           <p>${escapeHtml(album.description || '')}</p>
           <div class="album-detail-meta">
             <span>${albumTracks.length} tracks</span>
+            <span data-album-total-duration aria-live="polite">Loading duration…</span>
             <span>${lyricCount} lyric files</span>
             ${tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}
           </div>
@@ -53,15 +149,20 @@ export function createAlbumDetail({ escapeHtml, onPlayAlbum, onPlayTrack, onBack
             <img src="${escapeHtml(track.cover)}" alt="" loading="lazy">
             <span class="album-detail-track-copy">
               <strong>${escapeHtml(track.title)}</strong>
-              <small>${escapeHtml(track.genre)} • ${escapeHtml(track.mood)}</small>
+              <small>
+                ${escapeHtml(track.genre)} • ${escapeHtml(track.mood)}
+                <span aria-hidden="true"> • </span>
+                <span class="album-detail-duration" data-album-track-duration="${escapeHtml(track.id)}" aria-label="Duration loading">--:--</span>
+              </small>
             </span>
-            ${track.lyrics ? '<span class="album-detail-lyrics">LYRICS</span>' : ''}
+            ${track.lyrics ? '<span class="album-detail-lyrics">LYRICS</span>' : '<span aria-hidden="true"></span>'}
             <span class="album-detail-play">▶</span>
           </button>
         `).join('')}
       </div>
     `;
 
+    hydrateDurations(albumId, albumTracks);
     return true;
   }
 
