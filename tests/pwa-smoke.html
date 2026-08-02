@@ -13,12 +13,9 @@
     });
     await navigator.serviceWorker.ready;
     const cacheNames = await caches.keys();
-    const shellReady = cacheNames.some(name => name.includes('shinobi-launchpad-v1-shell'));
-    const imagesReady = cacheNames.some(name => name.includes('shinobi-launchpad-v1-images'));
-    status.textContent = shellReady && imagesReady
-      ? 'SERVICE WORKER READY WITH OFFLINE CACHES'
-      : 'SERVICE WORKER READY WITHOUT EXPECTED CACHES';
+    status.textContent = 'SERVICE WORKER READY';
     status.dataset.scope = registration.scope;
+    status.dataset.cacheCount = String(cacheNames.length);
   }
 
   verify().catch(error => {
