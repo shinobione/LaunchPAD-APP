@@ -122,7 +122,7 @@ function renderAlbums() {
                   <h2>${escapeHtml(album.title)}</h2>
                   <p>${escapeHtml(era?.description || album.description || '')}</p>
                   ${era?.heading ? `<strong class="project-era-heading">${escapeHtml(era.heading)}</strong>` : ''}
-                  <div class="project-tags">
+                  <div class="project-tags" style="margin-top:16px;column-gap:10px;row-gap:8px">
                     ${tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}
                   </div>
                 </div>
