@@ -51,6 +51,9 @@ jobs:
           console.log('PWA manifest and audio cache exclusions are valid.');
           NODE
 
+      - name: Validate offline service worker behavior
+        run: node scripts/test-service-worker.mjs
+
       - name: Smoke test in headless Chrome
         shell: bash
         run: |
@@ -109,27 +112,3 @@ jobs:
           grep -q 'Studio mode' /tmp/launchpad-lyrics.html
           grep -q 'Before the Noise' /tmp/launchpad-lyrics.html
           ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-lyrics.html
-
-          google-chrome --headless=new --no-sandbox --disable-gpu \
-            --user-data-dir=/tmp/launchpad-pwa-profile \
-            --virtual-time-budget=20000 --dump-dom \
-            'http://127.0.0.1:4173/#home' > /tmp/launchpad-pwa-warm.html
-
-          grep -q '14 TRACKS' /tmp/launchpad-pwa-warm.html
-          grep -q 'id="pwa-install-control"' /tmp/launchpad-pwa-warm.html
-          sleep 3
-
-          kill $SERVER_PID
-          wait $SERVER_PID 2>/dev/null || true
-          trap - EXIT
-          sleep 2
-
-          google-chrome --headless=new --no-sandbox --disable-gpu \
-            --user-data-dir=/tmp/launchpad-pwa-profile \
-            --virtual-time-budget=15000 --dump-dom \
-            'http://127.0.0.1:4173/#home' > /tmp/launchpad-offline.html
-
-          grep -q '14 TRACKS' /tmp/launchpad-offline.html
-          grep -q 'Ghost Signal' /tmp/launchpad-offline.html
-          grep -q 'id="pwa-install-control"' /tmp/launchpad-offline.html
-          ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-offline.html
