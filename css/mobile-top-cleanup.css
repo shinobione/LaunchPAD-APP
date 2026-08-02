@@ -43,6 +43,20 @@
     flex: 0 0 42px !important;
   }
 
+  /* Keep intrinsic HTML image dimensions from stretching the artist card. */
+  .launchpad-hero .hero-profile-card {
+    height: auto !important;
+  }
+
+  .launchpad-hero .hero-profile-card > img {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 4 / 5 !important;
+    object-fit: cover !important;
+    object-position: center top !important;
+  }
+
   /* Views now start directly below the floating menu button. */
   .view {
     margin-top: 0 !important;

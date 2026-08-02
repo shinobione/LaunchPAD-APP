@@ -1,12 +1,17 @@
 (() => {
   const config = Object.freeze({
     id: '20260802-wave14',
-    cache: 'shinobi-launchpad-v11'
+    cache: 'shinobi-launchpad-v11',
+    revision: 'hero-first-paint-1'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
 
   if (typeof document === 'undefined') return;
+
+  if (new URLSearchParams(location.search).has('visual-test')) {
+    document.documentElement.dataset.visualTest = 'true';
+  }
 
   function findEquivalentStylesheet(link, url) {
     return [...document.querySelectorAll('link[rel="stylesheet"]')].find(candidate => {
