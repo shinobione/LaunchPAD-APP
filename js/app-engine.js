@@ -44,16 +44,19 @@ async function boot() {
     { initAudioFocus },
     { applyAlbumCovers },
     { initLyricsWakeLock },
-    { syncCatalogCount }
+    { syncCatalogCount },
+    { initAboutEnhancements }
   ] = await Promise.all([
-    import('./content-v4.js'),
+    import('./content-v4.js?v=20260802-2'),
     import('./audio-focus.js'),
     import('./album-covers.js'),
     import('./lyrics-wake-lock.js'),
-    import('./catalog-count.js')
+    import('./catalog-count.js'),
+    import('./about-enhancements.js?v=20260802-1')
   ]);
 
   installContentV4();
+  initAboutEnhancements();
   applyAlbumCovers();
   syncCatalogCount();
   installDesktopHeroFix();
