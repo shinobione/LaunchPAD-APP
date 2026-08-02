@@ -38,16 +38,28 @@ jobs:
           sleep 2
 
           google-chrome --headless=new --no-sandbox --disable-gpu \
-            --virtual-time-budget=8000 --dump-dom \
+            --virtual-time-budget=9000 --dump-dom \
             'http://127.0.0.1:4173/#home' > /tmp/launchpad-home.html
 
           grep -q 'id="queue-panel"' /tmp/launchpad-home.html
+          grep -q 'id="view-favorites"' /tmp/launchpad-home.html
+          grep -q 'data-favorite-toggle="ghost-signal"' /tmp/launchpad-home.html
+          grep -q 'data-favorite-current="true"' /tmp/launchpad-home.html
           grep -q '14 TRACKS' /tmp/launchpad-home.html
           grep -q 'Ghost Signal' /tmp/launchpad-home.html
           ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-home.html
 
           google-chrome --headless=new --no-sandbox --disable-gpu \
-            --virtual-time-budget=8000 --dump-dom \
+            --virtual-time-budget=9000 --dump-dom \
+            'http://127.0.0.1:4173/#favorites' > /tmp/launchpad-favorites.html
+
+          grep -q 'id="view-favorites" class="view memory-view active"' /tmp/launchpad-favorites.html
+          grep -q 'Your favorites' /tmp/launchpad-favorites.html
+          grep -q 'Recently played' /tmp/launchpad-favorites.html
+          ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-favorites.html
+
+          google-chrome --headless=new --no-sandbox --disable-gpu \
+            --virtual-time-budget=9000 --dump-dom \
             'http://127.0.0.1:4173/#album=coal-to-diamond' > /tmp/launchpad-album.html
 
           grep -q 'album-detail-hero' /tmp/launchpad-album.html
@@ -55,7 +67,7 @@ jobs:
           grep -q 'The Throne Resonates' /tmp/launchpad-album.html
 
           google-chrome --headless=new --no-sandbox --disable-gpu \
-            --virtual-time-budget=8000 --dump-dom \
+            --virtual-time-budget=9000 --dump-dom \
             'http://127.0.0.1:4173/#lyrics=before-the-noise' > /tmp/launchpad-lyrics.html
 
           grep -q 'Studio mode' /tmp/launchpad-lyrics.html
