@@ -5,22 +5,6 @@
     0 0 55px color-mix(in srgb,#1db954 10%,transparent);
 }
 
-.track-detail-cloud-badge{
-  position:absolute;
-  left:14px;
-  bottom:14px;
-  padding:7px 11px;
-  border:1px solid rgba(29,185,84,.34);
-  border-radius:999px;
-  color:#7ff0a6;
-  background:rgba(4,18,10,.84);
-  backdrop-filter:blur(16px);
-  box-shadow:0 0 26px rgba(29,185,84,.16);
-  font-size:8px;
-  font-weight:900;
-  letter-spacing:.12em;
-}
-
 .track-detail-cloud-section{
   position:relative;
   overflow:hidden;
