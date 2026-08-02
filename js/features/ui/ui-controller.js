@@ -6,6 +6,16 @@ export function installExtendedUI() {
 
   const mainNav = document.querySelector('.main-nav');
   const albumsNav = mainNav?.querySelector('[data-view="analytics"]');
+  const albumsView = document.querySelector('#view-analytics');
+
+  for (const [id, value] of [['metric-tracks', '14'], ['metric-lyrics', '10']]) {
+    if (!albumsView || document.querySelector(`#${id}`)) continue;
+    const metric = document.createElement('span');
+    metric.id = id;
+    metric.hidden = true;
+    metric.textContent = value;
+    albumsView.appendChild(metric);
+  }
 
   if (mainNav && !mainNav.querySelector('[data-view="lyrics"]')) {
     const button = document.createElement('button');
