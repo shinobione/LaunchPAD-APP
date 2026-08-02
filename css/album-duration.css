@@ -1,0 +1,10 @@
+.album-detail-duration{
+  color:#c9bfd5;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+
+.album-detail-duration.unavailable,
+[data-album-total-duration].unavailable{
+  color:#887d94;
+}
