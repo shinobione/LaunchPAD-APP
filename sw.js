@@ -33,6 +33,7 @@ const SHELL_RESOURCES = [
   './js/catalog-metadata.js',
   './js/core/assets.js',
   './js/core/catalog-store.js',
+  './js/core/remote-catalog.js',
   './js/core/player-queue.js',
   './js/core/router.js',
   './js/core/share.js',
