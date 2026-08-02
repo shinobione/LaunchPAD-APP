@@ -1,7 +1,7 @@
 (() => {
   const config = Object.freeze({
-    id: '20260802-wave12',
-    cache: 'shinobi-launchpad-v9'
+    id: '20260802-wave13',
+    cache: 'shinobi-launchpad-v10'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;

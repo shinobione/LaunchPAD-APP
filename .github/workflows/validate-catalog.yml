@@ -34,9 +34,11 @@ jobs:
             README.md CHANGELOG.md RELEASE-CHECKLIST.md guide.md ARCHITECTURE.md \
             robots.txt sitemap.xml js/build-config.js js/core/assets.js \
             js/features/player-experience.js js/features/resilience-accessibility.js \
-            js/features/track-detail.js css/track-detail.css \
+            js/features/track-detail.js js/features/mobile-navigation.js \
+            css/track-detail.css css/mobile-navigation.css \
             css/launchpad-features.css scripts/capture-visuals.sh \
-            tests/accessibility-smoke.html tests/layout-regression.html; do
+            tests/accessibility-smoke.html tests/layout-regression.html \
+            tests/mobile-navigation-smoke.html; do
             test -s "$required"
           done
 
@@ -52,9 +54,9 @@ jobs:
             test ! -e "$removed"
           done
 
-          grep -q "id: '20260802-wave12'" js/build-config.js
+          grep -q "id: '20260802-wave13'" js/build-config.js
           grep -q 'normalizeStylesheet' js/build-config.js
-          grep -q "cache: 'shinobi-launchpad-v9'" js/build-config.js
+          grep -q "cache: 'shinobi-launchpad-v10'" js/build-config.js
           grep -q 'js/build-config.js' index.html
           ! grep -R -E "wave1|wave7" js --include='*.js'
           ! grep -q 'function updatePlayButtons' js/app-main.js
@@ -63,6 +65,9 @@ jobs:
           ! grep -q 'project-featured-covers' js/features/content/content-controller.js
           grep -q 'margin-top:16px;column-gap:10px;row-gap:8px' js/features/content/content-controller.js
           grep -q 'initTrackDetail' js/app-engine.js
+          grep -q 'initMobileNavigation' js/app-engine.js
+          grep -q 'mobile-menu-backdrop' js/features/mobile-navigation.js
+          grep -q 'mobile-menu-open' css/mobile-navigation.css
           grep -q 'data-track-cover-link' js/features/track-detail.js
           grep -q 'TRACK_DETAIL_HISTORY_KEY' js/features/track-detail.js
           grep -q 'isPassiveTrackDetail' js/core/router.js
@@ -95,7 +100,8 @@ jobs:
           for (const resource of [
             "'./js/build-config.js'", "'./js/core/assets.js'", "'./js/catalog-metadata.js'",
             "'./js/features/player-experience.js'", "'./js/features/resilience-accessibility.js'",
-            "'./js/features/track-detail.js'", "'./css/track-detail.css'",
+            "'./js/features/track-detail.js'", "'./js/features/mobile-navigation.js'",
+            "'./css/track-detail.css'", "'./css/mobile-navigation.css'",
             "'./css/launchpad-features.css'", "'./robots.txt'", "'./sitemap.xml'"
           ]) if (!worker.includes(resource)) fail(`Offline shell is missing ${resource}.`);
           for (const removed of [
@@ -130,6 +136,7 @@ jobs:
           grep -q '<h3>Track DNA</h3>' /tmp/launchpad-home.html
           grep -q '<strong id="track-dna-bpm">152</strong>' /tmp/launchpad-home.html
           grep -q 'data-track-cover-link=' /tmp/launchpad-home.html
+          grep -q 'id="mobile-menu-backdrop"' /tmp/launchpad-home.html
           ! grep -q 'Explore the universe' /tmp/launchpad-home.html
           ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-home.html
 
@@ -178,6 +185,11 @@ jobs:
           grep -q 'LAYOUT READY' /tmp/layout.html
           ! grep -q 'LAYOUT ERROR' /tmp/layout.html
           grep -q '"trackNavigationPreserved":true' /tmp/layout.html
+
+          chrome_dump 18000 'http://127.0.0.1:4173/tests/mobile-navigation-smoke.html' > /tmp/mobile-navigation.html
+          grep -o 'MOBILE NAV [^<]*' /tmp/mobile-navigation.html || true
+          grep -q 'MOBILE NAV READY TRACK BACK ALBUM BACK OUTSIDE ESCAPE' /tmp/mobile-navigation.html
+          ! grep -q 'MOBILE NAV ERROR' /tmp/mobile-navigation.html
 
       - name: Capture visual regression views
         shell: bash
