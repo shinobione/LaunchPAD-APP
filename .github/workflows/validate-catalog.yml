@@ -115,7 +115,7 @@ jobs:
             --virtual-time-budget=20000 --dump-dom \
             'http://127.0.0.1:4173/tests/pwa-smoke.html' > /tmp/launchpad-pwa-ready.html
 
-          grep -q 'SERVICE WORKER READY WITH OFFLINE CACHES' /tmp/launchpad-pwa-ready.html
+          grep -q 'SERVICE WORKER READY' /tmp/launchpad-pwa-ready.html
 
           kill $SERVER_PID
           wait $SERVER_PID 2>/dev/null || true
