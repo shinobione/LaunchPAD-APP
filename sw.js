@@ -73,7 +73,7 @@ const IMAGE_RESOURCES = [
   './assets/love-letters.jpeg',
   './assets/singles.jpeg',
   './assets/before-the-noise.jpeg',
-  './assets/low-bitrate-love.txt',
+  './assets/low-bitrate-love.jpeg',
   './assets/thick.jpeg',
   './assets/real-love-doesnt-rush.jpeg',
   './assets/jusquau-dernier-souffle.jpeg',
