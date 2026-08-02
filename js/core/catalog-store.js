@@ -90,6 +90,7 @@ export function mergeRemoteTracks(remoteTracks = []) {
         ...remoteTrack,
         ...existing,
         file: remoteTrack.file || existing.file,
+        fallbackFile: existing.fallbackFile || existing.file,
         cover: remoteTrack.cover || existing.cover,
         lyrics: remoteTrack.lyrics || existing.lyrics,
         tags: [...new Set([
