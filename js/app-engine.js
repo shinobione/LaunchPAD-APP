@@ -87,8 +87,9 @@ async function boot() {
   initAudioFocus({ audio });
   initLyricsWakeLock({ audio });
 
-  document.documentElement.dataset.appState = 'ready';
-  document.documentElement.dataset.appReady = 'true';
+  const data = document.documentElement.dataset;
+  data.appState = 'ready';
+  data.appReady = 'true';
   window.dispatchEvent(new CustomEvent('shinobi:ready'));
 }
 
