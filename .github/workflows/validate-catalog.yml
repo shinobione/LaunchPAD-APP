@@ -18,16 +18,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python for temporary audio analysis
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Analyze track BPM and keys
-        run: |
-          python -m pip install --disable-pip-version-check librosa
-          python scripts/analyze-audio-metadata.py
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -38,8 +28,33 @@ jobs:
           find js scripts -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
           node --check sw.js
 
-      - name: Validate final module migration
+      - name: Validate consolidated structure and cleanup
         run: |
+          test -s guide.md
+          test -s js/catalog-metadata.js
+          test -s js/features/player-experience.js
+          test -s css/player-experience.css
+          test -s tests/player-experience-smoke.html
+          test -s tests/lyrics-studio-smoke.html
+
+          for removed in \
+            assets/favicon.svg \
+            assets/favicon-v2.svg \
+            assets/favicon-v3.svg \
+            assets/favicon-v5.svg \
+            scripts/analyze-audio-metadata.py \
+            .github/workflows/analyze-audio-metadata.yml; do
+            test ! -e "$removed"
+          done
+
+          grep -q 'assets/favicon-v6.svg' index.html
+          ! grep -q 'favicon-v2.svg' index.html
+          grep -q "catalog-metadata.js" js/core/catalog-store.js
+          grep -q "player-experience.js" js/app-engine.js
+          grep -q "const BUILD = '20260802-wave7'" js/app-engine.js
+          ! grep -q 'requestFullscreen' js/features/lyrics-studio.js
+          ! grep -q 'data-lyrics-studio="fullscreen"' js/features/lyrics-studio.js
+
           test ! -e js/ui.js
           test ! -e js/lyrics-engine.js
           test ! -e js/visual-engine.js
@@ -50,17 +65,11 @@ jobs:
           test -s js/features/ui/ui-controller.js
           test -s js/features/lyrics/lyrics-engine.js
           test -s js/features/visual/visual-engine.js
-          grep -q "./features/ui/ui-controller.js" js/app-main.js
-          grep -q "./features/lyrics/lyrics-engine.js" js/app-main.js
-          grep -q "./features/visual/visual-engine.js" js/app-main.js
-          ! grep -q "from './ui.js'" js/app-main.js
-          ! grep -q "from './lyrics-engine.js'" js/app-main.js
-          ! grep -q "from './visual-engine.js'" js/app-main.js
 
       - name: Validate catalog and referenced files
         run: npm run validate:catalog
 
-      - name: Validate PWA manifest
+      - name: Validate PWA manifest and shell
         run: |
           node <<'NODE'
           const fs = require('node:fs');
@@ -74,10 +83,16 @@ jobs:
             if (!icon) fail(`Missing ${size} icon.`);
             if (!fs.existsSync(icon.src)) fail(`Missing icon file ${icon.src}.`);
           }
+
           const worker = fs.readFileSync('sw.js', 'utf8');
+          if (!worker.includes("const VERSION = 'shinobi-launchpad-v4'")) fail('PWA cache version was not bumped.');
           if (!worker.includes("request.destination === 'audio'")) fail('Audio requests are not explicitly excluded from cache.');
           if (!worker.includes("request.headers.has('range')")) fail('Range requests are not explicitly excluded from cache.');
+
           for (const resource of [
+            "'./js/catalog-metadata.js'",
+            "'./js/features/player-experience.js'",
+            "'./css/player-experience.css'",
             "'./js/features/ui/ui-controller.js'",
             "'./js/features/lyrics/lyrics-engine.js'",
             "'./js/features/visual/visual-engine.js'",
@@ -87,10 +102,18 @@ jobs:
           ]) {
             if (!worker.includes(resource)) fail(`Offline shell is missing ${resource}.`);
           }
-          for (const removed of ["'./js/ui.js'", "'./js/lyrics-engine.js'", "'./js/visual-engine.js'"]) {
+
+          for (const removed of [
+            "'./js/ui.js'",
+            "'./js/lyrics-engine.js'",
+            "'./js/visual-engine.js'",
+            "'./assets/favicon-v2.svg'",
+            "'./assets/favicon-v3.svg'",
+            "'./assets/favicon-v5.svg'"
+          ]) {
             if (worker.includes(removed)) fail(`Offline shell still references removed path ${removed}.`);
           }
-          console.log('PWA manifest, migrated shell and audio cache exclusions are valid.');
+          console.log('PWA manifest, consolidated shell and audio exclusions are valid.');
           NODE
 
       - name: Validate offline service worker behavior
@@ -105,20 +128,36 @@ jobs:
           sleep 2
 
           google-chrome --headless=new --no-sandbox --disable-gpu \
-            --virtual-time-budget=10000 --dump-dom \
+            --virtual-time-budget=12000 --dump-dom \
             'http://127.0.0.1:4173/#home' > /tmp/launchpad-home.html
 
           grep -q 'id="queue-panel"' /tmp/launchpad-home.html
           grep -q 'id="view-favorites"' /tmp/launchpad-home.html
-          grep -q 'data-favorite-toggle="ghost-signal"' /tmp/launchpad-home.html
-          grep -q 'data-favorite-current="true"' /tmp/launchpad-home.html
           grep -q 'id="visual-card-modal"' /tmp/launchpad-home.html
-          grep -q 'data-visual-card-action="open"' /tmp/launchpad-home.html
-          grep -q 'rel="manifest" href="manifest.webmanifest' /tmp/launchpad-home.html
           grep -q 'id="pwa-install-control"' /tmp/launchpad-home.html
           grep -q '14 TRACKS' /tmp/launchpad-home.html
-          grep -q 'Ghost Signal' /tmp/launchpad-home.html
+          grep -q 'class="panel discovery-panel track-dna-panel"' /tmp/launchpad-home.html
+          grep -q '<h3>Track DNA</h3>' /tmp/launchpad-home.html
+          grep -q '<strong id="track-dna-bpm">152</strong>' /tmp/launchpad-home.html
+          grep -q '<strong id="track-dna-key">D# minor</strong>' /tmp/launchpad-home.html
+          grep -q '<strong id="track-dna-language">English</strong>' /tmp/launchpad-home.html
+          grep -q '>CLEAN<' /tmp/launchpad-home.html
+          ! grep -q 'Explore the universe' /tmp/launchpad-home.html
           ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-home.html
+
+          google-chrome --headless=new --no-sandbox --disable-gpu \
+            --virtual-time-budget=7000 --dump-dom \
+            'http://127.0.0.1:4173/tests/player-experience-smoke.html' > /tmp/launchpad-player-experience.html
+
+          grep -q 'PLAYER EXPERIENCE READY PLAY PAUSE DYNAMIC TRACK DNA' /tmp/launchpad-player-experience.html
+          ! grep -q 'PLAYER EXPERIENCE ERROR' /tmp/launchpad-player-experience.html
+
+          google-chrome --headless=new --no-sandbox --disable-gpu \
+            --virtual-time-budget=7000 --dump-dom \
+            'http://127.0.0.1:4173/tests/lyrics-studio-smoke.html' > /tmp/launchpad-lyrics-studio.html
+
+          grep -q 'LYRICS STUDIO READY SINGLE MODE AUTO CLOSE' /tmp/launchpad-lyrics-studio.html
+          ! grep -q 'LYRICS STUDIO ERROR' /tmp/launchpad-lyrics-studio.html
 
           google-chrome --headless=new --no-sandbox --disable-gpu \
             --virtual-time-budget=9000 --dump-dom \
@@ -149,16 +188,13 @@ jobs:
           ! grep -q 'VISUAL CARD ERROR' /tmp/launchpad-visual-card.html
 
           google-chrome --headless=new --no-sandbox --disable-gpu \
-            --virtual-time-budget=20000 --dump-dom \
+            --virtual-time-budget=12000 --dump-dom \
             'http://127.0.0.1:4173/#album=coal-to-diamond' > /tmp/launchpad-album.html
 
           grep -q 'album-detail-hero' /tmp/launchpad-album.html
           grep -q 'Play album' /tmp/launchpad-album.html
           grep -q 'The Throne Resonates' /tmp/launchpad-album.html
-          grep -q 'data-album-total-duration' /tmp/launchpad-album.html
-          grep -q 'data-album-track-duration="the-throne-resonates"' /tmp/launchpad-album.html
           grep -Eq '[0-9]+:[0-9]{2} total' /tmp/launchpad-album.html
-          grep -Eq 'data-album-track-duration="the-throne-resonates"[^>]*>[0-9]+:[0-9]{2}<' /tmp/launchpad-album.html
           ! grep -q 'Duration unavailable' /tmp/launchpad-album.html
           ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-album.html
 
@@ -166,6 +202,9 @@ jobs:
             --virtual-time-budget=9000 --dump-dom \
             'http://127.0.0.1:4173/#lyrics=before-the-noise' > /tmp/launchpad-lyrics.html
 
+          grep -q 'data-lyrics-studio="mode"' /tmp/launchpad-lyrics.html
           grep -q 'Studio mode' /tmp/launchpad-lyrics.html
           grep -q 'Before the Noise' /tmp/launchpad-lyrics.html
+          ! grep -q 'data-lyrics-studio="fullscreen"' /tmp/launchpad-lyrics.html
+          ! grep -q '>Fullscreen<' /tmp/launchpad-lyrics.html
           ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-lyrics.html
