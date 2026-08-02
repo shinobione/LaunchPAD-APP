@@ -2,7 +2,10 @@ name: Validate Launchpad
 
 on:
   push:
-    branches: [main, refactor/launchpad-waves]
+    branches:
+      - main
+      - 'refactor/**'
+      - 'feature/**'
   pull_request:
 
 permissions:

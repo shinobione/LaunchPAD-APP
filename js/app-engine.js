@@ -33,7 +33,7 @@ async function boot() {
   installEarlyFavicon();
   installCriticalStyles();
 
-  await import('./app-main.js?v=20260802-wave1');
+  await import('./app-main.js?v=20260802-wave2');
 
   const [
     { installContentV4 },
@@ -42,9 +42,9 @@ async function boot() {
     { initAboutEnhancements }
   ] = await Promise.all([
     import('./features/content/content-controller.js?v=20260802-wave1'),
-    import('./audio-focus.js'),
-    import('./lyrics-wake-lock.js'),
-    import('./about-enhancements.js?v=20260802-2')
+    import('./features/audio/audio-focus.js?v=20260802-wave2'),
+    import('./features/lyrics/wake-lock.js?v=20260802-wave2'),
+    import('./features/about/about-controller.js?v=20260802-wave2')
   ]);
 
   installContentV4();
