@@ -1,0 +1,92 @@
+#view-about .about-card{
+  grid-template-columns:minmax(220px,280px) minmax(320px,1fr) minmax(260px,430px)!important;
+  align-items:center!important;
+}
+
+.about-social-links{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:8px!important;
+  width:min(100%,220px)!important;
+  margin:18px 0 0!important;
+}
+
+.about-social-links .social-platform{
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-height:48px!important;
+  margin:0!important;
+  text-align:left!important;
+}
+
+.about-social-links .social-platform span{
+  min-width:0;
+}
+
+.about-golden-logo-wrap{
+  min-width:0;
+  width:100%;
+  display:grid;
+  place-items:center;
+  padding:4px 10px;
+  overflow:visible;
+}
+
+.about-golden-canvas{
+  display:block!important;
+  width:min(100%,430px)!important;
+  height:auto!important;
+  max-height:none!important;
+  margin:0!important;
+  opacity:0;
+  object-fit:contain;
+  filter:
+    drop-shadow(0 13px 25px rgba(0,0,0,.32))
+    drop-shadow(0 0 20px rgba(232,184,77,.18));
+  transition:opacity .3s ease;
+}
+
+.about-golden-canvas.is-ready{
+  opacity:1;
+}
+
+@media(max-width:1180px) and (min-width:761px){
+  #view-about .about-card{
+    grid-template-columns:220px minmax(0,1fr)!important;
+  }
+
+  .about-golden-logo-wrap{
+    grid-column:1/-1;
+    padding-top:18px;
+  }
+
+  .about-golden-canvas{
+    width:min(68%,430px)!important;
+  }
+}
+
+@media(max-width:760px){
+  #view-about .about-card{
+    grid-template-columns:1fr!important;
+  }
+
+  .about-social-links{
+    width:min(100%,260px)!important;
+    margin:18px auto 0!important;
+  }
+
+  .about-social-links .social-platform{
+    min-height:54px!important;
+  }
+
+  .about-golden-logo-wrap{
+    width:100%;
+    margin-top:12px;
+    padding:8px 0 0;
+  }
+
+  .about-golden-canvas{
+    width:min(88vw,430px)!important;
+    margin-inline:auto!important;
+  }
+}
