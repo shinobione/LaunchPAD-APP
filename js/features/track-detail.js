@@ -101,16 +101,15 @@ function remoteSignalSection(track) {
   const era = metadata.era || 'Independent catalog';
   const energy = metadata.energy || 'Unspecified';
   const timedLyrics = metadata.timestampsAvailable ? 'Timestamped' : 'Not timestamped';
-  const sourceLabel = track.remoteAvailable ? 'R2 + bundled fallback' : 'Cloudflare R2';
 
   return `
     <section class="track-detail-section track-detail-cloud-section" aria-labelledby="track-detail-cloud-heading">
       <div class="track-detail-section-head">
         <div>
-          <span class="eyebrow">LIVE CATALOG SIGNAL</span>
-          <h2 id="track-detail-cloud-heading">R2 release profile</h2>
+          <span class="eyebrow">RELEASE CONTEXT</span>
+          <h2 id="track-detail-cloud-heading">Release profile</h2>
         </div>
-        <span class="pill track-detail-cloud-pill">CLOUDFLARE R2</span>
+        <span class="pill track-detail-cloud-pill">CATALOG DATA</span>
       </div>
 
       <div class="track-detail-data-grid track-detail-cloud-grid">
@@ -119,7 +118,6 @@ function remoteSignalSection(track) {
         ${metadataItem('Era', era)}
         ${metadataItem('Energy', energy)}
         ${metadataItem('Lyrics timing', timedLyrics)}
-        ${metadataItem('Media source', sourceLabel)}
       </div>
 
       ${moods.length || themes.length ? `
@@ -211,7 +209,6 @@ export function initTrackDetail({ audio = document.querySelector('#audio') } = {
         <div class="track-detail-artwork-shell">
           <img class="track-detail-cover" src="${escapeHtml(track.cover)}" alt="Cover art for ${escapeHtml(track.title)}">
           <span class="track-detail-status" data-status="${explicitStatus(track.explicit)}">${escapeHtml(explicitLabel(track.explicit))}</span>
-          ${isRemoteSignal ? '<span class="track-detail-cloud-badge">R2 LIVE</span>' : ''}
         </div>
 
         <div class="track-detail-copy">

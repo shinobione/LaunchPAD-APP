@@ -47,6 +47,10 @@ function paletteFor(value) {
   return GENRE_PALETTES[Math.abs(hash) % GENRE_PALETTES.length];
 }
 
+function finiteOrNull(value) {
+  return Number.isFinite(value) ? value : null;
+}
+
 function buildSearchText(track) {
   return [
     track.title,
@@ -54,7 +58,9 @@ function buildSearchText(track) {
     ...(track.tags || []),
     track.mood,
     track.album,
-    ...(track.languages || [])
+    ...(track.languages || []),
+    track.remoteMetadata?.era,
+    ...(track.remoteMetadata?.themes || [])
   ]
     .filter(Boolean)
     .join(' ')
@@ -67,9 +73,14 @@ function mapRemoteTrack(item) {
   const genres = Array.isArray(item.genres) && item.genres.length
     ? item.genres.filter(Boolean)
     : ['Other'];
+  const tags = Array.isArray(item.tags) && item.tags.length
+    ? item.tags.filter(Boolean)
+    : genres;
   const moods = Array.isArray(item.moods) ? item.moods.filter(Boolean) : [];
-  const [accent, accent2] = paletteFor(item.slug);
+  const fallbackPalette = paletteFor(item.slug);
   const languages = normalizeLanguages(item.languages);
+  const albumId = item.album?.id || 'singles';
+  const album = item.album?.title || 'Singles';
 
   const track = {
     id: item.slug,
@@ -77,20 +88,20 @@ function mapRemoteTrack(item) {
     file: item.assets.audio.url,
     cover: item.assets.cover?.url || FALLBACK_COVER,
     genre: genres[0],
-    tags: [...new Set(genres)],
+    tags: [...new Set([...tags, ...genres])],
     mood: moods.join(', ') || item.energy || 'Independent release',
-    albumId: 'singles',
-    album: 'Singles',
+    albumId,
+    album,
     lyrics: item.assets.lyrics?.url || null,
-    accent,
-    accent2,
-    releaseDate: null,
+    accent: /^#[0-9a-f]{6}$/i.test(item.accent || '') ? item.accent : fallbackPalette[0],
+    accent2: /^#[0-9a-f]{6}$/i.test(item.accent2 || '') ? item.accent2 : fallbackPalette[1],
+    releaseDate: item.releaseDate || null,
     languages: languages.length ? languages : ['English'],
-    bpm: null,
-    key: null,
-    keyConfidence: null,
-    explicit: null,
-    duration: null,
+    bpm: Number.isInteger(item.bpm) ? item.bpm : null,
+    key: typeof item.key === 'string' && item.key ? item.key : null,
+    keyConfidence: finiteOrNull(item.keyConfidence),
+    explicit: typeof item.explicit === 'boolean' ? item.explicit : null,
+    duration: finiteOrNull(item.duration),
     remote: true,
     source: 'cloudflare-r2',
     remoteMetadata: {
