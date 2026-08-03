@@ -5,7 +5,7 @@ _Snapshot: 2026-08-03_
 
 This document prepares the legacy GitHub media cleanup. It does not authorize or perform deletions.
 
-Status: automated R2 transport and metadata gates pass; physical Android acceptance and full-track decoding remain open. Cleanup is not authorized.
+Status: automated R2 transport and metadata gates pass; sampled Track-detail coherence passes, while physical Android full-catalog acceptance and full-track decoding remain open. Cleanup is not authorized.
 
 ## Live automated result
 
@@ -18,6 +18,7 @@ The public `launchpad-media` Worker currently reports version 2.3 and 16 canonic
 - `before-the-noise` persists the corrected genres `Hip-hop`, `Boom Bap`, `Lo-fi`.
 - `before-the-noise` persists theme colors `#ef9542` and `#7f8c83`.
 - `before-the-noise` stores its duration canonically as 237 seconds (`03:57` in the Track Manager).
+- Carved from Pressure and THICK both resolve to the single `Lyrics — Timestamped` Track-detail status.
 
 Run the read-only audit again at any time:
 
@@ -27,7 +28,7 @@ npm run audit:r2
 
 Use `npm run audit:r2 -- --inventory-only` when network access is unavailable.
 
-`Validate Cloudflare Workers` also compiles both pinned Wrangler bundles, but it does not query or mutate production. The manual deployment workflow has not yet been used to confirm the repository Track Manager v4.4 in production.
+`Validate Cloudflare Workers` also compiles both pinned Wrangler bundles, but it does not query or mutate production. Track Manager v4.5 is confirmed live behind Cloudflare Access after a manual dashboard deployment. The repository deployment workflow has not yet completed its first production run.
 
 ## Legacy candidates, not yet deleted
 
@@ -46,10 +47,10 @@ Automated range checks prove that R2 objects are reachable, not that every full 
 1. first-tap playback and continuous playback on the installed Android PWA;
 2. title, artist and SHINOBIWAN icon in the Android system player and lock screen;
 3. fast thumbnail loading and original cover loading on track details;
-4. Lyrics Studio and Track details coherence for timestamped tracks;
+4. Lyrics Studio and the single Track-detail `Lyrics` status across the timestamped catalog;
 5. all 16 tracks through a complete R2-only playback pass.
 
-The first-tap intent, explicit Android artwork and timestamp-status fixes are present on GitHub Pages. Treat them as code-complete, not device-approved, until the target Android pass above is signed off.
+The first-tap intent, explicit Android artwork and unified timestamp-status fixes are present on GitHub Pages. Treat the sampled timestamp check as passed, but do not treat the whole catalog as device-approved until the target Android pass above is signed off.
 
 Only after that approval should a separate cleanup PR remove the files, `fallbackFile`, `audio-fallback.js`, obsolete catalog metadata, and stale service-worker precache entries.
 
