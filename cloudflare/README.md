@@ -5,7 +5,7 @@ The media catalog uses one private administration Worker and one public read-onl
 
 ## Verified deployment status
 
-- Public `launchpad-media`: repository source v2.4; production remains v2.3 until the public Worker is redeployed. Sixteen canonical tracks are confirmed.
+- Public `launchpad-media`: repository source and production are both v2.4. Sixteen canonical tracks and 87,849,601 bytes across 16 complete audio transfers are confirmed.
 - Private `launchpad-r2-api`: repository source v4.5; the matching protected production UI is confirmed live after a manual dashboard deployment.
 - Wrangler validation: merged and green for both bundles.
 - Repository deployment workflow: available, but not yet recorded as a successful production deployment; the current v4.5 confirmation is manual.

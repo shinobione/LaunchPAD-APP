@@ -5,15 +5,17 @@ _Snapshot: 2026-08-03_
 
 This document prepares the legacy GitHub media cleanup. It does not authorize or perform deletions.
 
-Status: automated Range and metadata gates pass; the full-transfer audit exposed incorrect HTTP 206 responses for requests without a Range header. Public Worker v2.4 is prepared but not yet deployed. Cleanup is not authorized.
+Status: automated Range, metadata and full-transfer gates pass on public Worker v2.4. Physical Android full-catalog decoding and listening remain open. Cleanup is not authorized.
 
 This documentation update does not delete, rename or modify any historical GitHub or R2 media object.
 
 ## Live automated result
 
-The public `launchpad-media` Worker currently reports version 2.3 and 16 canonical published tracks.
+The public `launchpad-media` Worker currently reports version 2.4 and 16 canonical published tracks.
 
 - 16/16 audio URLs accept HTTP Range requests.
+- 16/16 complete audio responses transferred successfully, totaling 87,849,601 verified bytes.
+- Full requests return HTTP 200; byte-range requests return HTTP 206.
 - 16/16 catalog covers use optimized WebP thumbnails.
 - All 14 tracks in the original migration manifest are present in R2.
 - 10 tracks currently report timestamped lyrics.
@@ -28,7 +30,7 @@ Run the read-only audit again at any time:
 npm run audit:r2
 ```
 
-Use `npm run audit:r2 -- --full-audio` after public Worker v2.4 is deployed to download all 16 audio responses in full and compare every received byte count with the total announced by Range. This verifies complete transport, not audio decoding or human playback.
+Use `npm run audit:r2 -- --full-audio` to download all 16 audio responses in full and compare every received byte count with the total announced by Range. This verifies complete transport, not audio decoding or human playback.
 
 Use `npm run audit:r2 -- --inventory-only` when network access is unavailable.
 
