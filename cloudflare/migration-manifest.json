@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "source": {
     "repository": "shinobione/LaunchPAD-APP",
-    "ref": "main",
+    "ref": "7867d9b60033a3b5573019b670678ecc888feace",
     "generatedAt": "2026-08-03T00:04:00+02:00"
   },
   "tracks": [
@@ -29,9 +29,9 @@
       "accent": "#b746ff",
       "accent2": "#4c7dff",
       "sources": {
-        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/audio/before-the-noise.mp3",
-        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/before-the-noise.jpeg",
-        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/lyrics/before-the-noise.txt"
+        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/audio/before-the-noise.mp3",
+        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/before-the-noise.jpeg",
+        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/lyrics/before-the-noise.txt"
       }
     },
     {
@@ -57,9 +57,9 @@
       "accent": "#ff4fd8",
       "accent2": "#7c4dff",
       "sources": {
-        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/audio/low-bitrate-love.mp3",
-        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/low-bitrate-love.jpeg",
-        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/lyrics/low-bitrate-love.txt"
+        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/audio/low-bitrate-love.mp3",
+        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/low-bitrate-love.jpeg",
+        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/lyrics/low-bitrate-love.txt"
       }
     },
     {
@@ -85,9 +85,9 @@
       "accent": "#ff3f5f",
       "accent2": "#7d34ff",
       "sources": {
-        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/audio/thick.mp3",
-        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/thick.jpeg",
-        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/lyrics/thick.txt"
+        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/audio/thick.mp3",
+        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/thick.jpeg",
+        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/lyrics/thick.txt"
       }
     },
     {
@@ -113,9 +113,9 @@
       "accent": "#ff5a9d",
       "accent2": "#8e5bff",
       "sources": {
-        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/audio/real-love-doesnt-rush.mp3",
-        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/real-love-doesnt-rush.jpeg",
-        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/lyrics/real-love-doesnt-rush.txt"
+        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/audio/real-love-doesnt-rush.mp3",
+        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/real-love-doesnt-rush.jpeg",
+        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/lyrics/real-love-doesnt-rush.txt"
       }
     },
     {
@@ -141,9 +141,9 @@
       "accent": "#d13cff",
       "accent2": "#ff4b74",
       "sources": {
-        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/audio/jusquau-dernier-souffle.mp3",
-        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/jusquau-dernier-souffle.jpeg",
-        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/lyrics/jusquau-dernier-souffle.txt"
+        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/audio/jusquau-dernier-souffle.mp3",
+        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/jusquau-dernier-souffle.jpeg",
+        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/lyrics/jusquau-dernier-souffle.txt"
       }
     },
     {
@@ -169,9 +169,9 @@
       "accent": "#f2b84b",
       "accent2": "#e45585",
       "sources": {
-        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/audio/tinh-bolero-cho-tran.mp3",
-        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/tinh-bolero-cho-tran.png",
-        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/lyrics/tinh-bolero-cho-tran.txt"
+        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/audio/tinh-bolero-cho-tran.mp3",
+        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/tinh-bolero-cho-tran.png",
+        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/lyrics/tinh-bolero-cho-tran.txt"
       }
     },
     {
@@ -197,9 +197,9 @@
       "accent": "#ff8a3d",
       "accent2": "#d93cff",
       "sources": {
-        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/audio/saigon-bound.mp3",
-        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/saigon-bound.png",
-        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/lyrics/saigon-bound.txt"
+        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/audio/saigon-bound.mp3",
+        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/saigon-bound.png",
+        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/lyrics/saigon-bound.txt"
       }
     },
     {
@@ -225,9 +225,9 @@
       "accent": "#f0b34a",
       "accent2": "#7c47ff",
       "sources": {
-        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/audio/the-throne-resonates.mp3",
-        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/the-throne-resonates.jpeg",
-        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/lyrics/the-throne-resonates.txt"
+        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/audio/the-throne-resonates.mp3",
+        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/the-throne-resonates.jpeg",
+        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/lyrics/the-throne-resonates.txt"
       }
     },
     {
@@ -253,9 +253,9 @@
       "accent": "#ff4f52",
       "accent2": "#9b3dff",
       "sources": {
-        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/audio/carved-from-pressure.mp3",
-        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/carved-from-pressure.jpeg",
-        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/lyrics/carved-from-pressure.txt"
+        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/audio/carved-from-pressure.mp3",
+        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/carved-from-pressure.jpeg",
+        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/lyrics/carved-from-pressure.txt"
       }
     },
     {
@@ -281,9 +281,9 @@
       "accent": "#f1c75b",
       "accent2": "#e14f4f",
       "sources": {
-        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/audio/ligne-3.mp3",
-        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/ligne3.jpeg",
-        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/lyrics/ligne3.txt"
+        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/audio/ligne-3.mp3",
+        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/ligne3.jpeg",
+        "lyrics": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/lyrics/ligne3.txt"
       }
     },
     {
@@ -309,8 +309,8 @@
       "accent": "#d4a63a",
       "accent2": "#b41f3c",
       "sources": {
-        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/audio/albums/coal-to-diamond/obey.mp3",
-        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/covers/albums/coal-to-diamond/obey.jpeg",
+        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/audio/albums/coal-to-diamond/obey.mp3",
+        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/covers/albums/coal-to-diamond/obey.jpeg",
         "lyrics": null
       }
     },
@@ -337,8 +337,8 @@
       "accent": "#ff9c45",
       "accent2": "#ff4f8b",
       "sources": {
-        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/audio/singles/close-to-you.mp3",
-        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/covers/singles/close-to-you.jpeg",
+        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/audio/singles/close-to-you.mp3",
+        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/covers/singles/close-to-you.jpeg",
         "lyrics": null
       }
     },
@@ -365,8 +365,8 @@
       "accent": "#41d6ff",
       "accent2": "#8a52ff",
       "sources": {
-        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/audio/singles/ghost-signal.mp3",
-        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/covers/singles/ghost-signal.jpeg",
+        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/audio/singles/ghost-signal.mp3",
+        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/covers/singles/ghost-signal.jpeg",
         "lyrics": null
       }
     },
@@ -393,8 +393,8 @@
       "accent": "#ff4d8d",
       "accent2": "#4b6fff",
       "sources": {
-        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/audio/singles/husband.mp3",
-        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/assets/covers/singles/husband.jpeg",
+        "audio": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/audio/singles/husband.mp3",
+        "cover": "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/7867d9b60033a3b5573019b670678ecc888feace/assets/covers/singles/husband.jpeg",
         "lyrics": null
       }
     }
