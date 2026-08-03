@@ -47,17 +47,21 @@ for (const required of [
   'thumbnail',
   'Accept-Ranges',
   'request.headers.get("range")',
-  'version: 2.3',
+  'version: 2.4',
   'readCatalogIndex',
   'caches.default',
   'timestampsAvailable = manifest.timestampsAvailable === true',
   'function parseLyricSegments(',
-  'function detectTimestamps('
+  'function detectTimestamps(',
+  'if (rangeHeader && object.range)'
 ]) {
   if (!publicWorker.includes(required)) fail(`Public Worker is missing ${required}.`);
 }
 if (publicWorker.includes('bucket.head(')) {
   fail('Public catalog listing must not issue per-asset R2 HEAD requests.');
+}
+if (publicWorker.includes('if (object.range)')) {
+  fail('Full media requests must not be mislabeled as HTTP 206 responses.');
 }
 if (!publicWorker.includes('/" + kind + "/" + encodeURIComponent(filename)')) {
   fail('Public media URLs must end with their real filename.');

@@ -5,7 +5,7 @@ _Snapshot: 2026-08-03_
 
 This document prepares the legacy GitHub media cleanup. It does not authorize or perform deletions.
 
-Status: automated R2 transport and metadata gates pass; sampled Track-detail coherence passes, while physical Android full-catalog acceptance and full-track decoding remain open. Cleanup is not authorized.
+Status: automated Range and metadata gates pass; the full-transfer audit exposed incorrect HTTP 206 responses for requests without a Range header. Public Worker v2.4 is prepared but not yet deployed. Cleanup is not authorized.
 
 This documentation update does not delete, rename or modify any historical GitHub or R2 media object.
 
@@ -28,6 +28,8 @@ Run the read-only audit again at any time:
 npm run audit:r2
 ```
 
+Use `npm run audit:r2 -- --full-audio` after public Worker v2.4 is deployed to download all 16 audio responses in full and compare every received byte count with the total announced by Range. This verifies complete transport, not audio decoding or human playback.
+
 Use `npm run audit:r2 -- --inventory-only` when network access is unavailable.
 
 `Validate Cloudflare Workers` also compiles both pinned Wrangler bundles, but it does not query or mutate production. Track Manager v4.5 is confirmed live behind Cloudflare Access after a manual dashboard deployment. The repository deployment workflow has not yet completed its first production run.
@@ -44,7 +46,7 @@ The candidate total is 113,988,483 bytes. Album artwork, branding, PWA icons, sc
 
 ## Remaining manual gate
 
-Automated range checks prove that R2 objects are reachable, not that every full track decodes correctly on the target Android device. Before deletion, explicitly validate:
+Automated Range checks prove that R2 objects are reachable. The opt-in full-transfer pass proves that every byte can be delivered, but neither check proves that every full track decodes correctly on the target Android device. Before deletion, explicitly validate:
 
 1. first-tap playback and continuous playback on the installed Android PWA;
 2. title, artist and SHINOBIWAN icon in the Android system player and lock screen;

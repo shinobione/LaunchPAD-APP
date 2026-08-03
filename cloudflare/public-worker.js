@@ -24,7 +24,7 @@ export default {
         return jsonResponse({
           ok: true,
           service: "launchpad-media",
-          version: 2.3,
+          version: 2.4,
           access: "public-read-only",
           canonicalTracks: manifests,
           routes: {
@@ -260,7 +260,7 @@ async function streamR2Object(request, bucket, key) {
   headers.set("Cache-Control", "public, max-age=31536000, immutable");
 
   const body = request.method === "HEAD" ? null : object.body;
-  if (object.range) {
+  if (rangeHeader && object.range) {
     const start = object.range.offset;
     const end = start + object.range.length - 1;
     headers.set("Content-Range", "bytes " + start + "-" + end + "/" + object.size);

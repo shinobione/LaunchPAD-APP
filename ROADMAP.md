@@ -11,7 +11,7 @@ _Last updated: 2026-08-03_
 - The public `launchpad-media` Worker exposes published metadata and Range-enabled media streams.
 - Sixteen tracks are published in the canonical `tracks/<slug>/` layout.
 - Each track has a manifest, original cover and audio file; optimized WebP thumbnails are used by catalog cards.
-- The public Worker is live on v2.3; the read-only audit verifies all 16 Range streams and thumbnails.
+- The public Worker is live on v2.3; repository source v2.4 corrects full-request HTTP responses. The read-only audit verifies all 16 Range streams and thumbnails, while its new full-transfer mode awaits the v2.4 deployment.
 - GitHub Pages serves the favorites queue, desktop-only admin entry, PR #23 Android/PWA fixes and the unified `Lyrics` timestamp status.
 - Track-detail coherence is confirmed for Carved from Pressure and THICK. The physical Android full-catalog acceptance pass is not signed off yet, so historical-media cleanup remains blocked.
 - The bundled GitHub catalog and media still exist as a temporary safety fallback until mobile validation is complete.
@@ -36,6 +36,8 @@ _Last updated: 2026-08-03_
 
 - [ ] Confirm final mobile playback, Media Session icon, thumbnails and synchronized lyrics.
 - [x] Add a read-only R2 audit and exact legacy deletion inventory.
+- [x] Add an opt-in full-audio transfer pass that compares every downloaded byte count with the Range total.
+- [ ] Deploy public Worker v2.4 and complete the 16/16 full-audio transfer pass.
 - [ ] Remove legacy MP3 files from the GitHub repository.
 - [ ] Remove duplicated per-track covers and lyrics retained only as fallbacks.
 - [ ] Remove `fallbackFile` and the bundled-audio recovery layer.

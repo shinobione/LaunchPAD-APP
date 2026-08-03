@@ -147,7 +147,10 @@ Before any legacy-media cleanup, run the read-only live audit:
 
 ```bash
 npm run audit:r2
+npm run audit:r2 -- --full-audio
 ```
+
+The full-audio mode downloads every public audio response without modifying R2 and verifies its byte count. It does not replace Android decoding and listening tests.
 
 Worker source lives in `cloudflare/public-worker.js` and `cloudflare/admin-worker.parts/`. A merge does not deploy it. From `main`, dispatch **Deploy Cloudflare Workers** and select `public`, `admin` or `both`. The protected GitHub environment supplies the Cloudflare account ID and API token.
 

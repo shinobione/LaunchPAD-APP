@@ -46,7 +46,7 @@
 
 ## Cleanup safety
 
-32. Run `npm run audit:r2` and archive the result before proposing deletion.
+32. Run `npm run audit:r2` and `npm run audit:r2 -- --full-audio`, then archive both results before proposing deletion.
 33. Do not remove bundled GitHub media until R2 playback, thumbnails, lyrics and mobile Media Session tests pass.
 34. Require explicit approval before deleting any historical media.
 35. After removal, confirm there are no dead paths in the service-worker precache list.
