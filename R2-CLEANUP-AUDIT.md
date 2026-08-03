@@ -7,6 +7,8 @@ This document prepares the legacy GitHub media cleanup. It does not authorize or
 
 Status: automated R2 transport and metadata gates pass; sampled Track-detail coherence passes, while physical Android full-catalog acceptance and full-track decoding remain open. Cleanup is not authorized.
 
+This documentation update does not delete, rename or modify any historical GitHub or R2 media object.
+
 ## Live automated result
 
 The public `launchpad-media` Worker currently reports version 2.3 and 16 canonical published tracks.
