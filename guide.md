@@ -76,7 +76,7 @@ Optional metadata may appear before a line containing exactly:
 LYRICS:
 ```
 
-The catalog rebuild derives `lyricsAvailable` and `timestampsAvailable` from the actual file. Track detail and Lyrics Studio must therefore agree after an index rebuild.
+The catalog rebuild derives `lyricsAvailable` and `timestampsAvailable` from the actual file. Track detail exposes a single `Lyrics` status and Lyrics Studio uses the same file, so both must agree after an index rebuild.
 
 ## Metadata conventions
 
@@ -151,7 +151,7 @@ npm run audit:r2
 
 Worker source lives in `cloudflare/public-worker.js` and `cloudflare/admin-worker.parts/`. A merge does not deploy it. From `main`, dispatch **Deploy Cloudflare Workers** and select `public`, `admin` or `both`. The protected GitHub environment supplies the Cloudflare account ID and API token.
 
-Deploying code does not rebuild `catalog/index.json`. Rebuild only when the release or parser change requires it, then report the merge, Worker deployment and index rebuild separately.
+Deploying code does not rebuild `catalog/index.json`. Rebuild only when the release or parser change requires it, then report the merge, Worker deployment and index rebuild separately. Track Manager v4.5 is confirmed live from a manual dashboard deployment; the repository workflow still awaits its first production run.
 
 See `RELEASE-CHECKLIST.md` for the complete publication order and `ROADMAP.md` for remaining migration work.
 
