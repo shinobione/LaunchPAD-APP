@@ -1,0 +1,59 @@
+
+name: Deploy Cloudflare Workers
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Worker to deploy from the selected main revision
+        required: true
+        default: both
+        type: choice
+        options:
+          - both
+          - public
+          - admin
+
+permissions:
+  contents: read
+
+concurrency:
+  group: launchpad-cloudflare-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: cloudflare-production
+    steps:
+      - name: Checkout selected main revision
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Validate Worker sources and Wrangler bundles
+        run: npm run validate:cloudflare && npm run check:wrangler
+
+      - name: Deploy public media Worker
+        if: inputs.target == 'both' || inputs.target == 'public'
+        run: npm run deploy:cloudflare:public
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy private Track Manager Worker
+        if: inputs.target == 'both' || inputs.target == 'admin'
+        run: npm run deploy:cloudflare:admin
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
