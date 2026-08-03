@@ -10,6 +10,9 @@ if (!fs.existsSync(path)) fail(`Missing ${path}.`);
 
 const plan = JSON.parse(fs.readFileSync(path, 'utf8'));
 if (plan.schemaVersion !== 1) fail('Migration schemaVersion must be 1.');
+if (!/^[0-9a-f]{40}$/.test(plan.source?.ref || '')) {
+  fail('Migration source ref must be an immutable 40-character commit SHA.');
+}
 if (!Array.isArray(plan.tracks) || plan.tracks.length !== 14) {
   fail(`Expected 14 legacy tracks, received ${plan.tracks?.length ?? 0}.`);
 }
@@ -33,6 +36,9 @@ for (const track of plan.tracks) {
     const url = new URL(value);
     if (url.protocol !== 'https:' || url.hostname !== 'raw.githubusercontent.com') {
       fail(`${track.slug}: ${kind} must use an HTTPS raw.githubusercontent.com URL.`);
+    }
+    if (!url.pathname.includes(`/${plan.source.ref}/`)) {
+      fail(`${track.slug}: ${kind} must be pinned to migration commit ${plan.source.ref}.`);
     }
   }
 }
