@@ -12,7 +12,7 @@
 - Verify the live public Worker v2.3, 16 canonical R2 streams, optimized thumbnails and corrected Before the Noise metadata.
 - Add a read-only cleanup audit while keeping all historical media locked behind explicit mobile approval.
 - Pin Wrangler 4.118.0, dry-run both Worker bundles in CI and add a protected manual production deployment workflow.
-- Stabilize layout regression fixtures with ordered loading and post-ready geometry baselines.
+- Stabilize layout regression fixtures with ordered loading, bounded readiness waits and post-ready geometry baselines.
 - Add dedicated track pages with complete tags, catalog metadata and shareable `#track=` routes.
 - Make every track cover navigate to its detail page without starting playback.
 - Add visual-regression protection for key desktop and mobile views.
