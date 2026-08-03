@@ -1,0 +1,33 @@
+name: Validate Cloudflare Workers
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'fix/**'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-workers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate public and private Workers
+        run: npm run validate:cloudflare
+
+      - name: Build deployable Track Manager bundle
+        run: npm run build:admin-worker
+
+      - name: Verify generated bundle
+        run: test -s dist/launchpad-r2-admin-worker.js
