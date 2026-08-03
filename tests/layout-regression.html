@@ -10,6 +10,17 @@ const READY=['LAYOUT','READY'].join(' ');
 const ERROR=['LAYOUT','ERROR'].join(' ');
 const frames=[document.querySelector('#desktop'),document.querySelector('#mobile'),document.querySelector('#track'),document.querySelector('#mobile-album')];
 const sleep=delay=>new Promise(resolve=>setTimeout(resolve,delay));
+const frameReady=frame=>new Promise(resolve=>{
+  let settled=false;
+  const finish=()=>{
+    if(settled) return;
+    settled=true;
+    frame.removeEventListener('load',finish);
+    resolve(frame);
+  };
+  frame.addEventListener('load',finish,{once:true});
+  if(frame.contentDocument?.readyState==='complete') queueMicrotask(finish);
+});
 const rect=node=>node?.getBoundingClientRect();
 const selectors=[
   '.launchpad-hero','.launchpad-banner-rail','.hero-banner-art','.hero-body',
@@ -44,7 +55,7 @@ const localStyles=document=>[...document.querySelectorAll('link[rel="stylesheet"
   .map(link=>new URL(link.href,document.location.href))
   .filter(url=>url.origin===document.location.origin&&url.pathname.includes('/css/'));
 
-Promise.all(frames.map(frame=>new Promise(resolve=>frame.addEventListener('load',()=>resolve(frame))))).then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
+Promise.all(frames.map(frameReady)).then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   const measuredFrames=[desktop,mobile];
   measuredFrames.forEach(frame=>frame.contentWindow.scrollTo(0,0));
   await sleep(200);
@@ -186,5 +197,7 @@ Promise.all(frames.map(frame=>new Promise(resolve=>frame.addEventListener('load'
   };
   const diagnostics={desktop:desktopChanges.slice(0,5),mobile:mobileChanges.slice(0,5)};
   result.textContent=failures.length?`${ERROR} ${failures.join(' ')} ${JSON.stringify(diagnostics)}`:`${READY} ${JSON.stringify(snapshot)}`;
+}).catch(error=>{
+  result.textContent=`${ERROR} ${error?.message||String(error)}`;
 });
 </script>
