@@ -1,6 +1,5 @@
 import { readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { tracks as bundledTracks } from '../js/catalog.js';
 import migration from '../cloudflare/migration-manifest.json' with { type: 'json' };
 
 const DEFAULT_API = 'https://launchpad-media.jerryquinet.workers.dev';
@@ -31,8 +30,19 @@ async function fetchJson(path) {
 
 async function inventory(paths) {
   const unique = [...new Set(paths.filter(Boolean))];
-  const sizes = await Promise.all(unique.map(async resourcePath => (await stat(resourcePath)).size));
-  return { count: unique.length, bytes: sizes.reduce((sum, size) => sum + size, 0), paths: unique };
+  const existing = (await Promise.all(unique.map(async resourcePath => {
+    try {
+      return { path: resourcePath, size: (await stat(resourcePath)).size };
+    } catch (error) {
+      if (error?.code === 'ENOENT') return null;
+      throw error;
+    }
+  }))).filter(Boolean);
+  return {
+    count: existing.length,
+    bytes: existing.reduce((sum, item) => sum + item.size, 0),
+    paths: existing.map(item => item.path)
+  };
 }
 
 async function inventoryDirectory(rootPath) {
@@ -46,6 +56,15 @@ async function inventoryDirectory(rootPath) {
     if (error?.code === 'ENOENT') return { count: 0, bytes: 0, paths: [] };
     throw error;
   }
+}
+
+function migrationSourcePath(sourceUrl) {
+  if (!sourceUrl) return null;
+  const url = new URL(sourceUrl);
+  const marker = `/${migration.source.ref}/`;
+  const offset = url.pathname.indexOf(marker);
+  if (offset < 0) fail(`Migration source is not pinned to ${migration.source.ref}: ${sourceUrl}`);
+  return decodeURIComponent(url.pathname.slice(offset + marker.length));
 }
 
 async function verifyRange(url, label, expectedType) {
@@ -112,8 +131,8 @@ async function verifyLiveTrack(track) {
 async function main() {
   const candidates = {
     audio: await inventoryDirectory('audio'),
-    covers: await inventory(bundledTracks.map(track => track.cover)),
-    lyrics: await inventory(bundledTracks.map(track => track.lyrics))
+    covers: await inventory(migration.tracks.map(track => migrationSourcePath(track.sources?.cover))),
+    lyrics: await inventory(migration.tracks.map(track => migrationSourcePath(track.sources?.lyrics)))
   };
   const candidateBytes = Object.values(candidates).reduce((sum, item) => sum + item.bytes, 0);
   const report = {
