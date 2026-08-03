@@ -1,5 +1,5 @@
 importScripts('./js/build-config.js');
-const RELEASE = 'lyrics-status-20260803';
+const RELEASE = 'r2-audio-readiness-20260803';
 const VERSION = `${globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev'}-${RELEASE}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;
@@ -51,7 +51,7 @@ const SHELL_RESOURCES = [
   './js/features/lyrics-studio.js',
   './js/features/player-experience.js',
   './js/features/resilience-accessibility.js',
-  './js/features/audio-fallback.js',
+  './js/features/audio-readiness.js',
   './js/features/content/content-controller.js',
   './js/features/audio/audio-focus.js',
   './js/features/lyrics/wake-lock.js',
