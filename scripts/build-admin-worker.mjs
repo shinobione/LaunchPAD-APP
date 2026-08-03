@@ -22,7 +22,7 @@ if (parts.length < 8) {
 }
 
 const source = parts
-  .map(filename => fs.readFileSync(path.join(partsDirectory, filename), 'utf8'))
+  .map(filename => fs.readFileSync(path.join(partsDirectory, filename), 'utf8').replace(/[\r\n]+$/, ''))
   .join('');
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
@@ -36,11 +36,23 @@ if (syntax.status !== 0) {
   process.exit(syntax.status || 1);
 }
 
+const embeddedScript = source.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+if (!embeddedScript) {
+  throw new Error('Built Track Manager Worker is missing its embedded UI script.');
+}
+try {
+  new Function(embeddedScript);
+} catch (error) {
+  throw new Error(`Built Track Manager UI script has invalid syntax: ${error.message}`);
+}
+
 for (const required of [
   'version: "4.4"',
   'const ADMIN_HTML = String.raw`',
   'rel="icon" href="data:image/svg+xml',
   'class="form-section"',
+  'justify-content:space-between',
+  'document.querySelector',
   'aria-label="Actions du catalogue"',
   'function writeCatalogIndex(',
   'function parseTimestampedLyrics(',
