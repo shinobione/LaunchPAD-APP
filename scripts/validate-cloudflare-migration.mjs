@@ -46,9 +46,12 @@ for (const required of [
   'thumbnail',
   'Accept-Ranges',
   'request.headers.get("range")',
-  'version: 2.2',
+  'version: 2.3',
   'readCatalogIndex',
-  'caches.default'
+  'caches.default',
+  'timestampsAvailable = manifest.timestampsAvailable === true',
+  'function parseLyricSegments(',
+  'function detectTimestamps('
 ]) {
   if (!publicWorker.includes(required)) fail(`Public Worker is missing ${required}.`);
 }

@@ -1,158 +1,140 @@
-# SHINOBIWAN Launchpad — catalogue guide
+# SHINOBIWAN LaunchPad — catalog guide
 
-The catalogue is split into two files so musical content and technical metadata stay easy to maintain.
+The production catalog is managed in Cloudflare R2 through the private LaunchPAD Track Manager. Manual edits to `js/catalog.js` and `js/catalog-metadata.js` are now legacy fallback work, not the normal publishing workflow.
 
-- `js/catalog.js`: identity, paths, album, genre, tags, mood, lyrics and colours.
-- `js/catalog-metadata.js`: release date, language, BPM, musical key, explicit status and measured duration.
+## Open the Track Manager
 
-Both files use the same permanent track `id`. Never change an existing ID after publishing a shareable link.
+The private administration Worker is protected by Cloudflare Access:
 
-## Add or update a track
-
-First add the track to `tracks` in `js/catalog.js`:
-
-```js
-{
-  id: 'new-track',
-  title: 'New Track',
-  file: 'audio/singles/new-track.mp3',
-  cover: 'assets/covers/singles/new-track.jpeg',
-  genre: 'R&B',
-  tags: ['R&B', 'Love'],
-  mood: 'Nocturnal emotion',
-  albumId: 'singles',
-  album: 'Singles',
-  lyrics: null,
-  accent: '#d450ff',
-  accent2: '#4f70ff'
-}
+```text
+https://launchpad-r2-api.jerryquinet.workers.dev/
 ```
 
-Then add the matching entry to `trackMetadata` in `js/catalog-metadata.js`:
+Use it from a desktop browser. The public `launchpad-media` Worker is read-only and must never be used for uploads.
 
-```js
-'new-track': {
-  releaseDate: '2026-08-02',
-  languages: ['English'],
-  bpm: 142,
-  key: 'F minor',
-  keyConfidence: 1,
-  explicit: false,
-  duration: 213.42
-}
+## Add a track
+
+Choose **Ajouter un titre** and complete the release form:
+
+- title and permanent slug;
+- draft or published status;
+- release type, year and date;
+- album ID and album title;
+- genres, moods, themes and era;
+- languages, BPM, key and confidence;
+- duration and explicit status;
+- primary and secondary accent colours;
+- audio, original cover, optional lyrics and optional video.
+
+When a cover is uploaded, the browser also generates a 512 × 512 WebP thumbnail for catalog cards.
+
+The Worker creates this structure automatically:
+
+```text
+tracks/<slug>/manifest.json
+tracks/<slug>/audio.<ext>
+tracks/<slug>/cover.<ext>
+tracks/<slug>/thumbnail.webp
+tracks/<slug>/lyrics.txt      # optional
+tracks/<slug>/video.<ext>     # optional
 ```
 
-Every track must have one metadata entry, and every metadata ID must correspond to a real track.
+Do not rename a published slug. It is the permanent catalog and share-link identifier.
 
-## Metadata fields
+## Publish safely
 
-### `releaseDate`
+A published track requires at least:
 
-Use an ISO date in `YYYY-MM-DD` format:
+- a title;
+- an audio file;
+- an original cover.
 
-```js
-releaseDate: '2026-08-02'
+Use **draft** while metadata or media is incomplete. The public Worker exposes only tracks whose manifest status is `published`.
+
+Saving, deleting, importing or rebuilding the catalog refreshes `catalog/index.json`.
+
+## Lyrics formats
+
+Plain lyrics are supported, as are synchronized lyrics in these formats:
+
+```text
+[00:12.50] A bracketed LRC line
+[00:12:500] Milliseconds separated by a colon
+00:12.50 A timestamp and lyric on one line
+00:12.50
+A timestamp followed by its lyric on the next line
 ```
 
-Use `null` while the exact date is unknown. Do not enter an approximate or invented date. Home's **Latest releases** prioritizes dated tracks from newest to oldest; undated tracks fall back to catalogue order.
+Optional metadata may appear before a line containing exactly:
 
-### `languages`
-
-Use an array containing one or more of these exact values:
-
-```js
-languages: ['French']
-languages: ['English']
-languages: ['Vietnamese']
-languages: ['French', 'English']
+```text
+LYRICS:
 ```
 
-The spelling and capitalization are validated automatically.
+The catalog rebuild derives `lyricsAvailable` and `timestampsAvailable` from the actual file. Track detail and Lyrics Studio must therefore agree after an index rebuild.
 
-### `bpm`
+## Metadata conventions
 
-Use a whole number between 30 and 240:
+### Dates
 
-```js
-bpm: 142
+Use ISO `YYYY-MM-DD`. Leave the value empty rather than inventing an approximate date.
+
+### Languages
+
+Supported values are:
+
+```text
+English
+French
+Vietnamese
 ```
 
-The current values were estimated from the audio files. Confirm the final tempo in the DAW when possible, especially when a track uses half-time, double-time or tempo changes.
+Separate multiple values with commas in the Track Manager.
 
-### `key`
+### BPM and key
 
-Use an English note name followed by `major` or `minor`:
+Use an integer BPM between 30 and 240. Musical keys use English note notation:
 
-```js
-key: 'C major'
-key: 'F# minor'
-key: 'Bb major'
+```text
+C major
+F# minor
+Bb major
 ```
 
-`keyConfidence` is a number from `0` to `1` describing confidence in the automatic analysis. Values below `0.5` generate a warning and should be checked in the DAW.
+`keyConfidence` ranges from `0` to `1`. Values below `0.5` should be checked in the DAW.
 
-```js
-keyConfidence: 0.82
-```
+### Explicit status
 
-### `explicit`
+- `Clean` — reviewed and not explicit;
+- `Explicit` — reviewed and explicit;
+- `Unrated` — not reviewed yet.
 
-Use one of three values:
+### Accents
 
-```js
-explicit: true   // reviewed and explicit
-explicit: false  // reviewed and clean
-explicit: null   // not reviewed yet
-```
+Use six-digit hexadecimal colours such as `#d450ff`. They theme the player, Track DNA and Audio Lab.
 
-`null` is displayed as **UNRATED** and generates a catalogue warning. It is safer than guessing.
+## Cover optimization
 
-### `duration`
+Use **Optimiser les covers** after importing historical tracks or whenever a track lacks `thumbnail.webp`.
 
-Use the measured duration in seconds:
+The action:
 
-```js
-duration: 213.42
-```
+1. downloads the protected original cover;
+2. creates a 512 × 512 WebP thumbnail;
+3. uploads it beside the original;
+4. rebuilds `catalog/index.json` after all tracks are complete.
 
-Album pages use this value immediately. The browser can still read MP3 metadata as a fallback when the field is absent, but validated releases should contain it.
+Original covers are retained for detailed views.
 
-### `accent` and `accent2`
+## Validation and deployment
 
-These fields stay in `js/catalog.js`. Use six-digit hexadecimal colours:
-
-```js
-accent: '#d450ff',
-accent2: '#4f70ff'
-```
-
-They control the player, buttons, Track DNA accents and Audio Lab animations.
-
-## Add an album
-
-Add the album to `albums` in `js/catalog.js`:
-
-```js
-{
-  id: 'new-album',
-  title: 'New Album',
-  type: 'album',
-  year: '2026',
-  cover: 'assets/covers/albums/new-album/cover.jpeg',
-  description: 'Short editorial description.'
-}
-```
-
-Each album track must then use the exact same `albumId` and display title.
-
-## Validation
-
-Run this before publishing:
+Repository validation:
 
 ```bash
-npm run validate:catalog
+npm install
+npm run validate
 ```
 
-The validator checks IDs, albums, audio files, covers, lyrics, colours, dates, languages, BPM, keys, confidence, explicit status and duration. GitHub Actions repeats the same validation and opens the Launchpad in Chrome before a branch can be merged.
+The public Worker source lives in `cloudflare/public-worker.js`. Until Worker CI/CD is implemented, deploying updated Worker code remains a separate manual Cloudflare step after the GitHub pull request is merged.
 
-Warnings do not necessarily block deployment, but they identify metadata that still requires editorial review.
+See `RELEASE-CHECKLIST.md` for the complete publication order and `ROADMAP.md` for remaining migration work.

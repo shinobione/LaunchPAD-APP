@@ -1,0 +1,51 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+
+const partsDirectory = 'cloudflare/admin-worker.parts';
+const outputArgument = process.argv[2];
+const outputPath = outputArgument
+  ? path.resolve(outputArgument)
+  : path.join(os.tmpdir(), 'launchpad-r2-admin-worker.js');
+
+if (!fs.existsSync(partsDirectory)) {
+  throw new Error(`Missing ${partsDirectory}.`);
+}
+
+const parts = fs.readdirSync(partsDirectory)
+  .filter(filename => filename.endsWith('.part'))
+  .sort((left, right) => left.localeCompare(right, 'en', { numeric: true }));
+
+if (parts.length < 8) {
+  throw new Error(`Expected at least 8 Track Manager source parts, received ${parts.length}.`);
+}
+
+const source = parts
+  .map(filename => fs.readFileSync(path.join(partsDirectory, filename), 'utf8'))
+  .join('');
+
+fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+fs.writeFileSync(outputPath, source, 'utf8');
+
+const syntax = spawnSync(process.execPath, ['--check', outputPath], {
+  stdio: 'inherit'
+});
+
+if (syntax.status !== 0) {
+  process.exit(syntax.status || 1);
+}
+
+for (const required of [
+  'version: "4.3"',
+  'const ADMIN_HTML = String.raw`',
+  'function writeCatalogIndex(',
+  'function parseTimestampedLyrics(',
+  'timestampsAvailable'
+]) {
+  if (!source.includes(required)) {
+    throw new Error(`Built Track Manager Worker is missing ${required}.`);
+  }
+}
+
+console.log(`Built ${outputPath} from ${parts.length} source parts (${Buffer.byteLength(source)} bytes).`);

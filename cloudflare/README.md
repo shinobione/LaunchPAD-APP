@@ -16,20 +16,77 @@ tracks/<slug>/video.<ext>    # optional
 
 The public API exposes only manifests whose `status` is `published`.
 
+## Versioned Worker sources
+
+The public Worker is stored directly in:
+
+```text
+cloudflare/public-worker.js
+```
+
+The larger private Track Manager is stored as ordered source parts:
+
+```text
+cloudflare/admin-worker.parts/*.part
+```
+
+Build a single dashboard-compatible Worker file with:
+
+```bash
+npm run build:admin-worker
+```
+
+The output is written to:
+
+```text
+dist/launchpad-r2-admin-worker.js
+```
+
+`npm run validate` also concatenates the parts into a temporary file and runs `node --check`, so a broken private Worker cannot pass CI.
+
 ## Workers
 
-- `public-worker.js` is the source for `launchpad-media`.
-- The private Track Manager is deployed to `launchpad-r2-api`, protected by Cloudflare Access, with `POLICY_AUD` and `TEAM_DOMAIN` variables.
-- Track Manager v4.2 generates WebP thumbnails and rebuilds the single `catalog/index.json` file.
-- Public Worker v2.2 reads that index in one R2 request and serves lightweight thumbnails to the app.
-- Media Session intentionally omits per-track artwork so Android uses the installed LaunchPAD PWA icon on notifications and the lock screen.
+### Private Track Manager
 
-## Deployment order
+- Service: `launchpad-r2-api`.
+- Protected by Cloudflare Access.
+- Required bindings and variables:
+  - `MEDIA_BUCKET` → `shinobiwan-media`
+  - `POLICY_AUD`
+  - `TEAM_DOMAIN`
+- Creates and edits canonical manifests.
+- Generates WebP thumbnails.
+- Rebuilds `catalog/index.json`.
+- During a rebuild, reads each lyrics file and derives `lyricsAvailable` and `timestampsAvailable`.
 
-1. Deploy Track Manager v4.2 to `launchpad-r2-api`.
-2. Run **Optimiser les covers** once so every published track has `thumbnail.webp` and the catalog index is rebuilt.
-3. Deploy Public Worker v2.2 to `launchpad-media`.
-4. Verify `/health`, `/tracks`, mobile playback and the native PWA media icon.
-5. Remove the legacy GitHub audio, per-track covers and lyrics only after the Cloudflare catalog is validated.
+### Public media API
 
-Future tracks are created through the Track Manager form. Metadata is stored in `manifest.json`; no hand-written metadata TXT file is required. New cover uploads automatically receive an optimized thumbnail.
+- Source: `public-worker.js`.
+- Service: `launchpad-media`.
+- Public read-only access; do not add Cloudflare Access.
+- Binding: `MEDIA_BUCKET` → `shinobiwan-media`.
+- Reads `catalog/index.json` for the fast `/tracks` response.
+- Streams media with HTTP Range support.
+- Serves `thumbnail.webp` for catalog cards while preserving original-cover URLs.
+- Accepts bracketed LRC timestamps and standalone `mm:ss.xx` lines.
+
+## Timestamp metadata
+
+`/tracks` does not download full lyrics during normal operation. It relies on the derived timestamp flag stored in `catalog/index.json`.
+
+After adding or replacing lyrics, rebuild the index through the private Track Manager. The public Worker can still inspect a full lyrics file for `/tracks/<slug>`, but the index is the authoritative fast-path metadata source.
+
+## Deployment order for parser or index changes
+
+1. Merge the reviewed repository changes after CI passes.
+2. Run `npm run build:admin-worker` and deploy the generated private Worker.
+3. Rebuild `catalog/index.json` once.
+4. Deploy the matching `cloudflare/public-worker.js`.
+5. Verify `/health`, `/tracks` and `/tracks/<slug>`.
+6. Refresh the installed PWA after its service-worker namespace changes.
+
+## Migration cleanup
+
+Legacy GitHub audio, per-track covers and lyrics remain temporary fallbacks. Remove them only after R2 playback, thumbnails, synchronized lyrics and Android Media Session behavior are validated.
+
+Future tracks are created through the Track Manager form. Metadata is stored in `manifest.json`; no hand-written metadata TXT file is required.

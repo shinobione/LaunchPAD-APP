@@ -1,0 +1,278 @@
+      const text = line.replace(bracketed, "").trim();
+      if (text) {
+        for (const tag of tags) {
+          segments.push({ time: timestampSeconds(tag[1], tag[2], tag[3]), text });
+        }
+      }
+      pendingTime = null;
+      continue;
+    }
+
+    const nakedMatch = line.match(naked);
+    if (nakedMatch) {
+      const time = timestampSeconds(nakedMatch[1], nakedMatch[2], nakedMatch[3]);
+      const inlineText = String(nakedMatch[4] || "").trim();
+      if (inlineText) segments.push({ time, text: inlineText });
+      else pendingTime = time;
+      continue;
+    }
+
+    if (pendingTime !== null) {
+      segments.push({ time: pendingTime, text: line });
+      pendingTime = null;
+    }
+  }
+
+  return segments.sort((a, b) => a.time - b.time);
+}
+
+function hasTimestampedLyrics(raw) {
+  return parseTimestampedLyrics(raw).length > 0;
+}
+
+function normalizeManifest(input) {
+  const slug = slugify(input?.slug || "");
+  if (!slug) throw new Error("INPUT_Slug invalide.");
+  const status = STATUS_VALUES.has(input?.status) ? input.status : "draft";
+  const year = Number.isInteger(Number(input?.year)) ? Number(input.year) : null;
+  const explicit = typeof input?.explicit === "boolean" ? input.explicit : null;
+  const numberOrNull = value => Number.isFinite(Number(value)) && value !== "" && value !== null ? Number(value) : null;
+  const assets = input?.assets && typeof input.assets === "object" ? input.assets : {};
+  return {
+    schemaVersion: 1,
+    slug,
+    title: String(input?.title || titleFromSlug(slug)).trim(),
+    status,
+    type: String(input?.type || "single").trim(),
+    year,
+    releaseDate: input?.releaseDate || null,
+    album: {
+      id: slugify(input?.album?.id || "singles") || "singles",
+      title: String(input?.album?.title || "Singles").trim(),
+    },
+    genres: normalizeList(input?.genres),
+    tags: normalizeList(input?.tags?.length ? input.tags : input?.genres),
+    moods: normalizeList(input?.moods),
+    themes: normalizeList(input?.themes),
+    era: cleanNullable(input?.era),
+    energy: cleanNullable(input?.energy),
+    languages: normalizeList(input?.languages),
+    bpm: numberOrNull(input?.bpm),
+    key: cleanNullable(input?.key),
+    keyConfidence: numberOrNull(input?.keyConfidence),
+    explicit,
+    duration: numberOrNull(input?.duration),
+    accent: normalizeColor(input?.accent),
+    accent2: normalizeColor(input?.accent2),
+    assets: {
+      audio: safeAssetFilename(assets.audio),
+      cover: safeAssetFilename(assets.cover),
+      thumbnail: safeAssetFilename(assets.thumbnail),
+      lyrics: safeAssetFilename(assets.lyrics),
+      video: safeAssetFilename(assets.video),
+    },
+    migration: input?.migration || null,
+    createdAt: input?.createdAt || new Date().toISOString(),
+    updatedAt: input?.updatedAt || new Date().toISOString(),
+    updatedBy: cleanNullable(input?.updatedBy),
+  };
+}
+
+function assertPublishable(manifest) {
+  if (manifest.status !== "published") return;
+  if (!manifest.title) throw new Error("INPUT_Un titre publié doit avoir un nom.");
+  if (!manifest.assets.audio) throw new Error("INPUT_Un titre publié doit avoir un fichier audio.");
+  if (!manifest.assets.cover) throw new Error("INPUT_Un titre publié doit avoir une pochette.");
+}
+
+function validateUploadFile(file, kind) {
+  if (file.size > MAX_UPLOAD_BYTES) throw new Error("UPLOAD_" + kind + " dépasse 50 Mo.");
+  const extension = getExtension(file.name);
+  if (!ALLOWED_EXTENSIONS.has(extension)) throw new Error("UPLOAD_Extension non autorisée pour " + kind + ".");
+  const allowedByKind = {
+    audio: new Set(["mp3", "wav", "flac", "m4a", "aac", "ogg"]),
+    cover: new Set(["jpg", "jpeg", "png", "webp", "gif"]),
+    thumbnail: new Set(["jpg", "jpeg", "png", "webp"]),
+    lyrics: new Set(["txt"]),
+    video: new Set(["mp4", "webm"]),
+  };
+  if (!allowedByKind[kind].has(extension)) throw new Error("UPLOAD_Mauvais type de fichier pour " + kind + ".");
+}
+
+async function listAllObjects(bucket, prefix) {
+  const objects = [];
+  let cursor;
+  for (let page = 0; page < MAX_LIST_PAGES; page += 1) {
+    const result = await bucket.list({ prefix, cursor, limit: 1000, include: ["httpMetadata", "customMetadata"] });
+    objects.push(...result.objects);
+    if (!result.truncated || !result.cursor) return objects;
+    cursor = result.cursor;
+  }
+  throw new Error("Trop d'objets R2 pour la pagination configurée.");
+}
+
+async function deleteKeys(bucket, keys) {
+  const unique = [...new Set(keys.filter(Boolean))];
+  for (let index = 0; index < unique.length; index += 1000) {
+    await bucket.delete(unique.slice(index, index + 1000));
+  }
+}
+
+function groupLegacyObjects(objects) {
+  const groups = new Map();
+  for (const object of objects) {
+    const originalName = object.customMetadata?.originalName || filenameFromKey(object.key);
+    const extension = getExtension(originalName);
+    const kind = kindFromExtension(extension);
+    const slug = slugify(removeExtension(originalName));
+    if (!slug || !kind) continue;
+    if (!groups.has(slug)) groups.set(slug, { slug, assets: { audio: null, cover: null, thumbnail: null, lyrics: null, video: null } });
+    const asset = {
+      key: object.key,
+      originalName,
+      extension,
+      size: object.size,
+      uploaded: object.uploaded ? object.uploaded.toISOString() : null,
+      contentType: object.httpMetadata?.contentType || guessContentType(extension),
+    };
+    const current = groups.get(slug).assets[kind];
+    if (!current || String(asset.uploaded) > String(current.uploaded)) groups.get(slug).assets[kind] = asset;
+  }
+  return groups;
+}
+
+function legacySummary(group) {
+  const present = Object.fromEntries(ASSET_KINDS.map(kind => [kind, Boolean(group.assets[kind])]));
+  return {
+    slug: group.slug,
+    title: titleFromSlug(group.slug),
+    assets: present,
+    totalBytes: ASSET_KINDS.reduce((sum, kind) => sum + Number(group.assets[kind]?.size || 0), 0),
+  };
+}
+
+function parseLegacyText(text, fallbackSlug) {
+  const normalized = String(text || "").replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
+  const marker = normalized.match(/^LYRICS\s*:\s*$/im);
+  const metadataText = marker ? normalized.slice(0, marker.index) : normalized;
+  const fields = {};
+  for (const line of metadataText.split("\n")) {
+    const match = line.match(/^\s*([A-Z][A-Z0-9 _-]+)\s*:\s*(.*?)\s*$/i);
+    if (!match) continue;
+    fields[match[1].trim().toUpperCase().replace(/\s+/g, "_")] = match[2].trim();
+  }
+  return {
+    title: fields.TITLE || titleFromSlug(fallbackSlug),
+    type: fields.TYPE || "single",
+    year: parseYear(fields.YEAR),
+    genres: splitList(fields.GENRE),
+    moods: splitList(fields.MOOD),
+    themes: splitList(fields.THEMES),
+    era: fields.ERA || null,
+    energy: fields.ENERGY || null,
+    languages: splitList(fields.LANGUAGE),
+  };
+}
+
+function emptyLegacyMetadata(slug) {
+  return { title: titleFromSlug(slug), type: "single", year: null, genres: [], moods: [], themes: [], era: null, energy: null, languages: [] };
+}
+
+function trackPrefix(slug) { return TRACKS_PREFIX + slug + "/"; }
+function slugify(value) {
+  return String(value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 120);
+}
+function titleFromSlug(slug) { return String(slug).split("-").filter(Boolean).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" "); }
+function removeExtension(filename) { const value = String(filename || ""); const dot = value.lastIndexOf("."); return dot > 0 ? value.slice(0, dot) : value; }
+function getExtension(filename) { const value = String(filename || "").toLowerCase(); const dot = value.lastIndexOf("."); return dot >= 0 ? value.slice(dot + 1).split(/[?#]/)[0] : ""; }
+function filenameFromKey(key) { const last = String(key).split("/").pop() || "media"; return last.replace(/^[0-9a-f-]{36}-/i, ""); }
+function kindFromExtension(extension) {
+  if (["mp3", "wav", "flac", "m4a", "aac", "ogg"].includes(extension)) return "audio";
+  if (["jpg", "jpeg", "png", "webp", "gif"].includes(extension)) return "cover";
+  if (["mp4", "webm"].includes(extension)) return "video";
+  if (extension === "txt") return "lyrics";
+  return null;
+}
+function normalizedExtension(filename, contentType, kind) { return getExtension(filename) || extensionFromContentType(contentType) || defaultExtension(kind); }
+function extensionFromUrlOrType(url, contentType, kind) { return getExtension(new URL(url).pathname) || extensionFromContentType(contentType) || defaultExtension(kind); }
+function extensionFromContentType(contentType) {
+  const type = String(contentType || "").split(";")[0].trim().toLowerCase();
+  const map = { "image/jpeg":"jpeg", "image/png":"png", "image/webp":"webp", "image/gif":"gif", "audio/mpeg":"mp3", "audio/wav":"wav", "audio/x-wav":"wav", "audio/flac":"flac", "audio/x-flac":"flac", "audio/mp4":"m4a", "audio/aac":"aac", "audio/ogg":"ogg", "video/mp4":"mp4", "video/webm":"webm", "text/plain":"txt" };
+  return map[type] || null;
+}
+function defaultExtension(kind) { return { audio:"mp3", cover:"jpeg", thumbnail:"webp", lyrics:"txt", video:"mp4" }[kind] || "bin"; }
+function guessContentType(extension) {
+  const map = { jpg:"image/jpeg", jpeg:"image/jpeg", png:"image/png", webp:"image/webp", gif:"image/gif", mp3:"audio/mpeg", wav:"audio/wav", flac:"audio/flac", m4a:"audio/mp4", aac:"audio/aac", ogg:"audio/ogg", mp4:"video/mp4", webm:"video/webm", txt:"text/plain; charset=utf-8", json:"application/json; charset=utf-8" };
+  return map[extension] || "application/octet-stream";
+}
+function safeAssetFilename(value) { if (!value) return null; const clean = String(value).replace(/[^a-zA-Z0-9._-]/g, ""); return clean && !clean.includes("..") ? clean.slice(0, 160) : null; }
+function normalizeList(value) {
+  const source = Array.isArray(value) ? value : typeof value === "string" ? value.split(",") : [];
+  return [...new Set(source.map(item => String(item).trim()).filter(Boolean))].slice(0, 40);
+}
+function splitList(value) { return normalizeList(value); }
+function parseYear(value) { const year = Number.parseInt(String(value || ""), 10); return year >= 1900 && year <= 2200 ? year : null; }
+function cleanNullable(value) { const clean = value == null ? "" : String(value).trim(); return clean || null; }
+function normalizeColor(value) { const clean = String(value || "").trim(); return /^#[0-9a-f]{6}$/i.test(clean) ? clean.toLowerCase() : null; }
+
+function enforceSameOrigin(request, url) {
+  const origin = request.headers.get("origin");
+  if (!origin || origin !== url.origin) throw new Error("AUTH_Origine de requête refusée.");
+}
+
+async function verifyAccessJwt(request, env) {
+  if (!env.POLICY_AUD || !env.TEAM_DOMAIN) throw new Error("AUTH_Configuration Access incomplète.");
+  const token = request.headers.get("cf-access-jwt-assertion");
+  if (!token) throw new Error("AUTH_JWT Cloudflare Access absent.");
+  const parts = token.split(".");
+  if (parts.length !== 3) throw new Error("AUTH_Format JWT invalide.");
+  const [encodedHeader, encodedPayload, encodedSignature] = parts;
+  const header = decodeJwtPart(encodedHeader);
+  const payload = decodeJwtPart(encodedPayload);
+  if (header.alg !== "RS256" || !header.kid) throw new Error("AUTH_Algorithme JWT invalide.");
+  const teamDomain = env.TEAM_DOMAIN.replace(/\/$/, "");
+  const certsUrl = teamDomain + "/cdn-cgi/access/certs";
+  let jwks = await getAccessJwks(certsUrl);
+  let jwk = jwks.keys?.find(key => key.kid === header.kid);
+  if (!jwk) {
+    jwksCache.expiresAt = 0;
+    jwks = await getAccessJwks(certsUrl);
+    jwk = jwks.keys?.find(key => key.kid === header.kid);
+  }
+  if (!jwk) throw new Error("AUTH_Clé de signature Access introuvable.");
+  return verifyJwtWithJwk(jwk, encodedHeader, encodedPayload, encodedSignature, payload, teamDomain, env.POLICY_AUD);
+}
+
+async function getAccessJwks(certsUrl) {
+  const now = Date.now();
+  if (jwksCache.url === certsUrl && jwksCache.keys && jwksCache.expiresAt > now) return jwksCache.keys;
+  const response = await fetch(certsUrl, { headers: { Accept: "application/json" } });
+  if (!response.ok) throw new Error("AUTH_Impossible de récupérer les clés Access.");
+  const keys = await response.json();
+  jwksCache = { url: certsUrl, keys, expiresAt: now + 60 * 60 * 1000 };
+  return keys;
+}
+
+async function verifyJwtWithJwk(jwk, encodedHeader, encodedPayload, encodedSignature, payload, teamDomain, policyAud) {
+  const publicKey = await crypto.subtle.importKey("jwk", jwk, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
+  const signedData = new TextEncoder().encode(encodedHeader + "." + encodedPayload);
+  const valid = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", publicKey, base64UrlToBytes(encodedSignature), signedData);
+  if (!valid) throw new Error("AUTH_Signature JWT invalide.");
+  const now = Math.floor(Date.now() / 1000);
+  const audiences = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
+  if (payload.iss !== teamDomain) throw new Error("AUTH_Émetteur JWT invalide.");
+  if (!audiences.includes(policyAud)) throw new Error("AUTH_Audience JWT invalide.");
+  if (typeof payload.exp !== "number" || payload.exp <= now) throw new Error("AUTH_JWT expiré.");
+  if (typeof payload.nbf === "number" && payload.nbf > now + 30) throw new Error("AUTH_JWT pas encore valide.");
+  return payload;
+}
+
+function decodeJwtPart(value) { return JSON.parse(new TextDecoder().decode(base64UrlToBytes(value))); }
+function base64UrlToBytes(value) {
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+  const binary = atob(padded);
+  return Uint8Array.from(binary, character => character.charCodeAt(0));
+}
+
