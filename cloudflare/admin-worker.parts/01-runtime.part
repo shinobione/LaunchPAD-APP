@@ -1,0 +1,342 @@
+const TRACKS_PREFIX = "tracks/";
+const LEGACY_PREFIX = "media/";
+const MANIFEST_NAME = "manifest.json";
+const CATALOG_INDEX_KEY = "catalog/index.json";
+const THUMBNAIL_NAME = "thumbnail.webp";
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+const MAX_THUMBNAIL_BYTES = 2 * 1024 * 1024;
+const MAX_LYRICS_BYTES = 1024 * 1024;
+const MAX_BODY_OVERHEAD = 4 * 1024 * 1024;
+const MAX_LIST_PAGES = 20;
+const DEFAULT_MIGRATION_MANIFEST_URL = "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/cloudflare/migration-manifest.json";
+
+const ALLOWED_EXTENSIONS = new Set([
+  "jpg", "jpeg", "png", "webp", "gif",
+  "mp3", "wav", "flac", "m4a", "aac", "ogg",
+  "mp4", "webm", "txt", "json"
+]);
+
+const ASSET_KINDS = ["audio", "cover", "thumbnail", "lyrics", "video"];
+const STATUS_VALUES = new Set(["draft", "published", "archived"]);
+
+let jwksCache = { url: "", keys: null, expiresAt: 0 };
+
+export default {
+  async fetch(request, env) {
+    try {
+      const user = await verifyAccessJwt(request, env);
+      const url = new URL(request.url);
+
+      if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {
+        enforceSameOrigin(request, url);
+      }
+
+      if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/admin")) {
+        return htmlResponse(renderAdminPage(user.email || "Utilisateur autorisé"));
+      }
+
+      if (request.method === "GET" && url.pathname === "/health") {
+        const canonical = await listAllObjects(env.MEDIA_BUCKET, TRACKS_PREFIX);
+        const legacy = await listAllObjects(env.MEDIA_BUCKET, LEGACY_PREFIX);
+        return jsonResponse({
+          ok: true,
+          service: "launchpad-r2-track-manager",
+          version: "4.3",
+          authenticatedEmail: user.email || null,
+          canonicalObjects: canonical.length,
+          legacyObjects: legacy.length,
+          migrationManifestUrl: getMigrationManifestUrl(env),
+        });
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/tracks") {
+        return listTracks(env);
+      }
+
+      const mediaMatch = url.pathname.match(/^\/api\/media\/([a-z0-9][a-z0-9-]{0,119})\/(cover|thumbnail|audio|video|lyrics)$/);
+      if (mediaMatch && request.method === "GET") {
+        return getProtectedMedia(request, mediaMatch[1], mediaMatch[2], env);
+      }
+
+      const thumbnailMatch = url.pathname.match(/^\/api\/tracks\/([a-z0-9][a-z0-9-]{0,119})\/thumbnail$/);
+      if (thumbnailMatch && request.method === "PUT") {
+        return saveThumbnail(thumbnailMatch[1], request, env, user);
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/catalog/rebuild") {
+        const index = await writeCatalogIndex(env.MEDIA_BUCKET);
+        return jsonResponse({ ok: true, index });
+      }
+
+      const trackMatch = url.pathname.match(/^\/api\/tracks\/([a-z0-9][a-z0-9-]{0,119})$/);
+      if (trackMatch && request.method === "GET") {
+        return getTrack(trackMatch[1], env);
+      }
+      if (trackMatch && request.method === "PUT") {
+        return saveTrack(trackMatch[1], request, env, user);
+      }
+      if (trackMatch && request.method === "DELETE") {
+        return deleteTrack(trackMatch[1], env);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/migration-plan") {
+        return getMigrationPlan(env);
+      }
+
+      const githubImportMatch = url.pathname.match(/^\/api\/import\/github\/([a-z0-9][a-z0-9-]{0,119})$/);
+      if (githubImportMatch && request.method === "POST") {
+        return importGithubTrack(githubImportMatch[1], request, env, user);
+      }
+
+      const legacyImportMatch = url.pathname.match(/^\/api\/import\/legacy\/([a-z0-9][a-z0-9-]{0,119})$/);
+      if (legacyImportMatch && request.method === "POST") {
+        return importLegacyTrack(legacyImportMatch[1], env, user);
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/import/legacy") {
+        return importAllLegacyTracks(env, user);
+      }
+
+      return jsonResponse({ ok: false, error: "Route introuvable." }, 404);
+    } catch (error) {
+      console.error(error);
+      const message = error instanceof Error ? error.message : "Erreur inconnue.";
+      const isAuth = message.startsWith("AUTH_");
+      const isInput = message.startsWith("INPUT_") || message.startsWith("UPLOAD_");
+      return jsonResponse(
+        {
+          ok: false,
+          error: isAuth ? "Accès refusé." : isInput ? "Requête invalide." : "Erreur interne.",
+          details: message.replace(/^(AUTH_|INPUT_|UPLOAD_)/, ""),
+        },
+        isAuth ? 403 : isInput ? 400 : 500,
+      );
+    }
+  },
+};
+
+async function getProtectedMedia(request, slug, kind, env) {
+  const manifest = await readManifest(env.MEDIA_BUCKET, slug);
+  const filename = manifest?.assets?.[kind];
+  if (!filename) return jsonResponse({ ok: false, error: "Média introuvable." }, 404);
+  const object = await env.MEDIA_BUCKET.get(trackPrefix(slug) + filename);
+  if (!object) return jsonResponse({ ok: false, error: "Média introuvable." }, 404);
+  const headers = new Headers(corsSafeHeaders());
+  object.writeHttpMetadata(headers);
+  headers.set("ETag", object.httpEtag);
+  headers.set("Cache-Control", "private, no-store");
+  headers.set("Content-Disposition", "inline");
+  return new Response(request.method === "HEAD" ? null : object.body, { headers });
+}
+
+async function listTracks(env) {
+  const [canonicalObjects, legacyObjects] = await Promise.all([
+    listAllObjects(env.MEDIA_BUCKET, TRACKS_PREFIX),
+    listAllObjects(env.MEDIA_BUCKET, LEGACY_PREFIX),
+  ]);
+
+  const canonicalTracks = await buildCanonicalTrackSummaries(canonicalObjects, env.MEDIA_BUCKET);
+  const legacyGroups = groupLegacyObjects(legacyObjects);
+  const legacyTracks = [...legacyGroups.values()].map(group => legacySummary(group));
+
+  const totals = canonicalTracks.reduce((acc, track) => {
+    acc.total += 1;
+    acc[track.status] = (acc[track.status] || 0) + 1;
+    if (!track.complete) acc.incomplete += 1;
+    acc.bytes += track.totalBytes;
+    return acc;
+  }, { total: 0, published: 0, draft: 0, archived: 0, incomplete: 0, bytes: 0 });
+
+  return jsonResponse({
+    ok: true,
+    tracks: canonicalTracks,
+    legacyTracks,
+    totals,
+  });
+}
+
+async function getTrack(slug, env) {
+  const manifest = await readManifest(env.MEDIA_BUCKET, slug);
+  if (!manifest) return jsonResponse({ ok: false, error: "Titre introuvable." }, 404);
+
+  const objects = await listAllObjects(env.MEDIA_BUCKET, trackPrefix(slug));
+  return jsonResponse({
+    ok: true,
+    track: {
+      manifest,
+      assets: assetStateFromObjects(objects, manifest),
+    },
+  });
+}
+
+async function saveTrack(slug, request, env, user) {
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (contentLength && contentLength > MAX_UPLOAD_BYTES * 5 + MAX_BODY_OVERHEAD) {
+    throw new Error("UPLOAD_Envoi trop volumineux.");
+  }
+
+  const contentType = request.headers.get("content-type") || "";
+  if (!contentType.toLowerCase().startsWith("multipart/form-data")) {
+    throw new Error("INPUT_Le Track Manager attend un formulaire multipart.");
+  }
+
+  const formData = await request.formData();
+  const metadataRaw = formData.get("metadata");
+  if (typeof metadataRaw !== "string") throw new Error("INPUT_Métadonnées manquantes.");
+
+  let metadata;
+  try { metadata = JSON.parse(metadataRaw); }
+  catch { throw new Error("INPUT_JSON de métadonnées invalide."); }
+
+  const existing = await readManifest(env.MEDIA_BUCKET, slug);
+  const manifest = normalizeManifest({
+    ...existing,
+    ...metadata,
+    slug,
+    updatedAt: new Date().toISOString(),
+    updatedBy: String(user.email || "authorized-user"),
+    createdAt: existing?.createdAt || new Date().toISOString(),
+  });
+
+  const currentObjects = await listAllObjects(env.MEDIA_BUCKET, trackPrefix(slug));
+  const currentByKind = findAssetObjects(currentObjects, existing);
+
+  for (const kind of ASSET_KINDS) {
+    const file = formData.get(kind);
+    const remove = formData.get("remove_" + kind) === "true";
+
+    if (remove) {
+      if (currentByKind[kind]) await env.MEDIA_BUCKET.delete(currentByKind[kind].key);
+      manifest.assets[kind] = null;
+      continue;
+    }
+
+    if (!(file instanceof File) || file.size === 0) continue;
+    validateUploadFile(file, kind);
+
+    if (currentByKind[kind]) await env.MEDIA_BUCKET.delete(currentByKind[kind].key);
+
+    const extension = normalizedExtension(file.name, file.type, kind);
+    const filename = kind + "." + extension;
+    const key = trackPrefix(slug) + filename;
+    const storedContentType = file.type || guessContentType(extension);
+
+    await env.MEDIA_BUCKET.put(key, file.stream(), {
+      httpMetadata: {
+        contentType: storedContentType,
+        cacheControl: "public, max-age=31536000, immutable",
+      },
+      customMetadata: {
+        kind,
+        slug,
+        originalName: String(file.name || filename).slice(0, 300),
+        uploadedBy: String(user.email || "authorized-user").slice(0, 200),
+        uploadedAt: new Date().toISOString(),
+      },
+    });
+
+    manifest.assets[kind] = filename;
+  }
+
+  assertPublishable(manifest);
+  await writeManifest(env.MEDIA_BUCKET, manifest);
+  await writeCatalogIndex(env.MEDIA_BUCKET);
+
+  return jsonResponse({ ok: true, track: manifest }, existing ? 200 : 201);
+}
+
+async function saveThumbnail(slug, request, env, user) {
+  const manifest = await readManifest(env.MEDIA_BUCKET, slug);
+  if (!manifest) return jsonResponse({ ok: false, error: "Titre introuvable." }, 404);
+
+  const contentType = String(request.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+  if (!new Set(["image/webp", "image/jpeg", "image/png"]).has(contentType)) {
+    throw new Error("UPLOAD_La miniature doit être une image WebP, JPEG ou PNG.");
+  }
+
+  const body = await request.arrayBuffer();
+  if (!body.byteLength || body.byteLength > MAX_THUMBNAIL_BYTES) {
+    throw new Error("UPLOAD_La miniature doit peser moins de 2 Mo.");
+  }
+
+  const extension = extensionFromContentType(contentType) || "webp";
+  const filename = "thumbnail." + extension;
+  const current = manifest.assets?.thumbnail;
+  if (current && current !== filename) {
+    await env.MEDIA_BUCKET.delete(trackPrefix(slug) + current);
+  }
+
+  await env.MEDIA_BUCKET.put(trackPrefix(slug) + filename, body, {
+    httpMetadata: {
+      contentType,
+      cacheControl: "public, max-age=31536000, immutable",
+    },
+    customMetadata: {
+      kind: "thumbnail",
+      slug,
+      uploadedBy: String(user.email || "authorized-user").slice(0, 200),
+      uploadedAt: new Date().toISOString(),
+    },
+  });
+
+  manifest.assets.thumbnail = filename;
+  manifest.updatedAt = new Date().toISOString();
+  manifest.updatedBy = String(user.email || "authorized-user");
+  await writeManifest(env.MEDIA_BUCKET, manifest);
+
+  const defer = new URL(request.url).searchParams.get("defer") === "1";
+  if (!defer) await writeCatalogIndex(env.MEDIA_BUCKET);
+  return jsonResponse({ ok: true, slug, filename, size: body.byteLength });
+}
+
+async function deleteTrack(slug, env) {
+  const objects = await listAllObjects(env.MEDIA_BUCKET, trackPrefix(slug));
+  if (!objects.length) return jsonResponse({ ok: false, error: "Titre introuvable." }, 404);
+  await deleteKeys(env.MEDIA_BUCKET, objects.map(object => object.key));
+  await writeCatalogIndex(env.MEDIA_BUCKET);
+  return jsonResponse({ ok: true, deleted: slug, objectCount: objects.length });
+}
+
+async function getMigrationPlan(env) {
+  const plan = await fetchMigrationPlan(env);
+  return jsonResponse({ ok: true, plan });
+}
+
+async function importGithubTrack(slug, request, env, user) {
+  let options = {};
+  try { options = await request.json(); } catch {}
+  const overwrite = options?.overwrite === true;
+  const existing = await readManifest(env.MEDIA_BUCKET, slug);
+  if (existing && !overwrite) {
+    return jsonResponse({ ok: true, skipped: true, reason: "already-exists", track: existing });
+  }
+
+  const plan = await fetchMigrationPlan(env);
+  const entry = plan.tracks.find(item => item.slug === slug);
+  if (!entry) return jsonResponse({ ok: false, error: "Titre absent du plan de migration." }, 404);
+
+  if (overwrite) {
+    const current = await listAllObjects(env.MEDIA_BUCKET, trackPrefix(slug));
+    await deleteKeys(env.MEDIA_BUCKET, current.map(object => object.key));
+  }
+
+  const assets = { audio: null, cover: null, thumbnail: null, lyrics: null, video: null };
+  const imported = [];
+
+  for (const kind of ASSET_KINDS) {
+    const sourceUrl = entry.sources?.[kind];
+    if (!sourceUrl) continue;
+    const result = await importRemoteAsset({
+      bucket: env.MEDIA_BUCKET,
+      slug,
+      kind,
+      sourceUrl,
+      user,
+    });
+    assets[kind] = result.filename;
+    imported.push(result);
+  }
+
+  const manifest = normalizeManifest({
+    ...entry,
+    assets,
