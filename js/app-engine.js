@@ -61,8 +61,9 @@ async function boot() {
       : 'empty';
     document.documentElement.dataset.remoteTrackCount = String(state.remoteCount);
   } catch (error) {
-    document.documentElement.dataset.remoteCatalog = 'fallback';
-    console.warn('Cloudflare R2 metadata unavailable; using the static R2 catalog.', error);
+    document.documentElement.dataset.remoteCatalog = 'error';
+    console.error('Cloudflare R2 catalog unavailable.', error);
+    throw new Error('The online catalog could not be loaded.', { cause: error });
   }
 
   await import(versioned('./app-main.js'));

@@ -1,42 +1,11 @@
-import { albums as sourceAlbums, tracks as sourceTracks, journeyEras as sourceJourneyEras } from '../catalog.js';
-import { ALLOWED_LANGUAGES, trackMetadata } from '../catalog-metadata.js';
+import { albums as sourceAlbums, journeyEras as sourceJourneyEras } from '../catalog.js';
+
+const ALLOWED_LANGUAGES = ['French', 'English', 'Vietnamese'];
 
 export const albums = sourceAlbums;
 export const journeyEras = sourceJourneyEras;
 
-function enrichStaticTrack(track) {
-  const metadata = trackMetadata[track.id] || {};
-  const languages = Array.isArray(metadata.languages)
-    ? [...new Set(metadata.languages.filter(Boolean))]
-    : [];
-
-  const enriched = {
-    ...track,
-    releaseDate: metadata.releaseDate ?? track.releaseDate ?? null,
-    languages,
-    bpm: Number.isFinite(metadata.bpm) ? metadata.bpm : null,
-    key: typeof metadata.key === 'string' ? metadata.key : null,
-    keyConfidence: Number.isFinite(metadata.keyConfidence) ? metadata.keyConfidence : null,
-    explicit: typeof metadata.explicit === 'boolean' ? metadata.explicit : null,
-    duration: Number.isFinite(metadata.duration) ? metadata.duration : null
-  };
-
-  enriched.searchText = [
-    track.searchText,
-    languages.join(' '),
-    enriched.bpm,
-    enriched.key,
-    enriched.explicit === true ? 'explicit' : enriched.explicit === false ? 'clean' : 'unrated',
-    enriched.releaseDate
-  ]
-    .filter(value => value !== null && value !== undefined && value !== '')
-    .join(' ')
-    .toLowerCase();
-
-  return enriched;
-}
-
-export const tracks = sourceTracks.map(enrichStaticTrack);
+export const tracks = [];
 
 const albumById = new Map(albums.map(album => [album.id, album]));
 const trackById = new Map();
@@ -186,10 +155,9 @@ export function validateCatalogRuntime() {
   const warnings = [];
   const albumIds = new Set();
   const trackIds = new Set();
-  const metadataIds = new Set(Object.keys(trackMetadata));
   const allowedLanguages = new Set(ALLOWED_LANGUAGES);
   const hexPattern = /^#[0-9a-f]{6}$/i;
-  const keyPattern = /^[A-G](?:#|b)? (?:major|minor)$/;
+  const keyPattern = /^[A-G](?:#|b)? (?:major|minor)$/i;
 
   albums.forEach((album, index) => {
     if (!album?.id) errors.push(`Album ${index + 1}: missing id.`);
@@ -202,8 +170,6 @@ export function validateCatalogRuntime() {
   tracks.forEach((track, index) => {
     const label = track?.id || `track ${index + 1}`;
     const isRemote = track?.remote === true;
-    metadataIds.delete(track.id);
-
     if (!track?.id) errors.push(`Track ${index + 1}: missing id.`);
     if (trackIds.has(track.id)) errors.push(`Duplicate track id: ${track.id}.`);
     trackIds.add(track.id);
@@ -212,9 +178,6 @@ export function validateCatalogRuntime() {
     if (!track.cover) errors.push(`${label}: missing cover.`);
     if (!track.albumId || !albumIds.has(track.albumId)) {
       errors.push(`${label}: unknown albumId "${track.albumId || ''}".`);
-    }
-    if (!isRemote && !Object.hasOwn(trackMetadata, track.id)) {
-      errors.push(`${label}: missing catalog-metadata entry.`);
     }
     if (track.releaseDate && !Number.isFinite(Date.parse(track.releaseDate))) {
       errors.push(`${label}: invalid releaseDate "${track.releaseDate}".`);
@@ -267,7 +230,6 @@ export function validateCatalogRuntime() {
     if (!track.lyrics) warnings.push(`${label}: lyrics unavailable.`);
   });
 
-  metadataIds.forEach(id => errors.push(`Unknown catalog-metadata id: ${id}.`));
   return { errors, warnings, valid: errors.length === 0 };
 }
 

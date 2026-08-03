@@ -1,5 +1,5 @@
 importScripts('./js/build-config.js');
-const RELEASE = 'r2-lyrics-cleanup-20260803';
+const RELEASE = 'remote-catalog-only-20260803';
 const VERSION = `${globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev'}-${RELEASE}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;
@@ -32,7 +32,6 @@ const SHELL_RESOURCES = [
   './js/app-engine.js',
   './js/app-main.js',
   './js/catalog.js',
-  './js/catalog-metadata.js',
   './js/core/assets.js',
   './js/core/catalog-store.js',
   './js/core/remote-catalog.js',

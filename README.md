@@ -1,7 +1,7 @@
 
 # SHINOBIWAN Launchpad
 
-An installable, responsive music application for the SHINOBIWAN catalog: album pages, synchronized lyrics, reactive visuals, queues, favorites, offline shell support and shareable Visual Cards.
+An installable, responsive music application for the SHINOBIWAN catalog: album pages, synchronized lyrics, reactive visuals, queues, favorites and shareable Visual Cards.
 
 **Production:** https://shinobione.github.io/LaunchPAD-APP/
 
@@ -9,13 +9,13 @@ An installable, responsive music application for the SHINOBIWAN catalog: album p
 
 | Component | Repository state | Production state |
 | --- | --- | --- |
-| PWA | Favorites-only queue, desktop admin access, Android media fixes and one authoritative lyrics status are merged | GitHub Pages serves `lyrics-status-20260803` |
+| PWA | Favorites-only queue, desktop admin access, Android media fixes and an R2-only catalog are merged | GitHub Pages serves the latest service-worker release from `main` |
 | Public media Worker | v2.4 source and Wrangler config are merged | `/health` reports v2.4; full requests return HTTP 200 and Range requests return HTTP 206 |
 | Private Track Manager | v4.5 source and Wrangler config are merged | Protected by Access; v4.5 is confirmed live after a manual dashboard deployment |
 | R2 media | Read-only Range and opt-in full-transfer audits are merged | 16/16 full audio transfers pass: 87,849,601 bytes verified, plus 16/16 optimized thumbnails |
 | Cloudflare delivery | Pinned Wrangler validation and manual deployment workflow are merged | The repository workflow has not yet performed a production deployment |
 
-The first-tap playback, Android media icon and timestamp-status regressions are fixed in the deployed PWA code. Carved from Pressure and THICK now expose the same single `Lyrics — Timestamped` status. Final full-catalog acceptance on the target Android device is still required before legacy media deletion.
+The first-tap playback, Android media icon, cover loading and timestamp-status regressions are validated on the target Android device. Carved from Pressure and THICK expose the same single `Lyrics — Timestamped` status, and the validated historical media have been removed from GitHub.
 
 ## Production architecture
 
@@ -52,7 +52,7 @@ python3 -m http.server 4173
 
 Open `http://127.0.0.1:4173/`. A local HTTP server is required for ES modules, audio metadata and the service worker.
 
-Local development deliberately uses the bundled catalog so browser tests do not depend on Cloudflare availability.
+Local development deliberately loads a four-track fixture from `js/catalog-fixture.js` so browser tests do not depend on Cloudflare availability. Production never loads that fixture and requires the canonical public R2 catalog.
 
 ## Validation
 
@@ -75,7 +75,9 @@ npm run audit:r2 -- --full-audio
 
 - `js/app-engine.js` — boot sequence and remote-catalog hydration.
 - `js/app-main.js` — playback, routing and application composition.
-- `js/core/catalog-store.js` — merged catalog state and selectors.
+- `js/catalog.js` — album and editorial journey definitions only.
+- `js/catalog-fixture.js` — minimal localhost/CI track fixture; never loaded in production.
+- `js/core/catalog-store.js` — hydrated catalog state and selectors.
 - `js/core/remote-catalog.js` — public Cloudflare catalog adapter.
 - `js/features/` — user-facing features.
 - `cloudflare/` — Worker source, migration data and deployment documentation.

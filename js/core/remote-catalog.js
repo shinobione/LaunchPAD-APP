@@ -23,7 +23,7 @@ function normalizeApiUrl(value) {
   return String(value || DEFAULT_API_URL).replace(/\/+$/, '');
 }
 
-function shouldUseBundledCatalog() {
+function shouldUseCatalogFixture() {
   if (globalThis.SHINOBIWAN_MEDIA_API) return false;
   const hostname = globalThis.location?.hostname;
   return hostname === '127.0.0.1' || hostname === 'localhost';
@@ -135,7 +135,10 @@ export async function fetchRemoteTracks({
   apiUrl = globalThis.SHINOBIWAN_MEDIA_API || DEFAULT_API_URL,
   timeoutMs = FETCH_TIMEOUT_MS
 } = {}) {
-  if (shouldUseBundledCatalog()) return [];
+  if (shouldUseCatalogFixture()) {
+    const { catalogFixture } = await import('../catalog-fixture.js');
+    return catalogFixture.map(track => ({ ...track }));
+  }
 
   const normalizedApiUrl = normalizeApiUrl(apiUrl);
   const controller = new AbortController();

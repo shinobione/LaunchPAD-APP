@@ -44,12 +44,12 @@ js/
   build-config.js               Dynamic resource version
   app-engine.js                 Boot, catalog hydration and feature initialization
   app-main.js                   Playback, routing and delegated events
-  catalog.js                    Temporary bundled fallback catalog
-  catalog-metadata.js           Temporary bundled fallback metadata
+  catalog.js                    Album and editorial journey definitions
+  catalog-fixture.js            Minimal localhost/CI track fixture
 
   core/
     assets.js                   Versioned asset and stylesheet helper
-    catalog-store.js            Static/remote merge and catalog selectors
+    catalog-store.js            Hydrated catalog state and selectors
     remote-catalog.js           Public Worker response adapter
     player-queue.js             Queue, Shuffle and Repeat state
     router.js                   Hash routes and deep links
@@ -79,13 +79,13 @@ cloudflare/
 1. `build-config.js` installs the application engine.
 2. `app-engine.js` prepares the PWA shell and requests `/tracks` from the public Worker.
 3. `remote-catalog.js` maps R2 manifests to LaunchPAD track objects.
-4. `catalog-store.js` updates matching bundled entries and appends cloud-only tracks.
+4. `catalog-store.js` receives the complete online catalog before application rendering.
 5. `app-main.js` renders the hydrated catalog and initializes playback.
 6. Favorites can replace the catalog queue with a contextual favorites-only queue without changing Shuffle or Repeat state.
 7. `admin-access.js` exposes the private link only after a desktop user opts in locally with `?admin=1`.
-8. The service worker provides an offline interface shell; audio Range requests remain network-only.
+8. Audio and catalog requests remain network-dependent; the service worker only accelerates same-origin application assets.
 
-Localhost intentionally skips the remote catalog so CI and local development remain deterministic.
+Localhost intentionally loads the four-track `catalog-fixture.js` module so CI and local development remain deterministic. Production does not precache or import this fixture and fails clearly when the R2 catalog is unavailable.
 
 ## Lyrics metadata flow
 
@@ -115,7 +115,7 @@ A timestamp followed by its lyric on the next line
 11. Every shell-changing release receives a new service-worker cache namespace.
 12. Worker changes and PWA changes must pass CI before deployment.
 13. A merge, GitHub Pages publication, Worker deployment and catalog rebuild are distinct release states.
-14. Bundled media remains temporary and must be removed only after the R2-only mobile checks pass.
+14. Production has no bundled track or metadata fallback; R2 is required for the music catalog.
 
 ## Validation
 
