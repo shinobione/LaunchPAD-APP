@@ -1,3 +1,4 @@
+
 <!doctype html><meta charset="utf-8"><title>Layout regression</title>
 <div id="result">LAYOUT PENDING</div>
 <iframe id="desktop" src="../?visual-test=1#home" onload="this.dataset.loaded='true'" style="width:1440px;height:1000px;border:0"></iframe>
@@ -44,10 +45,17 @@ const localStyles=document=>[...document.querySelectorAll('link[rel="stylesheet"
   .map(link=>new URL(link.href,document.location.href))
   .filter(url=>url.origin===document.location.origin&&url.pathname.includes('/css/'));
 
-const whenLoaded=frame=>frame.dataset.loaded==='true'
+const whenAppReady=frame=>frame.dataset.appReady==='true'
   ? Promise.resolve(frame)
-  : new Promise(resolve=>frame.addEventListener('load',()=>resolve(frame),{once:true}));
-Promise.all(frames.map(whenLoaded)).then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
+  : new Promise(resolve=>{
+      const observer=new MutationObserver(()=>{
+        if(frame.dataset.appReady!=='true') return;
+        observer.disconnect();
+        resolve(frame);
+      });
+      observer.observe(frame,{attributes:true,attributeFilter:['data-app-ready']});
+    });
+Promise.all(frames.map(whenAppReady)).then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   const measuredFrames=[desktop,mobile];
   measuredFrames.forEach(frame=>frame.contentWindow.scrollTo(0,0));
   await sleep(200);

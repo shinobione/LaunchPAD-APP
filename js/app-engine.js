@@ -1,3 +1,4 @@
+
 const BUILD = globalThis.SHINOBIWAN_BUILD?.id || 'dev';
 
 const CRITICAL_STYLES = [
@@ -110,6 +111,9 @@ async function boot() {
   const data = document.documentElement.dataset;
   data.appState = 'ready';
   data.appReady = 'true';
+  if (window.frameElement && data.visualTest === 'true') {
+    window.frameElement.dataset.appReady = 'true';
+  }
   window.dispatchEvent(new CustomEvent('shinobi:ready'));
 }
 
