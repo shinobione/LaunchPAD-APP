@@ -87,8 +87,8 @@ export function mergeRemoteTracks(remoteTracks = []) {
     if (existingIndex >= 0) {
       const existing = tracks[existingIndex];
       const merged = {
-        ...remoteTrack,
         ...existing,
+        ...remoteTrack,
         file: remoteTrack.file || existing.file,
         fallbackFile: existing.fallbackFile || existing.file,
         cover: remoteTrack.cover || existing.cover,
@@ -271,3 +271,4 @@ export function validateCatalogRuntime() {
   metadataIds.forEach(id => errors.push(`Unknown catalog-metadata id: ${id}.`));
   return { errors, warnings, valid: errors.length === 0 };
 }
+
