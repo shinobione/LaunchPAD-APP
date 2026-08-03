@@ -50,9 +50,14 @@ const whenFrameLoaded=frame=>new Promise(resolve=>{
 });
 const whenAppReady=frame=>new Promise(resolve=>{
   const done=()=>{
+    clearTimeout(timeout);
     frame.contentWindow.removeEventListener('shinobi:ready',done);
     resolve(frame);
   };
+  const timeout=setTimeout(()=>{
+    frame.dataset.appReadyTimeout='true';
+    done();
+  },1500);
   frame.contentWindow.addEventListener('shinobi:ready',done,{once:true});
   if(frame.contentDocument.documentElement.dataset.appReady==='true') done();
 });
@@ -203,6 +208,7 @@ loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
     desktopHeroShift:Number(desktopHeroShift.toFixed(2)),
     mobileHeroShift:Number(mobileHeroShift.toFixed(2)),
     initialStyles:localStyles(dd).length,
+    appReadyTimeouts:frames.filter(frame=>frame.dataset.appReadyTimeout==='true').length,
     appReady:dd.documentElement.dataset.appReady==='true'&&md.documentElement.dataset.appReady==='true',
     trackNavigationPreserved:navigationLoadCalls===0&&homeAudio?.dataset.trackId==='thick'
   };
