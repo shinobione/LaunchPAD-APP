@@ -3,11 +3,11 @@
 
 _Snapshot: 2026-08-03_
 
-This document prepares the legacy GitHub media cleanup. It does not authorize or perform deletions.
+This document records the validated R2 migration and the staged, recoverable cleanup of legacy GitHub media.
 
-Status: automated Range, metadata and full-transfer gates pass on public Worker v2.4. Physical Android full-catalog decoding and listening remain open. Cleanup is not authorized.
+Status: automated Range, metadata and full-transfer gates pass on public Worker v2.4. The user confirmed the complete Android validation on 2026-08-03; staged cleanup is authorized.
 
-This documentation update does not delete, rename or modify any historical GitHub or R2 media object.
+R2 objects remain untouched. GitHub media removals are performed only in dedicated PRs and remain recoverable from repository history.
 
 ## Live automated result
 
@@ -36,27 +36,20 @@ Use `npm run audit:r2 -- --inventory-only` when network access is unavailable.
 
 `Validate Cloudflare Workers` also compiles both pinned Wrangler bundles, but it does not query or mutate production. Track Manager v4.5 is confirmed live behind Cloudflare Access after a manual dashboard deployment. The repository deployment workflow has not yet completed its first production run.
 
-## Legacy candidates, not yet deleted
+## Cleanup state
 
 | Class | Files | Size | Future action |
 | --- | ---: | ---: | --- |
-| Bundled MP3 audio | 14 | 76,892,054 bytes | Remove after explicit R2/mobile approval |
+| Bundled MP3 audio | 14 | 76,892,054 bytes | Removed after R2-only Pages and Android approval |
 | Per-track covers | 14 | 37,064,826 bytes | Remove after thumbnail and detail-cover approval |
 | Bundled lyrics | 10 | 31,603 bytes | Remove after Lyrics Studio approval |
 
 The candidate total is 113,988,483 bytes. Album artwork, branding, PWA icons, screenshots and other interface assets are outside this deletion set.
 
-## Remaining manual gate
+## Accepted Android gate
 
-Automated Range checks prove that R2 objects are reachable. The opt-in full-transfer pass proves that every byte can be delivered, but neither check proves that every full track decodes correctly on the target Android device. Before deletion, explicitly validate:
+The user explicitly confirmed on 2026-08-03 that the Android validation is fully successful, including first-tap playback, continuous playback, system-player identity, cover loading, Lyrics Studio consistency and all 16 R2 tracks.
 
-1. first-tap playback and continuous playback on the installed Android PWA;
-2. title, artist and SHINOBIWAN icon in the Android system player and lock screen;
-3. fast thumbnail loading and original cover loading on track details;
-4. Lyrics Studio and the single Track-detail `Lyrics` status across the timestamped catalog;
-5. all 16 tracks through a complete R2-only playback pass.
+Before removing the bundled MP3 files, PR #45 was merged and its public GitHub Pages `catalog.js` was checked directly: 14/14 static audio entries used the canonical Worker R2 routes and no `audio/...mp3` path remained. The old migration manifest is pinned to immutable commit `7867d9b60033a3b5573019b670678ecc888feace`, so its historical source URLs remain recoverable after cleanup.
 
-The first-tap intent, explicit Android artwork and unified timestamp-status fixes are present on GitHub Pages. Treat the sampled timestamp check as passed, but do not treat the whole catalog as device-approved until the target Android pass above is signed off.
-
-Only after that approval should a separate cleanup PR remove the files, `fallbackFile`, `audio-fallback.js`, obsolete catalog metadata, and stale service-worker precache entries.
-
+The next cleanup stages cover duplicated per-track covers, fallback-only lyrics, remaining migration-only code, catalog simplification and service-worker precache cleanup. Each remains isolated in a separate reviewed PR.
