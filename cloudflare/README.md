@@ -16,6 +16,34 @@ tracks/<slug>/video.<ext>    # optional
 
 The public API exposes only manifests whose `status` is `published`.
 
+## Versioned Worker sources
+
+The public Worker is stored directly in:
+
+```text
+cloudflare/public-worker.js
+```
+
+The larger private Track Manager is stored as ordered source parts:
+
+```text
+cloudflare/admin-worker.parts/*.part
+```
+
+Build a single dashboard-compatible Worker file with:
+
+```bash
+npm run build:admin-worker
+```
+
+The output is written to:
+
+```text
+dist/launchpad-r2-admin-worker.js
+```
+
+`npm run validate` also concatenates the parts into a temporary file and runs `node --check`, so a broken private Worker cannot pass CI.
+
 ## Workers
 
 ### Private Track Manager
@@ -51,9 +79,9 @@ After adding or replacing lyrics, rebuild the index through the private Track Ma
 ## Deployment order for parser or index changes
 
 1. Merge the reviewed repository changes after CI passes.
-2. Deploy the private Track Manager version that generates the new index fields.
+2. Run `npm run build:admin-worker` and deploy the generated private Worker.
 3. Rebuild `catalog/index.json` once.
-4. Deploy the matching public Worker.
+4. Deploy the matching `cloudflare/public-worker.js`.
 5. Verify `/health`, `/tracks` and `/tracks/<slug>`.
 6. Refresh the installed PWA after its service-worker namespace changes.
 
