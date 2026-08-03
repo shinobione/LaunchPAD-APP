@@ -1,3 +1,8 @@
+.track-manager-access{display:flex;align-items:center;gap:7px;min-height:36px;padding:5px 10px 5px 6px;border:1px solid rgba(84,230,155,.24);border-radius:999px;background:rgba(84,230,155,.07);color:#c7f8dd;text-decoration:none;font-size:10px;letter-spacing:.03em}
+.track-manager-access>span{width:25px;height:25px;display:grid;place-items:center;border-radius:50%;background:#54e69b;color:#07120c;font-size:9px;font-weight:900}
+.track-manager-access>b{font-size:11px;color:#78edaa}
+.track-manager-access:hover{background:rgba(84,230,155,.13);border-color:rgba(84,230,155,.42)}
+
 .pwa-install-control{
   margin:-10px 0 0;
 }
@@ -101,3 +106,4 @@ html[data-connectivity="offline"] .catalog-badge span::after{
     bottom:148px;
   }
 }
+

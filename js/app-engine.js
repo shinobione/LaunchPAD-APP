@@ -76,7 +76,8 @@ async function boot() {
     { createPlayerExperience },
     { initResilienceAccessibility },
     { initTrackDetail },
-    { initMobileNavigation }
+    { initMobileNavigation },
+    { initAdminAccess }
   ] = await Promise.all([
     import(versioned('./features/content/content-controller.js')),
     import(versioned('./features/audio/audio-focus.js')),
@@ -87,7 +88,8 @@ async function boot() {
     import(versioned('./features/player-experience.js')),
     import(versioned('./features/resilience-accessibility.js')),
     import(versioned('./features/track-detail.js')),
-    import(versioned('./features/mobile-navigation.js'))
+    import(versioned('./features/mobile-navigation.js')),
+    import(versioned('./features/admin-access.js'))
   ]);
 
   installContentV4();
@@ -99,6 +101,7 @@ async function boot() {
   initLibraryMemory({ audio });
   initTrackDetail({ audio });
   initMobileNavigation();
+  initAdminAccess();
   initVisualCard({ audio });
   pwa.initPWA();
   initAudioFocus({ audio });
@@ -121,3 +124,4 @@ boot().catch(error => {
     );
   }
 });
+

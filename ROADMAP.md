@@ -45,10 +45,10 @@ _Last updated: 2026-08-03_
 
 ### P2: desktop Track Manager access
 
-- [ ] Add an opt-in desktop-only Track Manager entry inside LaunchPAD.
-- [ ] Keep the entry hidden for normal public visitors.
-- [ ] Persist admin mode locally after opening LaunchPAD with `?admin=1`.
-- [ ] Open the protected Cloudflare Access URL in a separate tab.
+- [x] Add an opt-in desktop-only Track Manager entry inside LaunchPAD.
+- [x] Keep the entry hidden for normal public visitors.
+- [x] Persist admin mode locally after opening LaunchPAD with `?admin=1` (`?admin=0` clears it).
+- [x] Open the protected Cloudflare Access URL in a separate tab.
 
 ### P2: favorites playback
 
@@ -79,3 +79,4 @@ The Cloudflare migration is finished when:
 6. both Workers are versioned and deployable from the repository;
 7. CI validates the PWA and Worker sources;
 8. user and developer documentation describes the production architecture accurately.
+
