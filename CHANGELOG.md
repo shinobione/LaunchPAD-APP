@@ -1,7 +1,18 @@
+
 # Changelog
 
 ## Unreleased
 
+- Fix legacy Track Manager edits so remote genres, tags, mood, colours and duration override bundled fallback metadata.
+- Accept `mm:ss` duration input while storing canonical seconds.
+- Refresh the Track Manager interface, grouping, accessibility and distinctive LP favicon; source version is 4.4.
+- Add a hidden desktop-only `?admin=1` entry that opens Cloudflare Access in a new tab.
+- Add a favorites-only playback queue with **Play favorites**, continuous playback, Shuffle, Repeat and removal handling.
+- Preserve first-tap play intent, provide explicit Android Media Session artwork and align Track detail with remote timestamp metadata.
+- Verify the live public Worker v2.3, 16 canonical R2 streams, optimized thumbnails and corrected Before the Noise metadata.
+- Add a read-only cleanup audit while keeping all historical media locked behind explicit mobile approval.
+- Pin Wrangler 4.118.0, dry-run both Worker bundles in CI and add a protected manual production deployment workflow.
+- Stabilize layout regression fixtures with ordered loading and post-ready geometry baselines.
 - Add dedicated track pages with complete tags, catalog metadata and shareable `#track=` routes.
 - Make every track cover navigate to its detail page without starting playback.
 - Add visual-regression protection for key desktop and mobile views.
@@ -16,3 +27,4 @@
 - Add album durations and complete the legacy module migration.
 - Add Visual Card, installable PWA support, Favorites and listening history.
 - Add queue, Shuffle, Repeat, album playback, Media Session and deep links.
+
