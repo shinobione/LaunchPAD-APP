@@ -102,6 +102,11 @@
   margin:5px 0 0;
 }
 
+.memory-play-favorites{
+  flex:0 0 auto;
+  cursor:pointer;
+}
+
 .memory-favorites-grid{
   grid-template-columns:repeat(4,minmax(0,1fr));
 }
@@ -258,3 +263,4 @@
     max-width:58vw;
   }
 }
+
