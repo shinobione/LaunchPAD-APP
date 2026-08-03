@@ -1,7 +1,7 @@
 
 # SHINOBIWAN LaunchPad — catalog guide
 
-The production catalog is managed in Cloudflare R2 through the private LaunchPAD Track Manager. Manual edits to `js/catalog.js` and `js/catalog-metadata.js` are now legacy fallback work, not the normal publishing workflow.
+The production catalog is managed in Cloudflare R2 through the private LaunchPAD Track Manager. `js/catalog.js` contains only album/editorial presentation data; track metadata is never maintained by hand in the PWA.
 
 ## Open the Track Manager
 
@@ -118,7 +118,7 @@ Bb major
 
 Use six-digit hexadecimal colours such as `#d450ff`. They theme the player, Track DNA and Audio Lab.
 
-For migrated tracks, reopen the entry after saving and verify both swatches. Remote manifest values are authoritative over the bundled fallback catalog.
+For migrated tracks, reopen the entry after saving and verify both swatches. The saved R2 manifest is authoritative.
 
 ## Cover optimization
 

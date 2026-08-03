@@ -12,7 +12,7 @@ _Last updated: 2026-08-03_
 - The read-only R2 audit transferred all 16 audio files successfully (87,849,601 bytes) and retained 16/16 optimized thumbnails.
 - Android validation is complete: first-tap playback, Media Session identity/icon, cover loading and synchronized-lyrics coherence are confirmed on the physical device.
 - GitHub Pages serves the favorites-only playback queue and the opt-in desktop Track Manager entry.
-- The static PWA catalog now points to R2 for audio, thumbnails and full covers.
+- The production PWA catalog is hydrated exclusively from R2; only album/editorial presentation data remains static.
 - Fourteen historical MP3 files (76,892,054 bytes) and fourteen duplicated per-track covers (37,064,826 bytes) have been removed from GitHub after R2 validation.
 - Runtime `fallbackFile` switching has been removed while preserving the Android audio-readiness recovery.
 - Bundled lyric fallbacks have been removed; the PWA now reads lyrics exclusively from the public R2 Worker.
@@ -45,9 +45,9 @@ _Last updated: 2026-08-03_
 - [x] Refresh service-worker cache namespaces after the audio and cover cleanup.
 - [x] Verify GitHub Pages after both historical-media deletion passes.
 - [x] Point the static catalog at R2 lyrics and remove the 10 bundled lyric fallbacks (31,603 bytes).
-- [ ] Replace the hard-coded track catalog with a minimal offline snapshot or generated catalog fixture.
-- [ ] Simplify `catalog.js`, `catalog-metadata.js` and the final service-worker precache list.
-- [ ] Measure the final repository size after lyrics/catalog cleanup.
+- [x] Replace the hard-coded track catalog with a four-track localhost/CI fixture; production remains R2-only.
+- [x] Simplify `catalog.js`, remove `catalog-metadata.js` and remove it from the service-worker precache list.
+- [x] Measure the final tracked repository snapshot after lyrics/catalog cleanup (recorded in the cleanup audit).
 
 ### P1: Worker source control and CI/CD
 

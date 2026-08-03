@@ -127,7 +127,7 @@ After every run, record the selected `main` SHA and verify `/health`. For the pr
 
 ## Migration cleanup
 
-Legacy GitHub audio, per-track covers and lyrics remain temporary fallbacks. Remove them only after R2 playback, thumbnails, synchronized lyrics and Android Media Session behavior are validated.
+Legacy GitHub audio, per-track covers and lyrics were removed after R2 playback, thumbnails, synchronized lyrics and Android Media Session behavior were validated. Production track metadata is now R2-only.
 
 Future tracks are created through the Track Manager form. Metadata is stored in `manifest.json`; no hand-written metadata TXT file is required.
 

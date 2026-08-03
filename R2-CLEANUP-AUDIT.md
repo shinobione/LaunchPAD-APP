@@ -46,10 +46,12 @@ Use `npm run audit:r2 -- --inventory-only` when network access is unavailable.
 
 The candidate total is 113,988,483 bytes. Album artwork, branding, PWA icons, screenshots and other interface assets are outside this deletion set.
 
+After the lyric and catalog cleanup, the tracked repository snapshot is 14.45 MiB. This measures the current deployable tree only; historical media remains recoverable in Git history and therefore still contributes to clone size.
+
 ## Accepted Android gate
 
 The user explicitly confirmed on 2026-08-03 that the Android validation is fully successful, including first-tap playback, continuous playback, system-player identity, cover loading, Lyrics Studio consistency and all 16 R2 tracks.
 
 Before removing the bundled MP3 files, PR #45 was merged and its public GitHub Pages `catalog.js` was checked directly: 14/14 static audio entries used the canonical Worker R2 routes and no `audio/...mp3` path remained. The old migration manifest is pinned to immutable commit `7867d9b60033a3b5573019b670678ecc888feace`, so its historical source URLs remain recoverable after cleanup.
 
-The next cleanup stages cover remaining migration-only code, catalog simplification and the final service-worker precache cleanup. Each remains isolated in a separate reviewed PR.
+The hard-coded track catalog and duplicated metadata file have now been replaced by R2-only production hydration plus a minimal localhost/CI fixture. The service worker does not precache that fixture.

@@ -5,11 +5,14 @@ import path from 'node:path';
 import {
   albums,
   tracks,
+  mergeRemoteTracks,
   validateCatalogRuntime
 } from '../js/core/catalog-store.js';
+import { catalogFixture } from '../js/catalog-fixture.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const structureOnly = process.argv.includes('--structure-only');
+mergeRemoteTracks(catalogFixture);
 const health = validateCatalogRuntime();
 const errors = [...health.errors];
 const warnings = [...health.warnings];

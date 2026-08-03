@@ -65,14 +65,25 @@ if (!pngIcon || pngIcon.type !== 'image/png' || pngIcon.sizes !== '512x512') {
 }
 
 const staticCatalog = read('js/catalog.js');
-if (staticCatalog.includes('assets/lyrics/')) {
-  fail('Static catalog must not reference bundled lyric files.');
+const catalogFixture = read('js/catalog-fixture.js');
+const appEngine = read('js/app-engine.js');
+if (/export const tracks\s*=/.test(staticCatalog)) {
+  fail('Production catalog must be hydrated from the canonical R2 Worker.');
 }
-if (!staticCatalog.includes("const r2Lyrics = slug =>")) {
-  fail('Static catalog must resolve lyrics through the public R2 Worker.');
+if (catalogFixture.includes('assets/lyrics/')) {
+  fail('The local catalog fixture must not reference bundled lyric files.');
+}
+if (!catalogFixture.includes("kind, filename")) {
+  fail('The local catalog fixture must resolve media through the public R2 Worker.');
+}
+if (!appEngine.includes("dataset.remoteCatalog = 'error'") || appEngine.includes("dataset.remoteCatalog = 'fallback'")) {
+  fail('Catalog startup must fail clearly instead of pretending to provide an offline catalog.');
 }
 if (fs.existsSync('assets/lyrics')) {
   fail('Bundled lyric fallbacks must be removed after R2 validation.');
+}
+if (fs.existsSync('js/catalog-metadata.js')) {
+  fail('Duplicated static track metadata must be removed.');
 }
 
 const worker = read('sw.js');
@@ -82,7 +93,7 @@ if (worker.includes('LYRIC_RESOURCES') || worker.includes('assets/lyrics/')) {
 if (!worker.includes("'./assets/pwa-icon-512.png'")) {
   fail('The service worker must cache the Android media artwork.');
 }
-if (!worker.includes('r2-lyrics-cleanup-20260803')) {
+if (!worker.includes('remote-catalog-only-20260803')) {
   fail('The service-worker release namespace was not refreshed.');
 }
 

@@ -3,6 +3,8 @@
 
 ## Unreleased
 
+- Make the production catalog R2-only, replace fourteen duplicated track definitions with a four-track localhost/CI fixture and remove `catalog-metadata.js` from the PWA precache.
+- Remove the ten bundled lyric fallbacks after validating their public R2 endpoints.
 - Fix legacy Track Manager edits so remote genres, tags, mood, colours and duration override bundled fallback metadata.
 - Accept `mm:ss` duration input while storing canonical seconds.
 - Refresh the Track Manager interface, grouping, accessibility and distinctive LP favicon; source version is 4.5.
