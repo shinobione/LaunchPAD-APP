@@ -51,6 +51,12 @@ function finiteOrNull(value) {
   return Number.isFinite(value) ? value : null;
 }
 
+function timestampState(value) {
+  if (value === true) return true;
+  if (value === false) return false;
+  return null;
+}
+
 function buildSearchText(track) {
   return [
     track.title,
@@ -116,8 +122,8 @@ function mapRemoteTrack(item) {
       themes: Array.isArray(item.themes) ? item.themes.filter(Boolean) : [],
       era: item.era || null,
       energy: item.energy || null,
-      timestampsAvailable: item.timestampsAvailable === true,
-      apiUrl: item.urls?.self || null
+      timestampsAvailable: timestampState(item.timestampsAvailable),
+      apiUrl: item.urls?.self || `${DEFAULT_API_URL}/tracks/${encodeURIComponent(item.slug)}`
     }
   };
 
@@ -138,7 +144,7 @@ export async function fetchRemoteTracks({
     const response = await fetch(`${normalizeApiUrl(apiUrl)}/tracks`, {
       method: 'GET',
       headers: { Accept: 'application/json' },
-      cache: 'default',
+      cache: 'no-store',
       signal: controller.signal
     });
 
