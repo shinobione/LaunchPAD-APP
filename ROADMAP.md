@@ -16,6 +16,8 @@ _Last updated: 2026-08-03_
 - Fourteen historical MP3 files (76,892,054 bytes) and fourteen duplicated per-track covers (37,064,826 bytes) have been removed from GitHub after R2 validation.
 - Runtime `fallbackFile` switching has been removed while preserving the Android audio-readiness recovery.
 - Bundled lyric fallbacks have been removed; the PWA now reads lyrics exclusively from the public R2 Worker.
+- The repository now contains protected production deployment and rollback workflows with post-deployment smoke tests and Cloudflare version tracing.
+- The first production deployment from GitHub Actions is still pending environment-secret configuration and review.
 
 ## Step 7 — stabilization and consolidation
 
@@ -58,7 +60,11 @@ _Last updated: 2026-08-03_
 - [x] Pin Wrangler and add configuration for both Workers.
 - [x] Dry-run the exact public and private bundles in CI.
 - [x] Add a protected, manual production deployment workflow from `main`.
+- [x] Add explicit production confirmation, structured Wrangler version tracing and post-deployment smoke tests.
+- [x] Add a protected manual rollback workflow with post-rollback verification.
+- [x] Document the one-time GitHub environment, required secrets and first deployment runbook.
 - [ ] Configure the `cloudflare-production` secrets and complete the first reviewed workflow deployment.
+- [ ] Stop all Dashboard source editing after both Workers have completed their first repository-driven deployment.
 
 ### P2: desktop Track Manager access
 
@@ -86,6 +92,7 @@ _Last updated: 2026-08-03_
 - [x] Rewrite `guide.md` around the Track Manager rather than manual catalog edits.
 - [x] Update `RELEASE-CHECKLIST.md` for Cloudflare publication and PWA cache refreshes.
 - [x] Update the Cloudflare operating documentation.
+- [x] Add a dedicated reproducible deployment and rollback runbook.
 - [x] Synchronize this roadmap with the completed Android validation and media cleanup.
 
 ## Definition of migration complete
