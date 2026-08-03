@@ -52,15 +52,36 @@ const trackVideos = read('js/features/track-videos.js');
 for (const required of [
   'track?.video',
   "preload = 'none'",
-  "button.textContent = 'Watch video'",
+  "button.textContent = 'Open Canvas'",
   'video.playsInline = true',
-  "audio?.addEventListener('play'",
-  'video.dataset.src = track.video'
+  'video.loop = true',
+  'video.muted = true',
+  'video.controls = false',
+  'video.dataset.src = track.video',
+  'data-track-video-loop-action'
 ]) {
-  if (!trackVideos.includes(required)) fail(`Track video playback is missing ${required}.`);
+  if (!trackVideos.includes(required)) fail(`Track Canvas playback is missing ${required}.`);
 }
 if (trackVideos.includes('fetch(')) {
-  fail('Track video playback must use the hydrated catalog instead of making a second metadata request.');
+  fail('Track Canvas playback must use the hydrated catalog instead of making a second metadata request.');
+}
+for (const forbidden of ['audio?.pause()', "audio?.addEventListener('play'"]) {
+  if (trackVideos.includes(forbidden)) fail(`Silent Canvas playback must not interrupt music: ${forbidden}.`);
+}
+
+const lyricsStudio = read('js/features/lyrics-studio.js');
+for (const required of [
+  'data-lyrics-studio="canvas"',
+  'lyrics-studio-canvas-active',
+  'canvasVideo.loop = true',
+  'canvasVideo.muted = true',
+  'canvasVideo.controls = false',
+  "ensureStylesheet('css/track-videos.css')"
+]) {
+  if (!lyricsStudio.includes(required)) fail(`Lyrics Studio Canvas is missing ${required}.`);
+}
+if (lyricsStudio.includes('audio.pause')) {
+  fail('Lyrics Studio Canvas must leave the music track playing.');
 }
 
 const listeningSummary = read('js/features/listening-history-summary.js');
@@ -136,10 +157,11 @@ for (const required of [
   "'./assets/pwa-icon-512.png'",
   "'./css/track-videos.css'",
   "'./js/features/track-videos.js'",
+  "'./js/features/lyrics-studio.js'",
   "'./js/features/listening-history-summary.js'",
-  'track-video-history-20260804'
+  'spotify-canvas-studio-20260804'
 ]) {
   if (!worker.includes(required)) fail(`The service worker cache is missing ${required}.`);
 }
 
-console.log('Media artwork, playback readiness, lyrics timing, track videos and listening summary regressions are covered.');
+console.log('Media artwork, playback readiness, lyrics timing, silent Canvas loops, Studio Canvas and listening summary regressions are covered.');
