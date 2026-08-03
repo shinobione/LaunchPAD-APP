@@ -1,8 +1,21 @@
+
 # SHINOBIWAN Launchpad
 
 An installable, responsive music application for the SHINOBIWAN catalog: album pages, synchronized lyrics, reactive visuals, queues, favorites, offline shell support and shareable Visual Cards.
 
 **Production:** https://shinobione.github.io/LaunchPAD-APP/
+
+## Verified status
+
+| Component | Repository state | Production state |
+| --- | --- | --- |
+| PWA | Favorites-only queue, desktop admin access and Android media fixes are merged | GitHub Pages serves `favorites-queue-20260803` |
+| Public media Worker | v2.3 source and Wrangler config are merged | `/health` reports v2.3 and 16 canonical tracks |
+| Private Track Manager | v4.4 source and Wrangler config are merged | Protected by Access; the live v4.4 deployment is not yet independently confirmed |
+| R2 media | Read-only audit is merged | 16/16 Range audio streams and 16/16 optimized thumbnails verified |
+| Cloudflare delivery | Pinned Wrangler validation and manual deployment workflow are merged | The repository workflow has not yet performed a production deployment |
+
+The first-tap playback, Android media icon and timestamp-status regressions are fixed in the deployed PWA code. Final acceptance on the target Android device is still required before legacy media deletion.
 
 ## Production architecture
 
@@ -23,11 +36,13 @@ Media is streamed from R2 with HTTP Range support. Catalog cards use optimized 5
 ## Cloudflare components
 
 - `cloudflare/public-worker.js` — public catalog and media streaming Worker.
+- `cloudflare/admin-worker.parts/` — versioned private Track Manager source.
+- `cloudflare/wrangler.*.jsonc` — reproducible service names, entry points and R2 bindings.
 - `cloudflare/migration-manifest.json` — historical migration source data.
 - `cloudflare/README.md` — R2 layout, bindings and deployment notes.
 - `ROADMAP.md` — stabilization, cleanup and post-migration work.
 
-The private Track Manager runs at `launchpad-r2-api` behind Cloudflare Access. Its source is scheduled to move into the repository as part of the current consolidation phase.
+The private Track Manager runs at `launchpad-r2-api` behind Cloudflare Access. On a desktop pointer device, open LaunchPAD once with `?admin=1` to persist a private local entry; `?admin=0` removes it. Ordinary visitors never see the control.
 
 ## Local development
 
@@ -42,11 +57,18 @@ Local development deliberately uses the bundled catalog so browser tests do not 
 ## Validation
 
 ```bash
-npm install
+npm ci
 npm run validate
+npm run check:wrangler
 ```
 
-Validation covers JavaScript syntax, catalog integrity, Cloudflare Worker structure and service-worker behavior. GitHub Actions additionally runs browser smoke tests, accessibility checks and desktop/mobile visual-regression screenshots.
+Validation covers JavaScript syntax, catalog integrity, both exact Wrangler bundles and service-worker behavior. GitHub Actions additionally runs browser smoke tests, accessibility checks and desktop/mobile visual-regression screenshots.
+
+The live cleanup audit is read-only:
+
+```bash
+npm run audit:r2
+```
 
 ## Project map
 
@@ -56,6 +78,7 @@ Validation covers JavaScript syntax, catalog integrity, Cloudflare Worker struct
 - `js/core/remote-catalog.js` — public Cloudflare catalog adapter.
 - `js/features/` — user-facing features.
 - `cloudflare/` — Worker source, migration data and deployment documentation.
+- `R2-CLEANUP-AUDIT.md` — verified legacy-media inventory and deletion gate.
 - `css/` — base, feature and responsive layers.
 - `guide.md` — catalog and release workflow.
 - `ARCHITECTURE.md` — technical structure.
@@ -70,6 +93,9 @@ The service worker uses a release namespace in `sw.js`. Change it whenever JavaS
 
 ## Deployment
 
-Merges to `main` are published through GitHub Pages. Cloudflare Worker changes require a separate Worker deployment until repository-driven Worker CI/CD is implemented.
+Merges to `main` are published through GitHub Pages. Worker source is not deployed by a merge: dispatch **Deploy Cloudflare Workers** from `main`, choose `public`, `admin` or `both`, and use the protected `cloudflare-production` environment.
 
-Do not merge unless the `Validate Launchpad` workflow is green.
+The GitHub environment must contain `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. A Worker deployment does not rebuild `catalog/index.json`; perform that explicit Track Manager action only when required.
+
+Do not merge unless both `Validate Launchpad` and `Validate Cloudflare Workers` are green. Report source merge, GitHub Pages publication, Worker deployment and R2 index rebuild as separate states.
+

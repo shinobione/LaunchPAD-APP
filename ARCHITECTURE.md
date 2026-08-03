@@ -1,3 +1,4 @@
+
 # SHINOBIWAN Launchpad architecture
 
 LaunchPAD is a modular PWA backed by a canonical Cloudflare R2 media catalog. GitHub Pages serves the interface; Cloudflare Workers manage and publish media stored in R2.
@@ -17,7 +18,7 @@ launchpad-media Worker  --->  shinobiwan-media R2 bucket
 
 Private desktop administration
         |
-        | Cloudflare Access
+        | ?admin=1 local opt-in, then Cloudflare Access
         v
 launchpad-r2-api Worker  --->  same R2 bucket
 ```
@@ -60,11 +61,15 @@ js/
     media-session.js            Android lock-screen and headset controls
     player-experience.js        Play-state authority and Track DNA
     library-memory.js           Favorites, history and playback persistence
+    admin-access.js             Desktop-only local Track Manager entry
     pwa.js                      Installation and update controls
     ...
 
 cloudflare/
   public-worker.js              Public read-only API and Range streaming
+  admin-worker.parts/           Ordered private Worker source
+  wrangler.public.jsonc         Public production deployment contract
+  wrangler.admin.jsonc          Private production deployment contract
   migration-manifest.json       Legacy GitHub-to-R2 migration plan
   README.md                     Worker bindings and deployment notes
 ```
@@ -76,7 +81,9 @@ cloudflare/
 3. `remote-catalog.js` maps R2 manifests to LaunchPAD track objects.
 4. `catalog-store.js` updates matching bundled entries and appends cloud-only tracks.
 5. `app-main.js` renders the hydrated catalog and initializes playback.
-6. The service worker provides an offline interface shell; audio Range requests remain network-only.
+6. Favorites can replace the catalog queue with a contextual favorites-only queue without changing Shuffle or Repeat state.
+7. `admin-access.js` exposes the private link only after a desktop user opts in locally with `?admin=1`.
+8. The service worker provides an offline interface shell; audio Range requests remain network-only.
 
 Localhost intentionally skips the remote catalog so CI and local development remain deterministic.
 
@@ -103,13 +110,18 @@ A timestamp followed by its lyric on the next line
 6. Audio responses support HTTP Range requests and bypass the PWA cache.
 7. Views remain addressable through hash routes.
 8. Playback order is controlled by `core/player-queue.js`.
-9. Feature behavior lives in `js/features/`; shared state and helpers live in `js/core/`.
-10. Every shell-changing release receives a new service-worker cache namespace.
-11. Worker changes and PWA changes must pass CI before deployment.
-12. Bundled media remains temporary and must be removed only after the R2-only mobile checks pass.
+9. Catalog, album and favorites queues remain explicit contexts; an empty contextual queue never falls back silently to the catalog.
+10. Feature behavior lives in `js/features/`; shared state and helpers live in `js/core/`.
+11. Every shell-changing release receives a new service-worker cache namespace.
+12. Worker changes and PWA changes must pass CI before deployment.
+13. A merge, GitHub Pages publication, Worker deployment and catalog rebuild are distinct release states.
+14. Bundled media remains temporary and must be removed only after the R2-only mobile checks pass.
 
 ## Validation
 
-`npm run validate` checks JavaScript syntax, catalog integrity, the public Worker contract and service-worker behavior. GitHub Actions additionally runs Chrome smoke tests, accessibility checks and desktop/mobile visual-regression captures.
+`npm run validate` checks JavaScript syntax, catalog integrity, the public Worker contract and service-worker behavior. `npm run check:wrangler` compiles the exact public and private deployment bundles without deploying. GitHub Actions runs both plus Chrome smoke tests, accessibility checks and desktop/mobile visual-regression captures.
+
+Production deployment is a manual `main` workflow protected by the `cloudflare-production` environment. Wrangler uses the existing `MEDIA_BUCKET` binding and preserves dashboard variables. The workflow does not rebuild the R2 catalog index.
 
 See `guide.md`, `RELEASE-CHECKLIST.md` and `ROADMAP.md` for operational workflows.
+

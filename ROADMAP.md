@@ -1,3 +1,4 @@
+
 # LaunchPAD roadmap
 
 _Last updated: 2026-08-03_
@@ -10,6 +11,9 @@ _Last updated: 2026-08-03_
 - The public `launchpad-media` Worker exposes published metadata and Range-enabled media streams.
 - Sixteen tracks are published in the canonical `tracks/<slug>/` layout.
 - Each track has a manifest, original cover and audio file; optimized WebP thumbnails are used by catalog cards.
+- The public Worker is live on v2.3; the read-only audit verifies all 16 Range streams and thumbnails.
+- GitHub Pages serves the favorites queue, desktop-only admin entry and PR #23 Android/PWA fixes.
+- The physical Android acceptance pass is not signed off yet, so the three regressions are considered resolved in PWA code but still require device confirmation.
 - The bundled GitHub catalog and media still exist as a temporary safety fallback until mobile validation is complete.
 
 ## Step 7 — stabilization and consolidation
@@ -20,13 +24,16 @@ _Last updated: 2026-08-03_
 - [x] Make the public Worker accept bracketed LRC timestamps and standalone `mm:ss.xx` timestamp lines.
 - [x] Read `timestampsAvailable` from the catalog index for `/tracks` responses.
 - [x] Prepare the Track Manager catalog rebuild that derives timestamp flags from every lyrics file.
-- [ ] Deploy the private and public Worker versions containing the fix.
-- [ ] Rebuild `catalog/index.json` once in production.
-- [ ] Verify THICK, Carved from Pressure and The Throne Resonates in Track detail and Lyrics Studio.
+- [x] Confirm public Worker v2.3 in production.
+- [x] Confirm the rebuilt public index reports timestamp metadata for ten tracks.
+- [x] Verify the public API flags for THICK, Carved from Pressure and The Throne Resonates.
+- [ ] Confirm Track Manager v4.4 through the protected live Worker after the first repository-driven deployment.
+- [ ] Complete the final Track detail and Lyrics Studio device pass.
 
 ### P1: repository cleanup
 
 - [ ] Confirm final mobile playback, Media Session icon, thumbnails and synchronized lyrics.
+- [x] Add a read-only R2 audit and exact legacy deletion inventory.
 - [ ] Remove legacy MP3 files from the GitHub repository.
 - [ ] Remove duplicated per-track covers and lyrics retained only as fallbacks.
 - [ ] Remove `fallbackFile` and the bundled-audio recovery layer.
@@ -40,8 +47,10 @@ _Last updated: 2026-08-03_
 - [x] Version the private Track Manager Worker as ordered source parts in `cloudflare/admin-worker.parts/`.
 - [x] Add a reproducible build and syntax-check script for the dashboard-compatible private Worker bundle.
 - [x] Add Worker syntax and catalog-index checks to the existing CI validation command.
-- [ ] Add Wrangler configuration for both Workers.
-- [ ] Replace manual dashboard copy/paste deployments with reviewed deployments from GitHub.
+- [x] Pin Wrangler and add configuration for both Workers.
+- [x] Dry-run the exact public and private bundles in CI.
+- [x] Add a protected, manual production deployment workflow from `main`.
+- [ ] Configure the `cloudflare-production` secrets and complete the first reviewed workflow deployment.
 
 ### P2: desktop Track Manager access
 
@@ -76,7 +85,7 @@ The Cloudflare migration is finished when:
 3. Lyrics Studio and Track detail agree on timestamp availability;
 4. Android playback starts on the first tap and exposes the expected PWA media identity;
 5. legacy GitHub media and fallback code are removed;
-6. both Workers are versioned and deployable from the repository;
+6. both Workers are versioned and have completed a reviewed repository-driven deployment;
 7. CI validates the PWA and Worker sources;
 8. user and developer documentation describes the production architecture accurately.
 
