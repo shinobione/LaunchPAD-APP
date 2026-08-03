@@ -1,0 +1,16 @@
+
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "launchpad-media",
+  "main": "public-worker.js",
+  "compatibility_date": "2026-08-03",
+  "workers_dev": true,
+  "keep_vars": true,
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "shinobiwan-media"
+    }
+  ]
+}
+
