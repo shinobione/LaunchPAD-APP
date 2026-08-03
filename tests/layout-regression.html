@@ -10,52 +10,17 @@ const READY=['LAYOUT','READY'].join(' ');
 const ERROR=['LAYOUT','ERROR'].join(' ');
 const frames=[document.querySelector('#desktop'),document.querySelector('#mobile'),document.querySelector('#track'),document.querySelector('#mobile-album')];
 const sleep=delay=>new Promise(resolve=>setTimeout(resolve,delay));
-const frameReady=frame=>new Promise((resolve,reject)=>{
-  const started=performance.now();
-  let timer=0;
-  let settled=false;
-  const cleanup=()=>{
-    clearTimeout(timer);
-    frame.removeEventListener('load',check);
-  };
-  const finish=()=>{
-    if(settled) return;
-    settled=true;
-    cleanup();
-    resolve(frame);
-  };
-  const check=()=>{
-    if(settled) return;
-    try{
-      const document=frame.contentDocument;
-      const href=frame.contentWindow?.location?.href||'';
-      if(document&&document.readyState==='complete'&&href&&href!=='about:blank'){
-        finish();
-        return;
-      }
-    }catch{}
-    if(performance.now()-started>8000){
-      settled=true;
-      cleanup();
-      reject(new Error(`Frame ${frame.id} did not load.`));
-      return;
-    }
-    timer=setTimeout(check,25);
-  };
-  frame.addEventListener('load',check);
-  check();
-});
 const rect=node=>node?.getBoundingClientRect();
 const selectors=[
   '.launchpad-hero','.launchpad-banner-rail','.hero-banner-art','.hero-body',
   '.hero-profile-card','.hero-copy','.hero-wordmark','.artist-manifesto','.hero-actions'
 ];
 const geometry=document=>{
-  const view=document?.defaultView;
+  const view=document.defaultView;
   const scrollX=view?.scrollX||0;
   const scrollY=view?.scrollY||0;
   return Object.fromEntries(selectors.map(selector=>{
-    const box=rect(document?.querySelector(selector));
+    const box=rect(document.querySelector(selector));
     return [selector,box?{
       left:box.left+scrollX,
       top:box.top+scrollY,
@@ -75,32 +40,20 @@ const geometryChanges=(before,after)=>Object.keys(before).flatMap(selector=>{
   }));
 }).sort((a,b)=>b.delta-a.delta);
 const failureToken=change=>`${change.selector.replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'')}-${change.field}-${Math.round(change.delta)}`;
-const localStyles=document=>{
-  if(!document) return [];
-  const base=document.baseURI||document.URL||window.location.href;
-  let baseUrl;
-  try{baseUrl=new URL(base,window.location.href);}catch{return [];}
-  return [...document.querySelectorAll('link[rel="stylesheet"]')]
-    .map(link=>{
-      const href=link.getAttribute('href')||link.href;
-      if(!href) return null;
-      try{return new URL(href,baseUrl);}catch{return null;}
-    })
-    .filter(Boolean)
-    .filter(url=>url.origin===baseUrl.origin&&url.pathname.includes('/css/'));
-};
+const localStyles=document=>[...document.querySelectorAll('link[rel="stylesheet"]')]
+  .map(link=>new URL(link.href,document.location.href))
+  .filter(url=>url.origin===document.location.origin&&url.pathname.includes('/css/'));
 
-Promise.all(frames.map(frameReady)).then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
+Promise.all(frames.map(frame=>new Promise(resolve=>frame.addEventListener('load',()=>resolve(frame))))).then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   const measuredFrames=[desktop,mobile];
-  measuredFrames.forEach(frame=>frame.contentWindow?.scrollTo(0,0));
+  measuredFrames.forEach(frame=>frame.contentWindow.scrollTo(0,0));
   await sleep(200);
   const dd=desktop.contentDocument, md=mobile.contentDocument, td=trackFrame.contentDocument, ad=mobileAlbum.contentDocument;
-  if(!dd||!md||!td||!ad) throw new Error('One or more iframe documents detached before measurement.');
   const initialDesktopGeometry=geometry(dd);
   const initialMobileGeometry=geometry(md);
 
   await sleep(4800);
-  measuredFrames.forEach(frame=>frame.contentWindow?.scrollTo(0,0));
+  measuredFrames.forEach(frame=>frame.contentWindow.scrollTo(0,0));
   await sleep(50);
   const failures=[];
   const finalDesktopGeometry=geometry(dd);
@@ -143,7 +96,7 @@ Promise.all(frames.map(frameReady)).then(async([desktop,mobile,trackFrame,mobile
   ]){
     const bannerRect=rect(bannerNode);
     const profileRect=rect(profileNode);
-    const bannerStyle=bannerNode?document.defaultView?.getComputedStyle(bannerNode):null;
+    const bannerStyle=bannerNode?document.defaultView.getComputedStyle(bannerNode):null;
     if(!bannerRect||bannerRect.width<260||bannerRect.height<140||bannerStyle?.visibility==='hidden'||Number(bannerStyle?.opacity||0)<.9){
       failures.push(`${label}-launchpad-visible`);
     }
@@ -191,13 +144,13 @@ Promise.all(frames.map(frameReady)).then(async([desktop,mobile,trackFrame,mobile
 
     cover.click();
     await sleep(900);
-    if(desktop.contentWindow?.location?.hash!=='#track=husband') failures.push('cover-navigation');
+    if(desktop.contentWindow.location.hash!=='#track=husband') failures.push('cover-navigation');
     if(!dd.querySelector('#view-track.active')) failures.push('cover-track-view');
     if(homeAudio.dataset.trackId!=='thick') failures.push('cover-changed-playing-track');
     if(homeAudio.paused) failures.push('cover-paused-playback');
     if(Math.abs(homeAudio.currentTime-37)>.01) failures.push('cover-reset-playback-position');
     if(navigationLoadCalls!==0) failures.push('cover-reloaded-audio');
-    if(desktop.contentWindow?.history?.state?.shinobiTrackDetail!==true) failures.push('cover-passive-history-state');
+    if(desktop.contentWindow.history.state?.shinobiTrackDetail!==true) failures.push('cover-passive-history-state');
   }
 
   const albumRows=[...ad.querySelectorAll('.album-detail-track')];
@@ -233,7 +186,5 @@ Promise.all(frames.map(frameReady)).then(async([desktop,mobile,trackFrame,mobile
   };
   const diagnostics={desktop:desktopChanges.slice(0,5),mobile:mobileChanges.slice(0,5)};
   result.textContent=failures.length?`${ERROR} ${failures.join(' ')} ${JSON.stringify(diagnostics)}`:`${READY} ${JSON.stringify(snapshot)}`;
-}).catch(error=>{
-  result.textContent=`${ERROR} ${error?.message||String(error)}`;
 });
 </script>
