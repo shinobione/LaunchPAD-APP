@@ -61,8 +61,9 @@ const worker = read('sw.js');
 if (!worker.includes("'./assets/pwa-icon-512.png'")) {
   fail('The service worker must cache the Android media artwork.');
 }
-if (!worker.includes('android-media-timestamps-20260803')) {
+if (!worker.includes('desktop-admin-access-20260803')) {
   fail('The service-worker release namespace was not refreshed.');
 }
 
 console.log('Android media artwork, first-tap playback and lyric timing regressions are covered.');
+
