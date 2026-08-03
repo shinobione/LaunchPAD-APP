@@ -10,16 +10,40 @@ const READY=['LAYOUT','READY'].join(' ');
 const ERROR=['LAYOUT','ERROR'].join(' ');
 const frames=[document.querySelector('#desktop'),document.querySelector('#mobile'),document.querySelector('#track'),document.querySelector('#mobile-album')];
 const sleep=delay=>new Promise(resolve=>setTimeout(resolve,delay));
-const frameReady=frame=>new Promise(resolve=>{
+const frameReady=frame=>new Promise((resolve,reject)=>{
+  const started=performance.now();
+  let timer=0;
   let settled=false;
+  const cleanup=()=>{
+    clearTimeout(timer);
+    frame.removeEventListener('load',check);
+  };
   const finish=()=>{
     if(settled) return;
     settled=true;
-    frame.removeEventListener('load',finish);
+    cleanup();
     resolve(frame);
   };
-  frame.addEventListener('load',finish,{once:true});
-  if(frame.contentDocument?.readyState==='complete') queueMicrotask(finish);
+  const check=()=>{
+    if(settled) return;
+    try{
+      const document=frame.contentDocument;
+      const href=frame.contentWindow?.location?.href||'';
+      if(document&&document.readyState==='complete'&&href&&href!=='about:blank'){
+        finish();
+        return;
+      }
+    }catch{}
+    if(performance.now()-started>8000){
+      settled=true;
+      cleanup();
+      reject(new Error(`Frame ${frame.id} did not load.`));
+      return;
+    }
+    timer=setTimeout(check,25);
+  };
+  frame.addEventListener('load',check);
+  check();
 });
 const rect=node=>node?.getBoundingClientRect();
 const selectors=[
