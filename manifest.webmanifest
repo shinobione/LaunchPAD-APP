@@ -24,6 +24,12 @@
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    },
+    {
+      "src": "assets/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
   "shortcuts": [
@@ -31,19 +37,19 @@
       "name": "Home",
       "short_name": "Home",
       "url": "./#home",
-      "icons": [{ "src": "assets/pwa-icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+      "icons": [{ "src": "assets/pwa-icon-512.png", "sizes": "512x512", "type": "image/png" }]
     },
     {
       "name": "Favorites",
       "short_name": "Favorites",
       "url": "./#favorites",
-      "icons": [{ "src": "assets/pwa-icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+      "icons": [{ "src": "assets/pwa-icon-512.png", "sizes": "512x512", "type": "image/png" }]
     },
     {
       "name": "Audio Lab",
       "short_name": "Audio Lab",
       "url": "./#lab",
-      "icons": [{ "src": "assets/pwa-icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+      "icons": [{ "src": "assets/pwa-icon-512.png", "sizes": "512x512", "type": "image/png" }]
     }
   ]
 }
