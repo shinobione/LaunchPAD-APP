@@ -8,10 +8,11 @@
   "scripts": {
     "build:admin-worker": "node scripts/build-admin-worker.mjs dist/launchpad-r2-admin-worker.js",
     "check:admin-worker": "node scripts/build-admin-worker.mjs",
+    "check:lyrics-txt-metadata": "node scripts/validate-lyrics-txt-metadata.mjs",
     "check:cloudflare:ops": "node --check scripts/verify-cloudflare-deployment.mjs && node --check scripts/report-wrangler-deploy.mjs",
     "check:syntax": "find js scripts cloudflare -type f \\( -name '*.js' -o -name '*.mjs' \\) -print0 | xargs -0 -n1 node --check && node --check sw.js",
     "validate:catalog": "node scripts/validate-catalog.mjs && node scripts/validate-hero-layout.mjs && node scripts/validate-legacy-catalog-merge.mjs && node scripts/validate-favorites-queue.mjs",
-    "validate:cloudflare": "node scripts/validate-cloudflare-migration.mjs && npm run check:admin-worker && npm run check:cloudflare:ops",
+    "validate:cloudflare": "node scripts/validate-cloudflare-migration.mjs && npm run check:admin-worker && npm run check:lyrics-txt-metadata && npm run check:cloudflare:ops",
     "check:wrangler:public": "wrangler deploy --dry-run --config cloudflare/wrangler.public.jsonc --outdir dist/wrangler/public",
     "check:wrangler:admin": "npm run build:admin-worker && wrangler deploy --dry-run --config cloudflare/wrangler.admin.jsonc --outdir dist/wrangler/admin",
     "check:wrangler": "npm run check:wrangler:public && npm run check:wrangler:admin",
