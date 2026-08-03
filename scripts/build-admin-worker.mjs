@@ -37,8 +37,11 @@ if (syntax.status !== 0) {
 }
 
 for (const required of [
-  'version: "4.3"',
+  'version: "4.4"',
   'const ADMIN_HTML = String.raw`',
+  'rel="icon" href="data:image/svg+xml',
+  'class="form-section"',
+  'aria-label="Actions du catalogue"',
   'function writeCatalogIndex(',
   'function parseTimestampedLyrics(',
   'timestampsAvailable'
@@ -49,3 +52,4 @@ for (const required of [
 }
 
 console.log(`Built ${outputPath} from ${parts.length} source parts (${Buffer.byteLength(source)} bytes).`);
+
