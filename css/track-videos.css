@@ -1,42 +1,66 @@
-.track-video-section{
-  overflow:hidden;
-  background:
-    radial-gradient(circle at 14% 10%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 34%),
-    linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.012));
-}
-
-.track-video-section[hidden],
+.track-detail-canvas-panel[hidden],
 .lyrics-studio-canvas[hidden]{
   display:none!important;
 }
 
-.track-video-head{
-  width:min(100%,520px);
-  margin-inline:auto;
+.track-detail-hero.has-track-canvas{
+  grid-template-columns:minmax(240px,340px) minmax(0,1fr) minmax(150px,210px);
+  gap:clamp(22px,3vw,48px);
 }
 
-.track-video-meta{
+.track-detail-hero.has-track-canvas .track-detail-copy h1{
+  font-size:clamp(46px,5.4vw,86px);
+}
+
+.track-detail-canvas-panel{
+  position:relative;
+  align-self:center;
+  justify-self:end;
+  width:clamp(150px,13vw,210px);
+  aspect-ratio:9/16;
+  overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--accent) 34%,rgba(255,255,255,.1));
+  border-radius:19px;
+  background:#020105;
+  box-shadow:0 24px 70px rgba(0,0,0,.45);
+}
+
+.track-detail-canvas-shell{
+  width:100%;
+  height:100%;
+}
+
+.track-detail-canvas-toolbar{
+  position:absolute;
+  z-index:2;
+  inset:9px 9px auto;
   display:flex;
-  flex-wrap:wrap;
   align-items:center;
-  justify-content:flex-end;
-  gap:8px;
+  justify-content:space-between;
+  gap:7px;
+  pointer-events:none;
+}
+
+.track-detail-canvas-badge,
+.lyrics-studio-canvas-badge{
+  padding:5px 8px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:999px;
+  color:#fff;
+  background:rgba(3,2,7,.64);
+  backdrop-filter:blur(10px);
+  font-size:7px;
+  font-weight:800;
+  letter-spacing:.12em;
 }
 
 .track-video-loop-control{
-  min-height:30px;
-  padding:7px 10px;
-}
-
-.track-video-shell{
-  width:clamp(230px,23vw,350px);
-  aspect-ratio:9/16;
-  margin:20px auto 0;
-  overflow:hidden;
-  border:1px solid rgba(255,255,255,.11);
-  border-radius:22px;
-  background:#020105;
-  box-shadow:0 24px 70px rgba(0,0,0,.42);
+  min-width:0;
+  min-height:28px;
+  padding:6px 8px;
+  background:rgba(3,2,7,.72);
+  pointer-events:auto;
+  font-size:8px;
 }
 
 .track-video-player,
@@ -46,7 +70,7 @@
   height:100%;
   border:0;
   background:#020105;
-  object-fit:contain;
+  object-fit:cover;
 }
 
 .track-video-player:focus-visible{
@@ -56,72 +80,75 @@
 
 .lyrics-studio-canvas{
   position:relative;
+  order:-1;
   align-self:center;
-  width:min(21vw,230px);
-  min-width:180px;
+  width:min(100%,200px);
   aspect-ratio:9/16;
-  margin:24px 0 24px 24px;
+  margin:0 auto 22px;
   overflow:hidden;
   border:1px solid color-mix(in srgb,var(--accent) 38%,rgba(255,255,255,.1));
-  border-radius:22px;
+  border-radius:20px;
   background:#020105;
-  box-shadow:0 28px 80px rgba(0,0,0,.48);
+  box-shadow:0 24px 70px rgba(0,0,0,.46);
 }
 
 .lyrics-studio-canvas-badge{
   position:absolute;
   z-index:2;
-  top:12px;
-  left:12px;
-  padding:6px 9px;
-  border:1px solid rgba(255,255,255,.14);
-  border-radius:999px;
-  color:#fff;
-  background:rgba(3,2,7,.64);
-  backdrop-filter:blur(10px);
-  font-size:8px;
-  font-weight:700;
-  letter-spacing:.12em;
-}
-
-#view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-stage{
-  grid-template-columns:minmax(180px,230px) minmax(230px,300px) minmax(0,1fr);
+  top:10px;
+  left:10px;
 }
 
 #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-cover-wrap{
   display:none;
 }
 
-@media(max-width:1100px) and (min-width:761px){
-  #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-stage{
-    grid-template-columns:minmax(160px,205px) minmax(210px,260px) minmax(0,1fr);
+#view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-track-panel{
+  padding:22px;
+}
+
+@media(max-width:1180px) and (min-width:901px){
+  .track-detail-hero.has-track-canvas{
+    grid-template-columns:minmax(220px,300px) minmax(0,1fr) minmax(140px,175px);
+    gap:24px;
   }
 
-  .lyrics-studio-canvas{
-    min-width:160px;
-    width:min(19vw,205px);
-    margin-left:18px;
+  .track-detail-canvas-panel{
+    width:clamp(140px,14vw,175px);
+  }
+}
+
+@media(max-width:900px) and (min-width:761px){
+  .track-detail-hero.has-track-canvas{
+    grid-template-columns:minmax(210px,300px) minmax(0,1fr);
+  }
+
+  .track-detail-hero.has-track-canvas .track-detail-canvas-panel{
+    grid-column:2;
+    justify-self:start;
+    width:150px;
+    margin-top:2px;
   }
 }
 
 @media(max-width:760px){
-  .track-video-section{
-    padding-inline:14px;
+  .track-detail-hero.has-track-canvas{
+    grid-template-columns:1fr;
   }
 
-  .track-video-head{
-    align-items:flex-start;
-    gap:12px;
+  .track-detail-hero.has-track-canvas .track-detail-copy h1{
+    font-size:clamp(44px,15vw,72px);
   }
 
-  .track-video-meta{
-    justify-content:flex-start;
+  .track-detail-canvas-panel{
+    justify-self:center;
+    width:min(48vw,205px);
+    max-height:52dvh;
+    border-radius:17px;
   }
 
-  .track-video-shell{
-    width:min(72vw,280px);
-    max-height:62dvh;
-    border-radius:18px;
+  .track-detail-canvas-toolbar{
+    inset:8px 8px auto;
   }
 
   #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active{
@@ -133,14 +160,13 @@
     z-index:0;
     inset:0;
     width:100vw;
-    min-width:0;
     height:100dvh;
     aspect-ratio:auto;
     margin:0;
     border:0;
     border-radius:0;
-    opacity:.34;
-    filter:brightness(.72) saturate(1.15);
+    opacity:.31;
+    filter:brightness(.68) saturate(1.12);
     pointer-events:none;
   }
 
@@ -157,7 +183,7 @@
     position:fixed;
     z-index:1;
     inset:0;
-    background:linear-gradient(180deg,rgba(6,4,13,.38),rgba(6,4,13,.76) 52%,#06040d 100%);
+    background:linear-gradient(180deg,rgba(6,4,13,.42),rgba(6,4,13,.78) 54%,#06040d 100%);
     pointer-events:none;
   }
 
@@ -171,7 +197,7 @@
   #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-reader-shell{
     position:relative;
     z-index:2;
-    background:rgba(7,4,15,.72);
+    background:rgba(7,4,15,.74);
     backdrop-filter:blur(16px);
   }
 
@@ -180,13 +206,13 @@
   }
 }
 
-@media(max-width:420px){
-  .track-video-shell{
-    width:min(68vw,250px);
-    max-height:58dvh;
+@media(max-width:430px){
+  .track-detail-canvas-panel{
+    width:min(50vw,180px);
+    max-height:48dvh;
   }
 
-  .track-video-meta .pill{
+  .track-detail-canvas-badge{
     display:none;
   }
 }
