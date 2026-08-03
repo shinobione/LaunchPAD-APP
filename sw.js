@@ -1,5 +1,5 @@
 importScripts('./js/build-config.js');
-const RELEASE = 'favorites-queue-20260803';
+const RELEASE = 'lyrics-status-20260803';
 const VERSION = `${globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev'}-${RELEASE}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;
