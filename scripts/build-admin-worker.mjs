@@ -73,7 +73,12 @@ for (const required of [
   'THUMBNAIL_TARGET_BYTES=180*1024',
   "imageSmoothingQuality='high'",
   'async function createThumbnailResult(blob)',
-  'Régénérer les '
+  'Régénérer les ',
+  'TXT_METADATA_FIELD_MAP',
+  'function parseLyricsTxtMetadata(text)',
+  'function applyLyricsTxtMetadata(result)',
+  "elements.lyrics.addEventListener('change',importLyricsTxtFile)",
+  'Métadonnées du TXT importées dans le formulaire.'
 ]) {
   if (!source.includes(required)) {
     throw new Error(`Built Track Manager Worker is missing ${required}.`);
