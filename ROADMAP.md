@@ -12,8 +12,8 @@ _Last updated: 2026-08-03_
 - Sixteen tracks are published in the canonical `tracks/<slug>/` layout.
 - Each track has a manifest, original cover and audio file; optimized WebP thumbnails are used by catalog cards.
 - The public Worker is live on v2.3; the read-only audit verifies all 16 Range streams and thumbnails.
-- GitHub Pages serves the favorites queue, desktop-only admin entry and PR #23 Android/PWA fixes.
-- The physical Android acceptance pass is not signed off yet, so the three regressions are considered resolved in PWA code but still require device confirmation.
+- GitHub Pages serves the favorites queue, desktop-only admin entry, PR #23 Android/PWA fixes and the unified `Lyrics` timestamp status.
+- Track-detail coherence is confirmed for Carved from Pressure and THICK. The physical Android full-catalog acceptance pass is not signed off yet, so historical-media cleanup remains blocked.
 - The bundled GitHub catalog and media still exist as a temporary safety fallback until mobile validation is complete.
 
 ## Step 7 — stabilization and consolidation
@@ -27,8 +27,10 @@ _Last updated: 2026-08-03_
 - [x] Confirm public Worker v2.3 in production.
 - [x] Confirm the rebuilt public index reports timestamp metadata for ten tracks.
 - [x] Verify the public API flags for THICK, Carved from Pressure and The Throne Resonates.
-- [ ] Confirm Track Manager v4.4 through the protected live Worker after the first repository-driven deployment.
-- [ ] Complete the final Track detail and Lyrics Studio device pass.
+- [x] Confirm Track Manager v4.5 through the protected live Worker after the manual dashboard deployment.
+- [x] Unify Track detail into one authoritative `Lyrics` status and confirm Carved from Pressure and THICK report `Timestamped`.
+- [ ] Complete the final Lyrics Studio and full-catalog Android device pass.
+- [ ] Complete the first reviewed repository-driven Track Manager deployment.
 
 ### P1: repository cleanup
 
@@ -75,6 +77,7 @@ _Last updated: 2026-08-03_
 - [x] Update `RELEASE-CHECKLIST.md` for Cloudflare publication and PWA cache refreshes.
 - [x] Update the Cloudflare operating documentation.
 - [x] Keep this roadmap synchronized with completed preparation work.
+- [x] Record the manually deployed Track Manager v4.5 and unified production lyrics status.
 
 ## Definition of migration complete
 
