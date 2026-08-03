@@ -17,7 +17,7 @@ _Last updated: 2026-08-03_
 - Runtime `fallbackFile` switching has been removed while preserving the Android audio-readiness recovery.
 - Bundled lyric fallbacks and the hard-coded offline catalog remain until their dedicated validation and cleanup pass.
 
-## Step 7 â€” stabilization and consolidation
+## Step 7 — stabilization and consolidation
 
 ### P0: synchronized-lyrics metadata
 
