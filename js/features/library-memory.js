@@ -75,7 +75,7 @@ function trackCard(track, index, isFavorite) {
         <img src="${escapeHtml(track.cover)}" alt="Cover art for ${escapeHtml(track.title)}" loading="lazy">
         ${track.lyrics ? '<span class="lyrics-card-badge">LYRICS</span>' : ''}
         <button class="favorite-toggle${isFavorite ? ' active' : ''}" type="button" data-favorite-toggle="${escapeHtml(track.id)}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? 'Remove' : 'Add'} ${escapeHtml(track.title)} ${isFavorite ? 'from' : 'to'} favorites">♥</button>
-        <button class="play-overlay" type="button" data-play-index="${index}" aria-label="Listen to ${escapeHtml(track.title)}">▶</button>
+        <button class="play-overlay" type="button" data-favorites-play-index="${index}" aria-label="Play ${escapeHtml(track.title)} in the favorites queue">▶</button>
       </div>
       <h3>${escapeHtml(track.title)}</h3>
       <p>${escapeHtml(track.genre)} • ${escapeHtml(track.mood)}</p>
@@ -113,6 +113,20 @@ export function initLibraryMemory({ audio = document.querySelector('#audio') } =
 
   function isFavorite(trackId) {
     return state.favorites.includes(trackId);
+  }
+
+  function favoriteIndexes() {
+    return state.favorites.map(getTrackIndex).filter(index => index >= 0);
+  }
+
+  function playFavorites(startIndex = null) {
+    const indexes = favoriteIndexes();
+    if (!indexes.length) return;
+    const requested = Number(startIndex);
+    const currentIndex = indexes.includes(requested) ? requested : indexes[0];
+    window.dispatchEvent(new CustomEvent('shinobi:favorites-play', {
+      detail: { indexes, currentIndex }
+    }));
   }
 
   function ensureNavigation() {
@@ -235,6 +249,7 @@ export function initLibraryMemory({ audio = document.querySelector('#audio') } =
             <span class="eyebrow">SAVED TRACKS</span>
             <h2 id="favorite-tracks-heading">Your favorites</h2>
           </div>
+          ${favoriteTracks.length ? '<button type="button" class="primary memory-play-favorites" data-memory-action="play-favorites">▶ Play favorites</button>' : ''}
         </div>
         ${favoriteTracks.length
           ? `<div class="album-grid memory-favorites-grid">${favoriteTracks.map(track => {
@@ -271,6 +286,9 @@ export function initLibraryMemory({ audio = document.querySelector('#audio') } =
     renderView();
     decorateCards();
     updateButtons();
+    window.dispatchEvent(new CustomEvent('shinobi:favorites-updated', {
+      detail: { indexes: favoriteIndexes() }
+    }));
   }
 
   function recordHistory(trackId) {
@@ -392,6 +410,22 @@ export function initLibraryMemory({ audio = document.querySelector('#audio') } =
       return;
     }
 
+    const playFavorite = event.target.closest('[data-favorites-play-index]');
+    if (playFavorite) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      playFavorites(Number(playFavorite.dataset.favoritesPlayIndex));
+      return;
+    }
+
+    const playFavoritesButton = event.target.closest('[data-memory-action="play-favorites"]');
+    if (playFavoritesButton) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      playFavorites();
+      return;
+    }
+
     if (restoringControls) return;
     const queueAction = event.target.closest('[data-queue-action]')?.dataset.queueAction;
     const visualMode = event.target.closest('[data-visual]')?.dataset.visual;
@@ -430,6 +464,7 @@ export function initLibraryMemory({ audio = document.querySelector('#audio') } =
   window.__shinobiLibraryMemory = {
     getState: () => JSON.parse(JSON.stringify(state)),
     toggleFavorite,
+    playFavorites,
     clear() {
       Object.assign(state, defaults());
       save();
@@ -438,3 +473,4 @@ export function initLibraryMemory({ audio = document.querySelector('#audio') } =
     }
   };
 }
+
