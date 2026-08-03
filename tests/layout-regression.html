@@ -44,11 +44,14 @@ const localStyles=document=>[...document.querySelectorAll('link[rel="stylesheet"
   .map(link=>new URL(link.href,document.location.href))
   .filter(url=>url.origin===document.location.origin&&url.pathname.includes('/css/'));
 
-const whenLoaded=frame=>new Promise(resolve=>{
-  if(frame.contentDocument?.readyState==='complete') resolve(frame);
-  else frame.addEventListener('load',()=>resolve(frame),{once:true});
+const whenDocumentReady=frame=>new Promise(resolve=>{
+  const check=()=>{
+    if(frame.contentDocument?.body) resolve(frame);
+    else setTimeout(check,25);
+  };
+  check();
 });
-Promise.all(frames.map(whenLoaded)).then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
+Promise.all(frames.map(whenDocumentReady)).then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   const measuredFrames=[desktop,mobile];
   measuredFrames.forEach(frame=>frame.contentWindow.scrollTo(0,0));
   await sleep(200);
