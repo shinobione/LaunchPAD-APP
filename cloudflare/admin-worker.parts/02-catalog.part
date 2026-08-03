@@ -1,0 +1,336 @@
+    ...entry,
+    assets,
+    migration: {
+      source: "github",
+      repository: plan.source?.repository || "shinobione/LaunchPAD-APP",
+      ref: plan.source?.ref || "main",
+      importedAt: new Date().toISOString(),
+    },
+    createdAt: existing?.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    updatedBy: String(user.email || "authorized-user"),
+  });
+
+  assertPublishable(manifest);
+  await writeManifest(env.MEDIA_BUCKET, manifest);
+  await writeCatalogIndex(env.MEDIA_BUCKET);
+  return jsonResponse({ ok: true, imported, track: manifest }, 201);
+}
+
+async function importRemoteAsset({ bucket, slug, kind, sourceUrl, user }) {
+  const url = new URL(sourceUrl);
+  if (url.protocol !== "https:") throw new Error("INPUT_URL source non sécurisée.");
+  if (!["raw.githubusercontent.com", "github.com"].includes(url.hostname)) {
+    throw new Error("INPUT_Hôte de migration non autorisé.");
+  }
+
+  const response = await fetch(sourceUrl, {
+    headers: {
+      Accept: "*/*",
+      "User-Agent": "LaunchPAD-R2-Migration/1.0",
+    },
+    redirect: "follow",
+  });
+
+  if (!response.ok || !response.body) {
+    throw new Error("INPUT_Import impossible pour " + kind + " (HTTP " + response.status + ").");
+  }
+
+  const declaredLength = Number(response.headers.get("content-length") || 0);
+  if (declaredLength > MAX_UPLOAD_BYTES) throw new Error("UPLOAD_" + kind + " dépasse 50 Mo.");
+
+  const body = await response.arrayBuffer();
+  if (body.byteLength > MAX_UPLOAD_BYTES) throw new Error("UPLOAD_" + kind + " dépasse 50 Mo.");
+  if (!body.byteLength) throw new Error("INPUT_Import vide pour " + kind + ".");
+
+  const extension = extensionFromUrlOrType(sourceUrl, response.headers.get("content-type"), kind);
+  const filename = kind + "." + extension;
+  const key = trackPrefix(slug) + filename;
+  const contentType = response.headers.get("content-type") || guessContentType(extension);
+
+  await bucket.put(key, body, {
+    httpMetadata: {
+      contentType,
+      cacheControl: "public, max-age=31536000, immutable",
+    },
+    customMetadata: {
+      kind,
+      slug,
+      sourceUrl: sourceUrl.slice(0, 900),
+      uploadedBy: String(user.email || "authorized-user").slice(0, 200),
+      uploadedAt: new Date().toISOString(),
+    },
+  });
+
+  return { kind, filename, key, contentType, size: body.byteLength };
+}
+
+async function importAllLegacyTracks(env, user) {
+  const objects = await listAllObjects(env.MEDIA_BUCKET, LEGACY_PREFIX);
+  const groups = groupLegacyObjects(objects);
+  const results = [];
+  for (const slug of groups.keys()) {
+    results.push(await migrateLegacyGroup(groups.get(slug), env.MEDIA_BUCKET, user));
+  }
+  return jsonResponse({ ok: true, migrated: results });
+}
+
+async function importLegacyTrack(slug, env, user) {
+  const objects = await listAllObjects(env.MEDIA_BUCKET, LEGACY_PREFIX);
+  const group = groupLegacyObjects(objects).get(slug);
+  if (!group) return jsonResponse({ ok: false, error: "Groupe legacy introuvable." }, 404);
+  const result = await migrateLegacyGroup(group, env.MEDIA_BUCKET, user);
+  return jsonResponse({ ok: true, migrated: result }, 201);
+}
+
+async function migrateLegacyGroup(group, bucket, user) {
+  const existing = await readManifest(bucket, group.slug);
+  if (existing) return { slug: group.slug, skipped: true, reason: "already-exists" };
+
+  let parsed = emptyLegacyMetadata(group.slug);
+  if (group.assets.lyrics) {
+    const textObject = await bucket.get(group.assets.lyrics.key);
+    if (textObject) parsed = parseLegacyText(await textObject.text(), group.slug);
+  }
+
+  const assets = { audio: null, cover: null, thumbnail: null, lyrics: null, video: null };
+  const copied = [];
+
+  for (const kind of ASSET_KINDS) {
+    const source = group.assets[kind];
+    if (!source) continue;
+    const object = await bucket.get(source.key);
+    if (!object) continue;
+    const extension = source.extension;
+    const filename = kind + "." + extension;
+    const key = trackPrefix(group.slug) + filename;
+    await bucket.put(key, object.body, {
+      httpMetadata: {
+        contentType: source.contentType || guessContentType(extension),
+        cacheControl: "public, max-age=31536000, immutable",
+      },
+      customMetadata: {
+        kind,
+        slug: group.slug,
+        migratedFrom: source.key.slice(0, 900),
+        uploadedBy: String(user.email || "authorized-user").slice(0, 200),
+        uploadedAt: new Date().toISOString(),
+      },
+    });
+    assets[kind] = filename;
+    copied.push({ kind, from: source.key, to: key });
+  }
+
+  const manifest = normalizeManifest({
+    slug: group.slug,
+    title: parsed.title,
+    status: "published",
+    type: parsed.type || "single",
+    year: parsed.year,
+    releaseDate: null,
+    album: { id: "singles", title: "Singles" },
+    genres: parsed.genres,
+    tags: parsed.genres,
+    moods: parsed.moods,
+    themes: parsed.themes,
+    era: parsed.era,
+    energy: parsed.energy,
+    languages: parsed.languages,
+    bpm: null,
+    key: null,
+    keyConfidence: null,
+    explicit: null,
+    duration: null,
+    accent: null,
+    accent2: null,
+    assets,
+    migration: { source: "legacy-r2", importedAt: new Date().toISOString() },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    updatedBy: String(user.email || "authorized-user"),
+  });
+
+  assertPublishable(manifest);
+  await writeManifest(bucket, manifest);
+  await deleteKeys(bucket, Object.values(group.assets).filter(Boolean).map(asset => asset.key));
+  await writeCatalogIndex(bucket);
+  return { slug: group.slug, copied, legacyDeleted: true };
+}
+
+async function fetchMigrationPlan(env) {
+  const url = getMigrationManifestUrl(env);
+  const response = await fetch(url, {
+    headers: { Accept: "application/json", "User-Agent": "LaunchPAD-R2-Track-Manager/1.0" },
+    cf: { cacheTtl: 60, cacheEverything: true },
+  });
+  if (!response.ok) throw new Error("INPUT_Plan de migration indisponible (HTTP " + response.status + ").");
+  const plan = await response.json();
+  if (plan?.schemaVersion !== 1 || !Array.isArray(plan.tracks)) {
+    throw new Error("INPUT_Format du plan de migration invalide.");
+  }
+  return plan;
+}
+
+function getMigrationManifestUrl(env) {
+  return String(env.MIGRATION_MANIFEST_URL || DEFAULT_MIGRATION_MANIFEST_URL);
+}
+
+async function buildCanonicalTrackSummaries(objects, bucket) {
+  const manifestObjects = objects.filter(object => object.key.endsWith("/" + MANIFEST_NAME));
+  const tracks = [];
+  for (const object of manifestObjects) {
+    const slug = object.key.slice(TRACKS_PREFIX.length, -(MANIFEST_NAME.length + 1));
+    const manifest = await readManifest(bucket, slug);
+    if (!manifest) continue;
+    const scoped = objects.filter(item => item.key.startsWith(trackPrefix(slug)));
+    const state = assetStateFromObjects(scoped, manifest);
+    tracks.push({
+      slug,
+      title: manifest.title,
+      status: manifest.status,
+      type: manifest.type,
+      year: manifest.year,
+      album: manifest.album,
+      genres: manifest.genres,
+      moods: manifest.moods,
+      updatedAt: manifest.updatedAt || object.uploaded?.toISOString() || null,
+      assets: state,
+      complete: Boolean(state.audio?.present && state.cover?.present),
+      totalBytes: scoped.reduce((sum, item) => sum + Number(item.size || 0), 0),
+    });
+  }
+  tracks.sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")) || a.title.localeCompare(b.title));
+  return tracks;
+}
+
+function assetStateFromObjects(objects, manifest) {
+  const byKey = new Map(objects.map(object => [object.key, object]));
+  const state = {};
+  for (const kind of ASSET_KINDS) {
+    const filename = manifest.assets?.[kind] || null;
+    const key = filename ? trackPrefix(manifest.slug) + filename : null;
+    const object = key ? byKey.get(key) : null;
+    state[kind] = filename ? {
+      present: Boolean(object), filename, key,
+      size: object?.size || 0,
+      contentType: object?.httpMetadata?.contentType || guessContentType(getExtension(filename)),
+    } : null;
+  }
+  return state;
+}
+
+function findAssetObjects(objects, manifest) {
+  const result = { audio: null, cover: null, thumbnail: null, lyrics: null, video: null };
+  if (!manifest) return result;
+  for (const kind of ASSET_KINDS) {
+    const filename = manifest.assets?.[kind];
+    if (!filename) continue;
+    result[kind] = objects.find(object => object.key === trackPrefix(manifest.slug) + filename) || null;
+  }
+  return result;
+}
+
+async function readManifest(bucket, slug) {
+  const object = await bucket.get(trackPrefix(slug) + MANIFEST_NAME);
+  if (!object) return null;
+  try { return normalizeManifest(JSON.parse(await object.text())); }
+  catch { return null; }
+}
+
+async function writeManifest(bucket, manifest) {
+  const body = JSON.stringify(manifest, null, 2) + "\n";
+  await bucket.put(trackPrefix(manifest.slug) + MANIFEST_NAME, body, {
+    httpMetadata: {
+      contentType: "application/json; charset=utf-8",
+      cacheControl: "public, max-age=60, stale-while-revalidate=300",
+    },
+    customMetadata: {
+      kind: "manifest",
+      slug: manifest.slug,
+      status: manifest.status,
+      updatedAt: manifest.updatedAt || new Date().toISOString(),
+    },
+  });
+}
+
+async function writeCatalogIndex(bucket) {
+  const objects = await listAllObjects(bucket, TRACKS_PREFIX);
+  const manifestObjects = objects.filter(object => object.key.endsWith("/" + MANIFEST_NAME));
+  const manifests = (await Promise.all(manifestObjects.map(async object => {
+    const slug = object.key.slice(TRACKS_PREFIX.length, -(MANIFEST_NAME.length + 1));
+    return readManifest(bucket, slug);
+  }))).filter(Boolean);
+
+  const tracks = (await Promise.all(manifests
+    .filter(manifest => manifest.status === "published")
+    .map(async manifest => {
+      const lyricsFilename = manifest.assets?.lyrics;
+      if (!lyricsFilename) {
+        return { ...manifest, lyricsAvailable: false, timestampsAvailable: false };
+      }
+
+      const lyricsObject = await bucket.get(trackPrefix(manifest.slug) + lyricsFilename);
+      if (!lyricsObject) {
+        return { ...manifest, lyricsAvailable: false, timestampsAvailable: false };
+      }
+
+      let timestampsAvailable = false;
+      if (lyricsObject.size <= MAX_LYRICS_BYTES) {
+        timestampsAvailable = hasTimestampedLyrics(await lyricsObject.text());
+      }
+
+      return { ...manifest, lyricsAvailable: true, timestampsAvailable };
+    })))
+    .sort((a, b) => {
+      const aDate = Date.parse(a.releaseDate || "") || 0;
+      const bDate = Date.parse(b.releaseDate || "") || 0;
+      if (aDate !== bDate) return bDate - aDate;
+      if ((a.year || 0) !== (b.year || 0)) return (b.year || 0) - (a.year || 0);
+      return a.title.localeCompare(b.title, "fr", { sensitivity: "base" });
+    });
+
+  const index = {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    count: tracks.length,
+    tracks,
+  };
+
+  await bucket.put(CATALOG_INDEX_KEY, JSON.stringify(index, null, 2) + "\n", {
+    httpMetadata: {
+      contentType: "application/json; charset=utf-8",
+      cacheControl: "public, max-age=60, stale-while-revalidate=300",
+    },
+    customMetadata: {
+      kind: "catalog-index",
+      generatedAt: index.generatedAt,
+      count: String(index.count),
+    },
+  });
+  return index;
+}
+
+function stripLyricsMetadata(text) {
+  const normalized = String(text || "").replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
+  const marker = normalized.match(/^LYRICS\s*:\s*$/im);
+  return marker ? normalized.slice(marker.index + marker[0].length).trim() : normalized.trim();
+}
+
+function timestampSeconds(minutes, seconds, fraction = "0") {
+  const milliseconds = String(fraction || "0").padEnd(3, "0").slice(0, 3);
+  return Number(minutes) * 60 + Number(seconds) + Number(milliseconds) / 1000;
+}
+
+function parseTimestampedLyrics(raw) {
+  const lines = stripLyricsMetadata(raw).split("\n");
+  const bracketed = /\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\]/g;
+  const naked = /^(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?(?:\s+(.+))?$/;
+  const segments = [];
+  let pendingTime = null;
+
+  for (const sourceLine of lines) {
+    const line = sourceLine.trim();
+    if (!line) continue;
+
+    const tags = [...line.matchAll(bracketed)];
+    if (tags.length) {
