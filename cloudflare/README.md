@@ -1,3 +1,4 @@
+
 # LaunchPAD Cloudflare architecture
 
 The media catalog uses one private administration Worker and one public read-only Worker, both bound to the `shinobiwan-media` R2 bucket as `MEDIA_BUCKET`.
@@ -44,6 +45,20 @@ dist/launchpad-r2-admin-worker.js
 
 `npm run validate` also concatenates the parts into a temporary file and runs `node --check`, so a broken private Worker cannot pass CI.
 
+Wrangler 4.118.0 is pinned in `package-lock.json`. The production service names, entry points and R2 binding are versioned in:
+
+```text
+cloudflare/wrangler.public.jsonc
+cloudflare/wrangler.admin.jsonc
+```
+
+Validate the exact deployable bundles without contacting the production account:
+
+```bash
+npm ci
+npm run check:wrangler
+```
+
 ## Workers
 
 ### Private Track Manager
@@ -85,8 +100,24 @@ After adding or replacing lyrics, rebuild the index through the private Track Ma
 5. Verify `/health`, `/tracks` and `/tracks/<slug>`.
 6. Refresh the installed PWA after its service-worker namespace changes.
 
+## Reproducible GitHub deployment
+
+The `Deploy Cloudflare Workers` workflow is manual and accepts `public`, `admin` or `both`. It only runs from `main`, validates both bundles before deployment, and uses the protected `cloudflare-production` GitHub environment.
+
+Configure these GitHub environment secrets before the first run:
+
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_API_TOKEN`
+
+The token should be scoped to the LaunchPAD Cloudflare account and only the permissions required to deploy Workers and use the existing R2 binding. Never commit either value.
+
+Both Wrangler configurations set `keep_vars` so the existing dashboard variables are preserved. The private Worker still requires `POLICY_AUD` and `TEAM_DOMAIN` to exist in Cloudflare. Cloudflare Access protection remains an external service setting and must be checked after every private Worker deployment.
+
+The workflow deploys code only. It does not rebuild `catalog/index.json`; perform that explicit Track Manager action only when a manifest or lyrics change requires it.
+
 ## Migration cleanup
 
 Legacy GitHub audio, per-track covers and lyrics remain temporary fallbacks. Remove them only after R2 playback, thumbnails, synchronized lyrics and Android Media Session behavior are validated.
 
 Future tracks are created through the Track Manager form. Metadata is stored in `manifest.json`; no hand-written metadata TXT file is required.
+
