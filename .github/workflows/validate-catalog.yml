@@ -109,7 +109,7 @@ jobs:
           if (!worker.includes("request.destination === 'audio'")) fail('Audio requests are not explicitly excluded from cache.');
           if (!worker.includes("request.headers.has('range')")) fail('Range requests are not explicitly excluded from cache.');
           for (const resource of [
-            "'./js/build-config.js'", "'./js/core/assets.js'", "'./js/catalog-metadata.js'",
+            "'./js/build-config.js'", "'./js/core/assets.js'", "'./js/catalog.js'",
             "'./js/features/player-experience.js'", "'./js/features/resilience-accessibility.js'",
             "'./js/features/track-detail.js'", "'./js/features/mobile-navigation.js'",
             "'./css/track-detail.css'", "'./css/mobile-navigation.css'",
@@ -117,7 +117,8 @@ jobs:
           ]) if (!worker.includes(resource)) fail(`Offline shell is missing ${resource}.`);
           for (const removed of [
             "'./css/audio-lab-fix.css'", "'./css/player-experience.css'", "'./css/album-duration.css'",
-            "'./assets/favicon-v2.svg'", "'./assets/favicon-v3.svg'", "'./assets/favicon-v5.svg'"
+            "'./assets/favicon-v2.svg'", "'./assets/favicon-v3.svg'", "'./assets/favicon-v5.svg'",
+            "'./js/catalog-metadata.js'", "'./js/catalog-fixture.js'"
           ]) if (worker.includes(removed)) fail(`Offline shell still references removed path ${removed}.`);
           console.log('PWA manifest, shared build config and shell are valid.');
           NODE
