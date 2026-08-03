@@ -17,7 +17,7 @@
 
 10. Open the public `/tracks/<slug>` response and confirm `lyricsAvailable` and `timestampsAvailable`.
 11. Test Lyrics Studio from the beginning and after seeking into the track.
-12. Confirm Track detail and Lyrics Studio show the same synchronization state.
+12. Confirm the single Track-detail `Lyrics` status and Lyrics Studio show the same synchronization state.
 13. Test bracketed LRC and standalone timestamp-line formats when parsers change.
 
 ## Application and playback
@@ -42,7 +42,7 @@
 28. Change the service-worker release namespace whenever existing PWA installations must refresh.
 29. Verify GitHub Pages with a hard refresh and then verify the installed PWA.
 30. Check `/health`, `/tracks` and one full `/tracks/<slug>` response.
-31. Report separately what is merged, published by Pages, deployed to Workers and rebuilt in R2.
+31. Report separately what is merged, published by Pages, deployed to Workers and rebuilt in R2; identify dashboard deployments separately from GitHub Actions deployments.
 
 ## Cleanup safety
 
