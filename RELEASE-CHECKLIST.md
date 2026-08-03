@@ -1,4 +1,3 @@
-
 # Release checklist
 
 ## Track Manager
@@ -35,21 +34,31 @@
 
 22. Merge only after `Validate Launchpad` and `Validate Cloudflare Workers` are green.
 23. Record the merge SHA; do not describe Worker source as deployed yet.
-24. From `main`, dispatch **Deploy Cloudflare Workers** for `admin`, `public` or `both` as required.
-25. Deploy the private Worker first when catalog-generation behavior changed.
-26. Run the required Track Manager rebuild or optimization action.
-27. Deploy the public Worker when its API or media behavior changed.
-28. Change the service-worker release namespace whenever existing PWA installations must refresh.
-29. Verify GitHub Pages with a hard refresh and then verify the installed PWA.
-30. Check `/health`, `/tracks` and one full `/tracks/<slug>` response.
-31. Report separately what is merged, published by Pages, deployed to Workers and rebuilt in R2; identify dashboard deployments separately from GitHub Actions deployments.
+24. From `main`, dispatch **Deploy Cloudflare Workers** for `admin`, `public` or `both`, and enter `DEPLOY` in the confirmation field.
+25. Approve the protected `cloudflare-production` environment when prompted.
+26. Deploy the private Worker first when catalog-generation behavior changed.
+27. Run the required Track Manager rebuild or optimization action.
+28. Deploy the public Worker when its API or media behavior changed.
+29. Review the GitHub job summary and record each Cloudflare version ID with the deployed Git SHA.
+30. Confirm the automatic post-deployment checks passed: private Access protection, public `/health`, `/tracks`, HTTP Range `206`, and full-audio HEAD `200`.
+31. Change the service-worker release namespace whenever existing PWA installations must refresh.
+32. Verify GitHub Pages with a hard refresh and then verify the installed PWA.
+33. Check one full `/tracks/<slug>` response after any catalog or parser change.
+34. Report separately what is merged, published by Pages, deployed to Workers and rebuilt in R2; identify dashboard deployments separately from GitHub Actions deployments.
+
+## Rollback
+
+35. Use **Roll back Cloudflare Worker** only from `main` and enter `ROLLBACK` in the confirmation field.
+36. Select one Worker and optionally provide a known Cloudflare version ID; leave it blank only when the immediately previous deployment is the intended target.
+37. Approve the protected `cloudflare-production` environment and review the active deployment data in the job summary.
+38. Confirm the post-rollback smoke test passes.
+39. Remember that Worker rollback does not restore R2 objects or `catalog/index.json`.
 
 ## Cleanup safety
 
-32. Run `npm run audit:r2` and `npm run audit:r2 -- --full-audio`, then archive both results before proposing deletion.
-33. Do not remove bundled GitHub media until R2 playback, thumbnails, lyrics and mobile Media Session tests pass.
-34. Require explicit approval before deleting any historical media.
-35. After removal, confirm there are no dead paths in the service-worker precache list.
-36. Confirm the repository size and GitHub Pages deployment after cleanup.
-37. Update every project Markdown file whenever the operating workflow changes.
-
+40. Run `npm run audit:r2` and `npm run audit:r2 -- --full-audio`, then archive both results before proposing deletion.
+41. Do not remove bundled GitHub media until R2 playback, thumbnails, lyrics and mobile Media Session tests pass.
+42. Require explicit approval before deleting any historical media.
+43. After removal, confirm there are no dead paths in the service-worker precache list.
+44. Confirm the repository size and GitHub Pages deployment after cleanup.
+45. Update project documentation whenever the operating workflow changes.
