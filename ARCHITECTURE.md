@@ -89,9 +89,9 @@ Localhost intentionally skips the remote catalog so CI and local development rem
 
 ## Lyrics metadata flow
 
-The Lyrics reader parses the actual `lyrics.txt` file. Track-detail badges use the derived `timestampsAvailable` field returned by `/tracks`.
+The Lyrics reader parses the actual `lyrics.txt` file. Track detail exposes one authoritative `Lyrics` value: remote tracks start at `Checking…`, then the full `/tracks/<slug>` response resolves the status to `Timestamped`, `Not timestamped` or `Status unavailable`.
 
-The Track Manager catalog rebuild must inspect each lyrics object and write that derived flag into `catalog/index.json`. The public Worker also validates the flag when a full `/tracks/<slug>` response is requested. Both parsers accept:
+The Track Manager catalog rebuild must inspect each lyrics object and write the derived flag into `catalog/index.json`. The public Worker also validates the flag when a full `/tracks/<slug>` response is requested, avoiding a second contradictory Track-detail field. Both parsers accept:
 
 ```text
 [00:12.50] A bracketed LRC line
