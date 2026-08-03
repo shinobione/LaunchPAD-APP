@@ -54,16 +54,35 @@ export function createMediaSessionController({
   function update(track = getTrack()) {
     if (!track || typeof MediaMetadata === 'undefined') return;
 
-    session.metadata = new MediaMetadata({
+    const metadata = {
       title: track.title,
       artist: 'SHINOBIWAN',
       album: track.album,
       artwork: MEDIA_ARTWORK
-    });
+    };
+
+    try {
+      session.metadata = new MediaMetadata(metadata);
+    } catch (error) {
+      console.warn('Android media artwork could not be registered; using text metadata.', error);
+      try {
+        session.metadata = new MediaMetadata({
+          title: track.title,
+          artist: 'SHINOBIWAN',
+          album: track.album
+        });
+      } catch {
+        // Media Session support is partial; never let it block the app boot.
+      }
+    }
   }
 
   function updatePlaybackState() {
-    session.playbackState = audio.paused ? 'paused' : 'playing';
+    try {
+      session.playbackState = audio.paused ? 'paused' : 'playing';
+    } catch {
+      // Partial implementations may expose a read-only playback state.
+    }
   }
 
   function updatePosition() {
