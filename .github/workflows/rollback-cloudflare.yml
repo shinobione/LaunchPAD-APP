@@ -1,0 +1,116 @@
+name: Roll back Cloudflare Worker
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Worker to roll back
+        required: true
+        type: choice
+        options:
+          - public
+          - admin
+      version_id:
+        description: Optional Cloudflare version ID; leave blank to use the previous deployment
+        required: false
+        type: string
+      confirm:
+        description: Type ROLLBACK to confirm the production rollback
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: launchpad-cloudflare-production
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: cloudflare-production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      PUBLIC_WORKER_URL: https://launchpad-media.jerryquinet.workers.dev
+      ADMIN_WORKER_URL: https://launchpad-r2-api.jerryquinet.workers.dev
+      EXPECTED_PUBLIC_VERSION: ''
+      EXPECTED_ADMIN_VERSION: ''
+      CLOUDFLARE_ACCESS_CLIENT_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
+      CLOUDFLARE_ACCESS_CLIENT_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
+    steps:
+      - name: Confirm production rollback
+        run: |
+          test "${{ inputs.confirm }}" = 'ROLLBACK'
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+
+      - name: Checkout selected main revision
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Resolve Worker name
+        id: worker
+        shell: bash
+        run: |
+          if [[ "${{ inputs.target }}" == 'public' ]]; then
+            echo 'name=launchpad-media' >> "$GITHUB_OUTPUT"
+          else
+            echo 'name=launchpad-r2-api' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Roll back Worker
+        shell: bash
+        env:
+          WORKER_NAME: ${{ steps.worker.outputs.name }}
+          VERSION_ID: ${{ inputs.version_id }}
+        run: |
+          message="GitHub rollback by $GITHUB_ACTOR from workflow run $GITHUB_RUN_ID"
+          if [[ -n "$VERSION_ID" ]]; then
+            npx wrangler rollback "$VERSION_ID" --name "$WORKER_NAME" --message "$message"
+          else
+            npx wrangler rollback --name "$WORKER_NAME" --message "$message"
+          fi
+
+      - name: Capture active deployments
+        env:
+          WORKER_NAME: ${{ steps.worker.outputs.name }}
+        run: npx wrangler deployments list --name "$WORKER_NAME" --json > "$RUNNER_TEMP/deployments.json"
+
+      - name: Verify rolled-back Worker
+        run: node scripts/verify-cloudflare-deployment.mjs "${{ inputs.target }}"
+
+      - name: Record rollback summary
+        env:
+          WORKER_NAME: ${{ steps.worker.outputs.name }}
+        run: |
+          requested_version='${{ inputs.version_id }}'
+          if [[ -z "$requested_version" ]]; then requested_version='previous deployment'; fi
+          {
+            echo '## LaunchPAD Cloudflare rollback'
+            echo
+            echo "- Worker: \`$WORKER_NAME\`"
+            echo "- Requested version: \`$requested_version\`"
+            echo "- Source SHA: \`$GITHUB_SHA\`"
+            echo "- Actor: \`$GITHUB_ACTOR\`"
+            echo
+            echo '### Active deployment data'
+            echo
+            echo '```json'
+            cat "$RUNNER_TEMP/deployments.json"
+            echo
+            echo '```'
+            echo
+            echo '> Worker rollback does not restore or modify R2 objects, manifests, lyrics, covers, audio, or `catalog/index.json`.'
+          } >> "$GITHUB_STEP_SUMMARY"
