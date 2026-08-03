@@ -3,6 +3,8 @@ import fs from 'node:fs';
 const fail = message => { throw new Error(message); };
 const read = path => fs.readFileSync(path, 'utf8');
 
+// These checks deliberately run through the existing service-worker CI step,
+// so every PWA build validates all three persistent mobile regressions.
 const icon = fs.readFileSync('assets/pwa-icon-512.png');
 const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 if (icon.length < 1024 || !icon.subarray(0, 8).equals(pngSignature)) {
