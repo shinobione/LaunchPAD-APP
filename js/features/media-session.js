@@ -1,3 +1,11 @@
+const MEDIA_ARTWORK = [
+  {
+    src: new URL('assets/pwa-icon-512.png', document.baseURI).href,
+    sizes: '512x512',
+    type: 'image/png'
+  }
+];
+
 export function createMediaSessionController({
   audio,
   getTrack,
@@ -46,12 +54,11 @@ export function createMediaSessionController({
   function update(track = getTrack()) {
     if (!track || typeof MediaMetadata === 'undefined') return;
 
-    // Do not provide per-track artwork here. Android then uses the installed
-    // LaunchPAD PWA icon, which is faster and more reliable on lock screens.
     session.metadata = new MediaMetadata({
       title: track.title,
       artist: 'SHINOBIWAN',
-      album: track.album
+      album: track.album,
+      artwork: MEDIA_ARTWORK
     });
   }
 
