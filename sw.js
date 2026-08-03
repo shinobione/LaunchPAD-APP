@@ -1,5 +1,5 @@
 importScripts('./js/build-config.js');
-const RELEASE = 'mobile-about-layout-20260803';
+const RELEASE = 'r2-lyrics-cleanup-20260803';
 const VERSION = `${globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev'}-${RELEASE}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;
@@ -77,19 +77,6 @@ const IMAGE_RESOURCES = [
   './assets/singles.jpeg',
 ];
 
-const LYRIC_RESOURCES = [
-  './assets/lyrics/before-the-noise.txt',
-  './assets/lyrics/low-bitrate-love.txt',
-  './assets/lyrics/thick.txt',
-  './assets/lyrics/real-love-doesnt-rush.txt',
-  './assets/lyrics/jusquau-dernier-souffle.txt',
-  './assets/lyrics/tinh-bolero-cho-tran.txt',
-  './assets/lyrics/saigon-bound.txt',
-  './assets/lyrics/the-throne-resonates.txt',
-  './assets/lyrics/carved-from-pressure.txt',
-  './assets/lyrics/ligne3.txt'
-];
-
 async function cacheSafely(cacheName, resources) {
   const cache = await caches.open(cacheName);
   await Promise.allSettled(resources.map(async resource => {
@@ -159,7 +146,7 @@ async function navigationResponse(request) {
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     await Promise.all([
-      cacheSafely(SHELL_CACHE, [...SHELL_RESOURCES, ...LYRIC_RESOURCES]),
+      cacheSafely(SHELL_CACHE, SHELL_RESOURCES),
       cacheSafely(IMAGE_CACHE, IMAGE_RESOURCES)
     ]);
     await self.skipWaiting();
