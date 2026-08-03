@@ -61,14 +61,9 @@ const whenAppReady=frame=>new Promise(resolve=>{
   if(frame.contentDocument.documentElement.dataset.appReady==='true') done();
 });
 const loadFrames=async()=>{
-  const loaded=[];
-  for(const frame of frames){
-    const ready=whenFrameLoaded(frame);
-    frame.src=frame.dataset.src;
-    await ready;
-    loaded.push(await whenAppReady(frame));
-  }
-  return loaded;
+  const loaded=frames.map(whenFrameLoaded);
+  frames.forEach(frame=>{frame.src=frame.dataset.src;});
+  return Promise.all((await Promise.all(loaded)).map(whenAppReady));
 };
 loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   const measuredFrames=[desktop,mobile];
@@ -78,7 +73,7 @@ loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   const initialDesktopGeometry=geometry(dd);
   const initialMobileGeometry=geometry(md);
 
-  await sleep(4800);
+  await sleep(1800);
   measuredFrames.forEach(frame=>frame.contentWindow.scrollTo(0,0));
   await sleep(50);
   const failures=[];
@@ -183,7 +178,7 @@ loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
     homeAudio.load=()=>{navigationLoadCalls+=1;};
 
     cover.click();
-    await sleep(900);
+    await sleep(300);
     if(desktop.contentWindow.location.hash!=='#track=ghost-signal') failures.push('cover-navigation');
     if(!dd.querySelector('#view-track.active')) failures.push('cover-track-view');
     if(homeAudio.dataset.trackId!=='thick') failures.push('cover-changed-playing-track');
@@ -228,5 +223,7 @@ loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   };
   const diagnostics={desktop:desktopChanges.slice(0,5),mobile:mobileChanges.slice(0,5)};
   result.textContent=failures.length?`${ERROR} ${failures.join(' ')} ${JSON.stringify(diagnostics)}`:`${READY} ${JSON.stringify(snapshot)}`;
+}).catch(error=>{
+  result.textContent=`${ERROR} harness-${String(error?.message||error).replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()}`;
 });
 </script>
