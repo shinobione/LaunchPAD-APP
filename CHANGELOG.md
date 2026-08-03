@@ -1,8 +1,8 @@
-
 # Changelog
 
 ## Unreleased
 
+- Harden repository-driven Cloudflare deployments with explicit production confirmation, structured Wrangler version tracing, post-deployment smoke tests and a protected rollback workflow.
 - Make the production catalog R2-only, replace fourteen duplicated track definitions with a four-track localhost/CI fixture and remove `catalog-metadata.js` from the PWA precache.
 - Remove the ten bundled lyric fallbacks after validating their public R2 endpoints.
 - Fix legacy Track Manager edits so remote genres, tags, mood, colours and duration override bundled fallback metadata.
@@ -31,4 +31,3 @@
 - Add album durations and complete the legacy module migration.
 - Add Visual Card, installable PWA support, Favorites and listening history.
 - Add queue, Shuffle, Repeat, album playback, Media Session and deep links.
-

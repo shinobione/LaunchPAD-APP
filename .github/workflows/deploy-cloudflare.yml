@@ -1,4 +1,3 @@
-
 name: Deploy Cloudflare Workers
 
 on:
@@ -13,6 +12,10 @@ on:
           - both
           - public
           - admin
+      confirm:
+        description: Type DEPLOY to confirm the production deployment
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -27,7 +30,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: cloudflare-production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      PUBLIC_WORKER_URL: https://launchpad-media.jerryquinet.workers.dev
+      ADMIN_WORKER_URL: https://launchpad-r2-api.jerryquinet.workers.dev
+      EXPECTED_PUBLIC_VERSION: '2.4'
+      EXPECTED_ADMIN_VERSION: '4.5'
+      CLOUDFLARE_ACCESS_CLIENT_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
+      CLOUDFLARE_ACCESS_CLIENT_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
     steps:
+      - name: Confirm production deployment
+        run: |
+          test "${{ inputs.confirm }}" = 'DEPLOY'
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+
       - name: Checkout selected main revision
         uses: actions/checkout@v4
 
@@ -43,17 +61,53 @@ jobs:
       - name: Validate Worker sources and Wrangler bundles
         run: npm run validate:cloudflare && npm run check:wrangler
 
+      - name: Record deployment request
+        run: |
+          {
+            echo '## LaunchPAD Cloudflare deployment'
+            echo
+            echo "- Requested target: \`${{ inputs.target }}\`"
+            echo "- Source SHA: \`$GITHUB_SHA\`"
+            echo "- Actor: \`$GITHUB_ACTOR\`"
+            echo "- Workflow run: \`$GITHUB_RUN_ID\`"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Deploy private Track Manager Worker
         if: inputs.target == 'both' || inputs.target == 'admin'
         run: npm run deploy:cloudflare:admin
         env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          WRANGLER_OUTPUT_FILE_PATH: ${{ runner.temp }}/wrangler-admin.ndjson
+
+      - name: Record private Worker version
+        if: inputs.target == 'both' || inputs.target == 'admin'
+        run: node scripts/report-wrangler-deploy.mjs "$RUNNER_TEMP/wrangler-admin.ndjson" admin
+
+      - name: Verify private Worker and Cloudflare Access
+        if: inputs.target == 'both' || inputs.target == 'admin'
+        run: node scripts/verify-cloudflare-deployment.mjs admin
 
       - name: Deploy public media Worker
         if: inputs.target == 'both' || inputs.target == 'public'
         run: npm run deploy:cloudflare:public
         env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          WRANGLER_OUTPUT_FILE_PATH: ${{ runner.temp }}/wrangler-public.ndjson
 
+      - name: Record public Worker version
+        if: inputs.target == 'both' || inputs.target == 'public'
+        run: node scripts/report-wrangler-deploy.mjs "$RUNNER_TEMP/wrangler-public.ndjson" public
+
+      - name: Verify public catalog and media streaming
+        if: inputs.target == 'both' || inputs.target == 'public'
+        run: node scripts/verify-cloudflare-deployment.mjs public
+
+      - name: Complete deployment summary
+        if: success()
+        run: |
+          {
+            echo '### Result'
+            echo
+            echo 'Deployment and post-deployment smoke tests passed.'
+            echo
+            echo '> This workflow deploys Worker code only. It does not rebuild `catalog/index.json` or mutate R2 media.'
+          } >> "$GITHUB_STEP_SUMMARY"
