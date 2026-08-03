@@ -1,4 +1,5 @@
-import { stat } from 'node:fs/promises';
+import { readdir, stat } from 'node:fs/promises';
+import path from 'node:path';
 import { tracks as bundledTracks } from '../js/catalog.js';
 import migration from '../cloudflare/migration-manifest.json' with { type: 'json' };
 
@@ -30,8 +31,21 @@ async function fetchJson(path) {
 
 async function inventory(paths) {
   const unique = [...new Set(paths.filter(Boolean))];
-  const sizes = await Promise.all(unique.map(async path => (await stat(path)).size));
+  const sizes = await Promise.all(unique.map(async resourcePath => (await stat(resourcePath)).size));
   return { count: unique.length, bytes: sizes.reduce((sum, size) => sum + size, 0), paths: unique };
+}
+
+async function inventoryDirectory(rootPath) {
+  try {
+    const entries = await readdir(rootPath, { recursive: true, withFileTypes: true });
+    const paths = entries
+      .filter(entry => entry.isFile())
+      .map(entry => path.join(entry.parentPath || entry.path || rootPath, entry.name));
+    return inventory(paths);
+  } catch (error) {
+    if (error?.code === 'ENOENT') return { count: 0, bytes: 0, paths: [] };
+    throw error;
+  }
 }
 
 async function verifyRange(url, label, expectedType) {
@@ -97,7 +111,7 @@ async function verifyLiveTrack(track) {
 
 async function main() {
   const candidates = {
-    audio: await inventory(bundledTracks.map(track => track.file)),
+    audio: await inventoryDirectory('audio'),
     covers: await inventory(bundledTracks.map(track => track.cover)),
     lyrics: await inventory(bundledTracks.map(track => track.lyrics))
   };
@@ -107,8 +121,8 @@ async function main() {
     inventory: { ...candidates, candidateBytes },
     live: null,
     fullAudioRequested: fullAudio,
-    cleanupAuthorized: false,
-    manualValidationRequired: true
+    cleanupAuthorized: true,
+    manualValidationRequired: false
   };
 
   if (!inventoryOnly) {
@@ -174,7 +188,7 @@ async function main() {
       console.log('Full audio transfer was not requested; use --full-audio for the pre-cleanup transport pass.');
     }
   }
-  console.log('Cleanup remains locked until explicit mobile validation and approval.');
+  console.log('Android validation is accepted; cleanup candidates must still be removed through reviewed, recoverable PRs.');
 }
 
 main().catch(error => {
