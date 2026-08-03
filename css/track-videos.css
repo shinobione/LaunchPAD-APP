@@ -151,58 +151,28 @@
     inset:8px 8px auto;
   }
 
-  #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active{
-    isolation:isolate;
+  #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-track-panel{
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    padding:18px;
   }
 
   #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-studio-canvas{
-    position:fixed;
-    z-index:0;
-    inset:0;
-    width:100vw;
-    height:100dvh;
-    aspect-ratio:auto;
-    margin:0;
-    border:0;
-    border-radius:0;
-    opacity:.31;
-    filter:brightness(.68) saturate(1.12);
-    pointer-events:none;
+    width:min(50vw,185px);
+    max-height:48dvh;
+    margin:0 auto 16px;
+    border-radius:17px;
   }
 
-  #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-studio-canvas-video{
-    object-fit:cover;
+  #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-track-panel .eyebrow,
+  #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-track-panel h2,
+  #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-track-panel>p{
+    text-align:center;
   }
 
-  #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-studio-canvas-badge{
-    display:none;
-  }
-
-  #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active::before{
-    content:"";
-    position:fixed;
-    z-index:1;
-    inset:0;
-    background:linear-gradient(180deg,rgba(6,4,13,.42),rgba(6,4,13,.78) 54%,#06040d 100%);
-    pointer-events:none;
-  }
-
-  #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-stage{
-    position:relative;
-    display:block;
-    background:transparent;
-  }
-
-  #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-track-panel,
-  #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-reader-shell{
-    position:relative;
-    z-index:2;
-    background:rgba(7,4,15,.74);
-    backdrop-filter:blur(16px);
-  }
-
-  #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-cover-wrap{
-    display:block;
+  #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-transport{
+    justify-content:center;
   }
 }
 
@@ -214,6 +184,10 @@
 
   .track-detail-canvas-badge{
     display:none;
+  }
+
+  #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-studio-canvas{
+    width:min(52vw,170px);
   }
 }
 
