@@ -9,48 +9,29 @@ function currentTrack() {
   return getTrack(id);
 }
 
-function createVideoHeader(track) {
-  const header = document.createElement('div');
-  header.className = 'track-detail-section-head track-video-head';
+function createCanvasPanel(track) {
+  const panel = document.createElement('aside');
+  panel.className = 'track-detail-canvas-panel';
+  panel.dataset.trackVideoPanel = track.id;
+  panel.hidden = true;
+  panel.setAttribute('aria-label', `Spotify Canvas for ${track.title}`);
 
-  const copy = document.createElement('div');
-  const eyebrow = document.createElement('span');
-  eyebrow.className = 'eyebrow';
-  eyebrow.textContent = 'SPOTIFY CANVAS';
+  const toolbar = document.createElement('div');
+  toolbar.className = 'track-detail-canvas-toolbar';
 
-  const heading = document.createElement('h2');
-  heading.id = `track-video-heading-${track.id}`;
-  heading.textContent = track.title;
-  copy.append(eyebrow, heading);
-
-  const meta = document.createElement('div');
-  meta.className = 'track-video-meta';
-
-  const format = document.createElement('span');
-  format.className = 'pill';
-  format.textContent = '9:16 • MUTED LOOP';
+  const badge = document.createElement('span');
+  badge.className = 'track-detail-canvas-badge';
+  badge.textContent = 'CANVAS';
 
   const toggle = document.createElement('button');
   toggle.type = 'button';
   toggle.className = 'chip track-video-loop-control';
   toggle.dataset.trackVideoLoopAction = track.id;
   toggle.setAttribute('aria-pressed', 'true');
-  toggle.textContent = 'Pause loop';
-
-  meta.append(format, toggle);
-  header.append(copy, meta);
-  return header;
-}
-
-function createVideoSection(track) {
-  const section = document.createElement('section');
-  section.className = 'track-detail-section track-video-section';
-  section.dataset.trackVideoSection = track.id;
-  section.hidden = true;
-  section.setAttribute('aria-labelledby', `track-video-heading-${track.id}`);
+  toggle.textContent = 'Pause';
 
   const shell = document.createElement('div');
-  shell.className = 'track-video-shell';
+  shell.className = 'track-detail-canvas-shell';
 
   const video = document.createElement('video');
   video.className = 'track-video-player';
@@ -69,35 +50,36 @@ function createVideoSection(track) {
   video.setAttribute('aria-label', `Silent looping Spotify Canvas for ${track.title}`);
   video.setAttribute('controlslist', 'nodownload noplaybackrate noremoteplayback');
 
+  toolbar.append(badge, toggle);
   shell.appendChild(video);
-  section.append(createVideoHeader(track), shell);
-  return section;
+  panel.append(toolbar, shell);
+  return panel;
 }
 
-function syncLoopControl(section, playing) {
-  const control = section?.querySelector('[data-track-video-loop-action]');
+function syncLoopControl(panel, playing) {
+  const control = panel?.querySelector('[data-track-video-loop-action]');
   if (!control) return;
   control.setAttribute('aria-pressed', String(playing));
-  control.textContent = playing ? 'Pause loop' : 'Play loop';
+  control.textContent = playing ? 'Pause' : 'Play';
 }
 
-function loadAndPlay(video, section) {
+function loadAndPlay(video, panel) {
   if (!video.src) {
     video.src = video.dataset.src;
     video.load();
   }
   video.muted = true;
   return video.play()
-    .then(() => syncLoopControl(section, true))
+    .then(() => syncLoopControl(panel, true))
     .catch(error => {
-      syncLoopControl(section, false);
+      syncLoopControl(panel, false);
       console.info('Canvas playback awaits another user gesture.', error);
     });
 }
 
 function installVideoUI(view, track) {
   if (!view || !track?.video) return;
-  if (view.querySelector(`[data-track-video-section="${CSS.escape(track.id)}"]`)) return;
+  if (view.querySelector(`[data-track-video-panel="${CSS.escape(track.id)}"]`)) return;
 
   const actions = view.querySelector('.track-detail-actions');
   const hero = view.querySelector('.track-detail-hero');
@@ -112,8 +94,7 @@ function installVideoUI(view, track) {
 
   const lyricsButton = actions.querySelector('[data-track-detail-route="lyrics"]');
   actions.insertBefore(button, lyricsButton || actions.lastElementChild);
-
-  hero.insertAdjacentElement('afterend', createVideoSection(track));
+  hero.appendChild(createCanvasPanel(track));
 }
 
 export function initTrackVideos() {
@@ -140,13 +121,13 @@ export function initTrackVideos() {
     const loopControl = event.target.closest?.('[data-track-video-loop-action]');
     if (loopControl) {
       event.preventDefault();
-      const section = loopControl.closest('[data-track-video-section]');
-      const video = section?.querySelector('video.track-video-player');
+      const panel = loopControl.closest('[data-track-video-panel]');
+      const video = panel?.querySelector('video.track-video-player');
       if (!video) return;
-      if (video.paused) loadAndPlay(video, section);
+      if (video.paused) loadAndPlay(video, panel);
       else {
         video.pause();
-        syncLoopControl(section, false);
+        syncLoopControl(panel, false);
       }
       return;
     }
@@ -156,23 +137,27 @@ export function initTrackVideos() {
 
     event.preventDefault();
     const trackId = button.dataset.trackVideoAction;
-    const section = view.querySelector(`[data-track-video-section="${CSS.escape(trackId)}"]`);
-    const video = section?.querySelector('video.track-video-player');
-    if (!section || !video) return;
+    const panel = view.querySelector(`[data-track-video-panel="${CSS.escape(trackId)}"]`);
+    const hero = panel?.closest('.track-detail-hero');
+    const video = panel?.querySelector('video.track-video-player');
+    if (!panel || !hero || !video) return;
 
-    const opening = section.hidden;
-    section.hidden = !opening;
+    const opening = panel.hidden;
+    panel.hidden = !opening;
+    hero.classList.toggle('has-track-canvas', opening);
     button.setAttribute('aria-expanded', String(opening));
     button.textContent = opening ? 'Hide Canvas' : 'Open Canvas';
 
     if (!opening) {
       video.pause();
-      syncLoopControl(section, false);
+      syncLoopControl(panel, false);
       return;
     }
 
-    section.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    loadAndPlay(video, section);
+    loadAndPlay(video, panel);
+    if (window.matchMedia('(max-width: 760px)').matches) {
+      window.setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 0);
+    }
   }, true);
 
   new MutationObserver(scheduleHydration).observe(view, { childList: true, subtree: true });
