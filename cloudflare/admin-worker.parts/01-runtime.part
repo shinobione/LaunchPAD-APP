@@ -41,7 +41,7 @@ export default {
         return jsonResponse({
           ok: true,
           service: "launchpad-r2-track-manager",
-          version: "4.3",
+          version: "4.4",
           authenticatedEmail: user.email || null,
           canonicalObjects: canonical.length,
           legacyObjects: legacy.length,
@@ -340,3 +340,4 @@ async function importGithubTrack(slug, request, env, user) {
   const manifest = normalizeManifest({
     ...entry,
     assets,
+
