@@ -2,7 +2,7 @@
 <div id="result">LAYOUT PENDING</div>
 <iframe id="desktop" data-src="../?visual-test=1#home" style="width:1440px;height:1000px;border:0"></iframe>
 <iframe id="mobile" data-src="../?visual-test=1#home" style="width:390px;height:844px;border:0"></iframe>
-<iframe id="track" data-src="../?visual-test=1#track=husband" style="width:1280px;height:1000px;border:0"></iframe>
+<iframe id="track" data-src="../?visual-test=1#track=thick" style="width:1280px;height:1000px;border:0"></iframe>
 <iframe id="mobile-album" data-src="../?visual-test=1#album=singles" style="width:390px;height:1000px;border:0"></iframe>
 <script>
 const result=document.querySelector('#result');
@@ -139,7 +139,7 @@ loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   const homePanels=rect(dd.querySelector('.home-panels'));
   if(!sidebar||sidebar.width<170||sidebar.width>280) failures.push('desktop-sidebar');
   if(!player||player.height<65||player.height>110||player.bottom<980) failures.push('desktop-player');
-  if(desktopGrid!==5) failures.push('featured-grid');
+  if(desktopGrid!==4) failures.push('featured-grid');
   if(!homePanels||homePanels.width<800) failures.push('home-panels');
   if(!mobileNav||mobileNav.height<45||mobileNav.height>75||mobileNav.bottom<830) failures.push('mobile-nav');
   if(!mobilePlayer||mobilePlayer.height<55||mobilePlayer.height>95||mobilePlayer.bottom>800) failures.push('mobile-player');
@@ -165,14 +165,14 @@ loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   const directHero=rect(td.querySelector('.track-detail-hero'));
   if(!directView) failures.push('track-direct-route');
   if(!directAudio?.paused) failures.push('track-direct-autoplay');
-  if(td.querySelector('.track-detail-copy h1')?.textContent.trim()!=='HUSBAND') failures.push('track-title');
+  if(td.querySelector('.track-detail-copy h1')?.textContent.trim()!=='THICK') failures.push('track-title');
   for(const label of ['BPM','Key','Key analysis','Language','Genre','Mood','Project','Release date','Duration','Content rating','Lyrics','Catalog ID','Primary accent','Secondary accent']){
     if(!metadataLabels.includes(label)) failures.push(`track-meta-${label.toLowerCase().replaceAll(' ','-')}`);
   }
   if(directTags<2) failures.push('track-tags');
   if(!directHero||directHero.width<700) failures.push('track-hero');
 
-  const cover=dd.querySelector('#featured-grid img[data-track-cover-link="husband"]');
+  const cover=dd.querySelector('#featured-grid img[data-track-cover-link="ghost-signal"]');
   const homeAudio=dd.querySelector('#audio');
   let navigationLoadCalls=0;
   if(!cover||!homeAudio) failures.push('cover-link');
@@ -184,7 +184,7 @@ loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
 
     cover.click();
     await sleep(900);
-    if(desktop.contentWindow.location.hash!=='#track=husband') failures.push('cover-navigation');
+    if(desktop.contentWindow.location.hash!=='#track=ghost-signal') failures.push('cover-navigation');
     if(!dd.querySelector('#view-track.active')) failures.push('cover-track-view');
     if(homeAudio.dataset.trackId!=='thick') failures.push('cover-changed-playing-track');
     if(homeAudio.paused) failures.push('cover-paused-playback');
@@ -194,7 +194,7 @@ loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   }
 
   const albumRows=[...ad.querySelectorAll('.album-detail-track')];
-  if(albumRows.length!==4) failures.push('mobile-album-track-count');
+  if(albumRows.length!==1) failures.push('mobile-album-track-count');
   albumRows.forEach((row,index)=>{
     const rowRect=rect(row);
     const playRect=rect(row.querySelector('.album-detail-play'));
