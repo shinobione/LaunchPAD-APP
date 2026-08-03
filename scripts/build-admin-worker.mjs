@@ -46,6 +46,17 @@ try {
   throw new Error(`Built Track Manager UI script has invalid syntax: ${error.message}`);
 }
 
+for (const forbidden of [
+  'id="importGithub"',
+  'id="migrateLegacy"',
+  'id="migrationModal"',
+  'id="legacyPanel"'
+]) {
+  if (source.includes(forbidden)) {
+    throw new Error(`Built Track Manager Worker still exposes obsolete migration UI: ${forbidden}.`);
+  }
+}
+
 for (const required of [
   'version: "4.5"',
   'const ADMIN_HTML = String.raw`',
