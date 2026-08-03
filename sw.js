@@ -1,5 +1,5 @@
 importScripts('./js/build-config.js');
-const RELEASE = 'remote-catalog-only-20260803';
+const RELEASE = 'track-video-history-20260804';
 const VERSION = `${globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev'}-${RELEASE}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;
@@ -27,6 +27,7 @@ const SHELL_RESOURCES = [
   './css/pwa.css',
   './css/visual-card.css',
   './css/track-detail.css',
+  './css/track-videos.css',
   './css/r2-track-details.css',
   './js/build-config.js',
   './js/app-engine.js',
@@ -46,6 +47,7 @@ const SHELL_RESOURCES = [
   './js/features/queue-ui.js',
   './js/features/album-detail.js',
   './js/features/track-detail.js',
+  './js/features/track-videos.js',
   './js/features/mobile-navigation.js',
   './js/features/lyrics-studio.js',
   './js/features/player-experience.js',
@@ -57,6 +59,7 @@ const SHELL_RESOURCES = [
   './js/features/about/about-controller.js',
   './js/features/library-memory-shell.js',
   './js/features/library-memory.js',
+  './js/features/listening-history-summary.js',
   './js/features/pwa.js',
   './js/features/visual-card.js',
   './js/features/admin-access.js'
@@ -191,4 +194,3 @@ self.addEventListener('fetch', event => {
 
   event.respondWith(staleWhileRevalidate(request));
 });
-

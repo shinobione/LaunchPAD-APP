@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Display uploaded MP4/WebM track videos on demand from Track detail pages and keep the played-track summary growing beyond the twelve-item recent-history window.
 - Autofill Track Manager metadata from structured Lyrics TXT headers while preserving the original timestamped lyrics file and existing form values.
 - Improve Track Manager thumbnail generation with 1024 px supersampling, high-quality 512 px output, adaptive WebP compression, preserved framing for non-square artwork and an explicit full-catalog regeneration option.
 - Harden repository-driven Cloudflare deployments with explicit production confirmation, structured Wrangler version tracing, post-deployment smoke tests and a protected rollback workflow.

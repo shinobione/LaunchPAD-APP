@@ -74,10 +74,12 @@ async function boot() {
     { initLyricsWakeLock },
     { initAboutEnhancements },
     { initLibraryMemory },
+    { initListeningHistorySummary },
     { initVisualCard },
     { createPlayerExperience },
     { initResilienceAccessibility },
     { initTrackDetail },
+    { initTrackVideos },
     { initMobileNavigation },
     { initAdminAccess }
   ] = await Promise.all([
@@ -86,10 +88,12 @@ async function boot() {
     import(versioned('./features/lyrics/wake-lock.js')),
     import(versioned('./features/about/about-controller.js')),
     import(versioned('./features/library-memory.js')),
+    import(versioned('./features/listening-history-summary.js')),
     import(versioned('./features/visual-card.js')),
     import(versioned('./features/player-experience.js')),
     import(versioned('./features/resilience-accessibility.js')),
     import(versioned('./features/track-detail.js')),
+    import(versioned('./features/track-videos.js')),
     import(versioned('./features/mobile-navigation.js')),
     import(versioned('./features/admin-access.js'))
   ]);
@@ -101,7 +105,9 @@ async function boot() {
   createPlayerExperience({ audio });
   initResilienceAccessibility({ audio });
   initLibraryMemory({ audio });
+  initListeningHistorySummary({ audio });
   initTrackDetail({ audio });
+  initTrackVideos({ audio });
   initMobileNavigation();
   initAdminAccess();
   initVisualCard({ audio });
@@ -129,4 +135,3 @@ boot().catch(error => {
     );
   }
 });
-
