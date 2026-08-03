@@ -67,7 +67,13 @@ for (const required of [
   'aria-label="Actions du catalogue"',
   'function writeCatalogIndex(',
   'function parseTimestampedLyrics(',
-  'timestampsAvailable'
+  'timestampsAvailable',
+  "THUMBNAIL_PIPELINE_VERSION='v2'",
+  'THUMBNAIL_RENDER_SIZE=1024',
+  'THUMBNAIL_TARGET_BYTES=180*1024',
+  "imageSmoothingQuality='high'",
+  'async function createThumbnailResult(blob)',
+  'Régénérer les '
 ]) {
   if (!source.includes(required)) {
     throw new Error(`Built Track Manager Worker is missing ${required}.`);
@@ -75,4 +81,3 @@ for (const required of [
 }
 
 console.log(`Built ${outputPath} from ${parts.length} source parts (${Buffer.byteLength(source)} bytes).`);
-
