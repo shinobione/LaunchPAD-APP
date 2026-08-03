@@ -51,11 +51,11 @@ const selectors=[
   '.hero-profile-card','.hero-copy','.hero-wordmark','.artist-manifesto','.hero-actions'
 ];
 const geometry=document=>{
-  const view=document.defaultView;
+  const view=document?.defaultView;
   const scrollX=view?.scrollX||0;
   const scrollY=view?.scrollY||0;
   return Object.fromEntries(selectors.map(selector=>{
-    const box=rect(document.querySelector(selector));
+    const box=rect(document?.querySelector(selector));
     return [selector,box?{
       left:box.left+scrollX,
       top:box.top+scrollY,
@@ -75,20 +75,32 @@ const geometryChanges=(before,after)=>Object.keys(before).flatMap(selector=>{
   }));
 }).sort((a,b)=>b.delta-a.delta);
 const failureToken=change=>`${change.selector.replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'')}-${change.field}-${Math.round(change.delta)}`;
-const localStyles=document=>[...document.querySelectorAll('link[rel="stylesheet"]')]
-  .map(link=>new URL(link.href,document.location.href))
-  .filter(url=>url.origin===document.location.origin&&url.pathname.includes('/css/'));
+const localStyles=document=>{
+  if(!document) return [];
+  const base=document.baseURI||document.URL||window.location.href;
+  let baseUrl;
+  try{baseUrl=new URL(base,window.location.href);}catch{return [];}
+  return [...document.querySelectorAll('link[rel="stylesheet"]')]
+    .map(link=>{
+      const href=link.getAttribute('href')||link.href;
+      if(!href) return null;
+      try{return new URL(href,baseUrl);}catch{return null;}
+    })
+    .filter(Boolean)
+    .filter(url=>url.origin===baseUrl.origin&&url.pathname.includes('/css/'));
+};
 
 Promise.all(frames.map(frameReady)).then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   const measuredFrames=[desktop,mobile];
-  measuredFrames.forEach(frame=>frame.contentWindow.scrollTo(0,0));
+  measuredFrames.forEach(frame=>frame.contentWindow?.scrollTo(0,0));
   await sleep(200);
   const dd=desktop.contentDocument, md=mobile.contentDocument, td=trackFrame.contentDocument, ad=mobileAlbum.contentDocument;
+  if(!dd||!md||!td||!ad) throw new Error('One or more iframe documents detached before measurement.');
   const initialDesktopGeometry=geometry(dd);
   const initialMobileGeometry=geometry(md);
 
   await sleep(4800);
-  measuredFrames.forEach(frame=>frame.contentWindow.scrollTo(0,0));
+  measuredFrames.forEach(frame=>frame.contentWindow?.scrollTo(0,0));
   await sleep(50);
   const failures=[];
   const finalDesktopGeometry=geometry(dd);
@@ -131,7 +143,7 @@ Promise.all(frames.map(frameReady)).then(async([desktop,mobile,trackFrame,mobile
   ]){
     const bannerRect=rect(bannerNode);
     const profileRect=rect(profileNode);
-    const bannerStyle=bannerNode?document.defaultView.getComputedStyle(bannerNode):null;
+    const bannerStyle=bannerNode?document.defaultView?.getComputedStyle(bannerNode):null;
     if(!bannerRect||bannerRect.width<260||bannerRect.height<140||bannerStyle?.visibility==='hidden'||Number(bannerStyle?.opacity||0)<.9){
       failures.push(`${label}-launchpad-visible`);
     }
@@ -179,13 +191,13 @@ Promise.all(frames.map(frameReady)).then(async([desktop,mobile,trackFrame,mobile
 
     cover.click();
     await sleep(900);
-    if(desktop.contentWindow.location.hash!=='#track=husband') failures.push('cover-navigation');
+    if(desktop.contentWindow?.location?.hash!=='#track=husband') failures.push('cover-navigation');
     if(!dd.querySelector('#view-track.active')) failures.push('cover-track-view');
     if(homeAudio.dataset.trackId!=='thick') failures.push('cover-changed-playing-track');
     if(homeAudio.paused) failures.push('cover-paused-playback');
     if(Math.abs(homeAudio.currentTime-37)>.01) failures.push('cover-reset-playback-position');
     if(navigationLoadCalls!==0) failures.push('cover-reloaded-audio');
-    if(desktop.contentWindow.history.state?.shinobiTrackDetail!==true) failures.push('cover-passive-history-state');
+    if(desktop.contentWindow?.history?.state?.shinobiTrackDetail!==true) failures.push('cover-passive-history-state');
   }
 
   const albumRows=[...ad.querySelectorAll('.album-detail-track')];
