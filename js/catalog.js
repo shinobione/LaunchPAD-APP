@@ -2,6 +2,7 @@ const MEDIA_ORIGIN = 'https://launchpad-media.jerryquinet.workers.dev';
 const r2Audio = slug => `${MEDIA_ORIGIN}/media/${encodeURIComponent(slug)}/audio/audio.mp3`;
 const r2Thumbnail = slug => `${MEDIA_ORIGIN}/media/${encodeURIComponent(slug)}/thumbnail/thumbnail.webp`;
 const r2Cover = (slug, extension = 'jpeg') => `${MEDIA_ORIGIN}/media/${encodeURIComponent(slug)}/cover/cover.${extension}`;
+const r2Lyrics = slug => `${MEDIA_ORIGIN}/media/${encodeURIComponent(slug)}/lyrics/lyrics.txt`;
 
 export const albums = [
   {
@@ -86,7 +87,7 @@ export const tracks = [
     mood: 'Digital melancholy',
     albumId: 'neon-heartbreaks',
     album: 'Neon Heartbreaks',
-    lyrics: 'assets/lyrics/before-the-noise.txt',
+    lyrics: r2Lyrics('before-the-noise'),
     accent: '#b746ff',
     accent2: '#4c7dff'
   },
@@ -101,7 +102,7 @@ export const tracks = [
     mood: 'Romantic glitch',
     albumId: 'neon-heartbreaks',
     album: 'Neon Heartbreaks',
-    lyrics: 'assets/lyrics/low-bitrate-love.txt',
+    lyrics: r2Lyrics('low-bitrate-love'),
     accent: '#ff4fd8',
     accent2: '#7c4dff'
   },
@@ -116,7 +117,7 @@ export const tracks = [
     mood: 'Heavy confidence',
     albumId: 'coal-to-diamond',
     album: 'Coal to Diamond',
-    lyrics: 'assets/lyrics/thick.txt',
+    lyrics: r2Lyrics('thick'),
     accent: '#ff3f5f',
     accent2: '#7d34ff'
   },
@@ -131,7 +132,7 @@ export const tracks = [
     mood: 'Slow soul',
     albumId: 'neon-heartbreaks',
     album: 'Neon Heartbreaks',
-    lyrics: 'assets/lyrics/real-love-doesnt-rush.txt',
+    lyrics: r2Lyrics('real-love-doesnt-rush'),
     accent: '#ff5a9d',
     accent2: '#8e5bff'
   },
@@ -146,7 +147,7 @@ export const tracks = [
     mood: 'French Tango',
     albumId: 'love-letters-from-saigon',
     album: 'Love Letters from Saigon',
-    lyrics: 'assets/lyrics/jusquau-dernier-souffle.txt',
+    lyrics: r2Lyrics('jusquau-dernier-souffle'),
     accent: '#d13cff',
     accent2: '#ff4b74'
   },
@@ -161,7 +162,7 @@ export const tracks = [
     mood: 'Vietnamese love',
     albumId: 'love-letters-from-saigon',
     album: 'Love Letters from Saigon',
-    lyrics: 'assets/lyrics/tinh-bolero-cho-tran.txt',
+    lyrics: r2Lyrics('tinh-bolero-cho-tran'),
     accent: '#f2b84b',
     accent2: '#e45585'
   },
@@ -176,7 +177,7 @@ export const tracks = [
     mood: 'Travel story',
     albumId: 'love-letters-from-saigon',
     album: 'Love Letters from Saigon',
-    lyrics: 'assets/lyrics/saigon-bound.txt',
+    lyrics: r2Lyrics('saigon-bound'),
     accent: '#ff8a3d',
     accent2: '#d93cff'
   },
@@ -191,7 +192,7 @@ export const tracks = [
     mood: 'Epic energy',
     albumId: 'coal-to-diamond',
     album: 'Coal to Diamond',
-    lyrics: 'assets/lyrics/the-throne-resonates.txt',
+    lyrics: r2Lyrics('the-throne-resonates'),
     accent: '#f0b34a',
     accent2: '#7c47ff'
   },
@@ -206,7 +207,7 @@ export const tracks = [
     mood: 'Resilience',
     albumId: 'coal-to-diamond',
     album: 'Coal to Diamond',
-    lyrics: 'assets/lyrics/carved-from-pressure.txt',
+    lyrics: r2Lyrics('carved-from-pressure'),
     accent: '#ff4f52',
     accent2: '#9b3dff'
   },
@@ -221,7 +222,7 @@ export const tracks = [
     mood: 'Urban satire',
     albumId: 'singles',
     album: 'Singles',
-    lyrics: 'assets/lyrics/ligne3.txt',
+    lyrics: r2Lyrics('ligne-3'),
     accent: '#f1c75b',
     accent2: '#e14f4f'
   },
