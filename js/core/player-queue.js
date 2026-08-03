@@ -47,8 +47,14 @@ export function createQueueController({ allIndexes }) {
 
   function rebuild(currentIndex = current()) {
     const cleanBase = uniqueIndexes(baseQueue);
-    if (!cleanBase.length) cleanBase.push(...catalogIndexes);
+    if (!cleanBase.length && context.type === 'catalog') cleanBase.push(...catalogIndexes);
     baseQueue = cleanBase;
+
+    if (!baseQueue.length) {
+      queue = Number.isInteger(currentIndex) ? [currentIndex] : [];
+      position = 0;
+      return;
+    }
 
     if (shuffle) {
       const rest = shuffled(baseQueue.filter(index => index !== currentIndex));
@@ -170,3 +176,4 @@ export function createQueueController({ allIndexes }) {
     subscribe
   };
 }
+
