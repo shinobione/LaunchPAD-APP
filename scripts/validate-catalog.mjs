@@ -27,6 +27,13 @@ async function requireFile(relativePath, label, { optional = false } = {}) {
   if (structureOnly) return;
 
   try {
+    const url = new URL(relativePath);
+    if (url.protocol === 'https:' || url.protocol === 'http:') return;
+  } catch {
+    // Local resources are checked on disk below.
+  }
+
+  try {
     await access(path.join(root, relativePath), constants.R_OK);
   } catch {
     errors.push(`${label} does not exist: ${relativePath}`);

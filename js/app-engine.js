@@ -62,7 +62,7 @@ async function boot() {
     document.documentElement.dataset.remoteTrackCount = String(state.remoteCount);
   } catch (error) {
     document.documentElement.dataset.remoteCatalog = 'fallback';
-    console.warn('Cloudflare R2 catalog unavailable; using bundled catalog.', error);
+    console.warn('Cloudflare R2 metadata unavailable; using the static R2 catalog.', error);
   }
 
   await import(versioned('./app-main.js'));

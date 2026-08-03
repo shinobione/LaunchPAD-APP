@@ -1,3 +1,6 @@
+const MEDIA_ORIGIN = 'https://launchpad-media.jerryquinet.workers.dev';
+const r2Audio = slug => `${MEDIA_ORIGIN}/media/${encodeURIComponent(slug)}/audio/audio.mp3`;
+
 export const albums = [
   {
     id: 'neon-heartbreaks',
@@ -73,7 +76,7 @@ export const tracks = [
   {
     id: 'before-the-noise',
     title: 'Before the Noise',
-    file: 'audio/before-the-noise.mp3',
+    file: r2Audio('before-the-noise'),
     cover: 'assets/before-the-noise.jpeg',
     genre: 'R&B',
     tags: ['R&B'],
@@ -87,7 +90,7 @@ export const tracks = [
   {
     id: 'low-bitrate-love',
     title: 'Low Bitrate Love',
-    file: 'audio/low-bitrate-love.mp3',
+    file: r2Audio('low-bitrate-love'),
     cover: 'assets/low-bitrate-love.jpeg',
     genre: 'Love',
     tags: ['Love', 'R&B'],
@@ -101,7 +104,7 @@ export const tracks = [
   {
     id: 'thick',
     title: 'THICK',
-    file: 'audio/thick.mp3',
+    file: r2Audio('thick'),
     cover: 'assets/thick.jpeg',
     genre: 'Hip-hop',
     tags: ['Hip-hop'],
@@ -115,7 +118,7 @@ export const tracks = [
   {
     id: 'real-love-doesnt-rush',
     title: 'Real Love Doesn’t Rush',
-    file: 'audio/real-love-doesnt-rush.mp3',
+    file: r2Audio('real-love-doesnt-rush'),
     cover: 'assets/real-love-doesnt-rush.jpeg',
     genre: 'Love',
     tags: ['Love', 'R&B'],
@@ -129,7 +132,7 @@ export const tracks = [
   {
     id: 'jusquau-dernier-souffle',
     title: 'Jusqu’au dernier souffle',
-    file: 'audio/jusquau-dernier-souffle.mp3',
+    file: r2Audio('jusquau-dernier-souffle'),
     cover: 'assets/jusquau-dernier-souffle.jpeg',
     genre: 'R&B',
     tags: ['R&B', 'Love', 'French'],
@@ -143,7 +146,7 @@ export const tracks = [
   {
     id: 'tinh-bolero-cho-tran',
     title: 'Tình Bolero Cho Trân',
-    file: 'audio/tinh-bolero-cho-tran.mp3',
+    file: r2Audio('tinh-bolero-cho-tran'),
     cover: 'assets/tinh-bolero-cho-tran.png',
     genre: 'Vietnam',
     tags: ['Vietnam', 'Love'],
@@ -157,7 +160,7 @@ export const tracks = [
   {
     id: 'saigon-bound',
     title: 'Saigon Bound',
-    file: 'audio/saigon-bound.mp3',
+    file: r2Audio('saigon-bound'),
     cover: 'assets/saigon-bound.png',
     genre: 'Vietnam',
     tags: ['Vietnam', 'Hip-hop'],
@@ -171,7 +174,7 @@ export const tracks = [
   {
     id: 'the-throne-resonates',
     title: 'The Throne Resonates',
-    file: 'audio/the-throne-resonates.mp3',
+    file: r2Audio('the-throne-resonates'),
     cover: 'assets/the-throne-resonates.jpeg',
     genre: 'Hip-hop',
     tags: ['Hip-hop'],
@@ -185,7 +188,7 @@ export const tracks = [
   {
     id: 'carved-from-pressure',
     title: 'Carved from Pressure',
-    file: 'audio/carved-from-pressure.mp3',
+    file: r2Audio('carved-from-pressure'),
     cover: 'assets/carved-from-pressure.jpeg',
     genre: 'Hip-hop',
     tags: ['Hip-hop'],
@@ -199,7 +202,7 @@ export const tracks = [
   {
     id: 'ligne-3',
     title: 'Ligne 3',
-    file: 'audio/ligne-3.mp3',
+    file: r2Audio('ligne-3'),
     cover: 'assets/ligne3.jpeg',
     genre: 'Hip-hop',
     tags: ['Hip-hop', 'French'],
@@ -213,7 +216,7 @@ export const tracks = [
   {
     id: 'obey',
     title: 'OBEY!',
-    file: 'audio/albums/coal-to-diamond/obey.mp3',
+    file: r2Audio('obey'),
     cover: 'assets/covers/albums/coal-to-diamond/obey.jpeg',
     genre: 'Hip-hop',
     tags: ['Hip-hop'],
@@ -227,7 +230,7 @@ export const tracks = [
   {
     id: 'close-to-you',
     title: 'Close to You',
-    file: 'audio/singles/close-to-you.mp3',
+    file: r2Audio('close-to-you'),
     cover: 'assets/covers/singles/close-to-you.jpeg',
     genre: 'Dancehall',
     tags: ['Dancehall', 'Love'],
@@ -241,7 +244,7 @@ export const tracks = [
   {
     id: 'ghost-signal',
     title: 'Ghost Signal',
-    file: 'audio/singles/ghost-signal.mp3',
+    file: r2Audio('ghost-signal'),
     cover: 'assets/covers/singles/ghost-signal.jpeg',
     genre: 'R&B',
     tags: ['R&B', 'Love'],
@@ -255,7 +258,7 @@ export const tracks = [
   {
     id: 'husband',
     title: 'HUSBAND',
-    file: 'audio/singles/husband.mp3',
+    file: r2Audio('husband'),
     cover: 'assets/covers/singles/husband.jpeg',
     genre: 'Hip-hop',
     tags: ['Hip-hop', 'Love'],
