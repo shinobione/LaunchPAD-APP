@@ -145,7 +145,7 @@ jobs:
           grep -q 'id="visual-card-modal"' /tmp/launchpad-home.html
           grep -q 'id="pwa-install-control"' /tmp/launchpad-home.html
           grep -q 'data-app-ready="true"' /tmp/launchpad-home.html
-          grep -q '14 TRACKS' /tmp/launchpad-home.html
+          grep -q '4 TRACKS' /tmp/launchpad-home.html
           grep -q '<h3>Track DNA</h3>' /tmp/launchpad-home.html
           grep -q '<strong id="track-dna-bpm">152</strong>' /tmp/launchpad-home.html
           grep -q 'data-track-cover-link=' /tmp/launchpad-home.html
@@ -158,9 +158,9 @@ jobs:
           ! grep -q 'project-featured-covers' /tmp/albums.html
           grep -q 'margin-top:16px;column-gap:10px;row-gap:8px' /tmp/albums.html
 
-          chrome_dump 10000 'http://127.0.0.1:4173/#track=husband' > /tmp/track-detail.html
+          chrome_dump 10000 'http://127.0.0.1:4173/#track=thick' > /tmp/track-detail.html
           grep -q 'id="view-track" class="view track-detail-view active"' /tmp/track-detail.html
-          grep -q '<h1>HUSBAND</h1>' /tmp/track-detail.html
+          grep -q '<h1>THICK</h1>' /tmp/track-detail.html
           grep -q '>BPM<' /tmp/track-detail.html
           grep -q '>Key<' /tmp/track-detail.html
           grep -q '>Language<' /tmp/track-detail.html
