@@ -1,5 +1,5 @@
 importScripts('./js/build-config.js');
-const RELEASE = 'r2-cover-cleanup-20260803';
+const RELEASE = 'mobile-about-layout-20260803';
 const VERSION = `${globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev'}-${RELEASE}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;
