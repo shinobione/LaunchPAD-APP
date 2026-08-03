@@ -31,27 +31,11 @@ jobs:
       - name: Validate consolidated structure and cleanup
         shell: bash
         run: |
-          for required in \
-            README.md CHANGELOG.md RELEASE-CHECKLIST.md guide.md ARCHITECTURE.md \
-            robots.txt sitemap.xml js/build-config.js js/core/assets.js \
-            js/features/player-experience.js js/features/resilience-accessibility.js \
-            js/features/track-detail.js js/features/mobile-navigation.js \
-            css/track-detail.css css/mobile-navigation.css \
-            css/launchpad-features.css scripts/capture-visuals.sh \
-            tests/accessibility-smoke.html tests/layout-regression.html \
-            tests/mobile-navigation-smoke.html; do
+          for required in README.md CHANGELOG.md RELEASE-CHECKLIST.md guide.md ARCHITECTURE.md robots.txt sitemap.xml js/build-config.js js/core/assets.js js/features/player-experience.js js/features/resilience-accessibility.js js/features/track-detail.js js/features/mobile-navigation.js css/track-detail.css css/mobile-navigation.css css/launchpad-features.css scripts/capture-visuals.sh tests/accessibility-smoke.html tests/layout-regression.html tests/mobile-navigation-smoke.html; do
             test -s "$required"
           done
 
-          for removed in \
-            assets/favicon.svg assets/favicon-v2.svg assets/favicon-v3.svg assets/favicon-v5.svg \
-            css/desktop-hero-v3.css css/logo-lock.css css/audio-lab-fix.css \
-            CATALOG-GUIDE.md \
-            css/player-experience.css css/album-duration.css \
-            js/content-upgrade.js js/favicon-guard.js \
-            js/ui.js js/lyrics-engine.js js/visual-engine.js js/content-v4.js \
-            js/about-enhancements.js js/audio-focus.js js/lyrics-wake-lock.js \
-            scripts/analyze-audio-metadata.py .github/workflows/analyze-audio-metadata.yml; do
+          for removed in assets/favicon.svg assets/favicon-v2.svg assets/favicon-v3.svg assets/favicon-v5.svg css/desktop-hero-v3.css css/logo-lock.css css/audio-lab-fix.css CATALOG-GUIDE.md css/player-experience.css css/album-duration.css js/content-upgrade.js js/favicon-guard.js js/ui.js js/lyrics-engine.js js/visual-engine.js js/content-v4.js js/about-enhancements.js js/audio-focus.js js/lyrics-wake-lock.js scripts/analyze-audio-metadata.py .github/workflows/analyze-audio-metadata.yml; do
             test ! -e "$removed"
           done
 
@@ -64,9 +48,7 @@ jobs:
           grep -q 'class="hero-banner-art" src="assets/launchpad.png" width="2048" height="1143"' index.html
           grep -q 'class="hero-wordmark" src="assets/logo.png" width="720" height="330"' index.html
           grep -q 'class="artist-manifesto"' index.html
-          for stylesheet in \
-            style header refinements lyrics fixes-v2 content-v4 desktop-hero-wide mobile-top-cleanup \
-            mobile-navigation launchpad-features about-enhancements library-memory pwa visual-card track-detail; do
+          for stylesheet in style header refinements lyrics fixes-v2 content-v4 desktop-hero-wide mobile-top-cleanup mobile-navigation launchpad-features about-enhancements library-memory pwa visual-card track-detail; do
             grep -q "css/${stylesheet}.css?v=20260802-wave14" index.html
           done
           ! grep -R -F "20260802-wave1'" js --include='*.js'
@@ -104,23 +86,12 @@ jobs:
             const icon = manifest.icons?.find(item => String(item.sizes).split(/\s+/).includes(size));
             if (!icon || !fs.existsSync(icon.src)) fail(`Missing ${size} icon.`);
           }
-
           const worker = fs.readFileSync('sw.js', 'utf8');
           if (!worker.includes("importScripts('./js/build-config.js')")) fail('Service worker does not share the central build config.');
           if (!worker.includes("request.destination === 'audio'")) fail('Audio requests are not explicitly excluded from cache.');
           if (!worker.includes("request.headers.has('range')")) fail('Range requests are not explicitly excluded from cache.');
-          for (const resource of [
-            "'./js/build-config.js'", "'./js/core/assets.js'", "'./js/catalog.js'",
-            "'./js/features/player-experience.js'", "'./js/features/resilience-accessibility.js'",
-            "'./js/features/track-detail.js'", "'./js/features/mobile-navigation.js'",
-            "'./css/track-detail.css'", "'./css/mobile-navigation.css'",
-            "'./css/launchpad-features.css'", "'./robots.txt'", "'./sitemap.xml'"
-          ]) if (!worker.includes(resource)) fail(`Offline shell is missing ${resource}.`);
-          for (const removed of [
-            "'./css/audio-lab-fix.css'", "'./css/player-experience.css'", "'./css/album-duration.css'",
-            "'./assets/favicon-v2.svg'", "'./assets/favicon-v3.svg'", "'./assets/favicon-v5.svg'",
-            "'./js/catalog-metadata.js'", "'./js/catalog-fixture.js'"
-          ]) if (worker.includes(removed)) fail(`Offline shell still references removed path ${removed}.`);
+          for (const resource of ["'./js/build-config.js'", "'./js/core/assets.js'", "'./js/catalog.js'", "'./js/features/player-experience.js'", "'./js/features/resilience-accessibility.js'", "'./js/features/track-detail.js'", "'./js/features/mobile-navigation.js'", "'./css/track-detail.css'", "'./css/mobile-navigation.css'", "'./css/launchpad-features.css'", "'./robots.txt'", "'./sitemap.xml'"]) if (!worker.includes(resource)) fail(`Offline shell is missing ${resource}.`);
+          for (const removed of ["'./css/audio-lab-fix.css'", "'./css/player-experience.css'", "'./css/album-duration.css'", "'./assets/favicon-v2.svg'", "'./assets/favicon-v3.svg'", "'./assets/favicon-v5.svg'", "'./js/catalog-metadata.js'", "'./js/catalog-fixture.js'"]) if (worker.includes(removed)) fail(`Offline shell still references removed path ${removed}.`);
           console.log('PWA manifest, shared build config and shell are valid.');
           NODE
 
@@ -136,8 +107,7 @@ jobs:
           sleep 2
 
           chrome_dump() {
-            google-chrome --headless=new --no-sandbox --disable-gpu \
-              --virtual-time-budget="$1" --dump-dom "$2"
+            google-chrome --headless=new --no-sandbox --disable-gpu --virtual-time-budget="$1" --dump-dom "$2"
           }
 
           chrome_dump 12000 'http://127.0.0.1:4173/#home' > /tmp/launchpad-home.html
