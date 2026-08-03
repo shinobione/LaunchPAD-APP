@@ -9,13 +9,13 @@ An installable, responsive music application for the SHINOBIWAN catalog: album p
 
 | Component | Repository state | Production state |
 | --- | --- | --- |
-| PWA | Favorites-only queue, desktop admin access and Android media fixes are merged | GitHub Pages serves `favorites-queue-20260803` |
+| PWA | Favorites-only queue, desktop admin access, Android media fixes and one authoritative lyrics status are merged | GitHub Pages serves `lyrics-status-20260803` |
 | Public media Worker | v2.3 source and Wrangler config are merged | `/health` reports v2.3 and 16 canonical tracks |
-| Private Track Manager | v4.4 source and Wrangler config are merged | Protected by Access; the live v4.4 deployment is not yet independently confirmed |
+| Private Track Manager | v4.5 source and Wrangler config are merged | Protected by Access; v4.5 is confirmed live after a manual dashboard deployment |
 | R2 media | Read-only audit is merged | 16/16 Range audio streams and 16/16 optimized thumbnails verified |
 | Cloudflare delivery | Pinned Wrangler validation and manual deployment workflow are merged | The repository workflow has not yet performed a production deployment |
 
-The first-tap playback, Android media icon and timestamp-status regressions are fixed in the deployed PWA code. Final acceptance on the target Android device is still required before legacy media deletion.
+The first-tap playback, Android media icon and timestamp-status regressions are fixed in the deployed PWA code. Carved from Pressure and THICK now expose the same single `Lyrics — Timestamped` status. Final full-catalog acceptance on the target Android device is still required before legacy media deletion.
 
 ## Production architecture
 
@@ -95,7 +95,7 @@ The service worker uses a release namespace in `sw.js`. Change it whenever JavaS
 
 Merges to `main` are published through GitHub Pages. Worker source is not deployed by a merge: dispatch **Deploy Cloudflare Workers** from `main`, choose `public`, `admin` or `both`, and use the protected `cloudflare-production` environment.
 
-The GitHub environment must contain `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. A Worker deployment does not rebuild `catalog/index.json`; perform that explicit Track Manager action only when required.
+The GitHub environment must contain `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. A Worker deployment does not rebuild `catalog/index.json`; perform that explicit Track Manager action only when required. Track Manager v4.5 is currently live from a manual Cloudflare dashboard deployment; the first successful repository-driven deployment remains to be recorded.
 
 Do not merge unless both `Validate Launchpad` and `Validate Cloudflare Workers` are green. Report source merge, GitHub Pages publication, Worker deployment and R2 index rebuild as separate states.
 
