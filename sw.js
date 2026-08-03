@@ -1,5 +1,5 @@
 importScripts('./js/build-config.js');
-const RELEASE = 'track-video-history-20260804';
+const RELEASE = 'spotify-canvas-studio-20260804';
 const VERSION = `${globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev'}-${RELEASE}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;
