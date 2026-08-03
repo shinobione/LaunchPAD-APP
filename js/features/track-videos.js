@@ -40,22 +40,33 @@ async function fetchVideoAsset(track) {
   return promise;
 }
 
+function createVideoHeader(track, asset) {
+  const header = document.createElement('div');
+  header.className = 'track-detail-section-head';
+
+  const copy = document.createElement('div');
+  const eyebrow = document.createElement('span');
+  eyebrow.className = 'eyebrow';
+  eyebrow.textContent = 'OFFICIAL VISUAL';
+
+  const heading = document.createElement('h2');
+  heading.id = `track-video-heading-${track.id}`;
+  heading.textContent = track.title;
+  copy.append(eyebrow, heading);
+
+  const filename = document.createElement('span');
+  filename.className = 'pill';
+  filename.textContent = asset.filename;
+  header.append(copy, filename);
+  return header;
+}
+
 function createVideoSection(track, asset, audio) {
   const section = document.createElement('section');
   section.className = 'track-detail-section track-video-section';
   section.dataset.trackVideoSection = track.id;
   section.hidden = true;
   section.setAttribute('aria-labelledby', `track-video-heading-${track.id}`);
-
-  const header = document.createElement('div');
-  header.className = 'track-detail-section-head';
-  header.innerHTML = `
-    <div>
-      <span class="eyebrow">OFFICIAL VISUAL</span>
-      <h2 id="track-video-heading-${track.id}">${track.title}</h2>
-    </div>
-    <span class="pill">${asset.filename}</span>
-  `;
 
   const shell = document.createElement('div');
   shell.className = 'track-video-shell';
@@ -72,7 +83,7 @@ function createVideoSection(track, asset, audio) {
   video.addEventListener('play', () => audio?.pause());
 
   shell.appendChild(video);
-  section.append(header, shell);
+  section.append(createVideoHeader(track, asset), shell);
   return section;
 }
 
