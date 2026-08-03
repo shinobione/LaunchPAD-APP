@@ -4,6 +4,7 @@ import { shareRoute } from '../core/share.js';
 
 const TRACK_HASH_PREFIX = '#track=';
 const TRACK_DETAIL_HISTORY_KEY = 'shinobiTrackDetail';
+const TIMESTAMP_PATTERN = /^(?:\[)?\d{1,2}:\d{2}(?:[.:]\d{1,3})?(?:\])?(?:\s+.*)?$/m;
 
 function escapeHtml(value) {
   return String(value)
@@ -68,9 +69,9 @@ function currentTrackFromHash() {
   return getTrack(id);
 }
 
-function metadataItem(label, value, extra = '') {
+function metadataItem(label, value, extra = '', attributes = '') {
   return `
-    <div class="track-detail-data-item${extra ? ` ${extra}` : ''}">
+    <div class="track-detail-data-item${extra ? ` ${extra}` : ''}" ${attributes}>
       <span>${escapeHtml(label)}</span>
       <strong>${escapeHtml(value)}</strong>
     </div>
@@ -90,6 +91,18 @@ function normaliseList(value) {
   return Array.isArray(value) ? value.filter(Boolean) : [];
 }
 
+function detectTimestampedLyrics(remoteTrack) {
+  if (remoteTrack?.timestampsAvailable === true) return true;
+
+  const segments = remoteTrack?.lyrics?.segments;
+  if (Array.isArray(segments) && segments.some(segment => Number.isFinite(segment?.time))) {
+    return true;
+  }
+
+  const raw = remoteTrack?.lyrics?.raw;
+  return typeof raw === 'string' && TIMESTAMP_PATTERN.test(raw.replace(/\r\n?/g, '\n'));
+}
+
 function remoteSignalSection(track) {
   const metadata = track.remoteMetadata;
   if (!metadata) return '';
@@ -100,7 +113,11 @@ function remoteSignalSection(track) {
   const type = metadata.type || 'Release';
   const era = metadata.era || 'Independent catalog';
   const energy = metadata.energy || 'Unspecified';
-  const timedLyrics = metadata.timestampsAvailable ? 'Timestamped' : 'Not timestamped';
+  const timedLyrics = !track.lyrics
+    ? 'No lyrics'
+    : metadata.timestampsAvailable === true
+      ? 'Timestamped'
+      : 'Checking…';
 
   return `
     <section class="track-detail-section track-detail-cloud-section" aria-labelledby="track-detail-cloud-heading">
@@ -117,7 +134,7 @@ function remoteSignalSection(track) {
         ${metadataItem('Release type', type)}
         ${metadataItem('Era', era)}
         ${metadataItem('Energy', energy)}
-        ${metadataItem('Lyrics timing', timedLyrics)}
+        ${metadataItem('Lyrics timing', timedLyrics, '', 'data-lyrics-timing')}
       </div>
 
       ${moods.length || themes.length ? `
@@ -154,6 +171,52 @@ export function initTrackDetail({ audio = document.querySelector('#audio') } = {
   const coverPaths = new Map(tracks.map(track => [new URL(track.cover, window.location.href).pathname, track]));
   let returnHash = '#home';
   let currentTrackId = null;
+
+  async function verifyRemoteLyricsTiming(track) {
+    if (!track?.lyrics || !track.remoteMetadata) return;
+
+    const timingValue = view.querySelector('[data-lyrics-timing] strong');
+    if (!timingValue) return;
+
+    const apiUrl = track.remoteMetadata.apiUrl;
+    if (!apiUrl) {
+      timingValue.textContent = track.remoteMetadata.timestampsAvailable === true
+        ? 'Timestamped'
+        : 'Status unavailable';
+      return;
+    }
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        cache: 'no-store'
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const payload = await response.json();
+      const remoteTrack = payload?.track;
+      if (!payload?.ok || !remoteTrack) throw new Error('Invalid track response.');
+
+      const timestamped = detectTimestampedLyrics(remoteTrack);
+      track.remoteMetadata.timestampsAvailable = timestamped;
+
+      if (currentTrackId === track.id) {
+        const currentValue = view.querySelector('[data-lyrics-timing] strong');
+        if (currentValue) currentValue.textContent = timestamped ? 'Timestamped' : 'Not timestamped';
+      }
+    } catch (error) {
+      console.warn(`Unable to verify lyric timing for ${track.title}.`, error);
+      if (currentTrackId === track.id) {
+        const currentValue = view.querySelector('[data-lyrics-timing] strong');
+        if (currentValue) {
+          currentValue.textContent = track.remoteMetadata.timestampsAvailable === true
+            ? 'Timestamped'
+            : 'Status unavailable';
+        }
+      }
+    }
+  }
 
   function trackForImage(image) {
     if (!(image instanceof HTMLImageElement)) return null;
@@ -268,6 +331,7 @@ export function initTrackDetail({ audio = document.querySelector('#audio') } = {
     window.scrollTo({ top: 0, behavior: 'auto' });
     view.focus({ preventScroll: true });
     document.title = `${track.title} — Track details — SHINOBIWAN`;
+    verifyRemoteLyricsTiming(track);
     return true;
   }
 

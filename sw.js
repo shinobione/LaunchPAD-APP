@@ -1,5 +1,5 @@
 importScripts('./js/build-config.js');
-const RELEASE = 'step7-lyrics-catalog-1';
+const RELEASE = 'android-media-timestamps-20260803';
 const VERSION = `${globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev'}-${RELEASE}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;
@@ -66,6 +66,7 @@ const IMAGE_RESOURCES = [
   './assets/favicon-v6.svg',
   './assets/pwa-icon-192.svg',
   './assets/pwa-icon-512.svg',
+  './assets/pwa-icon-512.png',
   './assets/logo.png',
   './assets/shinoprofil.jpeg',
   './assets/launchpad.png',
