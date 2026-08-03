@@ -36,9 +36,13 @@ for (const required of [
   'detectTimestampedLyrics',
   'remoteTrack?.lyrics?.segments',
   "cache: 'no-store'",
-  "'Checking…'"
+  "'Checking…'",
+  "metadataItem('Lyrics', lyricsLabel, '', lyricsAttributes)"
 ]) {
   if (!trackDetail.includes(required)) fail(`Track detail is missing ${required}.`);
+}
+if (trackDetail.includes("metadataItem('Lyrics timing'")) {
+  fail('Track detail must expose one authoritative lyrics status instead of a duplicate timing field.');
 }
 
 const audioFallback = read('js/features/audio-fallback.js');
@@ -61,7 +65,7 @@ const worker = read('sw.js');
 if (!worker.includes("'./assets/pwa-icon-512.png'")) {
   fail('The service worker must cache the Android media artwork.');
 }
-if (!worker.includes('favorites-queue-20260803')) {
+if (!worker.includes('lyrics-status-20260803')) {
   fail('The service-worker release namespace was not refreshed.');
 }
 
