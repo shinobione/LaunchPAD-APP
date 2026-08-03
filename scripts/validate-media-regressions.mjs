@@ -73,9 +73,10 @@ const lyricsStudio = read('js/features/lyrics-studio.js');
 for (const required of [
   'data-lyrics-studio="canvas"',
   'lyrics-studio-canvas-active',
-  'canvasVideo.loop = true',
-  'canvasVideo.muted = true',
-  'canvasVideo.controls = false',
+  "video.className = 'lyrics-studio-canvas-video'",
+  'video.loop = true',
+  'video.muted = true',
+  'video.controls = false',
   "ensureStylesheet('css/track-videos.css')"
 ]) {
   if (!lyricsStudio.includes(required)) fail(`Lyrics Studio Canvas is missing ${required}.`);
