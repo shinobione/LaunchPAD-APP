@@ -52,11 +52,11 @@ _Last updated: 2026-08-03_
 
 ### P2: favorites playback
 
-- [ ] Add **Play favorites** to the Favorites view.
-- [ ] Build a queue containing only favorite track IDs.
-- [ ] Continue automatically through that queue when a track ends.
-- [ ] Preserve Shuffle and Repeat behavior inside the favorite queue.
-- [ ] Add browser tests for queue order and track removal while playing.
+- [x] Add **Play favorites** to the Favorites view.
+- [x] Build a queue containing only favorite track IDs.
+- [x] Continue automatically through that queue when a track ends.
+- [x] Preserve Shuffle and Repeat behavior inside the favorite queue.
+- [x] Add regression tests for queue order and track removal while playing.
 
 ### P2: documentation
 
