@@ -8,7 +8,8 @@
     "check:syntax": "find js scripts cloudflare -type f \\( -name '*.js' -o -name '*.mjs' \\) -print0 | xargs -0 -n1 node --check && node --check sw.js",
     "validate:catalog": "node scripts/validate-catalog.mjs && node scripts/validate-hero-layout.mjs",
     "validate:cloudflare": "node scripts/validate-cloudflare-migration.mjs && npm run check:admin-worker",
+    "validate:media-regressions": "node scripts/validate-media-regressions.mjs",
     "test:service-worker": "node scripts/test-service-worker.mjs",
-    "validate": "npm run check:syntax && npm run validate:catalog && npm run validate:cloudflare && npm run test:service-worker"
+    "validate": "npm run check:syntax && npm run validate:catalog && npm run validate:cloudflare && npm run validate:media-regressions && npm run test:service-worker"
   }
 }
