@@ -25,7 +25,10 @@ for (const required of [
   'function timestampState',
   "cache: 'no-store'",
   'timestampsAvailable: timestampState(item.timestampsAvailable)',
-  'apiUrl:'
+  'apiUrl:',
+  'video: item.assets.video?.url || null',
+  'videoContentType: item.assets.video?.contentType || null',
+  'videoFilename: item.assets.video?.filename || null'
 ]) {
   if (!remoteCatalog.includes(required)) fail(`Remote catalog is missing ${required}.`);
 }
@@ -47,14 +50,17 @@ if (trackDetail.includes("metadataItem('Lyrics timing'")) {
 
 const trackVideos = read('js/features/track-videos.js');
 for (const required of [
-  'payload?.track?.assets?.video',
+  'track?.video',
   "preload = 'none'",
   "button.textContent = 'Watch video'",
   'video.playsInline = true',
   "audio?.addEventListener('play'",
-  "cache: 'no-store'"
+  'video.dataset.src = track.video'
 ]) {
   if (!trackVideos.includes(required)) fail(`Track video playback is missing ${required}.`);
+}
+if (trackVideos.includes('fetch(')) {
+  fail('Track video playback must use the hydrated catalog instead of making a second metadata request.');
 }
 
 const listeningSummary = read('js/features/listening-history-summary.js');
