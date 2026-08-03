@@ -1,5 +1,4 @@
-    ...entry,
-    assets,
+
     migration: {
       source: "github",
       repository: plan.source?.repository || "shinobione/LaunchPAD-APP",
@@ -334,3 +333,4 @@ function parseTimestampedLyrics(raw) {
 
     const tags = [...line.matchAll(bracketed)];
     if (tags.length) {
+
