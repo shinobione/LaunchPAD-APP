@@ -115,7 +115,7 @@ export function installExtendedUI() {
         <aside class="lyrics-track-panel">
           <div class="lyrics-cover-wrap">
             <div class="lyrics-cover-glow"></div>
-            <img id="lyrics-cover" src="assets/before-the-noise.jpeg" alt="Current track cover">
+            <img id="lyrics-cover" src="https://launchpad-media.jerryquinet.workers.dev/media/before-the-noise/thumbnail/thumbnail.webp" alt="Current track cover">
           </div>
           <span id="lyrics-ep" class="eyebrow">NEON HEARTBREAKS</span>
           <h2 id="lyrics-title">Before the Noise</h2>
