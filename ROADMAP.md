@@ -15,7 +15,7 @@ _Last updated: 2026-08-03_
 - The static PWA catalog now points to R2 for audio, thumbnails and full covers.
 - Fourteen historical MP3 files (76,892,054 bytes) and fourteen duplicated per-track covers (37,064,826 bytes) have been removed from GitHub after R2 validation.
 - Runtime `fallbackFile` switching has been removed while preserving the Android audio-readiness recovery.
-- Bundled lyric fallbacks and the hard-coded offline catalog remain until their dedicated validation and cleanup pass.
+- Bundled lyric fallbacks have been removed; the PWA now reads lyrics exclusively from the public R2 Worker.
 
 ## Step 7 — stabilization and consolidation
 
@@ -44,7 +44,7 @@ _Last updated: 2026-08-03_
 - [x] Switch static track art to R2 thumbnails/originals and remove 14 duplicated per-track covers.
 - [x] Refresh service-worker cache namespaces after the audio and cover cleanup.
 - [x] Verify GitHub Pages after both historical-media deletion passes.
-- [ ] Remove lyrics retained only as bundled fallbacks after a dedicated offline/Android check.
+- [x] Point the static catalog at R2 lyrics and remove the 10 bundled lyric fallbacks (31,603 bytes).
 - [ ] Replace the hard-coded track catalog with a minimal offline snapshot or generated catalog fixture.
 - [ ] Simplify `catalog.js`, `catalog-metadata.js` and the final service-worker precache list.
 - [ ] Measure the final repository size after lyrics/catalog cleanup.
