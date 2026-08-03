@@ -68,7 +68,7 @@ const worker = read('sw.js');
 if (!worker.includes("'./assets/pwa-icon-512.png'")) {
   fail('The service worker must cache the Android media artwork.');
 }
-if (!worker.includes('r2-static-covers-20260803')) {
+if (!worker.includes('r2-cover-cleanup-20260803')) {
   fail('The service-worker release namespace was not refreshed.');
 }
 
