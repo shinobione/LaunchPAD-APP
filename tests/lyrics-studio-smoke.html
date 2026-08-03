@@ -6,32 +6,74 @@
 </head>
 <body>
   <section id="view-lyrics" class="view active">
-    <div class="lyrics-reader-head"><span>LYRICS</span></div>
-    <div id="lyrics-reader"><button class="lyric-line active">Active line</button></div>
+    <article class="lyrics-stage">
+      <div class="lyrics-track-panel"></div>
+      <div class="lyrics-reader-shell">
+        <div class="lyrics-reader-head"><span>LYRICS</span></div>
+        <div id="lyrics-reader"><button class="lyric-line active">Active line</button></div>
+      </div>
+    </article>
   </section>
+  <select id="lyrics-track-select"><option value="0">THICK</option></select>
+  <audio id="audio" data-track-id="thick"></audio>
   <output id="result">LYRICS STUDIO PENDING</output>
 
   <script type="module">
+    import { mergeRemoteTracks } from '../js/core/catalog-store.js';
     import { initLyricsStudio } from '../js/features/lyrics-studio.js';
 
+    mergeRemoteTracks([{
+      id: 'thick',
+      title: 'THICK',
+      video: 'https://example.test/thick.mp4',
+      videoContentType: 'video/mp4'
+    }]);
+
     const view = document.querySelector('#view-lyrics');
+    const audio = document.querySelector('#audio');
     const result = document.querySelector('#result');
     const waitForFrame = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    let audioPauseCalls = 0;
+    audio.pause = () => { audioPauseCalls += 1; };
 
     try {
-      initLyricsStudio();
-      const buttons = [...document.querySelectorAll('[data-lyrics-studio]')];
-      if (buttons.length !== 1 || buttons[0].dataset.lyricsStudio !== 'mode') {
-        throw new Error('Lyrics Studio must expose exactly one mode control.');
+      initLyricsStudio({ audio });
+      const modeButton = document.querySelector('[data-lyrics-studio="mode"]');
+      const canvasButton = document.querySelector('[data-lyrics-studio="canvas"]');
+      if (!modeButton || !canvasButton || canvasButton.hidden) {
+        throw new Error('Lyrics Studio must expose mode and available Canvas controls.');
       }
       if (document.body.textContent.includes('Fullscreen')) {
         throw new Error('Fullscreen control still exists.');
       }
 
-      buttons[0].click();
+      modeButton.click();
       await waitForFrame();
+      const canvas = view.querySelector('.lyrics-studio-canvas');
+      const video = canvas?.querySelector('video');
       if (!view.classList.contains('lyrics-studio-mode') || !document.body.classList.contains('lyrics-studio-open')) {
         throw new Error('Studio mode did not open cleanly.');
+      }
+      if (!view.classList.contains('lyrics-studio-canvas-active') || canvas?.hidden) {
+        throw new Error('Canvas did not activate with Studio mode.');
+      }
+      if (!video?.muted || !video?.loop || video?.controls || !video?.playsInline) {
+        throw new Error('Studio Canvas is not configured as a silent inline loop.');
+      }
+      if (audioPauseCalls !== 0) {
+        throw new Error('Studio Canvas must not pause the music track.');
+      }
+
+      canvasButton.click();
+      await waitForFrame();
+      if (view.classList.contains('lyrics-studio-canvas-active')) {
+        throw new Error('Canvas control did not disable the background.');
+      }
+
+      canvasButton.click();
+      await waitForFrame();
+      if (!view.classList.contains('lyrics-studio-canvas-active')) {
+        throw new Error('Canvas control did not restore the background.');
       }
 
       view.classList.remove('active');
@@ -40,7 +82,7 @@
         throw new Error('Studio mode did not close after leaving Lyrics.');
       }
 
-      result.textContent = 'LYRICS STUDIO READY SINGLE MODE AUTO CLOSE';
+      result.textContent = 'LYRICS STUDIO READY CANVAS LOOP AUTO CLOSE';
     } catch (error) {
       result.textContent = `LYRICS STUDIO ERROR ${error.message}`;
     }
