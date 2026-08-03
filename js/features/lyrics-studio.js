@@ -36,7 +36,8 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   const view = document.querySelector('#view-lyrics');
   const head = document.querySelector('.lyrics-reader-head');
   const stage = document.querySelector('#view-lyrics .lyrics-stage');
-  if (!view || !head || !stage) return;
+  const trackPanel = stage?.querySelector('.lyrics-track-panel');
+  if (!view || !head || !stage || !trackPanel) return;
 
   ensureStylesheet('css/track-videos.css');
   head.querySelector('.lyrics-studio-controls')?.remove();
@@ -54,7 +55,7 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   const canvasButton = controls.querySelector('[data-lyrics-studio="canvas"]');
   const canvasShell = createStudioCanvas();
   const canvasVideo = canvasShell.querySelector('video');
-  stage.prepend(canvasShell);
+  trackPanel.prepend(canvasShell);
 
   let savedScrollY = 0;
   let canvasEnabled = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -72,7 +73,6 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
 
   function loadCanvas(track) {
     if (!track?.video) {
-      canvasButton.hidden = true;
       canvasShell.dataset.trackId = '';
       canvasVideo.dataset.src = '';
       canvasVideo.removeAttribute('src');
@@ -81,7 +81,6 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
       return false;
     }
 
-    canvasButton.hidden = false;
     if (canvasShell.dataset.trackId !== track.id) {
       canvasVideo.pause();
       canvasVideo.removeAttribute('src');
@@ -113,8 +112,11 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
 
   function syncCanvasTrack() {
     const hasCanvas = loadCanvas(currentTrack(audio));
+    const studioOpen = view.classList.contains('lyrics-studio-mode');
+    canvasButton.hidden = !hasCanvas || !studioOpen;
     setCanvasButtonState();
-    if (hasCanvas && view.classList.contains('lyrics-studio-mode') && canvasEnabled) playCanvas();
+    if (hasCanvas && studioOpen && canvasEnabled) playCanvas();
+    else pauseCanvas();
   }
 
   function setStudioMode(active, { restoreScroll = true } = {}) {
@@ -140,6 +142,7 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
     }
 
     pauseCanvas();
+    canvasButton.hidden = true;
     view.classList.remove('lyrics-studio-mode');
     document.body.classList.remove('lyrics-studio-open');
     modeButton.classList.remove('active');
@@ -180,6 +183,7 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
 
   window.addEventListener('pagehide', () => {
     pauseCanvas();
+    canvasButton.hidden = true;
     view.classList.remove('lyrics-studio-mode');
     document.body.classList.remove('lyrics-studio-open');
   });
