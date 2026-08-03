@@ -45,14 +45,17 @@ if (trackDetail.includes("metadataItem('Lyrics timing'")) {
   fail('Track detail must expose one authoritative lyrics status instead of a duplicate timing field.');
 }
 
-const audioFallback = read('js/features/audio-fallback.js');
+const audioReadiness = read('js/features/audio-readiness.js');
 for (const required of [
   "['loadedmetadata', 'canplay', 'canplaythrough']",
   'waitForReady',
   'nativePlay(...args)',
   'playbackRequested = true'
 ]) {
-  if (!audioFallback.includes(required)) fail(`First-tap playback recovery is missing ${required}.`);
+  if (!audioReadiness.includes(required)) fail(`First-tap playback recovery is missing ${required}.`);
+}
+for (const forbidden of ['fallbackFile', 'Bundled audio fallback', "addEventListener('error'"]) {
+  if (audioReadiness.includes(forbidden)) fail(`Legacy audio fallback survived in playback readiness: ${forbidden}.`);
 }
 
 const manifest = JSON.parse(read('manifest.webmanifest'));
@@ -65,7 +68,7 @@ const worker = read('sw.js');
 if (!worker.includes("'./assets/pwa-icon-512.png'")) {
   fail('The service worker must cache the Android media artwork.');
 }
-if (!worker.includes('lyrics-status-20260803')) {
+if (!worker.includes('r2-audio-readiness-20260803')) {
   fail('The service-worker release namespace was not refreshed.');
 }
 
