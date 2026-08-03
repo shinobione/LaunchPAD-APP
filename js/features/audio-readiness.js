@@ -1,17 +1,5 @@
-import { getTrack } from '../core/catalog-store.js';
-
 const PLAY_READY_EVENTS = ['loadedmetadata', 'canplay', 'canplaythrough'];
 const PLAY_RETRY_DELAY_MS = 900;
-
-function sameResource(left, right) {
-  if (!left || !right) return false;
-
-  try {
-    return new URL(left, document.baseURI).href === new URL(right, document.baseURI).href;
-  } catch {
-    return left === right;
-  }
-}
 
 function abortError() {
   try {
@@ -23,14 +11,13 @@ function abortError() {
   }
 }
 
-export function initAudioFallback({ audio }) {
-  if (!(audio instanceof HTMLMediaElement) || audio.dataset.audioFallbackReady === 'true') return;
+export function initAudioReadiness({ audio }) {
+  if (!(audio instanceof HTMLMediaElement) || audio.dataset.audioReadinessReady === 'true') return;
 
-  audio.dataset.audioFallbackReady = 'true';
+  audio.dataset.audioReadinessReady = 'true';
   audio.preload = 'none';
 
   let playbackRequested = false;
-  let activeTrackId = '';
   let playIntent = 0;
   let pendingPlay = null;
   const nativeLoad = audio.load.bind(audio);
@@ -125,14 +112,6 @@ export function initAudioFallback({ audio }) {
     return nativePause(...args);
   };
 
-  audio.addEventListener('loadstart', () => {
-    const trackId = audio.dataset.trackId || '';
-    if (trackId && trackId !== activeTrackId) {
-      activeTrackId = trackId;
-      delete audio.dataset.fallbackTrackId;
-    }
-  });
-
   audio.addEventListener('play', () => {
     playbackRequested = true;
   });
@@ -147,27 +126,4 @@ export function initAudioFallback({ audio }) {
     pendingPlay = null;
   });
 
-  audio.addEventListener('error', () => {
-    const trackId = audio.dataset.trackId;
-    const track = trackId ? getTrack(trackId) : null;
-
-    if (!track?.fallbackFile) return;
-    if (audio.dataset.fallbackTrackId === track.id) return;
-    if (sameResource(audio.currentSrc || audio.src, track.fallbackFile)) return;
-
-    const resumeAfterFallback = playbackRequested;
-    audio.dataset.fallbackTrackId = track.id;
-
-    console.warn(`Remote audio unavailable for ${track.title}; using bundled audio fallback.`);
-    audio.src = track.fallbackFile;
-    audio.dataset.forceLoad = 'true';
-    nativeLoad();
-    delete audio.dataset.forceLoad;
-
-    if (resumeAfterFallback) {
-      audio.play().catch(error => {
-        console.warn(`Bundled audio fallback could not start for ${track.title}.`, error);
-      });
-    }
-  });
 }

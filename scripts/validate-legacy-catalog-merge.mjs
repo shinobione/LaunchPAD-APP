@@ -29,9 +29,8 @@ if (track.accent !== '#ef9542' || track.accent2 !== '#7f8c83') {
   fail('Remote theme colours must replace bundled legacy colours.');
 }
 if (track.duration !== 237) fail('Remote canonical duration must replace bundled metadata.');
-if (track.fallbackFile !== 'audio/before-the-noise.mp3') {
-  fail('Bundled audio must remain available only as the legacy fallback.');
-}
+if (Object.hasOwn(track, 'fallbackFile')) fail('Legacy fallbackFile metadata must not survive the merge.');
+if (track.file !== 'https://media.example/audio.mp3') fail('Remote R2 audio must replace bundled audio.');
 
 const adminSource = fs.readdirSync('cloudflare/admin-worker.parts')
   .filter(filename => filename.endsWith('.part'))
@@ -48,5 +47,5 @@ for (const required of [
   if (!adminSource.includes(required)) fail(`Track Manager duration flow is missing ${required}.`);
 }
 
-console.log('Legacy catalog overrides and canonical mm:ss durations are covered.');
+console.log('Remote catalog overrides and canonical mm:ss durations are covered without legacy audio fallback.');
 
