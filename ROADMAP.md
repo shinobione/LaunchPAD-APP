@@ -19,8 +19,9 @@ _Last updated: 2026-08-03_
 - [x] Identify the mismatch between the Lyrics reader and Track detail.
 - [x] Make the public Worker accept bracketed LRC timestamps and standalone `mm:ss.xx` timestamp lines.
 - [x] Read `timestampsAvailable` from the catalog index for `/tracks` responses.
-- [ ] Rebuild `catalog/index.json` with timestamp flags for every lyrics file.
-- [ ] Deploy the public Worker version containing the fix.
+- [x] Prepare the Track Manager catalog rebuild that derives timestamp flags from every lyrics file.
+- [ ] Deploy the private and public Worker versions containing the fix.
+- [ ] Rebuild `catalog/index.json` once in production.
 - [ ] Verify THICK, Carved from Pressure and The Throne Resonates in Track detail and Lyrics Studio.
 
 ### P1: repository cleanup
@@ -36,10 +37,10 @@ _Last updated: 2026-08-03_
 ### P1: Worker source control and CI/CD
 
 - [x] Version the public media Worker in `cloudflare/public-worker.js`.
-- [ ] Version the private Track Manager Worker in `cloudflare/admin-worker.js`.
+- [x] Version the private Track Manager Worker as ordered source parts in `cloudflare/admin-worker.parts/`.
+- [x] Add a reproducible build and syntax-check script for the dashboard-compatible private Worker bundle.
+- [x] Add Worker syntax and catalog-index checks to the existing CI validation command.
 - [ ] Add Wrangler configuration for both Workers.
-- [ ] Add reproducible build scripts for the dashboard-compatible Worker bundles.
-- [ ] Add Worker syntax and catalog-index tests to CI.
 - [ ] Replace manual dashboard copy/paste deployments with reviewed deployments from GitHub.
 
 ### P2: desktop Track Manager access
@@ -59,11 +60,12 @@ _Last updated: 2026-08-03_
 
 ### P2: documentation
 
-- [ ] Rewrite `README.md` around the R2-first architecture.
-- [ ] Update `ARCHITECTURE.md` with both Workers, R2, catalog indexing and thumbnails.
-- [ ] Rewrite `guide.md` around the Track Manager rather than manual catalog edits.
-- [ ] Update `RELEASE-CHECKLIST.md` for Cloudflare publication and PWA cache refreshes.
-- [ ] Keep this roadmap synchronized with completed pull requests.
+- [x] Rewrite `README.md` around the R2-first architecture.
+- [x] Update `ARCHITECTURE.md` with both Workers, R2, catalog indexing and thumbnails.
+- [x] Rewrite `guide.md` around the Track Manager rather than manual catalog edits.
+- [x] Update `RELEASE-CHECKLIST.md` for Cloudflare publication and PWA cache refreshes.
+- [x] Update the Cloudflare operating documentation.
+- [x] Keep this roadmap synchronized with completed preparation work.
 
 ## Definition of migration complete
 
