@@ -73,7 +73,7 @@ function buildSearchText(track) {
     .toLowerCase();
 }
 
-function mapRemoteTrack(item) {
+function mapRemoteTrack(item, activeApiUrl = DEFAULT_API_URL) {
   if (!item?.slug || !item?.assets?.audio?.url) return null;
 
   const genres = Array.isArray(item.genres) && item.genres.length
@@ -123,7 +123,7 @@ function mapRemoteTrack(item) {
       era: item.era || null,
       energy: item.energy || null,
       timestampsAvailable: timestampState(item.timestampsAvailable),
-      apiUrl: item.urls?.self || `${DEFAULT_API_URL}/tracks/${encodeURIComponent(item.slug)}`
+      apiUrl: item.urls?.self || `${activeApiUrl}/tracks/${encodeURIComponent(item.slug)}`
     }
   };
 
@@ -137,11 +137,12 @@ export async function fetchRemoteTracks({
 } = {}) {
   if (shouldUseBundledCatalog()) return [];
 
+  const normalizedApiUrl = normalizeApiUrl(apiUrl);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(`${normalizeApiUrl(apiUrl)}/tracks`, {
+    const response = await fetch(`${normalizedApiUrl}/tracks`, {
       method: 'GET',
       headers: { Accept: 'application/json' },
       cache: 'no-store',
@@ -157,7 +158,9 @@ export async function fetchRemoteTracks({
       throw new Error('Remote catalog response is invalid.');
     }
 
-    return payload.tracks.map(mapRemoteTrack).filter(Boolean);
+    return payload.tracks
+      .map(item => mapRemoteTrack(item, normalizedApiUrl))
+      .filter(Boolean);
   } finally {
     clearTimeout(timeout);
   }
