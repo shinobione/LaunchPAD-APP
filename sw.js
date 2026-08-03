@@ -1,5 +1,5 @@
 importScripts('./js/build-config.js');
-const RELEASE = 'android-media-timestamps-20260803';
+const RELEASE = 'desktop-admin-access-20260803';
 const VERSION = `${globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev'}-${RELEASE}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;
@@ -59,7 +59,8 @@ const SHELL_RESOURCES = [
   './js/features/library-memory-shell.js',
   './js/features/library-memory.js',
   './js/features/pwa.js',
-  './js/features/visual-card.js'
+  './js/features/visual-card.js',
+  './js/features/admin-access.js'
 ];
 
 const IMAGE_RESOURCES = [
@@ -218,3 +219,4 @@ self.addEventListener('fetch', event => {
 
   event.respondWith(staleWhileRevalidate(request));
 });
+
