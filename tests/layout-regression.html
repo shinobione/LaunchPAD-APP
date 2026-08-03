@@ -1,10 +1,10 @@
 
 <!doctype html><meta charset="utf-8"><title>Layout regression</title>
 <div id="result">LAYOUT PENDING</div>
-<iframe id="desktop" src="../?visual-test=1#home" onload="this.dataset.loaded='true'" style="width:1440px;height:1000px;border:0"></iframe>
-<iframe id="mobile" src="../?visual-test=1#home" onload="this.dataset.loaded='true'" style="width:390px;height:844px;border:0"></iframe>
-<iframe id="track" src="../?visual-test=1#track=husband" onload="this.dataset.loaded='true'" style="width:1280px;height:1000px;border:0"></iframe>
-<iframe id="mobile-album" src="../?visual-test=1#album=singles" onload="this.dataset.loaded='true'" style="width:390px;height:1000px;border:0"></iframe>
+<iframe id="desktop" data-src="../?visual-test=1#home" style="width:1440px;height:1000px;border:0"></iframe>
+<iframe id="mobile" data-src="../?visual-test=1#home" style="width:390px;height:844px;border:0"></iframe>
+<iframe id="track" data-src="../?visual-test=1#track=husband" style="width:1280px;height:1000px;border:0"></iframe>
+<iframe id="mobile-album" data-src="../?visual-test=1#album=singles" style="width:390px;height:1000px;border:0"></iframe>
 <script>
 const result=document.querySelector('#result');
 const READY=['LAYOUT','READY'].join(' ');
@@ -55,7 +55,16 @@ const whenAppReady=frame=>frame.dataset.appReady==='true'
       });
       observer.observe(frame,{attributes:true,attributeFilter:['data-app-ready']});
     });
-Promise.all(frames.map(whenAppReady)).then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
+const loadFrames=async()=>{
+  const loaded=[];
+  for(const frame of frames){
+    const ready=whenAppReady(frame);
+    frame.src=frame.dataset.src;
+    loaded.push(await ready);
+  }
+  return loaded;
+};
+loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   const measuredFrames=[desktop,mobile];
   measuredFrames.forEach(frame=>frame.contentWindow.scrollTo(0,0));
   await sleep(200);
