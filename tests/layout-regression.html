@@ -1,4 +1,3 @@
-
 <!doctype html><meta charset="utf-8"><title>Layout regression</title>
 <div id="result">LAYOUT PENDING</div>
 <iframe id="desktop" data-src="../?visual-test=1#home" style="width:1440px;height:1000px;border:0"></iframe>
@@ -145,6 +144,20 @@ loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   if(!mobileNav||mobileNav.height<45||mobileNav.height>75||mobileNav.bottom<830) failures.push('mobile-nav');
   if(!mobilePlayer||mobilePlayer.height<55||mobilePlayer.height>95||mobilePlayer.bottom>800) failures.push('mobile-player');
 
+  md.querySelector('[data-view="about"]')?.click();
+  await sleep(300);
+  const mobileAbout=md.querySelector('#view-about');
+  const mobileAboutPortrait=rect(md.querySelector('#view-about .about-card>img'));
+  const mobileAboutEyebrow=rect(md.querySelector('#view-about .page-intro .eyebrow'));
+  const mobileMenuButton=rect(md.querySelector('#menu-button'));
+  if(!mobileAbout?.classList.contains('active')) failures.push('mobile-about-route');
+  if(!mobileAboutPortrait||mobileAboutPortrait.width<150||mobileAboutPortrait.width>190||mobileAboutPortrait.height<210||mobileAboutPortrait.height>240||Math.abs(mobileAboutPortrait.width/mobileAboutPortrait.height-.8)>.04){
+    failures.push('mobile-about-portrait');
+  }
+  if(!mobileAboutEyebrow||!mobileMenuButton||mobileAboutEyebrow.top<mobileMenuButton.bottom+12){
+    failures.push('mobile-about-menu-clearance');
+  }
+
   const directView=td.querySelector('#view-track.active');
   const directAudio=td.querySelector('#audio');
   const metadataLabels=[...td.querySelectorAll('.track-detail-data-item>span')].map(node=>node.textContent.trim());
@@ -205,6 +218,7 @@ loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
     trackMetadata:metadataLabels.length,
     trackTags:directTags,
     mobileAlbumRows:albumRows.length,
+    mobileAboutPortrait:mobileAboutPortrait?`${Math.round(mobileAboutPortrait.width)}x${Math.round(mobileAboutPortrait.height)}`:'missing',
     desktopHeroShift:Number(desktopHeroShift.toFixed(2)),
     mobileHeroShift:Number(mobileHeroShift.toFixed(2)),
     initialStyles:localStyles(dd).length,
@@ -216,4 +230,3 @@ loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   result.textContent=failures.length?`${ERROR} ${failures.join(' ')} ${JSON.stringify(diagnostics)}`:`${READY} ${JSON.stringify(snapshot)}`;
 });
 </script>
-
