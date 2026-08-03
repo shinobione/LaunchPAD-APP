@@ -40,19 +40,19 @@ async function boot() {
     { prepareLibraryMemoryShell },
     pwa,
     remoteCatalog,
-    { initAudioFallback }
+    { initAudioReadiness }
   ] = await Promise.all([
     import(versioned('./features/library-memory-shell.js')),
     import(versioned('./features/pwa.js')),
     import(versioned('./core/remote-catalog.js')),
-    import(versioned('./features/audio-fallback.js'))
+    import(versioned('./features/audio-readiness.js'))
   ]);
 
   prepareLibraryMemoryShell();
   pwa.preparePWAHead();
 
   const audio = document.querySelector('#audio');
-  initAudioFallback({ audio });
+  initAudioReadiness({ audio });
 
   try {
     const state = await remoteCatalog.hydrateRemoteCatalog();
