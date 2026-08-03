@@ -1,13 +1,22 @@
+
 {
   "name": "shinobiwan-launchpad",
   "private": true,
   "type": "module",
+  "devDependencies": {
+    "wrangler": "4.118.0"
+  },
   "scripts": {
     "build:admin-worker": "node scripts/build-admin-worker.mjs dist/launchpad-r2-admin-worker.js",
     "check:admin-worker": "node scripts/build-admin-worker.mjs",
     "check:syntax": "find js scripts cloudflare -type f \\( -name '*.js' -o -name '*.mjs' \\) -print0 | xargs -0 -n1 node --check && node --check sw.js",
     "validate:catalog": "node scripts/validate-catalog.mjs && node scripts/validate-hero-layout.mjs && node scripts/validate-legacy-catalog-merge.mjs && node scripts/validate-favorites-queue.mjs",
     "validate:cloudflare": "node scripts/validate-cloudflare-migration.mjs && npm run check:admin-worker",
+    "check:wrangler:public": "wrangler deploy --dry-run --config cloudflare/wrangler.public.jsonc --outdir dist/wrangler/public",
+    "check:wrangler:admin": "npm run build:admin-worker && wrangler deploy --dry-run --config cloudflare/wrangler.admin.jsonc --outdir dist/wrangler/admin",
+    "check:wrangler": "npm run check:wrangler:public && npm run check:wrangler:admin",
+    "deploy:cloudflare:public": "wrangler deploy --strict --config cloudflare/wrangler.public.jsonc",
+    "deploy:cloudflare:admin": "npm run build:admin-worker && wrangler deploy --strict --config cloudflare/wrangler.admin.jsonc",
     "validate:media-regressions": "node scripts/validate-media-regressions.mjs && node scripts/validate-admin-access.mjs",
     "audit:r2": "node scripts/audit-r2-cleanup-readiness.mjs",
     "test:service-worker": "npm run validate:media-regressions && node scripts/test-service-worker.mjs",
