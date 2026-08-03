@@ -5,7 +5,7 @@ The media catalog uses one private administration Worker and one public read-onl
 
 ## Verified deployment status
 
-- Public `launchpad-media`: live v2.3, 16 canonical tracks confirmed on 2026-08-03.
+- Public `launchpad-media`: repository source v2.4; production remains v2.3 until the public Worker is redeployed. Sixteen canonical tracks are confirmed.
 - Private `launchpad-r2-api`: repository source v4.5; the matching protected production UI is confirmed live after a manual dashboard deployment.
 - Wrangler validation: merged and green for both bundles.
 - Repository deployment workflow: available, but not yet recorded as a successful production deployment; the current v4.5 confirmation is manual.
@@ -89,6 +89,7 @@ npm run check:wrangler
 - Binding: `MEDIA_BUCKET` → `shinobiwan-media`.
 - Reads `catalog/index.json` for the fast `/tracks` response.
 - Streams media with HTTP Range support.
+- Returns HTTP 206 only when the client supplied a Range header; full GET/HEAD requests return HTTP 200.
 - Serves `thumbnail.webp` for catalog cards while preserving original-cover URLs.
 - Accepts bracketed LRC timestamps and standalone `mm:ss.xx` lines.
 
@@ -122,7 +123,7 @@ Both Wrangler configurations set `keep_vars` so the existing dashboard variables
 
 The workflow deploys code only. It does not rebuild `catalog/index.json`; perform that explicit Track Manager action only when a manifest or lyrics change requires it.
 
-After every run, record the selected `main` SHA and verify `/health`. For the private Worker, complete the Cloudflare Access login and confirm Track Manager version 4.5. Record whether the deployment came from GitHub Actions or the Cloudflare dashboard; the current live v4.5 was pasted and deployed manually. For the public Worker, confirm version 2.3, the catalog count and a byte-range media request.
+After every run, record the selected `main` SHA and verify `/health`. For the private Worker, complete the Cloudflare Access login and confirm Track Manager version 4.5. Record whether the deployment came from GitHub Actions or the Cloudflare dashboard; the current live v4.5 was pasted and deployed manually. For the public Worker, confirm version 2.4, the catalog count, a byte-range request and a full request returning HTTP 200.
 
 ## Migration cleanup
 
