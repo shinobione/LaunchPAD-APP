@@ -113,12 +113,6 @@ function remoteSignalSection(track) {
   const type = metadata.type || 'Release';
   const era = metadata.era || 'Independent catalog';
   const energy = metadata.energy || 'Unspecified';
-  const timedLyrics = !track.lyrics
-    ? 'No lyrics'
-    : metadata.timestampsAvailable === true
-      ? 'Timestamped'
-      : 'Checking…';
-
   return `
     <section class="track-detail-section track-detail-cloud-section" aria-labelledby="track-detail-cloud-heading">
       <div class="track-detail-section-head">
@@ -134,7 +128,6 @@ function remoteSignalSection(track) {
         ${metadataItem('Release type', type)}
         ${metadataItem('Era', era)}
         ${metadataItem('Energy', energy)}
-        ${metadataItem('Lyrics timing', timedLyrics, '', 'data-lyrics-timing')}
       </div>
 
       ${moods.length || themes.length ? `
@@ -258,7 +251,14 @@ export function initTrackDetail({ audio = document.querySelector('#audio') } = {
     const languages = Array.isArray(track.languages) && track.languages.length
       ? track.languages.join(', ')
       : 'Unavailable';
-    const lyricsLabel = track.lyrics ? 'Lyrics available' : 'Lyrics unavailable';
+    const lyricsLabel = !track.lyrics
+      ? 'Unavailable'
+      : track.remoteMetadata
+        ? track.remoteMetadata.timestampsAvailable === true
+          ? 'Timestamped'
+          : 'Checking…'
+        : 'Available';
+    const lyricsAttributes = track.lyrics && track.remoteMetadata ? 'data-lyrics-timing' : '';
     const confidence = Number.isFinite(track.keyConfidence)
       ? `${Math.round(track.keyConfidence * 100)}% analysis confidence`
       : 'Unavailable';
@@ -317,7 +317,7 @@ export function initTrackDetail({ audio = document.querySelector('#audio') } = {
           ${metadataItem('Release date', formatReleaseDate(track.releaseDate))}
           ${metadataItem('Duration', formatDuration(track.duration))}
           ${metadataItem('Content rating', explicitLabel(track.explicit), `status-${explicitStatus(track.explicit)}`)}
-          ${metadataItem('Lyrics', lyricsLabel)}
+          ${metadataItem('Lyrics', lyricsLabel, '', lyricsAttributes)}
           ${metadataItem('Catalog ID', track.id)}
           ${colorItem('Primary accent', track.accent || '#a63cff')}
           ${colorItem('Secondary accent', track.accent2 || '#5c6cff')}
