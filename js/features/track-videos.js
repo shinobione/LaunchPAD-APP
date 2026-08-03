@@ -2,7 +2,6 @@ import { getTrack } from '../core/catalog-store.js';
 import { ensureStylesheet } from '../core/assets.js';
 
 const TRACK_HASH_PREFIX = '#track=';
-const videoAssets = new Map();
 
 function currentTrack() {
   if (!window.location.hash.startsWith(TRACK_HASH_PREFIX)) return null;
@@ -10,37 +9,7 @@ function currentTrack() {
   return getTrack(id);
 }
 
-async function fetchVideoAsset(track) {
-  if (!track?.remoteMetadata?.apiUrl) return null;
-  if (videoAssets.has(track.id)) return videoAssets.get(track.id);
-
-  const promise = fetch(track.remoteMetadata.apiUrl, {
-    method: 'GET',
-    headers: { Accept: 'application/json' },
-    cache: 'no-store'
-  })
-    .then(async response => {
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const payload = await response.json();
-      const asset = payload?.track?.assets?.video;
-      return asset?.url
-        ? {
-            url: asset.url,
-            contentType: asset.contentType || 'video/mp4',
-            filename: asset.filename || asset.originalName || 'video'
-          }
-        : null;
-    })
-    .catch(error => {
-      console.warn(`Unable to load video metadata for ${track.title}.`, error);
-      return null;
-    });
-
-  videoAssets.set(track.id, promise);
-  return promise;
-}
-
-function createVideoHeader(track, asset) {
+function createVideoHeader(track) {
   const header = document.createElement('div');
   header.className = 'track-detail-section-head';
 
@@ -56,12 +25,12 @@ function createVideoHeader(track, asset) {
 
   const filename = document.createElement('span');
   filename.className = 'pill';
-  filename.textContent = asset.filename;
+  filename.textContent = track.videoFilename || 'Video';
   header.append(copy, filename);
   return header;
 }
 
-function createVideoSection(track, asset, audio) {
+function createVideoSection(track, audio) {
   const section = document.createElement('section');
   section.className = 'track-detail-section track-video-section';
   section.dataset.trackVideoSection = track.id;
@@ -77,18 +46,18 @@ function createVideoSection(track, asset, audio) {
   video.playsInline = true;
   video.preload = 'none';
   video.poster = track.fullCover || track.cover || '';
-  video.dataset.src = asset.url;
-  video.dataset.contentType = asset.contentType;
+  video.dataset.src = track.video;
+  video.dataset.contentType = track.videoContentType || 'video/mp4';
   video.setAttribute('aria-label', `Video for ${track.title}`);
   video.addEventListener('play', () => audio?.pause());
 
   shell.appendChild(video);
-  section.append(createVideoHeader(track, asset), shell);
+  section.append(createVideoHeader(track), shell);
   return section;
 }
 
-function installVideoUI(view, track, asset, audio) {
-  if (!view || !track || !asset) return;
+function installVideoUI(view, track, audio) {
+  if (!view || !track?.video) return;
   if (view.querySelector(`[data-track-video-section="${CSS.escape(track.id)}"]`)) return;
 
   const actions = view.querySelector('.track-detail-actions');
@@ -105,8 +74,7 @@ function installVideoUI(view, track, asset, audio) {
   const lyricsButton = actions.querySelector('[data-track-detail-route="lyrics"]');
   actions.insertBefore(button, lyricsButton || actions.lastElementChild);
 
-  const section = createVideoSection(track, asset, audio);
-  hero.insertAdjacentElement('afterend', section);
+  hero.insertAdjacentElement('afterend', createVideoSection(track, audio));
 }
 
 export function initTrackVideos({ audio = document.querySelector('#audio') } = {}) {
@@ -118,17 +86,10 @@ export function initTrackVideos({ audio = document.querySelector('#audio') } = {
   if (!view) return;
 
   let hydrationTimer = null;
-  let hydrationToken = 0;
 
-  async function hydrate() {
-    const token = ++hydrationToken;
+  function hydrate() {
     const track = currentTrack();
-    if (!track) return;
-    if (view.querySelector(`[data-track-video-section="${CSS.escape(track.id)}"]`)) return;
-
-    const asset = await fetchVideoAsset(track);
-    if (token !== hydrationToken || currentTrack()?.id !== track.id) return;
-    installVideoUI(view, track, asset, audio);
+    if (track) installVideoUI(view, track, audio);
   }
 
   function scheduleHydration() {
