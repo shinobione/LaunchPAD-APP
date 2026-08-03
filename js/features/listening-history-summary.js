@@ -50,17 +50,25 @@ export function initListeningHistorySummary({ audio = document.querySelector('#a
 
   function updateSummary() {
     const summary = document.querySelector('#view-favorites .memory-summary');
-    const historyPill = summary?.querySelectorAll('span')?.[1];
+    const pills = summary?.querySelectorAll('span');
+    const historyPill = pills?.[1];
     if (!historyPill) return;
 
     const count = state.playedTrackIds.length;
-    historyPill.replaceChildren();
-    const strong = document.createElement('strong');
-    strong.textContent = String(count);
-    historyPill.append(strong, document.createTextNode(` track${count === 1 ? '' : 's'} played`));
+    if (historyPill.dataset.playedCount !== String(count)) {
+      const strong = document.createElement('strong');
+      strong.textContent = String(count);
+      historyPill.replaceChildren(
+        strong,
+        document.createTextNode(` track${count === 1 ? '' : 's'} played`)
+      );
+      historyPill.dataset.playedCount = String(count);
+    }
+
+    const favoriteCount = pills?.[0]?.querySelector('strong')?.textContent || '0';
     summary.setAttribute(
       'aria-label',
-      `${summary.querySelector('span strong')?.textContent || 0} favorites and ${count} tracks played locally`
+      `${favoriteCount} favorites and ${count} tracks played locally`
     );
   }
 
