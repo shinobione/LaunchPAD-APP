@@ -1,5 +1,5 @@
 importScripts('./js/build-config.js');
-const RELEASE = 'r2-static-covers-20260803';
+const RELEASE = 'r2-cover-cleanup-20260803';
 const VERSION = `${globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev'}-${RELEASE}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;
@@ -75,20 +75,6 @@ const IMAGE_RESOURCES = [
   './assets/coal-to-diamond.jpeg',
   './assets/love-letters.jpeg',
   './assets/singles.jpeg',
-  './assets/before-the-noise.jpeg',
-  './assets/low-bitrate-love.jpeg',
-  './assets/thick.jpeg',
-  './assets/real-love-doesnt-rush.jpeg',
-  './assets/jusquau-dernier-souffle.jpeg',
-  './assets/tinh-bolero-cho-tran.png',
-  './assets/saigon-bound.png',
-  './assets/the-throne-resonates.jpeg',
-  './assets/carved-from-pressure.jpeg',
-  './assets/ligne3.jpeg',
-  './assets/covers/albums/coal-to-diamond/obey.jpeg',
-  './assets/covers/singles/close-to-you.jpeg',
-  './assets/covers/singles/ghost-signal.jpeg',
-  './assets/covers/singles/husband.jpeg'
 ];
 
 const LYRIC_RESOURCES = [
