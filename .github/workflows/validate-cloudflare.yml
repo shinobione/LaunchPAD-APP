@@ -1,3 +1,4 @@
+
 name: Validate Cloudflare Workers
 
 on:
@@ -22,6 +23,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
 
       - name: Validate public and private Workers
         run: npm run validate:cloudflare
@@ -31,3 +36,7 @@ jobs:
 
       - name: Verify generated bundle
         run: test -s dist/launchpad-r2-admin-worker.js
+
+      - name: Dry-run both Wrangler deployments
+        run: npm run check:wrangler
+
