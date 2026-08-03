@@ -86,7 +86,9 @@ export function createQueueUI({ tracks, queue, onSelect, onShareCurrent }) {
     const context = panel.querySelector('#queue-context');
     context.textContent = state.context.type === 'album'
       ? `Album queue • ${state.queue.length} tracks`
-      : `Catalog queue • ${state.queue.length} tracks`;
+      : state.context.type === 'favorites'
+        ? `Favorites queue • ${state.baseQueue.length} tracks`
+        : `Catalog queue • ${state.queue.length} tracks`;
 
     const list = panel.querySelector('#queue-list');
     list.innerHTML = state.queue.map((trackIndex, queueIndex) => {
@@ -134,3 +136,4 @@ export function createQueueUI({ tracks, queue, onSelect, onShareCurrent }) {
   queue.subscribe(render);
   return { close: () => setOpen(false), render };
 }
+
