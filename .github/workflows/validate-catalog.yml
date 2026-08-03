@@ -1,1 +1,225 @@
 name: Validate Launchpad
+
+on:
+  push:
+    branches:
+      - main
+      - 'refactor/**'
+      - 'feature/**'
+      - 'fix/**'
+      - 'agent/**'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check JavaScript syntax
+        run: npm run check:syntax
+
+      - name: Validate consolidated structure and cleanup
+        shell: bash
+        run: |
+          for required in \
+            README.md CHANGELOG.md RELEASE-CHECKLIST.md guide.md ARCHITECTURE.md \
+            robots.txt sitemap.xml js/build-config.js js/core/assets.js \
+            js/features/player-experience.js js/features/resilience-accessibility.js \
+            js/features/track-detail.js js/features/mobile-navigation.js \
+            css/track-detail.css css/mobile-navigation.css \
+            css/launchpad-features.css scripts/capture-visuals.sh \
+            tests/accessibility-smoke.html tests/layout-regression.html \
+            tests/mobile-navigation-smoke.html; do
+            test -s "$required"
+          done
+
+          for removed in \
+            assets/favicon.svg assets/favicon-v2.svg assets/favicon-v3.svg assets/favicon-v5.svg \
+            css/desktop-hero-v3.css css/logo-lock.css css/audio-lab-fix.css \
+            CATALOG-GUIDE.md \
+            css/player-experience.css css/album-duration.css \
+            js/content-upgrade.js js/favicon-guard.js \
+            js/ui.js js/lyrics-engine.js js/visual-engine.js js/content-v4.js \
+            js/about-enhancements.js js/audio-focus.js js/lyrics-wake-lock.js \
+            scripts/analyze-audio-metadata.py .github/workflows/analyze-audio-metadata.yml; do
+            test ! -e "$removed"
+          done
+
+          grep -q "id: '20260802-wave14'" js/build-config.js
+          grep -q 'normalizeStylesheet' js/build-config.js
+          grep -q "cache: 'shinobi-launchpad-v11'" js/build-config.js
+          grep -q 'js/build-config.js?v=20260802-wave14' index.html
+          grep -q 'data.appReady' js/app-engine.js
+          grep -q 'rel="preload" href="assets/launchpad.png"' index.html
+          grep -q 'class="hero-banner-art" src="assets/launchpad.png" width="2048" height="1143"' index.html
+          grep -q 'class="hero-wordmark" src="assets/logo.png" width="720" height="330"' index.html
+          grep -q 'class="artist-manifesto"' index.html
+          for stylesheet in \
+            style header refinements lyrics fixes-v2 content-v4 desktop-hero-wide mobile-top-cleanup \
+            mobile-navigation launchpad-features about-enhancements library-memory pwa visual-card track-detail; do
+            grep -q "css/${stylesheet}.css?v=20260802-wave14" index.html
+          done
+          ! grep -R -F "20260802-wave1'" js --include='*.js'
+          ! grep -R -F "20260802-wave7'" js --include='*.js'
+          ! grep -q 'function updatePlayButtons' js/app-main.js
+          grep -q 'journeyEras' js/catalog.js
+          grep -q 'orderedAlbums' js/features/content/content-controller.js
+          ! grep -q 'project-featured-covers' js/features/content/content-controller.js
+          grep -q 'margin-top:16px;column-gap:10px;row-gap:8px' js/features/content/content-controller.js
+          grep -q 'initTrackDetail' js/app-engine.js
+          grep -q 'initMobileNavigation' js/app-engine.js
+          grep -q 'mobile-menu-backdrop' js/features/mobile-navigation.js
+          grep -q 'mobile-menu-open' css/mobile-navigation.css
+          grep -q 'data-track-cover-link' js/features/track-detail.js
+          grep -q 'TRACK_DETAIL_HISTORY_KEY' js/features/track-detail.js
+          grep -q 'isPassiveTrackDetail' js/core/router.js
+          grep -q "album-detail-lyrics\" aria-hidden=\"true" js/features/album-detail.js
+          grep -q 'prefers-reduced-motion' css/launchpad-features.css
+          grep -q 'property="og:title"' index.html
+          grep -q 'application/ld+json' index.html
+
+      - name: Validate catalog and referenced files
+        run: npm run validate:catalog
+
+      - name: Validate PWA manifest and shell
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const manifest = JSON.parse(fs.readFileSync('manifest.webmanifest', 'utf8'));
+          const fail = message => { throw new Error(message); };
+          if (!manifest.name || !manifest.short_name) fail('Manifest names are required.');
+          if (!manifest.start_url || !manifest.scope) fail('Manifest start_url and scope are required.');
+          if (!['standalone', 'fullscreen', 'minimal-ui'].includes(manifest.display)) fail('Manifest display mode is not installable.');
+          for (const size of ['192x192', '512x512']) {
+            const icon = manifest.icons?.find(item => String(item.sizes).split(/\s+/).includes(size));
+            if (!icon || !fs.existsSync(icon.src)) fail(`Missing ${size} icon.`);
+          }
+
+          const worker = fs.readFileSync('sw.js', 'utf8');
+          if (!worker.includes("importScripts('./js/build-config.js')")) fail('Service worker does not share the central build config.');
+          if (!worker.includes("request.destination === 'audio'")) fail('Audio requests are not explicitly excluded from cache.');
+          if (!worker.includes("request.headers.has('range')")) fail('Range requests are not explicitly excluded from cache.');
+          for (const resource of [
+            "'./js/build-config.js'", "'./js/core/assets.js'", "'./js/catalog.js'",
+            "'./js/features/player-experience.js'", "'./js/features/resilience-accessibility.js'",
+            "'./js/features/track-detail.js'", "'./js/features/mobile-navigation.js'",
+            "'./css/track-detail.css'", "'./css/mobile-navigation.css'",
+            "'./css/launchpad-features.css'", "'./robots.txt'", "'./sitemap.xml'"
+          ]) if (!worker.includes(resource)) fail(`Offline shell is missing ${resource}.`);
+          for (const removed of [
+            "'./css/audio-lab-fix.css'", "'./css/player-experience.css'", "'./css/album-duration.css'",
+            "'./assets/favicon-v2.svg'", "'./assets/favicon-v3.svg'", "'./assets/favicon-v5.svg'",
+            "'./js/catalog-metadata.js'", "'./js/catalog-fixture.js'"
+          ]) if (worker.includes(removed)) fail(`Offline shell still references removed path ${removed}.`);
+          console.log('PWA manifest, shared build config and shell are valid.');
+          NODE
+
+      - name: Validate offline service worker behavior
+        run: npm run test:service-worker
+
+      - name: Smoke and accessibility tests in Chrome
+        shell: bash
+        run: |
+          python3 -m http.server 4173 >/tmp/launchpad-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+          sleep 2
+
+          chrome_dump() {
+            google-chrome --headless=new --no-sandbox --disable-gpu \
+              --virtual-time-budget="$1" --dump-dom "$2"
+          }
+
+          chrome_dump 12000 'http://127.0.0.1:4173/#home' > /tmp/launchpad-home.html
+          grep -q 'id="queue-panel"' /tmp/launchpad-home.html
+          grep -q 'id="view-favorites"' /tmp/launchpad-home.html
+          grep -q 'id="visual-card-modal"' /tmp/launchpad-home.html
+          grep -q 'id="pwa-install-control"' /tmp/launchpad-home.html
+          grep -q 'data-app-ready="true"' /tmp/launchpad-home.html
+          grep -q '4 TRACKS' /tmp/launchpad-home.html
+          grep -q '<h3>Track DNA</h3>' /tmp/launchpad-home.html
+          grep -q '<strong id="track-dna-bpm">152</strong>' /tmp/launchpad-home.html
+          grep -q 'data-track-cover-link=' /tmp/launchpad-home.html
+          grep -q 'id="mobile-menu-backdrop"' /tmp/launchpad-home.html
+          ! grep -q 'Explore the universe' /tmp/launchpad-home.html
+          ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-home.html
+
+          chrome_dump 12000 'http://127.0.0.1:4173/#albums' > /tmp/albums.html
+          grep -q 'class="album-collection"' /tmp/albums.html
+          ! grep -q 'project-featured-covers' /tmp/albums.html
+          grep -q 'margin-top:16px;column-gap:10px;row-gap:8px' /tmp/albums.html
+
+          chrome_dump 10000 'http://127.0.0.1:4173/#track=thick' > /tmp/track-detail.html
+          grep -q 'id="view-track" class="view track-detail-view active"' /tmp/track-detail.html
+          grep -q '<h1>THICK</h1>' /tmp/track-detail.html
+          grep -q '>BPM<' /tmp/track-detail.html
+          grep -q '>Key<' /tmp/track-detail.html
+          grep -q '>Language<' /tmp/track-detail.html
+          grep -q '>Content rating<' /tmp/track-detail.html
+          grep -q 'track-detail-tags' /tmp/track-detail.html
+
+          chrome_dump 7000 'http://127.0.0.1:4173/tests/player-experience-smoke.html' > /tmp/player-experience.html
+          grep -q 'PLAYER EXPERIENCE READY PLAY PAUSE DYNAMIC TRACK DNA' /tmp/player-experience.html
+
+          chrome_dump 7000 'http://127.0.0.1:4173/tests/lyrics-studio-smoke.html' > /tmp/lyrics-studio.html
+          grep -q 'LYRICS STUDIO READY SINGLE MODE AUTO CLOSE' /tmp/lyrics-studio.html
+
+          chrome_dump 9000 'http://127.0.0.1:4173/#favorites' > /tmp/favorites.html
+          grep -q 'Your favorites' /tmp/favorites.html
+          grep -q 'Recently played' /tmp/favorites.html
+
+          chrome_dump 20000 'http://127.0.0.1:4173/tests/visual-card-smoke.html' > /tmp/visual-card.html
+          grep -q 'VISUAL CARD READY 1080x1080 GHOST SIGNAL' /tmp/visual-card.html
+
+          chrome_dump 12000 'http://127.0.0.1:4173/#album=coal-to-diamond' > /tmp/album.html
+          grep -q 'album-detail-hero' /tmp/album.html
+          grep -q 'Play album' /tmp/album.html
+          grep -Eq '[0-9]+:[0-9]{2} total' /tmp/album.html
+
+          chrome_dump 9000 'http://127.0.0.1:4173/#lyrics=before-the-noise' > /tmp/lyrics.html
+          grep -q 'data-lyrics-studio="mode"' /tmp/lyrics.html
+          ! grep -q '>Fullscreen<' /tmp/lyrics.html
+          grep -q 'aria-live="off"' /tmp/lyrics.html
+
+          chrome_dump 14000 'http://127.0.0.1:4173/tests/accessibility-smoke.html' > /tmp/accessibility.html
+          grep -q 'ACCESSIBILITY READY' /tmp/accessibility.html
+          ! grep -q 'ACCESSIBILITY ERROR' /tmp/accessibility.html
+
+          chrome_dump 17000 'http://127.0.0.1:4173/tests/layout-regression.html' > /tmp/layout.html
+          grep -o 'LAYOUT [^<]*' /tmp/layout.html || true
+          grep -q 'LAYOUT READY' /tmp/layout.html
+          ! grep -q 'LAYOUT ERROR' /tmp/layout.html
+          grep -q '"appReady":true' /tmp/layout.html
+          grep -q '"trackNavigationPreserved":true' /tmp/layout.html
+
+          chrome_dump 18000 'http://127.0.0.1:4173/tests/mobile-navigation-smoke.html' > /tmp/mobile-navigation.html
+          grep -o 'MOBILE NAV [^<]*' /tmp/mobile-navigation.html || true
+          grep -q 'MOBILE NAV READY TRACK BACK ALBUM BACK OUTSIDE ESCAPE' /tmp/mobile-navigation.html
+          ! grep -q 'MOBILE NAV ERROR' /tmp/mobile-navigation.html
+
+      - name: Capture visual regression views
+        shell: bash
+        run: |
+          python3 -m http.server 4173 >/tmp/launchpad-visual-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+          sleep 2
+          VISUAL_OUTPUT_DIR=artifacts/visual-actual ./scripts/capture-visuals.sh
+
+      - name: Upload visual screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-actual
+          path: artifacts/visual-actual
+          retention-days: 7
