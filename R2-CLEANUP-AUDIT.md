@@ -41,7 +41,7 @@ Use `npm run audit:r2 -- --inventory-only` when network access is unavailable.
 | Class | Files | Size | Future action |
 | --- | ---: | ---: | --- |
 | Bundled MP3 audio | 14 | 76,892,054 bytes | Removed after R2-only Pages and Android approval |
-| Per-track covers | 14 | 37,064,826 bytes | Remove after thumbnail and detail-cover approval |
+| Per-track covers | 14 | 37,064,826 bytes | Removed after 14/14 thumbnail and detail-cover verification |
 | Bundled lyrics | 10 | 31,603 bytes | Remove after Lyrics Studio approval |
 
 The candidate total is 113,988,483 bytes. Album artwork, branding, PWA icons, screenshots and other interface assets are outside this deletion set.
@@ -52,4 +52,4 @@ The user explicitly confirmed on 2026-08-03 that the Android validation is fully
 
 Before removing the bundled MP3 files, PR #45 was merged and its public GitHub Pages `catalog.js` was checked directly: 14/14 static audio entries used the canonical Worker R2 routes and no `audio/...mp3` path remained. The old migration manifest is pinned to immutable commit `7867d9b60033a3b5573019b670678ecc888feace`, so its historical source URLs remain recoverable after cleanup.
 
-The next cleanup stages cover duplicated per-track covers, fallback-only lyrics, remaining migration-only code, catalog simplification and service-worker precache cleanup. Each remains isolated in a separate reviewed PR.
+The next cleanup stages cover fallback-only lyrics, remaining migration-only code, catalog simplification and the final service-worker precache cleanup. Each remains isolated in a separate reviewed PR.
