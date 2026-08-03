@@ -1,5 +1,6 @@
 importScripts('./js/build-config.js');
 const RELEASE = 'spotify-canvas-studio-20260804';
+// Reinstall the existing release cache so the integrated Canvas layout replaces the first draft.
 const VERSION = `${globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev'}-${RELEASE}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;
