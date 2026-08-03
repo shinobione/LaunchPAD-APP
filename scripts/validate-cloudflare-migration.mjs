@@ -1,3 +1,4 @@
+
 import fs from 'node:fs';
 
 const fail = message => {
@@ -62,4 +63,25 @@ if (!publicWorker.includes('/" + kind + "/" + encodeURIComponent(filename)')) {
   fail('Public media URLs must end with their real filename.');
 }
 
+const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+if (packageJson.devDependencies?.wrangler !== '4.118.0') {
+  fail('Wrangler must remain pinned to 4.118.0.');
+}
+
+for (const [configPath, expected] of [
+  ['cloudflare/wrangler.public.jsonc', { name: 'launchpad-media', main: 'public-worker.js' }],
+  ['cloudflare/wrangler.admin.jsonc', { name: 'launchpad-r2-api', main: '../dist/launchpad-r2-admin-worker.js' }]
+]) {
+  const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  if (config.name !== expected.name || config.main !== expected.main) {
+    fail(`${configPath}: unexpected Worker name or entry point.`);
+  }
+  if (config.keep_vars !== true) fail(`${configPath}: dashboard variables must be preserved.`);
+  const mediaBucket = config.r2_buckets?.find(binding => binding.binding === 'MEDIA_BUCKET');
+  if (mediaBucket?.bucket_name !== 'shinobiwan-media') {
+    fail(`${configPath}: MEDIA_BUCKET must target shinobiwan-media.`);
+  }
+}
+
 console.log(`Cloudflare migration plan is valid: ${plan.tracks.length} legacy tracks.`);
+
