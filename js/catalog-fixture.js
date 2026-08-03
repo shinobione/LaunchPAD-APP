@@ -34,7 +34,7 @@ export const catalogFixture = [
     cover: media('thick', 'thumbnail', 'thumbnail.webp'),
     fullCover: media('thick', 'cover', 'cover.jpeg'),
     genre: 'Hip-hop',
-    tags: ['Hip-hop'],
+    tags: ['Hip-hop', 'Confidence'],
     mood: 'Heavy confidence',
     albumId: 'coal-to-diamond',
     album: 'Coal to Diamond',
