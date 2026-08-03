@@ -11,6 +11,7 @@
 - Preserve first-tap play intent, provide explicit Android Media Session artwork and align Track detail with remote timestamp metadata.
 - Replace the duplicate lyrics fields with one live-verified `Lyrics` status and refresh the installed PWA cache.
 - Verify the live public Worker v2.3, 16 canonical R2 streams, optimized thumbnails and corrected Before the Noise metadata.
+- Prepare public Worker v2.4 so full media requests return HTTP 200, and add an opt-in 16-track full-transfer audit.
 - Add a read-only cleanup audit while keeping all historical media locked behind explicit mobile approval.
 - Pin Wrangler 4.118.0, dry-run both Worker bundles in CI and add a protected manual production deployment workflow.
 - Stabilize layout regression fixtures with ordered loading, bounded readiness waits and post-ready geometry baselines.
