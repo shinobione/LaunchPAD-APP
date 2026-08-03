@@ -1,8 +1,11 @@
+
 # R2 cleanup readiness audit
 
 _Snapshot: 2026-08-03_
 
 This document prepares the legacy GitHub media cleanup. It does not authorize or perform deletions.
+
+Status: automated R2 transport and metadata gates pass; physical Android acceptance and full-track decoding remain open. Cleanup is not authorized.
 
 ## Live automated result
 
@@ -24,6 +27,8 @@ npm run audit:r2
 
 Use `npm run audit:r2 -- --inventory-only` when network access is unavailable.
 
+`Validate Cloudflare Workers` also compiles both pinned Wrangler bundles, but it does not query or mutate production. The manual deployment workflow has not yet been used to confirm the repository Track Manager v4.4 in production.
+
 ## Legacy candidates, not yet deleted
 
 | Class | Files | Size | Future action |
@@ -43,6 +48,8 @@ Automated range checks prove that R2 objects are reachable, not that every full 
 3. fast thumbnail loading and original cover loading on track details;
 4. Lyrics Studio and Track details coherence for timestamped tracks;
 5. all 16 tracks through a complete R2-only playback pass.
+
+The first-tap intent, explicit Android artwork and timestamp-status fixes are present on GitHub Pages. Treat them as code-complete, not device-approved, until the target Android pass above is signed off.
 
 Only after that approval should a separate cleanup PR remove the files, `fallbackFile`, `audio-fallback.js`, obsolete catalog metadata, and stale service-worker precache entries.
 
