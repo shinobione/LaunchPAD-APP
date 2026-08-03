@@ -1,3 +1,4 @@
+
 # SHINOBIWAN LaunchPad — catalog guide
 
 The production catalog is managed in Cloudflare R2 through the private LaunchPAD Track Manager. Manual edits to `js/catalog.js` and `js/catalog-metadata.js` are now legacy fallback work, not the normal publishing workflow.
@@ -11,6 +12,8 @@ https://launchpad-r2-api.jerryquinet.workers.dev/
 ```
 
 Use it from a desktop browser. The public `launchpad-media` Worker is read-only and must never be used for uploads.
+
+LaunchPAD can expose a private local shortcut on desktop: open the public PWA once with `?admin=1`. The resulting **Track Manager** control opens Cloudflare Access in a new tab and remains invisible to ordinary visitors. Use `?admin=0` to clear the opt-in.
 
 ## Add a track
 
@@ -40,6 +43,8 @@ tracks/<slug>/video.<ext>     # optional
 ```
 
 Do not rename a published slug. It is the permanent catalog and share-link identifier.
+
+Enter duration as `mm:ss`, for example `03:57`. The Track Manager converts it to canonical seconds in `manifest.json` and formats it back to `mm:ss` when the track is reopened.
 
 ## Publish safely
 
@@ -113,6 +118,8 @@ Bb major
 
 Use six-digit hexadecimal colours such as `#d450ff`. They theme the player, Track DNA and Audio Lab.
 
+For migrated tracks, reopen the entry after saving and verify both swatches. Remote manifest values are authoritative over the bundled fallback catalog.
+
 ## Cover optimization
 
 Use **Optimiser les covers** after importing historical tracks or whenever a track lacks `thumbnail.webp`.
@@ -131,10 +138,20 @@ Original covers are retained for detailed views.
 Repository validation:
 
 ```bash
-npm install
+npm ci
 npm run validate
+npm run check:wrangler
 ```
 
-The public Worker source lives in `cloudflare/public-worker.js`. Until Worker CI/CD is implemented, deploying updated Worker code remains a separate manual Cloudflare step after the GitHub pull request is merged.
+Before any legacy-media cleanup, run the read-only live audit:
+
+```bash
+npm run audit:r2
+```
+
+Worker source lives in `cloudflare/public-worker.js` and `cloudflare/admin-worker.parts/`. A merge does not deploy it. From `main`, dispatch **Deploy Cloudflare Workers** and select `public`, `admin` or `both`. The protected GitHub environment supplies the Cloudflare account ID and API token.
+
+Deploying code does not rebuild `catalog/index.json`. Rebuild only when the release or parser change requires it, then report the merge, Worker deployment and index rebuild separately.
 
 See `RELEASE-CHECKLIST.md` for the complete publication order and `ROADMAP.md` for remaining migration work.
+
