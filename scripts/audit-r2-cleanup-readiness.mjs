@@ -5,6 +5,7 @@ import migration from '../cloudflare/migration-manifest.json' with { type: 'json
 const DEFAULT_API = 'https://launchpad-media.jerryquinet.workers.dev';
 const apiBase = String(process.env.LAUNCHPAD_MEDIA_API || DEFAULT_API).replace(/\/$/, '');
 const inventoryOnly = process.argv.includes('--inventory-only');
+const fullAudio = process.argv.includes('--full-audio');
 const jsonOutput = process.argv.includes('--json');
 
 function fail(message) {
@@ -45,6 +46,37 @@ async function verifyRange(url, label, expectedType) {
   if (response.status !== 206) fail(`${label}: expected HTTP 206, received ${response.status}.`);
   if (!contentRange.startsWith('bytes 0-1/')) fail(`${label}: invalid Content-Range ${contentRange || '<missing>'}.`);
   if (!contentType.startsWith(expectedType)) fail(`${label}: invalid Content-Type ${contentType || '<missing>'}.`);
+  const totalBytes = Number(contentRange.match(/^bytes 0-1\/(\d+)$/)?.[1]);
+  if (!Number.isSafeInteger(totalBytes) || totalBytes < 2) fail(`${label}: invalid total size in ${contentRange}.`);
+  return totalBytes;
+}
+
+async function verifyFullAudioTransfer(url, label, expectedBytes) {
+  const response = await fetch(url, {
+    headers: { Accept: 'audio/*' },
+    signal: AbortSignal.timeout(120_000)
+  });
+  const contentType = response.headers.get('content-type') || '';
+  if (response.status !== 200) fail(`${label}: expected HTTP 200, received ${response.status}.`);
+  if (!contentType.startsWith('audio/')) fail(`${label}: invalid Content-Type ${contentType || '<missing>'}.`);
+  if (!response.body) fail(`${label}: response body is missing.`);
+
+  const declaredBytes = Number(response.headers.get('content-length'));
+  if (Number.isSafeInteger(declaredBytes) && declaredBytes !== expectedBytes) {
+    fail(`${label}: Content-Length ${declaredBytes} differs from Range total ${expectedBytes}.`);
+  }
+
+  let receivedBytes = 0;
+  const reader = response.body.getReader();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    receivedBytes += value.byteLength;
+  }
+  if (receivedBytes !== expectedBytes) {
+    fail(`${label}: received ${receivedBytes} bytes, expected ${expectedBytes}.`);
+  }
+  return receivedBytes;
 }
 
 async function verifyLiveTrack(track) {
@@ -53,10 +85,14 @@ async function verifyLiveTrack(track) {
   if (!track.assets?.audio?.url || !track.assets?.thumbnail?.url || !track.assets?.cover?.fullUrl) {
     fail(`${track.slug}: audio, thumbnail and original cover are required.`);
   }
-  await Promise.all([
+  const [audioBytes] = await Promise.all([
     verifyRange(track.assets.audio.url, `${track.slug} audio`, 'audio/'),
     verifyRange(track.assets.thumbnail.url, `${track.slug} thumbnail`, 'image/webp')
   ]);
+  const transferredAudioBytes = fullAudio
+    ? await verifyFullAudioTransfer(track.assets.audio.url, `${track.slug} full audio`, audioBytes)
+    : null;
+  return { slug: track.slug, audioBytes, transferredAudioBytes };
 }
 
 async function main() {
@@ -70,6 +106,7 @@ async function main() {
     apiBase,
     inventory: { ...candidates, candidateBytes },
     live: null,
+    fullAudioRequested: fullAudio,
     cleanupAuthorized: false,
     manualValidationRequired: true
   };
@@ -77,7 +114,7 @@ async function main() {
   if (!inventoryOnly) {
     const [health, catalog] = await Promise.all([fetchJson('/health'), fetchJson('/tracks')]);
     const liveTracks = Array.isArray(catalog.tracks) ? catalog.tracks : [];
-    if (health.ok !== true || Number(health.version) < 2.3) fail('Public Worker v2.3 or newer is required.');
+    if (health.ok !== true || Number(health.version) < 2.4) fail('Public Worker v2.4 or newer is required.');
     if (health.canonicalTracks !== liveTracks.length) fail('Health and catalog track counts disagree.');
     if (liveTracks.length !== 16) fail(`Expected 16 canonical R2 tracks, received ${liveTracks.length}.`);
 
@@ -95,8 +132,10 @@ async function main() {
     }
     if (beforeTheNoise.duration !== 237) fail('before-the-noise: canonical duration must be 237 seconds.');
 
-    for (let offset = 0; offset < liveTracks.length; offset += 4) {
-      await Promise.all(liveTracks.slice(offset, offset + 4).map(verifyLiveTrack));
+    const verifiedTracks = [];
+    const batchSize = fullAudio ? 2 : 4;
+    for (let offset = 0; offset < liveTracks.length; offset += batchSize) {
+      verifiedTracks.push(...await Promise.all(liveTracks.slice(offset, offset + batchSize).map(verifyLiveTrack)));
     }
 
     report.live = {
@@ -104,6 +143,10 @@ async function main() {
       canonicalTracks: liveTracks.length,
       publishedTracks: liveTracks.filter(track => track.status === 'published').length,
       rangeAudio: liveTracks.length,
+      fullAudioTransfers: fullAudio ? verifiedTracks.length : 0,
+      fullAudioBytes: fullAudio
+        ? verifiedTracks.reduce((sum, track) => sum + track.transferredAudioBytes, 0)
+        : 0,
       optimizedThumbnails: liveTracks.filter(track => track.assets?.cover?.optimized).length,
       timestampedLyrics: liveTracks.filter(track => track.timestampsAvailable === true).length,
       legacyTracksPresent: migration.tracks.length,
@@ -125,6 +168,11 @@ async function main() {
   if (report.live) {
     console.log(`R2 ready: ${report.live.canonicalTracks} published tracks, ${report.live.rangeAudio} range audio streams, ${report.live.optimizedThumbnails} optimized thumbnails.`);
     console.log(`Timestamped lyrics reported by R2: ${report.live.timestampedLyrics}.`);
+    if (fullAudio) {
+      console.log(`Full R2 audio transfer: ${report.live.fullAudioTransfers}/${report.live.canonicalTracks} files (${report.live.fullAudioBytes} bytes).`);
+    } else {
+      console.log('Full audio transfer was not requested; use --full-audio for the pre-cleanup transport pass.');
+    }
   }
   console.log('Cleanup remains locked until explicit mobile validation and approval.');
 }
