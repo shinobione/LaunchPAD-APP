@@ -249,6 +249,23 @@ function playAlbum(albumId, startIndex = null) {
   selectTrack(firstIndex, true, { syncQueue: false });
 }
 
+function setFavoritesQueue(indexes, startIndex = null, { play = true } = {}) {
+  const favorites = [...new Set(indexes)].filter(index => Number.isInteger(index) && tracks[index]);
+  const requested = Number(startIndex);
+  const firstIndex = favorites.includes(requested) ? requested : favorites[0];
+
+  if (!favorites.length) {
+    if (queue.snapshot().context.type === 'favorites') {
+      queue.setContext([], currentIndex, { type: 'favorites', id: 'local' });
+    }
+    return;
+  }
+
+  const selected = Number.isInteger(firstIndex) ? firstIndex : currentIndex;
+  queue.setContext(favorites, selected, { type: 'favorites', id: 'local' });
+  if (play) selectTrack(selected, true, { syncQueue: false });
+}
+
 function playNext({ ended = false } = {}) {
   const nextIndex = queue.next({ ended });
   if (nextIndex === null) {
@@ -409,6 +426,15 @@ function handleRoute(route) {
 
 router = createRouter({ onRoute: handleRoute });
 
+window.addEventListener('shinobi:favorites-play', event => {
+  setFavoritesQueue(event.detail?.indexes || [], event.detail?.currentIndex, { play: true });
+});
+
+window.addEventListener('shinobi:favorites-updated', event => {
+  if (queue.snapshot().context.type !== 'favorites') return;
+  setFavoritesQueue(event.detail?.indexes || [], currentIndex, { play: false });
+});
+
 document.addEventListener('click', event => {
   if (event.defaultPrevented) return;
 
@@ -518,3 +544,4 @@ queue.setContext(allTrackIndexes, 0, { type: 'catalog', id: 'all' });
 selectTrack(0, false, { syncQueue: false });
 lyrics.hydrateSearchIndex();
 router.start();
+
