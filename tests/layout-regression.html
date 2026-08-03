@@ -48,12 +48,21 @@ const localStyles=document=>[...document.querySelectorAll('link[rel="stylesheet"
 const whenFrameLoaded=frame=>new Promise(resolve=>{
   frame.addEventListener('load',()=>resolve(frame),{once:true});
 });
+const whenAppReady=frame=>new Promise(resolve=>{
+  const done=()=>{
+    frame.contentWindow.removeEventListener('shinobi:ready',done);
+    resolve(frame);
+  };
+  frame.contentWindow.addEventListener('shinobi:ready',done,{once:true});
+  if(frame.contentDocument.documentElement.dataset.appReady==='true') done();
+});
 const loadFrames=async()=>{
   const loaded=[];
   for(const frame of frames){
     const ready=whenFrameLoaded(frame);
     frame.src=frame.dataset.src;
-    loaded.push(await ready);
+    await ready;
+    loaded.push(await whenAppReady(frame));
   }
   return loaded;
 };
