@@ -47,7 +47,7 @@ try {
 }
 
 for (const required of [
-  'version: "4.4"',
+  'version: "4.5"',
   'const ADMIN_HTML = String.raw`',
   'rel="icon" href="data:image/svg+xml',
   'class="form-section"',
