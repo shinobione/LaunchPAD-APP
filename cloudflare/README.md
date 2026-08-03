@@ -6,7 +6,7 @@ The media catalog uses one private administration Worker and one public read-onl
 ## Verified deployment status
 
 - Public `launchpad-media`: live v2.3, 16 canonical tracks confirmed on 2026-08-03.
-- Private `launchpad-r2-api`: repository source v4.4; the matching protected production deployment is not yet independently confirmed.
+- Private `launchpad-r2-api`: repository source v4.5; the matching protected production deployment is not yet independently confirmed.
 - Wrangler validation: merged and green for both bundles.
 - Repository deployment workflow: available but not yet recorded as a successful production deployment.
 
@@ -122,7 +122,7 @@ Both Wrangler configurations set `keep_vars` so the existing dashboard variables
 
 The workflow deploys code only. It does not rebuild `catalog/index.json`; perform that explicit Track Manager action only when a manifest or lyrics change requires it.
 
-After every run, record the selected `main` SHA and verify `/health`. For the private Worker, complete the Cloudflare Access login and confirm Track Manager version 4.4. For the public Worker, confirm version 2.3, the catalog count and a byte-range media request.
+After every run, record the selected `main` SHA and verify `/health`. For the private Worker, complete the Cloudflare Access login and confirm Track Manager version 4.5. For the public Worker, confirm version 2.3, the catalog count and a byte-range media request.
 
 ## Migration cleanup
 

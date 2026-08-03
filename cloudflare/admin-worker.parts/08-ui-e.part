@@ -1,4 +1,4 @@
-eg.dataset.legacy)});$('#newTrack').addEventListener('click',openNew);$('#refresh').addEventListener('click',load);$('#search').addEventListener('input',renderTracks);$('#trackForm').addEventListener('submit',save);$('#importGithub').addEventListener('click',prepareMigration);$('#migrateLegacy').addEventListener('click',function(){migrateLegacy(null)});$('#optimizeCovers').addEventListener('click',optimizeAllCovers);$('#startMigration').addEventListener('click',startMigration);load();
+eg.dataset.legacy)});$('#newTrack').addEventListener('click',openNew);$('#refresh').addEventListener('click',load);$('#search').addEventListener('input',renderTracks);$('#trackForm').addEventListener('submit',save);$('#optimizeCovers').addEventListener('click',optimizeAllCovers);load();
 })();
 </script>
 </body>

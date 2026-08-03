@@ -41,7 +41,7 @@ export default {
         return jsonResponse({
           ok: true,
           service: "launchpad-r2-track-manager",
-          version: "4.4",
+          version: "4.5",
           authenticatedEmail: user.email || null,
           canonicalObjects: canonical.length,
           legacyObjects: legacy.length,
