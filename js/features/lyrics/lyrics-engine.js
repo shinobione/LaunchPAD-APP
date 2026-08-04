@@ -155,6 +155,13 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
     return result;
   }
 
+  function scrollLineIntoReader(element, behavior = 'smooth') {
+    const reader = $('#lyrics-reader');
+    if (!reader || !element) return;
+    const target = element.offsetTop - (reader.clientHeight - element.offsetHeight) / 2;
+    reader.scrollTo({ top: Math.max(0, target), behavior });
+  }
+
   function update(time) {
     if (!currentLines.length) return;
     const next = findIndex(time);
@@ -169,7 +176,7 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
 
     renderHome(Math.max(0, activeIndex));
     if (autoScroll && activeIndex >= 0) {
-      elements[activeIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      scrollLineIntoReader(elements[activeIndex]);
     }
   }
 
@@ -206,7 +213,7 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
     isSearchHydrated: () => searchHydrated,
     scrollToActive() {
       if (activeIndex < 0 || !autoScroll) return;
-      $(`#lyrics-reader .lyric-line[data-index="${activeIndex}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      scrollLineIntoReader($(`#lyrics-reader .lyric-line[data-index="${activeIndex}"]`), 'auto');
     }
   };
 }
