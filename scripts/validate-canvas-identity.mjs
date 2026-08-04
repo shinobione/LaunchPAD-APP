@@ -29,7 +29,7 @@ for (const required of [
   if (!feature.includes(required)) fail(`Canvas identity feature is missing ${required}.`);
 }
 
-if (/\.src\s*=\s*track\.video/.test(feature)) {
+if (feature.includes('video.src = track.video')) {
   fail('Canvas card videos must keep their MP4 in data-src until interaction.');
 }
 if (feature.includes('audio.pause(') || feature.includes("querySelector('#audio').pause")) {
