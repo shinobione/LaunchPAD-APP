@@ -17,8 +17,8 @@ const parts = fs.readdirSync(partsDirectory)
   .filter(filename => filename.endsWith('.part'))
   .sort((left, right) => left.localeCompare(right, 'en', { numeric: true }));
 
-if (parts.length < 8) {
-  throw new Error(`Expected at least 8 Track Manager source parts, received ${parts.length}.`);
+if (parts.length < 9) {
+  throw new Error(`Expected at least 9 Track Manager source parts, received ${parts.length}.`);
 }
 
 const source = parts
@@ -58,7 +58,7 @@ for (const forbidden of [
 }
 
 for (const required of [
-  'version: "4.5"',
+  'version: "4.6"',
   'const ADMIN_HTML = String.raw`',
   'rel="icon" href="data:image/svg+xml',
   'class="form-section"',
@@ -78,7 +78,17 @@ for (const required of [
   'function parseLyricsTxtMetadata(text)',
   'function applyLyricsTxtMetadata(result)',
   "elements.lyrics.addEventListener('change',importLyricsTxtFile)",
-  'Métadonnées du TXT importées dans le formulaire.'
+  'Métadonnées du TXT importées dans le formulaire.',
+  'async function inspectTrackQuality(',
+  'function publicationQualityMessage(',
+  'enrichTrackSummariesQuality',
+  'Publication bloquée par le contrôle qualité.',
+  "panel.id='qualityPanel'",
+  'id="qualityCheck"',
+  'Contrôle avant publication',
+  'qualityEvidence',
+  'create_only',
+  "version.textContent='v4.6'"
 ]) {
   if (!source.includes(required)) {
     throw new Error(`Built Track Manager Worker is missing ${required}.`);

@@ -41,7 +41,7 @@ export default {
         return jsonResponse({
           ok: true,
           service: "launchpad-r2-track-manager",
-          version: "4.5",
+          version: "4.6",
           authenticatedEmail: user.email || null,
           canonicalObjects: canonical.length,
           legacyObjects: legacy.length,
@@ -135,7 +135,8 @@ async function listTracks(env) {
     listAllObjects(env.MEDIA_BUCKET, LEGACY_PREFIX),
   ]);
 
-  const canonicalTracks = await buildCanonicalTrackSummaries(canonicalObjects, env.MEDIA_BUCKET);
+  const canonicalBase = await buildCanonicalTrackSummaries(canonicalObjects, env.MEDIA_BUCKET);
+  const canonicalTracks = await enrichTrackSummariesQuality(canonicalBase, canonicalObjects, env.MEDIA_BUCKET);
   const legacyGroups = groupLegacyObjects(legacyObjects);
   const legacyTracks = [...legacyGroups.values()].map(group => legacySummary(group));
 
@@ -160,11 +161,14 @@ async function getTrack(slug, env) {
   if (!manifest) return jsonResponse({ ok: false, error: "Titre introuvable." }, 404);
 
   const objects = await listAllObjects(env.MEDIA_BUCKET, trackPrefix(slug));
+  const assets = assetStateFromObjects(objects, manifest);
+  const quality = await inspectTrackQuality(env.MEDIA_BUCKET, manifest, objects);
   return jsonResponse({
     ok: true,
     track: {
       manifest,
-      assets: assetStateFromObjects(objects, manifest),
+      assets,
+      quality,
     },
   });
 }
@@ -188,7 +192,19 @@ async function saveTrack(slug, request, env, user) {
   try { metadata = JSON.parse(metadataRaw); }
   catch { throw new Error("INPUT_JSON de métadonnées invalide."); }
 
+  let qualityEvidence = {};
+  const qualityEvidenceRaw = formData.get("qualityEvidence");
+  if (typeof qualityEvidenceRaw === "string" && qualityEvidenceRaw.trim()) {
+    try { qualityEvidence = JSON.parse(qualityEvidenceRaw); }
+    catch { throw new Error("INPUT_Preuve de contrôle qualité invalide."); }
+  }
+
   const existing = await readManifest(env.MEDIA_BUCKET, slug);
+  const createOnly = formData.get("create_only") === "true";
+  if (createOnly && existing) {
+    throw new Error("INPUT_Ce slug existe déjà. Ouvre le morceau existant au lieu de l’écraser.");
+  }
+
   const manifest = normalizeManifest({
     ...existing,
     ...metadata,
@@ -238,11 +254,22 @@ async function saveTrack(slug, request, env, user) {
     manifest.assets[kind] = filename;
   }
 
-  assertPublishable(manifest);
+  const savedObjects = await listAllObjects(env.MEDIA_BUCKET, trackPrefix(slug));
+  const quality = await inspectTrackQuality(env.MEDIA_BUCKET, manifest, savedObjects, qualityEvidence);
+  if (manifest.status === "published" && !quality.publishable) {
+    return jsonResponse({
+      ok: false,
+      error: "Publication bloquée par le contrôle qualité.",
+      details: publicationQualityMessage(quality),
+      quality,
+      draftAllowed: true,
+    }, 409);
+  }
+
   await writeManifest(env.MEDIA_BUCKET, manifest);
   await writeCatalogIndex(env.MEDIA_BUCKET);
 
-  return jsonResponse({ ok: true, track: manifest }, existing ? 200 : 201);
+  return jsonResponse({ ok: true, track: manifest, quality }, existing ? 200 : 201);
 }
 
 async function saveThumbnail(slug, request, env, user) {
@@ -340,4 +367,3 @@ async function importGithubTrack(slug, request, env, user) {
   const manifest = normalizeManifest({
     ...entry,
     assets,
-

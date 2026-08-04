@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Upgrade Track Manager to v4.6 with authoritative R2 quality reports, browser-side media measurements, optional Lyrics/Canvas status, duplicate and orphan detection, draft-safe saving and explicit publication blocking for broken tracks.
 - Mark tracks with video using responsive **CANVAS** badges, lazy single-preview animation, mobile preview controls, quick Studio access, fixed-cover fallbacks and reduced-motion/data-saving safeguards across Home, Discography and Favorites cards.
 - Add smart Canvas lifecycle management: pause silent loops when hidden or offscreen, resume them when useful, respect reduced-motion/data-saving signals, enforce one active Canvas and release video resources on route or track changes without touching audio playback.
 - Add an audio-safe PWA update prompt with **Mettre à jour / Plus tard**, one-time reload protection, session dismissal and visible build metadata in About.
@@ -17,7 +18,7 @@
 - Remove the ten bundled lyric fallbacks after validating their public R2 endpoints.
 - Fix legacy Track Manager edits so remote genres, tags, mood, colours and duration override bundled fallback metadata.
 - Accept `mm:ss` duration input while storing canonical seconds.
-- Refresh the Track Manager interface, grouping, accessibility and distinctive LP favicon; source version is 4.5.
+- Refresh the Track Manager interface, grouping, accessibility and distinctive LP favicon; source version is 4.6.
 - Add a hidden desktop-only `?admin=1` entry that opens Cloudflare Access in a new tab.
 - Add a favorites-only playback queue with **Play favorites**, continuous playback, Shuffle, Repeat and removal handling.
 - Preserve first-tap play intent, provide explicit Android Media Session artwork and align Track detail with remote timestamp metadata.
