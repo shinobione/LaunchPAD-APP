@@ -1,0 +1,3 @@
+
+var batchImportModalElement=$('#batchImportModal');
+if(batchImportModalElement){batchImportModalElement.addEventListener('change',function(event){var role=event.target.closest('[data-batch-role]');if(role){var group=state.batchImport.groups[Number(role.dataset.batchRole)];var entry=group&&group.files[Number(role.dataset.fileIndex)];if(entry&&entry.role!==role.value){entry.role=role.value;batchAnalyzeAll()}return}var mode=event.target.closest('[data-batch-mode]');if(mode){var modeGroup=state.batchImport.groups[Number(mode.dataset.batchMode)];if(modeGroup&&modeGroup.mode!==mode.value){modeGroup.mode=mode.value;batchAnalyzeAll()}return}})}
