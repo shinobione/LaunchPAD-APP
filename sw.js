@@ -50,6 +50,7 @@ const SHELL_RESOURCES = [
   './js/features/album-detail.js',
   './js/features/track-detail.js',
   './js/features/track-videos.js',
+  './js/features/smart-canvas.js',
   './js/features/mobile-navigation.js',
   './js/features/lyrics-studio.js',
   './js/features/player-experience.js',
