@@ -17,6 +17,20 @@ function explicitLabel(value) {
   return 'UNRATED';
 }
 
+function installStudioReliabilityStyles() {
+  if (document.querySelector('#studio-reliability-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'studio-reliability-styles';
+  style.textContent = `
+    [data-action="toggle"].is-loading{cursor:progress}
+    @media(max-width:760px){
+      #view-lyrics.lyrics-studio-mode .lyrics-track-select-label,
+      #view-lyrics.lyrics-studio-mode .lyrics-track-select{display:none!important}
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 export function applyPlaybackState(root = document, playing = false) {
   root.querySelectorAll('[data-action="toggle"]').forEach(button => {
     button.textContent = playing ? '❚❚' : '▶';
@@ -66,6 +80,7 @@ function installTrackDNA(panel) {
 export function createPlayerExperience({ audio = document.querySelector('#audio') } = {}) {
   if (!audio) return { sync() {}, updateTrack() {} };
 
+  installStudioReliabilityStyles();
   const panel = document.querySelector('.discovery-panel');
   if (panel) installTrackDNA(panel);
 
