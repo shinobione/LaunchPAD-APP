@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Lyrics auto-scroll smoke test</title>
+  <style>
+    html,body{margin:0;padding:0}
+    .page-spacer{height:420px}
+    .reader-shell{margin-left:73px;width:340px}
+    #reader{height:240px;overflow:auto;border:1px solid #444}
+    .lead{height:720px}
+    #active-line{display:block;width:100%;height:52px;border:0}
+    .tail{height:720px}
+  </style>
+</head>
+<body>
+  <div class="page-spacer"></div>
+  <div class="reader-shell">
+    <div id="reader">
+      <div class="lead"></div>
+      <button id="active-line">Current lyric</button>
+      <div class="tail"></div>
+    </div>
+  </div>
+  <output id="result">LYRICS AUTOSCROLL PENDING</output>
+
+  <script type="module">
+    import {
+      centeredScrollTop,
+      centerElementInScrollContainer
+    } from '../js/features/lyrics/lyrics-engine.js';
+
+    const reader = document.querySelector('#reader');
+    const line = document.querySelector('#active-line');
+    const result = document.querySelector('#result');
+    const frame = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    function centerDelta() {
+      const readerRect = reader.getBoundingClientRect();
+      const lineRect = line.getBoundingClientRect();
+      return Math.abs(
+        (readerRect.top + readerRect.height / 2)
+        - (lineRect.top + lineRect.height / 2)
+      );
+    }
+
+    try {
+      const target = centeredScrollTop(reader, line);
+      if (!Number.isFinite(target) || target <= 0) {
+        throw new Error('Centered target was not calculated inside the reader.');
+      }
+
+      centerElementInScrollContainer(reader, line, 'auto');
+      await frame();
+      if (centerDelta() > 2) {
+        throw new Error(`Initial current line was not centered: ${centerDelta()}px.`);
+      }
+
+      reader.scrollTop = Math.max(0, reader.scrollTop - 190);
+      await frame();
+      if (centerDelta() < 80) {
+        throw new Error('Test did not move the current line outside the focus zone.');
+      }
+
+      centerElementInScrollContainer(reader, line, 'auto');
+      await frame();
+      if (centerDelta() > 2) {
+        throw new Error(`Current line was not recovered after layout drift: ${centerDelta()}px.`);
+      }
+
+      if (line.offsetTop === centeredScrollTop(reader, line)) {
+        throw new Error('Centering still depends on offsetTop geometry.');
+      }
+
+      result.textContent = 'LYRICS AUTOSCROLL READY CONTAINER RELATIVE DESKTOP MOBILE';
+    } catch (error) {
+      result.textContent = `LYRICS AUTOSCROLL ERROR ${error.message}`;
+    }
+  </script>
+</body>
+</html>
