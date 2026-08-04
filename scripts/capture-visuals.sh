@@ -27,6 +27,27 @@ run_pwa_update_smoke() {
   echo "PWA update prompt smoke test passed"
 }
 
+run_mobile_studio_smoke() {
+  local profile output
+  profile="$(mktemp -d)"
+  output="$(mktemp)"
+
+  timeout --signal=TERM 45s "$CHROME_BIN" \
+    --headless=new --no-sandbox --disable-gpu \
+    --disable-background-networking --disable-component-update --disable-sync \
+    --disable-features=OptimizationHints,OptimizationGuideModelDownloading,MediaRouter,Translate \
+    --metrics-recording-only --no-first-run --disable-default-apps \
+    --force-device-scale-factor=1 --window-size=390,844 \
+    --virtual-time-budget=9000 --run-all-compositor-stages-before-draw \
+    --user-data-dir="$profile" --dump-dom \
+    "${BASE_URL}tests/mobile-studio-smoke.html" > "$output"
+
+  grep -q 'MOBILE STUDIO READY COLLAPSIBLE STICKY SAFE PLAYER PORTRAIT LANDSCAPE' "$output"
+  ! grep -q 'MOBILE STUDIO ERROR' "$output"
+  rm -rf "$profile" "$output"
+  echo "Mobile Studio smoke test passed"
+}
+
 capture() {
   local name="$1" width="$2" height="$3" view="$4"
   local profile output bytes attempt
@@ -62,9 +83,12 @@ capture() {
 }
 
 run_pwa_update_smoke
+run_mobile_studio_smoke
 capture home-desktop 1440 1000 'home'
 capture home-mobile 390 844 'home'
 capture albums-desktop 1440 1000 'albums'
 capture lyrics-desktop 1440 1000 'lyrics%3Dbefore-the-noise'
+capture studio-mobile 390 844 'studio%3Dthick'
+capture studio-mobile-landscape 844 390 'studio%3Dthick'
 capture favorites-mobile 390 844 'favorites'
 capture about-mobile 390 844 'about'
