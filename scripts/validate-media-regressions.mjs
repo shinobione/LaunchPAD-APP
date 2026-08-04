@@ -48,6 +48,17 @@ if (trackDetail.includes("metadataItem('Lyrics timing'")) {
   fail('Track detail must expose one authoritative lyrics status instead of a duplicate timing field.');
 }
 
+const router = read('js/core/router.js');
+for (const required of [
+  "'studio'",
+  "route.type === 'studio'",
+  "{ type: 'lyrics', id: route.id }",
+  "'shinobi:route-change'",
+  'routeToHash(route)'
+]) {
+  if (!router.includes(required)) fail(`Dedicated Studio routing is missing ${required}.`);
+}
+
 const trackVideos = read('js/features/track-videos.js');
 for (const required of [
   'track?.video',
@@ -60,11 +71,13 @@ for (const required of [
   'video.dataset.src = track.video',
   'data-track-video-loop-action',
   'data-track-studio-action',
-  "import { requestLyricsStudio } from './lyrics-studio.js'",
-  'requestLyricsStudio(trackId)',
+  '`#studio=${encodeURIComponent(trackId)}`',
   "button.textContent = 'Studio'"
 ]) {
   if (!trackVideos.includes(required)) fail(`Track Canvas and Studio entry are missing ${required}.`);
+}
+if (trackVideos.includes('requestLyricsStudio') || trackVideos.includes('sessionStorage')) {
+  fail('Track detail must use the dedicated Studio route instead of a temporary handoff.');
 }
 if (trackVideos.includes('fetch(')) {
   fail('Track Canvas playback must use the hydrated catalog instead of making a second metadata request.');
@@ -85,14 +98,23 @@ for (const required of [
   'autoScrollButton',
   'has-canvas-control',
   'setPressed',
-  'consumeStudioRequest',
-  'scheduleStudioRequestConsumption',
+  'parseRoute',
+  'routeToHash',
+  'routeMatchesCurrentStudio',
+  'syncStudioRoute',
+  'preserveStudioForCurrentTrack',
+  "type: 'studio'",
+  "'shinobi:route-change'"
+]) {
+  if (!lyricsStudio.includes(required)) fail(`Lyrics Studio Canvas and route state are missing ${required}.`);
+}
+for (const forbidden of [
   'requestLyricsStudio',
   'pendingStudioTrackId',
-  'shinobi:lyrics-studio-request',
+  'sessionStorage',
   'shinobi-launchpad-open-studio-track'
 ]) {
-  if (!lyricsStudio.includes(required)) fail(`Lyrics Studio Canvas and controls are missing ${required}.`);
+  if (lyricsStudio.includes(forbidden)) fail(`Legacy Studio handoff survived dedicated routing: ${forbidden}.`);
 }
 if (lyricsStudio.includes('audio.pause')) {
   fail('Lyrics Studio Canvas must leave the music track playing.');
@@ -182,12 +204,13 @@ if (worker.includes('LYRIC_RESOURCES') || worker.includes('assets/lyrics/')) {
 for (const required of [
   "'./assets/pwa-icon-512.png'",
   "'./css/track-videos.css'",
+  "'./js/core/router.js'",
   "'./js/features/track-videos.js'",
   "'./js/features/lyrics-studio.js'",
   "'./js/features/listening-history-summary.js'",
-  'studio-direct-routing-20260804'
+  'studio-route-20260804'
 ]) {
   if (!worker.includes(required)) fail(`The service worker cache is missing ${required}.`);
 }
 
-console.log('Media artwork, playback readiness, lyrics timing, bounded scrolling, aligned Studio states, resilient direct Studio routing and listening summary regressions are covered.');
+console.log('Media artwork, playback readiness, lyrics timing, bounded scrolling, dedicated Studio URLs and listening summary regressions are covered.');
