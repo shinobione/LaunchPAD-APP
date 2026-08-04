@@ -80,6 +80,7 @@ async function boot() {
     { initResilienceAccessibility },
     { initTrackDetail },
     { initTrackVideos },
+    { initSmartCanvasManager },
     { initMobileNavigation },
     { initAdminAccess }
   ] = await Promise.all([
@@ -94,6 +95,7 @@ async function boot() {
     import(versioned('./features/resilience-accessibility.js')),
     import(versioned('./features/track-detail.js')),
     import(versioned('./features/track-videos.js')),
+    import(versioned('./features/smart-canvas.js')),
     import(versioned('./features/mobile-navigation.js')),
     import(versioned('./features/admin-access.js'))
   ]);
@@ -108,6 +110,7 @@ async function boot() {
   initListeningHistorySummary({ audio });
   initTrackDetail({ audio });
   initTrackVideos({ audio });
+  initSmartCanvasManager();
   initMobileNavigation();
   initAdminAccess();
   initVisualCard({ audio });
