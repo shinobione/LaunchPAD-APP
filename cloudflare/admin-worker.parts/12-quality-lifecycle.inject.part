@@ -1,0 +1,91 @@
+
+var qualityBaseBuildClientQuality=buildClientQuality;
+var qualityFullScheduled=false;
+var qualityEvidenceSignature='';
+state.qualityEvidence=null;
+state.qualityRunPromise=null;
+state.qualityRerunRequested=false;
+
+function qualityAssetPresent(kind){return Boolean(selectedFile(kind)||currentAssetPresent(kind))}
+function qualityFileSignature(){return ['audio','cover','lyrics','video'].map(function(kind){var file=selectedFile(kind);return file?kind+':'+file.name+':'+file.size+':'+file.lastModified:kind+':'+(currentAssetPresent(kind)?'r2':'none')}).join('|')}
+function qualityPendingEvidence(){return {audio:qualityAssetPresent('audio')?{pending:true}:{},cover:qualityAssetPresent('cover')?{pending:true}:{},thumbnail:currentAssetPresent('thumbnail')?{pending:true}:{},video:qualityAssetPresent('video')?{pending:true}:{},lyrics:qualityAssetPresent('lyrics')?{pending:true}:{}}}
+function qualityReplaceItem(items,code,replacement){var index=items.findIndex(function(item){return item.code===code});if(index>=0)items[index]=replacement;else items.push(replacement)}
+
+buildClientQuality=function(meta,evidence){
+  evidence=evidence||{};
+  var report=qualityBaseBuildClientQuality(meta,evidence);
+  var items=(report.items||[]).slice();
+  var pending=false;
+  var audioMeasured=Boolean(evidence.audio&&Object.prototype.hasOwnProperty.call(evidence.audio,'readable'));
+  var lyricsMeasured=Boolean(evidence.lyrics&&Object.prototype.hasOwnProperty.call(evidence.lyrics,'readable'));
+  var coverMeasured=Boolean(evidence.cover&&Object.prototype.hasOwnProperty.call(evidence.cover,'readable'));
+  var videoMeasured=Boolean(evidence.video&&Object.prototype.hasOwnProperty.call(evidence.video,'readable'));
+  if(qualityAssetPresent('audio')&&!audioMeasured){pending=true;qualityReplaceItem(items,'client-audio-pending',qualityItemClient('info','client-audio-pending','Audio','Audio sélectionné : contrôle complet en attente.'))}
+  if(qualityAssetPresent('lyrics')&&!lyricsMeasured){pending=true;qualityReplaceItem(items,'client-lyrics-absent',qualityItemClient('info','client-lyrics-pending','Lyrics','Fichier Lyrics sélectionné : contrôle complet en attente.'))}
+  if(qualityAssetPresent('cover')&&!coverMeasured){pending=true;qualityReplaceItem(items,'client-cover-pending',qualityItemClient('info','client-cover-pending','Cover','Cover sélectionnée : contrôle complet en attente.'))}
+  if(qualityAssetPresent('video')&&!videoMeasured){pending=true;qualityReplaceItem(items,'client-canvas-pending',qualityItemClient('info','client-canvas-pending','Canvas','Canvas sélectionné : contrôle complet en attente.'))}
+  report=reportFromItems(items,'browser');
+  if(pending&&report.state==='ready'){report.state='review';report.publishable=false}
+  return report;
+};
+
+function refreshQualityFromCachedEvidence(){
+  if(state.qualityChecking)return state.qualityReport;
+  var evidence=state.qualityEvidence||qualityPendingEvidence();
+  var report=buildClientQuality(formMetadataForQuality(),evidence);
+  report.evidence=state.qualityEvidence||{};
+  renderQuality(report);
+  return report;
+}
+
+runQualityCheck=function(options){
+  options=options||{};
+  clearTimeout(qualityTimer);
+  qualityFullScheduled=false;
+  var requestedSignature=qualityFileSignature();
+  if(state.qualityRunPromise){
+    if(requestedSignature!==qualityEvidenceSignature)state.qualityRerunRequested=true;
+    return state.qualityRunPromise;
+  }
+  state.qualityChecking=true;
+  $('#qualityState').className='quality-state review';
+  $('#qualityState').textContent='Analyse…';
+  $('#qualitySubtitle').textContent='Lecture des médias et vérification du formulaire.';
+  var runPromise=(async function(){
+    try{
+      var evidence=await collectQualityEvidence();
+      state.qualityEvidence=evidence;
+      qualityEvidenceSignature=requestedSignature;
+      var report=buildClientQuality(formMetadataForQuality(),evidence);
+      report.evidence=evidence;
+      renderQuality(report);
+      return report;
+    }catch(error){
+      var failure=reportFromItems([qualityItemClient('error','client-quality-failed','Contrôle qualité','Le contrôle a échoué : '+(error&&error.message?error.message:'erreur inconnue')+'.')],'browser');
+      failure.evidence={};
+      renderQuality(failure);
+      showNotice('Le contrôle qualité a échoué. Réessaie ou remplace le média concerné.',true);
+      return failure;
+    }
+  })();
+  var finalPromise=runPromise.then(function(report){
+    var mustRerun=state.qualityRerunRequested||qualityFileSignature()!==requestedSignature;
+    state.qualityRerunRequested=false;
+    if(mustRerun){state.qualityRunPromise=null;return runQualityCheck({forceFull:true})}
+    return report;
+  }).finally(function(){
+    if(state.qualityRunPromise===finalPromise){state.qualityRunPromise=null;state.qualityChecking=false}
+  });
+  state.qualityRunPromise=finalPromise;
+  return finalPromise;
+};
+
+scheduleQualityCheck=function(event){
+  var fileChanged=Boolean(event&&event.target&&event.target.type==='file');
+  if(fileChanged){qualityFullScheduled=true;state.qualityEvidence=null;qualityEvidenceSignature=''}
+  clearTimeout(qualityTimer);
+  qualityTimer=setTimeout(function(){
+    if(qualityFullScheduled){qualityFullScheduled=false;runQualityCheck({forceFull:true});return}
+    refreshQualityFromCachedEvidence();
+  },450);
+};
