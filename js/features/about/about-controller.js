@@ -16,6 +16,30 @@ function installAboutSocialCards() {
   }));
 }
 
+function installBuildInfo() {
+  const card = document.querySelector('#view-about .about-card');
+  const copy = card?.querySelector(':scope > div:not(.about-golden-logo-wrap)');
+  if (!card || !copy) return;
+
+  copy.querySelector('.about-build-info')?.remove();
+  const build = globalThis.SHINOBIWAN_BUILD || {};
+  const info = document.createElement('div');
+  info.className = 'about-build-info';
+  info.setAttribute('aria-label', 'LaunchPAD application version');
+
+  const heading = document.createElement('strong');
+  heading.textContent = 'LaunchPAD';
+
+  const buildLine = document.createElement('span');
+  buildLine.textContent = `Build ${build.display || build.id || 'development'}`;
+
+  const cacheLine = document.createElement('span');
+  cacheLine.textContent = `Release ${build.release || build.cache || 'development'}`;
+
+  info.append(heading, buildLine, cacheLine);
+  copy.appendChild(info);
+}
+
 function installGoldenLogo() {
   const card = document.querySelector('#view-about .about-card');
   if (!card) return;
@@ -37,5 +61,6 @@ function installGoldenLogo() {
 export function initAboutEnhancements() {
   ensureStylesheet('css/about-enhancements.css');
   installAboutSocialCards();
+  installBuildInfo();
   installGoldenLogo();
 }
