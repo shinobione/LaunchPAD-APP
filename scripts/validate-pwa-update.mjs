@@ -39,10 +39,10 @@ if (!worker.includes("globalThis.SHINOBIWAN_BUILD?.release")) {
 }
 
 const build = read('js/build-config.js');
-if (!build.includes("display: '2026.08.04.2'")) {
+if (!build.includes("display: '2026.08.04.3'")) {
   fail('Build display metadata is missing.');
 }
-if (!build.includes("release: 'pwa-update-english-20260804'")) {
+if (!build.includes("release: 'studio-audio-startup-fix-20260804'")) {
   fail('Build release metadata is missing.');
 }
 
