@@ -35,10 +35,10 @@ if (!worker.includes("globalThis.SHINOBIWAN_BUILD?.release")) {
 }
 
 const build = read('js/build-config.js');
-if (!build.includes("display: '2026.08.04'")) {
+if (!build.includes("display: '2026.08.04.1'")) {
   fail('Build display metadata is missing.');
 }
-if (!/release:\s*'[^']+'/.test(build)) {
+if (!build.includes("release: 'mobile-studio-canvas-fix-20260804'")) {
   fail('Build release metadata is missing.');
 }
 
