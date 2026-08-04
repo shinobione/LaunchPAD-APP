@@ -3,8 +3,8 @@
     id: '20260802-wave14',
     cache: 'shinobi-launchpad-v11',
     revision: 'hero-first-paint-1',
-    display: '2026.08.04.2',
-    release: 'pwa-update-english-20260804'
+    display: '2026.08.04.3',
+    release: 'studio-audio-startup-fix-20260804'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
