@@ -52,13 +52,21 @@
     const result = document.querySelector('#result');
     const frame = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     const finish = message => {
-      document.querySelectorAll('video,audio').forEach(media => {
-        try { media.pause(); } catch {}
-        media.removeAttribute('src');
-        media.remove();
-      });
+      const ready = message.startsWith('MOBILE STUDIO READY');
+      const detail = ready ? 'ready' : `error-${encodeURIComponent(message)}`;
       result.textContent = message;
-      window.stop();
+      fetch(`/__mobile_studio_result__/${detail}`, {
+        cache: 'no-store',
+        keepalive: true
+      }).catch(() => {});
+      window.setTimeout(() => {
+        document.querySelectorAll('video,audio').forEach(media => {
+          try { media.pause(); } catch {}
+          media.removeAttribute('src');
+          media.remove();
+        });
+        window.stop();
+      }, 100);
     };
 
     try {
