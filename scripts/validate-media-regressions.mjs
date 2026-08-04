@@ -58,9 +58,12 @@ for (const required of [
   'video.muted = true',
   'video.controls = false',
   'video.dataset.src = track.video',
-  'data-track-video-loop-action'
+  'data-track-video-loop-action',
+  'data-track-studio-action',
+  'shinobi-launchpad-open-studio-track',
+  "button.textContent = 'Studio'"
 ]) {
-  if (!trackVideos.includes(required)) fail(`Track Canvas playback is missing ${required}.`);
+  if (!trackVideos.includes(required)) fail(`Track Canvas and Studio entry are missing ${required}.`);
 }
 if (trackVideos.includes('fetch(')) {
   fail('Track Canvas playback must use the hydrated catalog instead of making a second metadata request.');
@@ -71,18 +74,35 @@ for (const forbidden of ['audio?.pause()', "audio?.addEventListener('play'"]) {
 
 const lyricsStudio = read('js/features/lyrics-studio.js');
 for (const required of [
-  'data-lyrics-studio="canvas"',
+  "dataset.lyricsStudio = 'canvas'",
   'lyrics-studio-canvas-active',
   "video.className = 'lyrics-studio-canvas-video'",
   'video.loop = true',
   'video.muted = true',
   'video.controls = false',
-  "ensureStylesheet('css/track-videos.css')"
+  "ensureStylesheet('css/track-videos.css')",
+  'autoScrollButton',
+  'has-canvas-control',
+  'setPressed',
+  'consumeStudioRequest',
+  'shinobi-launchpad-open-studio-track'
 ]) {
-  if (!lyricsStudio.includes(required)) fail(`Lyrics Studio Canvas is missing ${required}.`);
+  if (!lyricsStudio.includes(required)) fail(`Lyrics Studio Canvas and controls are missing ${required}.`);
 }
 if (lyricsStudio.includes('audio.pause')) {
   fail('Lyrics Studio Canvas must leave the music track playing.');
+}
+
+const lyricsEngine = read('js/features/lyrics/lyrics-engine.js');
+for (const required of [
+  'scrollLineIntoReader',
+  'reader.scrollTo',
+  "button.setAttribute('aria-pressed', String(autoScroll))"
+]) {
+  if (!lyricsEngine.includes(required)) fail(`Lyrics reader state or bounded scrolling is missing ${required}.`);
+}
+if (lyricsEngine.includes('scrollIntoView')) {
+  fail('Lyrics auto-scroll must not move the whole mobile page.');
 }
 
 const listeningSummary = read('js/features/listening-history-summary.js');
@@ -160,9 +180,9 @@ for (const required of [
   "'./js/features/track-videos.js'",
   "'./js/features/lyrics-studio.js'",
   "'./js/features/listening-history-summary.js'",
-  'spotify-canvas-studio-20260804'
+  'studio-controls-20260804'
 ]) {
   if (!worker.includes(required)) fail(`The service worker cache is missing ${required}.`);
 }
 
-console.log('Media artwork, playback readiness, lyrics timing, silent Canvas loops, Studio Canvas and listening summary regressions are covered.');
+console.log('Media artwork, playback readiness, lyrics timing, bounded scrolling, aligned Studio states, direct Studio entry and listening summary regressions are covered.');

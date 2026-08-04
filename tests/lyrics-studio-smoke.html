@@ -9,7 +9,10 @@
     <article class="lyrics-stage">
       <div class="lyrics-track-panel"></div>
       <div class="lyrics-reader-shell">
-        <div class="lyrics-reader-head"><span>LYRICS</span></div>
+        <div class="lyrics-reader-head">
+          <span id="lyrics-reader-label">LYRICS</span>
+          <button id="lyrics-autoscroll" class="chip active" type="button" aria-pressed="true">Auto-scroll</button>
+        </div>
         <div id="lyrics-reader"><button class="lyric-line active">Active line</button></div>
       </div>
     </article>
@@ -21,6 +24,8 @@
   <script type="module">
     import { mergeRemoteTracks } from '../js/core/catalog-store.js';
     import { initLyricsStudio } from '../js/features/lyrics-studio.js';
+
+    const STUDIO_REQUEST_KEY = 'shinobi-launchpad-open-studio-track';
 
     mergeRemoteTracks([{
       id: 'thick',
@@ -39,10 +44,21 @@
 
     try {
       initLyricsStudio({ audio });
+      const controls = document.querySelector('.lyrics-studio-controls');
+      const autoScrollButton = document.querySelector('#lyrics-autoscroll');
       const modeButton = document.querySelector('[data-lyrics-studio="mode"]');
       const canvasButton = document.querySelector('[data-lyrics-studio="canvas"]');
-      if (!modeButton || !canvasButton || !canvasButton.hidden) {
+      if (!controls || !modeButton || !canvasButton || !autoScrollButton) {
+        throw new Error('Lyrics controls were not assembled.');
+      }
+      if (autoScrollButton.parentElement !== controls || controls.children.length !== 3) {
+        throw new Error('Auto-scroll, Canvas and Studio controls must share one aligned group.');
+      }
+      if (!canvasButton.hidden || controls.classList.contains('has-canvas-control')) {
         throw new Error('Canvas control must stay hidden outside Studio mode.');
+      }
+      if (modeButton.getAttribute('aria-pressed') !== 'false' || modeButton.classList.contains('active')) {
+        throw new Error('Studio mode must start visually inactive.');
       }
       if (document.body.textContent.includes('Fullscreen')) {
         throw new Error('Fullscreen control still exists.');
@@ -55,8 +71,14 @@
       if (!view.classList.contains('lyrics-studio-mode') || !document.body.classList.contains('lyrics-studio-open')) {
         throw new Error('Studio mode did not open cleanly.');
       }
-      if (canvasButton.hidden) {
+      if (!modeButton.classList.contains('active') || modeButton.getAttribute('aria-pressed') !== 'true') {
+        throw new Error('Studio mode visual state did not turn on.');
+      }
+      if (canvasButton.hidden || !controls.classList.contains('has-canvas-control')) {
         throw new Error('Available Canvas control did not appear inside Studio mode.');
+      }
+      if (!canvasButton.classList.contains('active') || canvasButton.getAttribute('aria-pressed') !== 'true') {
+        throw new Error('Canvas on state is not visually active.');
       }
       if (canvas?.parentElement !== trackPanel) {
         throw new Error('Studio Canvas must be integrated inside the track panel.');
@@ -74,13 +96,32 @@
       canvasButton.click();
       await waitForFrame();
       if (view.classList.contains('lyrics-studio-canvas-active')) {
-        throw new Error('Canvas control did not disable the background.');
+        throw new Error('Canvas control did not disable the Canvas.');
+      }
+      if (canvasButton.classList.contains('active') || canvasButton.getAttribute('aria-pressed') !== 'false') {
+        throw new Error('Canvas off state still looks active.');
       }
 
-      canvasButton.click();
+      autoScrollButton.click();
+      if (autoScrollButton.classList.contains('active') || autoScrollButton.getAttribute('aria-pressed') !== 'false') {
+        throw new Error('Manual scroll state still looks active.');
+      }
+
+      modeButton.click();
       await waitForFrame();
-      if (!view.classList.contains('lyrics-studio-canvas-active')) {
-        throw new Error('Canvas control did not restore the background.');
+      if (view.classList.contains('lyrics-studio-mode') || !canvasButton.hidden) {
+        throw new Error('Studio mode did not close cleanly.');
+      }
+
+      sessionStorage.setItem(STUDIO_REQUEST_KEY, 'thick');
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+      await waitForFrame();
+      await waitForFrame();
+      if (!view.classList.contains('lyrics-studio-mode')) {
+        throw new Error('Direct track Studio request did not open Studio mode.');
+      }
+      if (sessionStorage.getItem(STUDIO_REQUEST_KEY) !== null) {
+        throw new Error('Direct Studio request was not consumed.');
       }
 
       view.classList.remove('active');
@@ -89,7 +130,7 @@
         throw new Error('Studio mode did not close after leaving Lyrics.');
       }
 
-      result.textContent = 'LYRICS STUDIO READY SINGLE MODE AUTO CLOSE';
+      result.textContent = 'LYRICS STUDIO READY SINGLE MODE AUTO CLOSE ALIGNED STATES DIRECT ENTRY';
     } catch (error) {
       result.textContent = `LYRICS STUDIO ERROR ${error.message}`;
     }
