@@ -52,6 +52,16 @@ export function createRouter({ onRoute }) {
       : route;
 
     onRoute(handledRoute);
+
+    // Lyrics rendering may normalize its active track back to #lyrics=... .
+    // Restore the dedicated Studio URL before announcing the route state.
+    if (route.type === 'studio') {
+      const studioHash = routeToHash(route);
+      if (window.location.hash !== studioHash) {
+        window.history.replaceState(window.history.state, '', studioHash);
+      }
+    }
+
     announceRoute(route);
   }
 
