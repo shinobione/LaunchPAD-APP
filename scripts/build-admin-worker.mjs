@@ -40,6 +40,10 @@ if (injectionParts.length) {
 }
 
 source = source.replace('version: "4.6"', 'version: "4.7"');
+source = source.replace(
+  ":' sans timestamps.'))}catch(error)",
+  ":' sans timestamps.')))}catch(error)",
+);
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 fs.writeFileSync(outputPath, source, 'utf8');
