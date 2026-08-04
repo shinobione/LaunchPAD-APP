@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import vm from 'node:vm';
 import { spawnSync } from 'node:child_process';
 
 const partsDirectory = 'cloudflare/admin-worker.parts';
@@ -56,9 +57,9 @@ if (!embeddedScript) {
   throw new Error('Built Track Manager Worker is missing its embedded UI script.');
 }
 try {
-  new Function(embeddedScript);
+  new vm.Script(embeddedScript, { filename: 'track-manager-ui.js' });
 } catch (error) {
-  throw new Error(`Built Track Manager UI script has invalid syntax: ${error.message}`);
+  throw new Error(`Built Track Manager UI script has invalid syntax:\n${error.stack || error.message}`);
 }
 
 for (const forbidden of [
