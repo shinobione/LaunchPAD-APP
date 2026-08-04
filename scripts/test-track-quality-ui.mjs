@@ -55,6 +55,7 @@ const timers = [];
 const rendered = [];
 const qualityState = { className: '', textContent: '' };
 const qualitySubtitle = { textContent: '' };
+const testState = { qualityChecking: false, qualityReport: null };
 const reportFromItems = (items, source = 'browser') => {
   const counts = { error: 0, warning: 0, info: 0, pass: 0 };
   for (const item of items) counts[item.level] += 1;
@@ -77,7 +78,7 @@ const context = vm.createContext({
   Promise,
   Date,
   qualityTimer: 0,
-  state: { qualityChecking: false, qualityReport: null },
+  state: testState,
   selectedFile: kind => files[kind] || null,
   currentAssetPresent: () => false,
   qualityItemClient,
@@ -104,7 +105,7 @@ const context = vm.createContext({
     video: {},
     lyrics: { readable: true, timestampCount: 76, lastTimestamp: 231.32 },
   }),
-  renderQuality(report) { this.state.qualityReport = report; rendered.push(report); },
+  renderQuality(report) { testState.qualityReport = report; rendered.push(report); },
   showNotice() {},
   clearTimeout() {},
   setTimeout(callback) { timers.push(callback); return timers.length; },
@@ -123,14 +124,14 @@ const secondRun = context.__qualityUi.runQualityCheck();
 assert.equal(firstRun, secondRun, 'manual control and publication must share the active analysis');
 const measured = await firstRun;
 assert.equal(measured.state, 'ready');
-assert.equal(context.state.qualityChecking, false);
-assert.equal(context.state.qualityRunPromise, null);
+assert.equal(testState.qualityChecking, false);
+assert.equal(testState.qualityRunPromise, null);
 assert.ok(measured.items.some(item => item.code === 'client-lyrics-readable'));
 
 context.__qualityUi.scheduleQualityCheck({ target: { type: 'file' } });
 assert.equal(timers.length, 1, 'file changes must schedule one debounced full control');
 timers.shift()();
-await context.state.qualityRunPromise;
-assert.equal(context.state.qualityReport.state, 'ready');
+await testState.qualityRunPromise;
+assert.equal(testState.qualityReport.state, 'ready');
 
 console.log('Track Manager album inference and non-stalling quality lifecycle are valid.');
