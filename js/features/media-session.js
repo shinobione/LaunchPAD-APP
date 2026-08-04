@@ -1,6 +1,11 @@
 const MEDIA_ARTWORK = [
   {
-    src: new URL('assets/pwa-icon-512.png', document.baseURI).href,
+    src: new URL('assets/app-icon-neon-192.png', document.baseURI).href,
+    sizes: '192x192',
+    type: 'image/png'
+  },
+  {
+    src: new URL('assets/app-icon-neon-512.png', document.baseURI).href,
     sizes: '512x512',
     type: 'image/png'
   }
