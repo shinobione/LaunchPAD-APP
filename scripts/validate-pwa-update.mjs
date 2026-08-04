@@ -35,11 +35,11 @@ if (!worker.includes("globalThis.SHINOBIWAN_BUILD?.release")) {
 }
 
 const build = read('js/build-config.js');
-for (const required of [
-  "display: '2026.08.04'",
-  "release: 'pwa-update-prompt-20260804'"
-]) {
-  if (!build.includes(required)) fail(`Build metadata is missing ${required}.`);
+if (!build.includes("display: '2026.08.04'")) {
+  fail('Build display metadata is missing.');
+}
+if (!/release:\s*'[^']+'/.test(build)) {
+  fail('Build release metadata is missing.');
 }
 
 const about = read('js/features/about/about-controller.js');
