@@ -1,6 +1,6 @@
 importScripts('./js/build-config.js');
-const RELEASE = 'studio-direct-routing-20260804';
-// Refresh the shell so direct Studio requests survive route activation and storage restrictions.
+const RELEASE = 'studio-route-20260804';
+// Refresh the shell so dedicated Studio URLs replace the temporary route handoff.
 const VERSION = `${globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev'}-${RELEASE}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;
