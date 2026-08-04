@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix Track Manager v4.7 quality checks so selected audio and Lyrics are never reported as absent during metadata edits, manual control and publication share one non-stalling media analysis, and `ALBUM:` TXT metadata automatically creates an album-track with a normalized album ID.
 - Upgrade Track Manager to v4.7 with grouped file/folder imports, automatic audio/cover/Lyrics/Canvas association, TXT metadata previews, thumbnail generation, editable mappings, explicit existing-track completion and best-effort rollback for newly created tracks.
 - Upgrade Track Manager to v4.6 with authoritative R2 quality reports, browser-side media measurements, optional Lyrics/Canvas status, duplicate and orphan detection, draft-safe saving and explicit publication blocking for broken tracks.
 - Mark tracks with video using responsive **CANVAS** badges, lazy single-preview animation, mobile preview controls, quick Studio access, fixed-cover fallbacks and reduced-motion/data-saving safeguards across Home, Discography and Favorites cards.
