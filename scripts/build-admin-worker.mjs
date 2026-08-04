@@ -104,7 +104,7 @@ for (const required of [
   'qualityEvidence',
   'create_only',
   "version.textContent='v4.7'",
-  'id="batchImportModal"',
+  "modal.id='batchImportModal'",
   'id="batchFiles"',
   'id="batchFolder"',
   'webkitdirectory',
