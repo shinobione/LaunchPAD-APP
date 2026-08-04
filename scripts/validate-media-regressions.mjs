@@ -215,9 +215,9 @@ for (const required of [
   "'./js/features/lyrics/lyrics-engine.js'",
   "'./js/features/lyrics-studio.js'",
   "'./js/features/listening-history-summary.js'",
-  'lyrics-autoscroll-20260804'
+  'pwa-update-prompt-20260804'
 ]) {
   if (!worker.includes(required)) fail(`The service worker cache is missing ${required}.`);
 }
 
-console.log('Media artwork, playback readiness, lyrics timing, reader-relative auto-scroll, dedicated Studio URLs and listening summary regressions are covered.');
+console.log('Media artwork, playback readiness, lyrics timing, reader-relative auto-scroll, dedicated Studio URLs, PWA update release and listening summary regressions are covered.');
