@@ -29,6 +29,7 @@ const SHELL_RESOURCES = [
   './css/visual-card.css',
   './css/track-detail.css',
   './css/track-videos.css',
+  './css/mobile-studio.css',
   './css/r2-track-details.css',
   './js/build-config.js',
   './js/app-engine.js',
