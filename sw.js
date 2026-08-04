@@ -1,6 +1,6 @@
 importScripts('./js/build-config.js');
-const RELEASE = 'studio-route-20260804';
-// Refresh the shell so dedicated Studio URLs replace the temporary route handoff.
+const RELEASE = 'lyrics-autoscroll-20260804';
+// Refresh the shell so reader-relative lyric centering replaces page-relative offsets.
 const VERSION = `${globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev'}-${RELEASE}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;
