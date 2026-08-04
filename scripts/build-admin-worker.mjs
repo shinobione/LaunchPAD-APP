@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import vm from 'node:vm';
 import { spawnSync } from 'node:child_process';
 
 const partsDirectory = 'cloudflare/admin-worker.parts';
@@ -17,13 +18,32 @@ const parts = fs.readdirSync(partsDirectory)
   .filter(filename => filename.endsWith('.part'))
   .sort((left, right) => left.localeCompare(right, 'en', { numeric: true }));
 
-if (parts.length < 9) {
-  throw new Error(`Expected at least 9 Track Manager source parts, received ${parts.length}.`);
+if (parts.length < 10) {
+  throw new Error(`Expected at least 10 Track Manager source parts, received ${parts.length}.`);
 }
 
-const source = parts
+const injectionParts = parts.filter(filename => filename.includes('.inject.'));
+const sourceParts = parts.filter(filename => !filename.includes('.inject.'));
+let source = sourceParts
   .map(filename => fs.readFileSync(path.join(partsDirectory, filename), 'utf8').replace(/[\r\n]+$/, ''))
   .join('');
+
+if (injectionParts.length) {
+  const insertionMarker = '\ninstallQualityWorkspace();';
+  if (!source.includes(insertionMarker)) {
+    throw new Error('Unable to locate the Track Manager UI installation marker.');
+  }
+  const injectionSource = injectionParts
+    .map(filename => fs.readFileSync(path.join(partsDirectory, filename), 'utf8').trim())
+    .join('\n');
+  source = source.replace(insertionMarker, `\n${injectionSource}${insertionMarker}`);
+}
+
+source = source.replace('version: "4.6"', 'version: "4.7"');
+source = source.replace(
+  ":' sans timestamps.'))}catch(error)",
+  ":' sans timestamps.')))}catch(error)",
+);
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 fs.writeFileSync(outputPath, source, 'utf8');
@@ -41,9 +61,9 @@ if (!embeddedScript) {
   throw new Error('Built Track Manager Worker is missing its embedded UI script.');
 }
 try {
-  new Function(embeddedScript);
+  new vm.Script(embeddedScript, { filename: 'track-manager-ui.js' });
 } catch (error) {
-  throw new Error(`Built Track Manager UI script has invalid syntax: ${error.message}`);
+  throw new Error(`Built Track Manager UI script has invalid syntax:\n${error.stack || error.message}`);
 }
 
 for (const forbidden of [
@@ -58,7 +78,7 @@ for (const forbidden of [
 }
 
 for (const required of [
-  'version: "4.6"',
+  'version: "4.7"',
   'const ADMIN_HTML = String.raw`',
   'rel="icon" href="data:image/svg+xml',
   'class="form-section"',
@@ -88,11 +108,22 @@ for (const required of [
   'Contrôle avant publication',
   'qualityEvidence',
   'create_only',
-  "version.textContent='v4.6'"
+  "version.textContent='v4.7'",
+  "modal.id='batchImportModal'",
+  'id="batchFiles"',
+  'id="batchFolder"',
+  'webkitdirectory',
+  'function batchGroupFiles(',
+  'function batchAssociationProblems(',
+  'async function batchAnalyzeGroup(',
+  'async function startBatchImport(',
+  'Compléter l’existant',
+  'Aucun fichier ne part vers R2 avant confirmation.',
+  'thumbnail.webp'
 ]) {
   if (!source.includes(required)) {
     throw new Error(`Built Track Manager Worker is missing ${required}.`);
   }
 }
 
-console.log(`Built ${outputPath} from ${parts.length} source parts (${Buffer.byteLength(source)} bytes).`);
+console.log(`Built ${outputPath} from ${sourceParts.length} source parts and ${injectionParts.length} UI injection(s) (${Buffer.byteLength(source)} bytes).`);
