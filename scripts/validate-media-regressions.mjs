@@ -5,7 +5,7 @@ const read = path => fs.readFileSync(path, 'utf8');
 
 // These checks deliberately run through the existing service-worker CI step,
 // so every PWA build validates persistent media and mobile regressions.
-const icon = fs.readFileSync('assets/pwa-icon-512.png');
+const icon = fs.readFileSync('assets/app-icon-neon-512.png');
 const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 if (icon.length < 1024 || !icon.subarray(0, 8).equals(pngSignature)) {
   fail('Android media artwork must be a real PNG file.');
@@ -14,10 +14,14 @@ if (icon.length < 1024 || !icon.subarray(0, 8).equals(pngSignature)) {
 const mediaSession = read('js/features/media-session.js');
 for (const required of [
   'artwork: MEDIA_ARTWORK',
-  'assets/pwa-icon-512.png',
+  'assets/app-icon-neon-192.png',
+  'assets/app-icon-neon-512.png',
   "type: 'image/png'"
 ]) {
   if (!mediaSession.includes(required)) fail(`Media Session is missing ${required}.`);
+}
+if (mediaSession.includes('assets/pwa-icon-512.png')) {
+  fail('Media Session still references the retired circular app icon.');
 }
 
 const remoteCatalog = read('js/core/remote-catalog.js');
@@ -176,9 +180,16 @@ for (const forbidden of ['fallbackFile', 'Bundled audio fallback', "addEventList
 }
 
 const manifest = JSON.parse(read('manifest.webmanifest'));
-const pngIcon = manifest.icons?.find(item => item.src === 'assets/pwa-icon-512.png');
-if (!pngIcon || pngIcon.type !== 'image/png' || pngIcon.sizes !== '512x512') {
-  fail('The PWA manifest must register the 512px PNG media artwork.');
+const pngIcon = manifest.icons?.find(item => item.src === 'assets/app-icon-neon-512.png');
+if (!pngIcon || pngIcon.type !== 'image/png' || pngIcon.sizes !== '512x512' || pngIcon.purpose !== 'any') {
+  fail('The PWA manifest must register the cache-busting 512px neon PNG icon.');
+}
+const maskableIcon = manifest.icons?.find(item => item.src === 'assets/app-icon-neon-maskable.svg');
+if (!maskableIcon || maskableIcon.type !== 'image/svg+xml' || maskableIcon.sizes !== 'any' || maskableIcon.purpose !== 'maskable') {
+  fail('The PWA manifest must register a dedicated safe-zone maskable icon.');
+}
+if (manifest.icons?.some(item => item.src.includes('pwa-icon-') || item.purpose === 'any maskable')) {
+  fail('The PWA manifest still exposes legacy or ambiguous app icon entries.');
 }
 
 const staticCatalog = read('js/catalog.js');
@@ -208,7 +219,10 @@ if (worker.includes('LYRIC_RESOURCES') || worker.includes('assets/lyrics/')) {
   fail('The service worker must not precache bundled lyric fallbacks.');
 }
 for (const required of [
-  "'./assets/pwa-icon-512.png'",
+  "'./assets/app-icon-neon.svg'",
+  "'./assets/app-icon-neon-maskable.svg'",
+  "'./assets/app-icon-neon-192.png'",
+  "'./assets/app-icon-neon-512.png'",
   "'./css/track-videos.css'",
   "'./js/core/router.js'",
   "'./js/features/track-videos.js'",
@@ -219,5 +233,12 @@ for (const required of [
 ]) {
   if (!worker.includes(required)) fail(`The service worker cache is missing ${required}.`);
 }
+for (const retired of [
+  "'./assets/pwa-icon-192.svg'",
+  "'./assets/pwa-icon-512.svg'",
+  "'./assets/pwa-icon-512.png'"
+]) {
+  if (worker.includes(retired)) fail(`The service worker still precaches retired icon ${retired}.`);
+}
 
-console.log('Media artwork, playback readiness, lyrics timing, reader-relative auto-scroll, dedicated Studio URLs, centralized PWA release and listening summary regressions are covered.');
+console.log('Unified neon app artwork, playback readiness, lyrics timing, reader-relative auto-scroll, dedicated Studio URLs, centralized PWA release and listening summary regressions are covered.');
