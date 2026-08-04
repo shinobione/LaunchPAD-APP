@@ -28,6 +28,26 @@ run_pwa_update_smoke() {
   echo "PWA update prompt smoke test passed"
 }
 
+run_audio_startup_smoke() {
+  local profile output
+  profile="$(mktemp -d)"
+  output="$(mktemp)"
+
+  timeout --signal=TERM 45s "$CHROME_BIN" \
+    --headless=new --no-sandbox --disable-gpu \
+    --disable-background-networking --disable-component-update --disable-sync \
+    --disable-features=OptimizationHints,OptimizationGuideModelDownloading,MediaRouter,Translate \
+    --metrics-recording-only --no-first-run --disable-default-apps \
+    --virtual-time-budget=9000 \
+    --user-data-dir="$profile" --dump-dom \
+    "${BASE_URL}tests/audio-startup-smoke.html" > "$output"
+
+  grep -q 'STUDIO AUDIO READY WATCHDOG SOURCE REBUILD RETRY' "$output"
+  ! grep -q 'STUDIO AUDIO ERROR' "$output"
+  rm -rf "$profile" "$output"
+  echo "Studio audio startup recovery smoke test passed"
+}
+
 run_mobile_studio_smoke() {
   local profile marker
   profile="$(mktemp -d)"
@@ -90,6 +110,7 @@ capture() {
 }
 
 run_pwa_update_smoke
+run_audio_startup_smoke
 run_mobile_studio_smoke
 capture home-desktop 1440 1000 'home'
 capture home-mobile 390 844 'home'
