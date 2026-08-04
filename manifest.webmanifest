@@ -1,6 +1,6 @@
 {
   "id": "./",
-  "name": "SHINOBIWAN Launchpad",
+  "name": "SHINOBIWAN LaunchPAD",
   "short_name": "SHINOBIWAN",
   "description": "An immersive music launchpad for SHINOBIWAN releases, albums, lyrics and reactive visuals.",
   "start_url": "./#home",
@@ -14,22 +14,28 @@
   "categories": ["music", "entertainment"],
   "icons": [
     {
-      "src": "assets/pwa-icon-192.svg",
+      "src": "assets/app-icon-neon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "assets/pwa-icon-512.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "assets/pwa-icon-512.png",
+      "src": "assets/app-icon-neon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "assets/app-icon-neon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/app-icon-neon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ],
   "shortcuts": [
@@ -37,19 +43,19 @@
       "name": "Home",
       "short_name": "Home",
       "url": "./#home",
-      "icons": [{ "src": "assets/pwa-icon-512.png", "sizes": "512x512", "type": "image/png" }]
+      "icons": [{ "src": "assets/app-icon-neon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Favorites",
       "short_name": "Favorites",
       "url": "./#favorites",
-      "icons": [{ "src": "assets/pwa-icon-512.png", "sizes": "512x512", "type": "image/png" }]
+      "icons": [{ "src": "assets/app-icon-neon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Audio Lab",
       "short_name": "Audio Lab",
       "url": "./#lab",
-      "icons": [{ "src": "assets/pwa-icon-512.png", "sizes": "512x512", "type": "image/png" }]
+      "icons": [{ "src": "assets/app-icon-neon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }
