@@ -4,6 +4,8 @@ const VIEW_ALIASES = {
 };
 
 const TRACK_DETAIL_HISTORY_KEY = 'shinobiTrackDetail';
+const TRACK_ROUTES = new Set(['track', 'album', 'lyrics', 'studio']);
+const ROUTE_CHANGE_EVENT = 'shinobi:route-change';
 
 export function parseRoute(hash = window.location.hash) {
   const value = hash.replace(/^#/, '').trim();
@@ -13,7 +15,7 @@ export function parseRoute(hash = window.location.hash) {
   if (separator > 0) {
     const type = value.slice(0, separator);
     const id = decodeURIComponent(value.slice(separator + 1));
-    if (['track', 'album', 'lyrics'].includes(type) && id) return { type, id };
+    if (TRACK_ROUTES.has(type) && id) return { type, id };
   }
 
   const view = VIEW_ALIASES[value] || value;
@@ -28,6 +30,12 @@ export function routeToHash(route) {
   return `#${route.type}=${encodeURIComponent(route.id)}`;
 }
 
+function announceRoute(route) {
+  window.dispatchEvent(new CustomEvent(ROUTE_CHANGE_EVENT, {
+    detail: { route }
+  }));
+}
+
 export function createRouter({ onRoute }) {
   function dispatch() {
     const route = parseRoute();
@@ -36,7 +44,15 @@ export function createRouter({ onRoute }) {
       window.history.state?.[TRACK_DETAIL_HISTORY_KEY] === true;
 
     if (isPassiveTrackDetail) return;
-    onRoute(route);
+
+    // Studio reuses the Lyrics view, while the original route remains visible
+    // and shareable in the address bar.
+    const handledRoute = route.type === 'studio'
+      ? { type: 'lyrics', id: route.id }
+      : route;
+
+    onRoute(handledRoute);
+    announceRoute(route);
   }
 
   function navigate(route, { replace = false } = {}) {
