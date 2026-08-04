@@ -4,7 +4,7 @@
     cache: 'shinobi-launchpad-v11',
     revision: 'hero-first-paint-1',
     display: '2026.08.04',
-    release: 'pwa-update-prompt-20260804'
+    release: 'mobile-studio-layout-20260804'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
