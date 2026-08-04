@@ -1,5 +1,9 @@
 import { ensureStylesheet, versionedAsset } from '../core/assets.js';
 
+const UPDATE_DISMISS_KEY = 'shinobi-pwa-update-dismissed-session';
+const RELOAD_REQUEST_KEY = 'shinobi-pwa-update-reload-requested';
+const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
+
 function ensureMeta(name, content) {
   let meta = document.head.querySelector(`meta[name="${name}"]`);
   if (!meta) {
@@ -8,6 +12,30 @@ function ensureMeta(name, content) {
     document.head.appendChild(meta);
   }
   meta.content = content;
+}
+
+function safeStorageGet(storage, key) {
+  try {
+    return storage?.getItem(key) || null;
+  } catch {
+    return null;
+  }
+}
+
+function safeStorageSet(storage, key, value) {
+  try {
+    storage?.setItem(key, value);
+  } catch {
+    // Hardened browsing modes may block session storage.
+  }
+}
+
+function safeStorageRemove(storage, key) {
+  try {
+    storage?.removeItem(key);
+  } catch {
+    // Hardened browsing modes may block session storage.
+  }
 }
 
 export function preparePWAHead() {
@@ -71,6 +99,157 @@ function createInstallControl() {
   return control;
 }
 
+function createUpdateBanner() {
+  const existing = document.querySelector('#pwa-update-banner');
+  if (existing) return existing;
+
+  const banner = document.createElement('section');
+  banner.id = 'pwa-update-banner';
+  banner.className = 'pwa-update-banner';
+  banner.hidden = true;
+  banner.setAttribute('role', 'status');
+  banner.setAttribute('aria-live', 'polite');
+  banner.setAttribute('aria-label', 'LaunchPAD update available');
+  banner.innerHTML = `
+    <div class="pwa-update-copy">
+      <span class="pwa-update-icon" aria-hidden="true">↻</span>
+      <span>
+        <strong>Une nouvelle version de LaunchPAD est disponible.</strong>
+        <small>La mise à jour sera appliquée sans interrompre brutalement la musique.</small>
+      </span>
+    </div>
+    <div class="pwa-update-actions">
+      <button type="button" class="primary" data-pwa-update-now>Mettre à jour</button>
+      <button type="button" class="secondary" data-pwa-update-later>Plus tard</button>
+    </div>
+  `;
+  document.body.appendChild(banner);
+  return banner;
+}
+
+export function createPWAUpdateController({
+  audio = document.querySelector('#audio'),
+  serviceWorker = navigator.serviceWorker,
+  storage = window.sessionStorage,
+  reload = () => window.location.reload(),
+  notify = () => {}
+} = {}) {
+  const banner = createUpdateBanner();
+  const updateButton = banner.querySelector('[data-pwa-update-now]');
+  const laterButton = banner.querySelector('[data-pwa-update-later]');
+  const title = banner.querySelector('strong');
+  const subtitle = banner.querySelector('small');
+
+  let waitingWorker = null;
+  let deferredUntilPlaybackStops = false;
+  let activationRequested = false;
+  let refreshing = false;
+  let dismissedForSession = safeStorageGet(storage, UPDATE_DISMISS_KEY) === '1';
+  let reloadAuthorized = safeStorageGet(storage, RELOAD_REQUEST_KEY) === '1';
+  safeStorageRemove(storage, RELOAD_REQUEST_KEY);
+
+  function resetCopy() {
+    banner.dataset.state = 'ready';
+    title.textContent = 'Une nouvelle version de LaunchPAD est disponible.';
+    subtitle.textContent = 'La mise à jour sera appliquée sans interrompre brutalement la musique.';
+    updateButton.textContent = 'Mettre à jour';
+    updateButton.disabled = false;
+    laterButton.disabled = false;
+  }
+
+  function hide() {
+    banner.classList.remove('show');
+    window.setTimeout(() => {
+      if (!banner.classList.contains('show')) banner.hidden = true;
+    }, 220);
+  }
+
+  function show(worker) {
+    waitingWorker = worker || waitingWorker;
+    if (!waitingWorker || dismissedForSession || activationRequested) return false;
+    resetCopy();
+    banner.hidden = false;
+    window.requestAnimationFrame(() => banner.classList.add('show'));
+    return true;
+  }
+
+  function requestActivation() {
+    if (!waitingWorker || activationRequested) return false;
+    deferredUntilPlaybackStops = false;
+    activationRequested = true;
+    reloadAuthorized = true;
+    safeStorageSet(storage, RELOAD_REQUEST_KEY, '1');
+    safeStorageRemove(storage, UPDATE_DISMISS_KEY);
+    banner.dataset.state = 'applying';
+    title.textContent = 'Mise à jour en cours…';
+    subtitle.textContent = 'LaunchPAD va se recharger une seule fois.';
+    updateButton.textContent = 'Installation…';
+    updateButton.disabled = true;
+    laterButton.disabled = true;
+    waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+    return true;
+  }
+
+  function deferActivation() {
+    deferredUntilPlaybackStops = true;
+    banner.dataset.state = 'deferred';
+    title.textContent = 'Mise à jour en attente';
+    subtitle.textContent = 'Elle s’installera dès que le morceau sera en pause ou terminé.';
+    updateButton.textContent = 'En attente…';
+    updateButton.disabled = true;
+    notify('La mise à jour attend la pause ou la fin du morceau.');
+  }
+
+  function handleUpdateClick() {
+    if (!waitingWorker) return;
+    if (audio && !audio.paused && !audio.ended) {
+      deferActivation();
+      return;
+    }
+    requestActivation();
+  }
+
+  function handleLaterClick() {
+    deferredUntilPlaybackStops = false;
+    dismissedForSession = true;
+    safeStorageSet(storage, UPDATE_DISMISS_KEY, '1');
+    hide();
+  }
+
+  function handlePlaybackStop() {
+    if (deferredUntilPlaybackStops) requestActivation();
+  }
+
+  function handleControllerChange() {
+    if (refreshing || (!activationRequested && !reloadAuthorized)) return;
+    refreshing = true;
+    safeStorageRemove(storage, RELOAD_REQUEST_KEY);
+    reload();
+  }
+
+  updateButton.addEventListener('click', handleUpdateClick);
+  laterButton.addEventListener('click', handleLaterClick);
+  audio?.addEventListener('pause', handlePlaybackStop);
+  audio?.addEventListener('ended', handlePlaybackStop);
+  serviceWorker?.addEventListener('controllerchange', handleControllerChange);
+
+  return {
+    show,
+    hide,
+    requestActivation,
+    isVisible: () => !banner.hidden,
+    isDeferred: () => deferredUntilPlaybackStops,
+    destroy() {
+      updateButton.removeEventListener('click', handleUpdateClick);
+      laterButton.removeEventListener('click', handleLaterClick);
+      audio?.removeEventListener('pause', handlePlaybackStop);
+      audio?.removeEventListener('ended', handlePlaybackStop);
+      serviceWorker?.removeEventListener('controllerchange', handleControllerChange);
+      banner.remove();
+    }
+  };
+}
+
 export function initPWA() {
   if (window.__shinobiPWAReady) return;
   window.__shinobiPWAReady = true;
@@ -82,28 +261,21 @@ export function initPWA() {
   const button = control.querySelector('button');
   const title = control.querySelector('strong');
   const subtitle = control.querySelector('small');
+  const audio = document.querySelector('#audio');
   let deferredPrompt = null;
   let registration = null;
-  let updateReady = false;
+  let lastUpdateCheck = 0;
+  let updateController = null;
 
   function setVisible(visible) {
     control.hidden = !visible || isStandalone();
   }
 
   function setInstallState() {
-    updateReady = false;
     title.textContent = 'Install app';
     subtitle.textContent = isIOS() ? 'Add to Home Screen' : 'Launch from your device';
     button.querySelector('[aria-hidden]')?.replaceChildren(document.createTextNode('↓'));
     setVisible(Boolean(deferredPrompt) || isIOS());
-  }
-
-  function setUpdateState() {
-    updateReady = true;
-    title.textContent = 'Update ready';
-    subtitle.textContent = 'Reload the latest version';
-    button.querySelector('[aria-hidden]')?.replaceChildren(document.createTextNode('↻'));
-    setVisible(true);
   }
 
   function syncConnectivity() {
@@ -128,11 +300,6 @@ export function initPWA() {
   syncConnectivity();
 
   button.addEventListener('click', async () => {
-    if (updateReady && registration?.waiting) {
-      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-      return;
-    }
-
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const choice = await deferredPrompt.userChoice;
@@ -147,20 +314,44 @@ export function initPWA() {
     }
   });
 
+  function watchRegistration(nextRegistration) {
+    registration = nextRegistration;
+    updateController ||= createPWAUpdateController({ audio, notify });
+
+    if (registration.waiting && navigator.serviceWorker.controller) {
+      updateController.show(registration.waiting);
+    }
+
+    registration.addEventListener('updatefound', () => {
+      const worker = registration.installing;
+      worker?.addEventListener('statechange', () => {
+        if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+          updateController.show(worker);
+        }
+      });
+    });
+  }
+
+  async function checkForUpdate({ force = false } = {}) {
+    if (!registration || !navigator.onLine) return;
+    const now = Date.now();
+    if (!force && now - lastUpdateCheck < UPDATE_CHECK_INTERVAL) return;
+    lastUpdateCheck = now;
+    try {
+      await registration.update();
+    } catch (error) {
+      console.info('PWA update check postponed.', error);
+    }
+  }
+
   async function registerServiceWorker() {
     try {
-      registration = await navigator.serviceWorker.register(versionedAsset('./sw.js'), {
+      const nextRegistration = await navigator.serviceWorker.register(versionedAsset('./sw.js'), {
         scope: './',
         updateViaCache: 'none'
       });
-
-      if (registration.waiting && navigator.serviceWorker.controller) setUpdateState();
-      registration.addEventListener('updatefound', () => {
-        const worker = registration.installing;
-        worker?.addEventListener('statechange', () => {
-          if (worker.state === 'installed' && navigator.serviceWorker.controller) setUpdateState();
-        });
-      });
+      watchRegistration(nextRegistration);
+      checkForUpdate({ force: true });
     } catch (error) {
       console.warn('PWA service worker registration failed', error);
     }
@@ -170,11 +361,9 @@ export function initPWA() {
     if (document.readyState === 'complete') registerServiceWorker();
     else window.addEventListener('load', registerServiceWorker, { once: true });
 
-    let refreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (refreshing) return;
-      refreshing = true;
-      window.location.reload();
+    window.addEventListener('online', () => checkForUpdate({ force: true }));
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') checkForUpdate();
     });
   }
 
@@ -184,6 +373,7 @@ export function initPWA() {
   window.__shinobiPWA = {
     isStandalone,
     getRegistration: () => registration,
-    getDeferredPrompt: () => deferredPrompt
+    getDeferredPrompt: () => deferredPrompt,
+    checkForUpdate: () => checkForUpdate({ force: true })
   };
 }
