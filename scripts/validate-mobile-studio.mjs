@@ -13,7 +13,9 @@ for (const required of [
   'lyrics-track-panel-collapsed',
   "window.matchMedia?.('(max-width:760px)')",
   'setMobilePanelCollapsed',
-  'centerElementInScrollContainer'
+  'centerElementInScrollContainer',
+  'resetMobileTrackPanelScroll',
+  "trackPanel.scrollTo({ top: 0, left: 0, behavior: 'auto' })"
 ]) {
   if (!studio.includes(required)) fail(`Mobile Studio controller is missing ${required}.`);
 }
@@ -27,7 +29,9 @@ for (const required of [
   'body.lyrics-studio-open .player-bar',
   'visibility:visible!important',
   'orientation:landscape',
-  'grid-template-columns:repeat(3,minmax(0,1fr))'
+  'grid-template-columns:repeat(3,minmax(0,1fr))',
+  '.lyrics-track-panel:not(.lyrics-track-panel-collapsed)',
+  'grid-template-columns:minmax(92px,116px) minmax(0,1fr)'
 ]) {
   if (!css.includes(required)) fail(`Mobile Studio stylesheet is missing ${required}.`);
 }
@@ -36,4 +40,4 @@ if (!worker.includes("'./css/mobile-studio.css'")) {
   fail('Mobile Studio stylesheet is missing from the PWA shell.');
 }
 
-console.log('Mobile Studio collapse, sticky controls, safe areas and compact player are covered.');
+console.log('Mobile Studio collapse, expanded Canvas visibility, sticky controls, safe areas and compact player are covered.');
