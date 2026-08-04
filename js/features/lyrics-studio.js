@@ -2,6 +2,24 @@ import { getTrack } from '../core/catalog-store.js';
 import { ensureStylesheet } from '../core/assets.js';
 
 const STUDIO_REQUEST_KEY = 'shinobi-launchpad-open-studio-track';
+let pendingStudioTrackId = null;
+
+export function requestLyricsStudio(trackId) {
+  const requestedTrackId = String(trackId || '').trim();
+  if (!requestedTrackId) return false;
+
+  pendingStudioTrackId = requestedTrackId;
+  try {
+    window.sessionStorage.setItem(STUDIO_REQUEST_KEY, requestedTrackId);
+  } catch {
+    // The in-memory request remains authoritative when storage is blocked.
+  }
+
+  window.dispatchEvent(new CustomEvent('shinobi:lyrics-studio-request', {
+    detail: { trackId: requestedTrackId }
+  }));
+  return true;
+}
 
 function currentTrack(audio) {
   return getTrack(audio?.dataset.trackId || '') || null;
@@ -85,6 +103,7 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
 
   let savedScrollY = 0;
   let canvasEnabled = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  let studioRequestTimer = null;
 
   function setCanvasButtonState() {
     setPressed(canvasButton, canvasEnabled);
@@ -194,14 +213,19 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   }
 
   function requestedStudioTrack() {
+    if (pendingStudioTrackId) return pendingStudioTrackId;
+
     try {
-      return window.sessionStorage.getItem(STUDIO_REQUEST_KEY);
+      const storedTrackId = window.sessionStorage.getItem(STUDIO_REQUEST_KEY);
+      if (storedTrackId) pendingStudioTrackId = storedTrackId;
+      return storedTrackId;
     } catch {
       return null;
     }
   }
 
   function clearStudioRequest() {
+    pendingStudioTrackId = null;
     try {
       window.sessionStorage.removeItem(STUDIO_REQUEST_KEY);
     } catch {
@@ -216,6 +240,17 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
     clearStudioRequest();
     setStudioMode(true, { restoreScroll: false });
     return true;
+  }
+
+  function scheduleStudioRequestConsumption(attempt = 0) {
+    window.clearTimeout(studioRequestTimer);
+    studioRequestTimer = window.setTimeout(() => {
+      studioRequestTimer = null;
+      if (consumeStudioRequest()) return;
+      if (requestedStudioTrack() && attempt < 10) {
+        scheduleStudioRequestConsumption(attempt + 1);
+      }
+    }, attempt === 0 ? 0 : 40);
   }
 
   modeButton.addEventListener('click', () => {
@@ -238,14 +273,14 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
       setStudioMode(false, { restoreScroll: false });
       return;
     }
-    window.setTimeout(consumeStudioRequest, 0);
+    scheduleStudioRequestConsumption();
   });
   activeViewObserver.observe(view, { attributes: true, attributeFilter: ['class'] });
 
   if (audio) {
     new MutationObserver(() => {
       syncCanvasTrack();
-      window.setTimeout(consumeStudioRequest, 0);
+      scheduleStudioRequestConsumption();
     }).observe(audio, {
       attributes: true,
       attributeFilter: ['data-track-id']
@@ -254,15 +289,22 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   document.querySelector('#lyrics-track-select')?.addEventListener('change', () => {
     window.setTimeout(() => {
       syncCanvasTrack();
-      consumeStudioRequest();
+      scheduleStudioRequestConsumption();
     }, 0);
   });
 
+  window.addEventListener('shinobi:lyrics-studio-request', event => {
+    const requestedTrackId = String(event.detail?.trackId || '').trim();
+    if (requestedTrackId) pendingStudioTrackId = requestedTrackId;
+    scheduleStudioRequestConsumption();
+  });
+
   window.addEventListener('hashchange', () => {
-    window.setTimeout(consumeStudioRequest, 0);
+    scheduleStudioRequestConsumption();
   });
 
   window.addEventListener('pagehide', () => {
+    window.clearTimeout(studioRequestTimer);
     pauseCanvas();
     canvasButton.hidden = true;
     updateControlsLayout();
@@ -274,5 +316,5 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   setCanvasButtonState();
   setModeButtonState(false);
   syncCanvasTrack();
-  window.setTimeout(consumeStudioRequest, 0);
+  scheduleStudioRequestConsumption();
 }

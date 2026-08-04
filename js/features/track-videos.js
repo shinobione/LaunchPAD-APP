@@ -1,8 +1,8 @@
 import { getTrack } from '../core/catalog-store.js';
 import { ensureStylesheet } from '../core/assets.js';
+import { requestLyricsStudio } from './lyrics-studio.js';
 
 const TRACK_HASH_PREFIX = '#track=';
-const STUDIO_REQUEST_KEY = 'shinobi-launchpad-open-studio-track';
 
 function currentTrack() {
   if (!window.location.hash.startsWith(TRACK_HASH_PREFIX)) return null;
@@ -122,11 +122,7 @@ function installTrackEnhancements(view, track) {
 }
 
 function requestStudio(trackId) {
-  try {
-    window.sessionStorage.setItem(STUDIO_REQUEST_KEY, trackId);
-  } catch {
-    // The hash route still opens Lyrics when session storage is unavailable.
-  }
+  requestLyricsStudio(trackId);
   window.location.hash = `#lyrics=${encodeURIComponent(trackId)}`;
 }
 

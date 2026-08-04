@@ -1,6 +1,6 @@
 importScripts('./js/build-config.js');
-const RELEASE = 'studio-controls-20260804';
-// Refresh the shell so mobile control states and direct Studio entry replace cached drafts.
+const RELEASE = 'studio-direct-routing-20260804';
+// Refresh the shell so direct Studio requests survive route activation and storage restrictions.
 const VERSION = `${globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev'}-${RELEASE}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;

@@ -23,7 +23,7 @@
 
   <script type="module">
     import { mergeRemoteTracks } from '../js/core/catalog-store.js';
-    import { initLyricsStudio } from '../js/features/lyrics-studio.js';
+    import { initLyricsStudio, requestLyricsStudio } from '../js/features/lyrics-studio.js';
 
     const STUDIO_REQUEST_KEY = 'shinobi-launchpad-open-studio-track';
 
@@ -113,12 +113,30 @@
         throw new Error('Studio mode did not close cleanly.');
       }
 
-      sessionStorage.setItem(STUDIO_REQUEST_KEY, 'thick');
-      window.dispatchEvent(new HashChangeEvent('hashchange'));
+      view.classList.remove('active');
+      await waitForFrame();
+
+      const nativeSetItem = Storage.prototype.setItem;
+      Storage.prototype.setItem = function blockedStudioStorage() {
+        throw new DOMException('Storage blocked for smoke test.', 'SecurityError');
+      };
+      try {
+        requestLyricsStudio('thick');
+      } finally {
+        Storage.prototype.setItem = nativeSetItem;
+      }
+
+      await waitForFrame();
+      if (view.classList.contains('lyrics-studio-mode')) {
+        throw new Error('Studio opened before the Lyrics route became active.');
+      }
+
+      view.classList.add('active');
       await waitForFrame();
       await waitForFrame();
+      await new Promise(resolve => setTimeout(resolve, 80));
       if (!view.classList.contains('lyrics-studio-mode')) {
-        throw new Error('Direct track Studio request did not open Studio mode.');
+        throw new Error('Direct track Studio request did not survive the route transition.');
       }
       if (sessionStorage.getItem(STUDIO_REQUEST_KEY) !== null) {
         throw new Error('Direct Studio request was not consumed.');
@@ -130,7 +148,7 @@
         throw new Error('Studio mode did not close after leaving Lyrics.');
       }
 
-      result.textContent = 'LYRICS STUDIO READY SINGLE MODE AUTO CLOSE ALIGNED STATES DIRECT ENTRY';
+      result.textContent = 'LYRICS STUDIO READY SINGLE MODE AUTO CLOSE ALIGNED STATES DIRECT ENTRY MEMORY ROUTE';
     } catch (error) {
       result.textContent = `LYRICS STUDIO ERROR ${error.message}`;
     }
