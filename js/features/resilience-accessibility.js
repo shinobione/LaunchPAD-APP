@@ -48,14 +48,35 @@ function installAudioStatus(audio) {
 
   status.addEventListener('click', event => {
     if (!event.target.closest('[data-audio-retry]')) return;
+
+    const track = getTrack(audio.dataset.trackId);
+    const source = track?.file || audio.getAttribute('src') || audio.currentSrc;
     const time = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+    let playbackRestarted = false;
+
+    const restartPlayback = () => {
+      if (playbackRestarted) return;
+      playbackRestarted = true;
+      if (time > 0 && Number.isFinite(audio.duration) && time < audio.duration) {
+        audio.currentTime = time;
+      }
+      audio.play().catch(() => show('Playback still cannot start.', true));
+    };
+
+    show('Retrying audio…');
+    audio.addEventListener('loadedmetadata', restartPlayback, { once: true });
+    audio.addEventListener('canplay', restartPlayback, { once: true });
+
+    // Rebuild the source from the catalog instead of calling load() on a media
+    // element that may still be stuck in NETWORK_EMPTY after entering Studio.
+    if (source) audio.setAttribute('src', source);
     audio.dataset.forceLoad = 'true';
     audio.load();
     delete audio.dataset.forceLoad;
-    audio.addEventListener('loadedmetadata', () => {
-      if (time > 0 && time < audio.duration) audio.currentTime = time;
-      audio.play().catch(() => show('Playback still cannot start.', true));
-    }, { once: true });
+
+    // loadedmetadata can be missed on a very fast cached response. Keep a short
+    // fallback so Retry always issues a fresh play intent from the user's tap.
+    window.setTimeout(restartPlayback, 320);
   });
 }
 
