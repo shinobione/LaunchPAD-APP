@@ -5,10 +5,15 @@ const fail = message => { throw new Error(message); };
 
 const readiness = read('js/features/audio-readiness.js');
 for (const required of [
+  "audio.preload = 'metadata'",
+  'navigator.userActivation?.isActive',
   'PLAY_START_WATCHDOG_MS',
   'prepareSourceInsideGesture',
   'refreshCurrentSource({ forceLoad: true })',
   'recoverPendingStart',
+  "audio.dataset.playbackRequestState = 'idle'",
+  'audio.shinobiRetryPlayback',
+  "event.stopImmediatePropagation()",
   'audio.networkState === HTMLMediaElement.NETWORK_EMPTY',
   'audio.networkState === HTMLMediaElement.NETWORK_NO_SOURCE'
 ]) {
@@ -25,6 +30,27 @@ for (const required of [
   if (!resilience.includes(required)) fail(`Audio Retry is missing ${required}.`);
 }
 
+const player = read('js/features/player-experience.js');
+for (const required of [
+  "document.title = `ShinoBiWan LaunchPAD — ${track.title}`",
+  "audio.dataset.playbackRequestState === 'starting'",
+  "button.dataset.playbackState = 'loading'",
+  '#view-lyrics.lyrics-studio-mode .lyrics-track-select'
+]) {
+  if (!player.includes(required)) fail(`Studio player reliability is missing ${required}.`);
+}
+
+const lyrics = read('js/features/lyrics/lyrics-engine.js');
+for (const required of [
+  'export function seekAudioToTimestamp',
+  'requestTimestamp',
+  "['loadedmetadata', 'durationchange', 'canplay']",
+  'startSyncClock',
+  'timestamp - lastSyncAt >= 90'
+]) {
+  if (!lyrics.includes(required)) fail(`Lyrics seek reliability is missing ${required}.`);
+}
+
 const browserTest = read('tests/audio-startup-smoke.html');
 for (const required of [
   'Direct Studio playback never recovered.',
@@ -39,4 +65,4 @@ if (!visualRunner.includes('run_audio_startup_smoke')) {
   fail('Studio audio startup browser regression is not wired into CI.');
 }
 
-console.log('Direct Studio playback watchdog, source rebuild and Retry recovery are covered.');
+console.log('Studio metadata preparation, honest loading state, lyric seeking, source rebuild and Retry recovery are covered.');
