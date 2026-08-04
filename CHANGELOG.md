@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Mark tracks with video using responsive **CANVAS** badges, lazy single-preview animation, mobile preview controls, quick Studio access, fixed-cover fallbacks and reduced-motion/data-saving safeguards across Home, Discography and Favorites cards.
 - Add smart Canvas lifecycle management: pause silent loops when hidden or offscreen, resume them when useful, respect reduced-motion/data-saving signals, enforce one active Canvas and release video resources on route or track changes without touching audio playback.
 - Add an audio-safe PWA update prompt with **Mettre à jour / Plus tard**, one-time reload protection, session dismissal and visible build metadata in About.
 - Add shareable `#studio=track-slug` routes that reopen Lyrics Studio directly, preserve browser history and no longer depend on temporary storage handoffs.

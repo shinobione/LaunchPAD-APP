@@ -1,0 +1,34 @@
+.album-card.has-canvas-identity{position:relative}
+.album-card.has-canvas-identity .cover-wrap{isolation:isolate}
+.canvas-card-preview-video{position:absolute;inset:0;z-index:2;width:100%;height:100%;object-fit:cover;object-position:center;pointer-events:none;opacity:0;transform:scale(1.015);transition:opacity .24s ease;background:#05030b}
+.album-card.is-canvas-previewing .canvas-card-preview-video{opacity:1}
+.album-card.is-canvas-loading .cover-wrap::after{content:"";position:absolute;z-index:6;inset:50% auto auto 50%;width:24px;height:24px;margin:-12px;border:2px solid rgba(255,255,255,.24);border-top-color:#fff;border-radius:50%;animation:canvas-card-spin .8s linear infinite;pointer-events:none}
+@keyframes canvas-card-spin{to{transform:rotate(360deg)}}
+.canvas-card-badge{position:absolute;z-index:7;left:9px;top:9px;display:inline-flex;align-items:center;min-height:24px;border:1px solid color-mix(in srgb,var(--accent) 48%,rgba(255,255,255,.18));background:rgba(5,3,11,.78);box-shadow:0 0 18px color-mix(in srgb,var(--accent) 18%,transparent);backdrop-filter:blur(10px);border-radius:999px;padding:5px 8px;color:#fff;font-size:8px;font-weight:800;letter-spacing:.13em;line-height:1}
+.album-card.has-canvas-identity.has-lyrics-badge .lyrics-card-badge{top:40px;z-index:7}
+.canvas-card-actions{position:absolute;z-index:8;left:8px;right:58px;bottom:8px;display:flex;align-items:center;gap:5px;pointer-events:none;opacity:0;transform:translateY(5px);transition:opacity .2s ease,transform .2s ease}
+.canvas-card-actions button{min-width:0;min-height:32px;padding:6px 9px;border:1px solid rgba(255,255,255,.16);border-radius:999px;background:rgba(5,3,11,.84);backdrop-filter:blur(10px);color:#fff;font-size:9px;font-weight:700;white-space:nowrap;box-shadow:0 8px 20px rgba(0,0,0,.3);pointer-events:auto}
+.canvas-card-actions button:hover,.canvas-card-actions button:focus-visible{border-color:color-mix(in srgb,var(--accent) 62%,white 10%);background:color-mix(in srgb,var(--accent) 24%,rgba(5,3,11,.88));outline:0}
+.canvas-card-preview-toggle[aria-pressed="true"]{border-color:color-mix(in srgb,var(--accent) 72%,white 12%);background:color-mix(in srgb,var(--accent) 34%,rgba(5,3,11,.88))}
+.canvas-card-preview-toggle[aria-disabled="true"]{opacity:.5;cursor:not-allowed}
+.album-card.has-canvas-identity:hover .canvas-card-actions,.album-card.has-canvas-identity:focus-within .canvas-card-actions,.album-card.is-canvas-previewing .canvas-card-actions{opacity:1;transform:none}
+.album-card.is-canvas-previewing{border-color:color-mix(in srgb,var(--accent) 62%,rgba(255,255,255,.1));box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 18%,transparent),0 18px 45px rgba(0,0,0,.36)}
+.album-card.is-canvas-previewing .cover-wrap>img{transform:scale(1.02)}
+.album-card.is-canvas-unavailable .canvas-card-badge{opacity:.62}
+.album-card.has-canvas-identity .play-overlay,.album-card.has-canvas-identity .favorite-toggle{z-index:9}
+@media(max-width:760px),(hover:none),(pointer:coarse){
+  .canvas-card-actions{right:50px;opacity:1;transform:none}
+  .canvas-card-actions button{min-height:30px;padding:5px 8px;font-size:8px}
+  .canvas-card-badge{min-height:22px;padding:4px 7px;font-size:7px}
+  .album-card.has-canvas-identity.has-lyrics-badge .lyrics-card-badge{top:37px}
+}
+@media(max-width:420px){
+  .canvas-card-actions{left:6px;right:46px;bottom:6px;gap:4px}
+  .canvas-card-actions button{padding:5px 6px;font-size:7px}
+  .canvas-card-badge{left:7px;top:7px}
+  .album-card.has-canvas-identity.has-lyrics-badge .lyrics-card-badge{left:7px;top:35px}
+}
+@media(prefers-reduced-motion:reduce){
+  .canvas-card-preview-video,.canvas-card-actions{transition:none}
+  .album-card.is-canvas-loading .cover-wrap::after{animation:none;border-color:rgba(255,255,255,.55)}
+}
