@@ -39,10 +39,10 @@ if (!worker.includes("globalThis.SHINOBIWAN_BUILD?.release")) {
 }
 
 const build = read('js/build-config.js');
-if (!build.includes("display: '2026.08.04.3'")) {
+if (!build.includes("display: '2026.08.04.4'")) {
   fail('Build display metadata is missing.');
 }
-if (!build.includes("release: 'studio-audio-startup-fix-20260804'")) {
+if (!build.includes("release: 'studio-playback-reliability-20260804'")) {
   fail('Build release metadata is missing.');
 }
 
@@ -71,4 +71,4 @@ if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RE
   fail('Browser regression coverage for the PWA update prompt is not wired into CI.');
 }
 
-console.log('PWA update prompt, deferred audio-safe activation, session dismissal and single reload safeguards are valid.');
+console.log('PWA update prompt, current build metadata, deferred audio-safe activation, session dismissal and single reload safeguards are valid.');

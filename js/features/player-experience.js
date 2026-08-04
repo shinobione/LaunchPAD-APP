@@ -17,13 +17,39 @@ function explicitLabel(value) {
   return 'UNRATED';
 }
 
+function installStudioReliabilityStyles() {
+  if (document.querySelector('#studio-reliability-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'studio-reliability-styles';
+  style.textContent = `
+    [data-action="toggle"].is-loading{cursor:progress}
+    @media(max-width:760px){
+      #view-lyrics.lyrics-studio-mode .lyrics-track-select-label,
+      #view-lyrics.lyrics-studio-mode .lyrics-track-select{display:none!important}
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 export function applyPlaybackState(root = document, playing = false) {
   root.querySelectorAll('[data-action="toggle"]').forEach(button => {
     button.textContent = playing ? '❚❚' : '▶';
     button.classList.toggle('is-playing', playing);
+    button.classList.remove('is-loading');
     button.setAttribute('aria-label', playing ? 'Pause' : 'Play');
     button.setAttribute('aria-pressed', String(playing));
     button.dataset.playbackState = playing ? 'playing' : 'paused';
+  });
+}
+
+function applyLoadingState(root = document) {
+  root.querySelectorAll('[data-action="toggle"]').forEach(button => {
+    button.textContent = '…';
+    button.classList.remove('is-playing');
+    button.classList.add('is-loading');
+    button.setAttribute('aria-label', 'Loading audio');
+    button.setAttribute('aria-pressed', 'true');
+    button.dataset.playbackState = 'loading';
   });
 }
 
@@ -54,6 +80,7 @@ function installTrackDNA(panel) {
 export function createPlayerExperience({ audio = document.querySelector('#audio') } = {}) {
   if (!audio) return { sync() {}, updateTrack() {} };
 
+  installStudioReliabilityStyles();
   const panel = document.querySelector('.discovery-panel');
   if (panel) installTrackDNA(panel);
 
@@ -65,6 +92,10 @@ export function createPlayerExperience({ audio = document.querySelector('#audio'
 
   function sync() {
     scheduled = false;
+    if (audio.dataset.playbackRequestState === 'starting') {
+      applyLoadingState(document);
+      return;
+    }
     applyPlaybackState(document, isPlaying());
   }
 
@@ -75,7 +106,13 @@ export function createPlayerExperience({ audio = document.querySelector('#audio'
   }
 
   function updateTrack(track = getTrack(audio.dataset.trackId) || tracks[0]) {
-    if (!track || !panel) return;
+    if (!track) {
+      document.title = 'ShinoBiWan LaunchPAD';
+      return;
+    }
+
+    document.title = `ShinoBiWan LaunchPAD — ${track.title}`;
+    if (!panel) return;
 
     const languages = Array.isArray(track.languages) && track.languages.length
       ? track.languages.join(' / ')
@@ -99,7 +136,7 @@ export function createPlayerExperience({ audio = document.querySelector('#audio'
     albumLink.setAttribute('aria-label', `Open ${track.album}`);
   }
 
-  ['play', 'playing', 'pause', 'ended', 'emptied', 'abort', 'error'].forEach(type => {
+  ['play', 'playing', 'waiting', 'stalled', 'pause', 'ended', 'emptied', 'abort', 'error', 'shinobi:audio-request-state'].forEach(type => {
     audio.addEventListener(type, scheduleSync);
   });
 
