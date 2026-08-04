@@ -146,10 +146,14 @@
 
     observer.set(videoA, 1);
     observer.set(videoB, 1);
+    videoA.src = videoA.dataset.src;
+    videoA.load();
     await videoA.play();
     await wait();
     assert(manager.activeVideo === videoA && !videoA.paused, 'The first Canvas did not become active.');
 
+    videoB.src = videoB.dataset.src;
+    videoB.load();
     await videoB.play();
     await wait();
     assert(videoA.paused, 'Starting a second Canvas did not pause the first.');
