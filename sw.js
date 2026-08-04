@@ -68,10 +68,10 @@ const SHELL_RESOURCES = [
 ];
 
 const IMAGE_RESOURCES = [
-  './assets/favicon-v6.svg',
-  './assets/pwa-icon-192.svg',
-  './assets/pwa-icon-512.svg',
-  './assets/pwa-icon-512.png',
+  './assets/app-icon-neon.svg',
+  './assets/app-icon-neon-maskable.svg',
+  './assets/app-icon-neon-192.png',
+  './assets/app-icon-neon-512.png',
   './assets/logo.png',
   './assets/shinoprofil.jpeg',
   './assets/launchpad.png',
