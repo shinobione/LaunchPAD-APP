@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Smart Canvas smoke test</title>
+</head>
+<body>
+  <main id="view-track" class="view active">
+    <aside data-track-video-panel="alpha">
+      <video class="track-video-player" data-src="data:video/mp4;base64,AAAA"></video>
+      <button data-track-video-loop-action="alpha">Play</button>
+    </aside>
+    <aside data-track-video-panel="alpha">
+      <video class="track-video-player" data-src="data:video/mp4;base64,BBBB"></video>
+      <button data-track-video-loop-action="alpha">Play</button>
+    </aside>
+  </main>
+  <audio id="audio"></audio>
+  <pre id="result">SMART CANVAS TEST RUNNING</pre>
+
+  <script type="module">
+    const result = document.querySelector('#result');
+    const wait = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms));
+    const fail = message => {
+      result.textContent = `SMART CANVAS ERROR ${message}`;
+      throw new Error(message);
+    };
+    const assert = (condition, message) => {
+      if (!condition) fail(message);
+    };
+
+    let visibilityState = 'visible';
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => visibilityState
+    });
+
+    class FakeMediaQuery {
+      constructor(matches = false) {
+        this.matches = matches;
+        this.listeners = new Set();
+      }
+      addEventListener(type, listener) {
+        if (type === 'change') this.listeners.add(listener);
+      }
+      removeEventListener(type, listener) {
+        if (type === 'change') this.listeners.delete(listener);
+      }
+      set(matches) {
+        this.matches = matches;
+        this.listeners.forEach(listener => listener({ matches, media: '' }));
+      }
+    }
+
+    const reducedMotion = new FakeMediaQuery(false);
+    const reducedData = new FakeMediaQuery(false);
+    window.matchMedia = query => {
+      if (query.includes('prefers-reduced-motion')) return reducedMotion;
+      if (query.includes('prefers-reduced-data')) return reducedData;
+      return new FakeMediaQuery(false);
+    };
+
+    class FakeIntersectionObserver {
+      static latest = null;
+      constructor(callback) {
+        this.callback = callback;
+        this.targets = new Set();
+        FakeIntersectionObserver.latest = this;
+      }
+      observe(target) {
+        this.targets.add(target);
+      }
+      unobserve(target) {
+        this.targets.delete(target);
+      }
+      disconnect() {
+        this.targets.clear();
+      }
+      set(target, ratio) {
+        this.callback([{
+          target,
+          isIntersecting: ratio > 0,
+          intersectionRatio: ratio
+        }]);
+      }
+    }
+    window.IntersectionObserver = FakeIntersectionObserver;
+
+    const connectionListeners = new Set();
+    const connection = {
+      saveData: false,
+      addEventListener(type, listener) {
+        if (type === 'change') connectionListeners.add(listener);
+      },
+      removeEventListener(type, listener) {
+        if (type === 'change') connectionListeners.delete(listener);
+      }
+    };
+    Object.defineProperty(navigator, 'connection', {
+      configurable: true,
+      value: connection
+    });
+
+    function stubVideo(video) {
+      const state = { paused: true, plays: 0, pauses: 0, loads: 0 };
+      Object.defineProperty(video, 'paused', {
+        configurable: true,
+        get: () => state.paused
+      });
+      Object.defineProperty(video, 'currentSrc', {
+        configurable: true,
+        get: () => video.getAttribute('src') || ''
+      });
+      video.play = () => {
+        state.plays += 1;
+        if (!state.paused) return Promise.resolve();
+        state.paused = false;
+        video.dispatchEvent(new Event('play'));
+        return Promise.resolve();
+      };
+      video.pause = () => {
+        state.pauses += 1;
+        if (state.paused) return;
+        state.paused = true;
+        video.dispatchEvent(new Event('pause'));
+      };
+      video.load = () => {
+        state.loads += 1;
+      };
+      return state;
+    }
+
+    const [videoA, videoB] = [...document.querySelectorAll('video')];
+    const stateA = stubVideo(videoA);
+    const stateB = stubVideo(videoB);
+    let audioPauseCalls = 0;
+    document.querySelector('#audio').pause = () => {
+      audioPauseCalls += 1;
+    };
+
+    location.hash = '#track=alpha';
+    const { initSmartCanvasManager } = await import('../js/features/smart-canvas.js');
+    const manager = initSmartCanvasManager();
+    const observer = FakeIntersectionObserver.latest;
+    assert(observer, 'IntersectionObserver was not created.');
+
+    observer.set(videoA, 1);
+    observer.set(videoB, 1);
+    await videoA.play();
+    await wait();
+    assert(manager.activeVideo === videoA && !videoA.paused, 'The first Canvas did not become active.');
+
+    await videoB.play();
+    await wait();
+    assert(videoA.paused, 'Starting a second Canvas did not pause the first.');
+    assert(!videoB.paused && manager.activeVideo === videoB, 'The second Canvas did not become the sole active Canvas.');
+    assert(!videoA.getAttribute('src'), 'The superseded Canvas source was not released.');
+
+    visibilityState = 'hidden';
+    document.dispatchEvent(new Event('visibilitychange'));
+    await wait();
+    assert(videoB.paused, 'The Canvas did not pause when the page became hidden.');
+
+    visibilityState = 'visible';
+    document.dispatchEvent(new Event('visibilitychange'));
+    await wait();
+    assert(!videoB.paused, 'The Canvas did not resume when the page became visible.');
+
+    observer.set(videoB, 0.05);
+    await wait();
+    assert(videoB.paused, 'The Canvas did not pause outside the viewport threshold.');
+
+    observer.set(videoB, 0.8);
+    await wait();
+    assert(!videoB.paused, 'The Canvas did not resume after returning to the viewport.');
+
+    reducedMotion.set(true);
+    await wait();
+    assert(videoB.paused, 'Reduced Motion did not pause the Canvas.');
+
+    reducedMotion.set(false);
+    await wait();
+    assert(!videoB.paused, 'The Canvas did not resume after Reduced Motion was disabled.');
+
+    connection.saveData = true;
+    connectionListeners.forEach(listener => listener(new Event('change')));
+    await wait();
+    assert(videoB.paused, 'Save-Data did not pause the Canvas.');
+
+    connection.saveData = false;
+    connectionListeners.forEach(listener => listener(new Event('change')));
+    await wait();
+    assert(!videoB.paused, 'The Canvas did not resume after Save-Data was disabled.');
+
+    location.hash = '#home';
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await wait();
+    assert(videoB.paused, 'Leaving the track route did not pause the Canvas.');
+    assert(!videoB.getAttribute('src'), 'Leaving the track route did not release the Canvas source.');
+    assert(audioPauseCalls === 0, 'Smart Canvas management paused the audio player.');
+    assert(stateA.plays >= 1 && stateB.plays >= 4, 'Expected Canvas resume cycles did not occur.');
+    assert(stateA.loads >= 2 && stateB.loads >= 2, 'Canvas resources were not loaded and released as expected.');
+
+    manager.destroy();
+    result.textContent = 'SMART CANVAS READY VISIBILITY VIEWPORT SINGLE ACTIVE RELEASE NO AUDIO PAUSE';
+  </script>
+</body>
+</html>
