@@ -119,6 +119,11 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
     );
   }
 
+  function resetMobileTrackPanelScroll() {
+    if (!isMobileStudio()) return;
+    trackPanel.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }
+
   function setMobilePanelCollapsed(collapsed, { recenter = true } = {}) {
     mobilePanelCollapsed = Boolean(collapsed);
     const apply = isMobileStudio() && mobilePanelCollapsed;
@@ -126,6 +131,17 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
     view.classList.toggle('lyrics-studio-track-collapsed', apply);
     panelToggle.hidden = !isMobileStudio();
     updatePanelToggleLabel();
+
+    if (!apply && isMobileStudio()) {
+      resetMobileTrackPanelScroll();
+      window.setTimeout(() => {
+        resetMobileTrackPanelScroll();
+        if (canvasEnabled) playCanvas();
+        if (recenter) centerActiveLyric();
+      }, 0);
+      return;
+    }
+
     if (recenter) window.setTimeout(centerActiveLyric, 0);
   }
 

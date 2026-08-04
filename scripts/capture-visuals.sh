@@ -5,6 +5,7 @@ BASE_URL="${VISUAL_BASE_URL:-http://127.0.0.1:4173/}"
 OUTPUT_DIR="${VISUAL_OUTPUT_DIR:-artifacts/visual-actual}"
 CHROME_BIN="${CHROME_BIN:-google-chrome}"
 MIN_BYTES="${VISUAL_MIN_BYTES:-15000}"
+SERVER_LOG="${VISUAL_SERVER_LOG:-/tmp/launchpad-visual-server.log}"
 mkdir -p "$OUTPUT_DIR"
 
 run_pwa_update_smoke() {
@@ -28,23 +29,29 @@ run_pwa_update_smoke() {
 }
 
 run_mobile_studio_smoke() {
-  local profile output
+  local profile marker
   profile="$(mktemp -d)"
-  output="$(mktemp)"
+  marker='__mobile_studio_result__'
 
-  timeout --signal=TERM 45s "$CHROME_BIN" \
+  timeout --signal=TERM 15s "$CHROME_BIN" \
     --headless=new --no-sandbox --disable-gpu \
     --disable-background-networking --disable-component-update --disable-sync \
     --disable-features=OptimizationHints,OptimizationGuideModelDownloading,MediaRouter,Translate \
     --metrics-recording-only --no-first-run --disable-default-apps \
     --force-device-scale-factor=1 --window-size=390,844 \
-    --virtual-time-budget=9000 --run-all-compositor-stages-before-draw \
-    --user-data-dir="$profile" --dump-dom \
-    "${BASE_URL}tests/mobile-studio-smoke.html" > "$output"
+    --virtual-time-budget=9000 \
+    --user-data-dir="$profile" \
+    "${BASE_URL}tests/mobile-studio-smoke.html" >/dev/null 2>&1 || true
 
-  grep -q 'MOBILE STUDIO READY COLLAPSIBLE STICKY SAFE PLAYER PORTRAIT LANDSCAPE' "$output"
-  ! grep -q 'MOBILE STUDIO ERROR' "$output"
-  rm -rf "$profile" "$output"
+  rm -rf "$profile"
+  if grep -q "/${marker}/error-" "$SERVER_LOG"; then
+    grep "/${marker}/error-" "$SERVER_LOG" >&2 || true
+    return 1
+  fi
+  if ! grep -q "/${marker}/ready" "$SERVER_LOG"; then
+    echo "Mobile Studio browser test did not report a result." >&2
+    return 1
+  fi
   echo "Mobile Studio smoke test passed"
 }
 
