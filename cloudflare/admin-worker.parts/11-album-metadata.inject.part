@@ -1,0 +1,14 @@
+
+var baseParseLyricsTxtMetadata=parseLyricsTxtMetadata;
+parseLyricsTxtMetadata=function(text){
+  var result=baseParseLyricsTxtMetadata(text);
+  var metadata=result&&result.metadata||{};
+  var albumTitle=String(metadata.albumTitle||'').trim();
+  var normalizedAlbum=normalizeTxtMetadataKey(albumTitle);
+  if(albumTitle&&normalizedAlbum&&normalizedAlbum!=='SINGLES'&&normalizedAlbum!=='SINGLE'){
+    if(!metadata.albumId||metadata.albumId==='singles')metadata.albumId=slugifyImportedTitle(albumTitle);
+    if(!metadata.type||metadata.type==='single')metadata.type='album-track';
+    result.albumDetected=true;
+  }
+  return result;
+};
