@@ -16,7 +16,11 @@ for (const required of [
   "serviceWorker?.addEventListener('controllerchange'",
   'if (refreshing || (!activationRequested && !reloadAuthorized)) return;',
   "registration.addEventListener('updatefound'",
-  'await registration.update()'
+  'await registration.update()',
+  'A new version of LaunchPAD is available.',
+  'The update will be applied without abruptly interrupting the music.',
+  'Update now',
+  'Later'
 ]) {
   if (!pwa.includes(required)) fail(`PWA update controller is missing ${required}.`);
 }
@@ -35,10 +39,10 @@ if (!worker.includes("globalThis.SHINOBIWAN_BUILD?.release")) {
 }
 
 const build = read('js/build-config.js');
-if (!build.includes("display: '2026.08.04.1'")) {
+if (!build.includes("display: '2026.08.04.2'")) {
   fail('Build display metadata is missing.');
 }
-if (!build.includes("release: 'mobile-studio-canvas-fix-20260804'")) {
+if (!build.includes("release: 'pwa-update-english-20260804'")) {
   fail('Build release metadata is missing.');
 }
 

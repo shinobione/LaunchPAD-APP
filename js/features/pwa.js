@@ -114,13 +114,13 @@ function createUpdateBanner() {
     <div class="pwa-update-copy">
       <span class="pwa-update-icon" aria-hidden="true">↻</span>
       <span>
-        <strong>Une nouvelle version de LaunchPAD est disponible.</strong>
-        <small>La mise à jour sera appliquée sans interrompre brutalement la musique.</small>
+        <strong>A new version of LaunchPAD is available.</strong>
+        <small>The update will be applied without abruptly interrupting the music.</small>
       </span>
     </div>
     <div class="pwa-update-actions">
-      <button type="button" class="primary" data-pwa-update-now>Mettre à jour</button>
-      <button type="button" class="secondary" data-pwa-update-later>Plus tard</button>
+      <button type="button" class="primary" data-pwa-update-now>Update now</button>
+      <button type="button" class="secondary" data-pwa-update-later>Later</button>
     </div>
   `;
   document.body.appendChild(banner);
@@ -150,9 +150,9 @@ export function createPWAUpdateController({
 
   function resetCopy() {
     banner.dataset.state = 'ready';
-    title.textContent = 'Une nouvelle version de LaunchPAD est disponible.';
-    subtitle.textContent = 'La mise à jour sera appliquée sans interrompre brutalement la musique.';
-    updateButton.textContent = 'Mettre à jour';
+    title.textContent = 'A new version of LaunchPAD is available.';
+    subtitle.textContent = 'The update will be applied without abruptly interrupting the music.';
+    updateButton.textContent = 'Update now';
     updateButton.disabled = false;
     laterButton.disabled = false;
   }
@@ -181,9 +181,9 @@ export function createPWAUpdateController({
     safeStorageSet(storage, RELOAD_REQUEST_KEY, '1');
     safeStorageRemove(storage, UPDATE_DISMISS_KEY);
     banner.dataset.state = 'applying';
-    title.textContent = 'Mise à jour en cours…';
-    subtitle.textContent = 'LaunchPAD va se recharger une seule fois.';
-    updateButton.textContent = 'Installation…';
+    title.textContent = 'Updating LaunchPAD…';
+    subtitle.textContent = 'LaunchPAD will reload once.';
+    updateButton.textContent = 'Installing…';
     updateButton.disabled = true;
     laterButton.disabled = true;
     waitingWorker.postMessage({ type: 'SKIP_WAITING' });
@@ -193,11 +193,11 @@ export function createPWAUpdateController({
   function deferActivation() {
     deferredUntilPlaybackStops = true;
     banner.dataset.state = 'deferred';
-    title.textContent = 'Mise à jour en attente';
-    subtitle.textContent = 'Elle s’installera dès que le morceau sera en pause ou terminé.';
-    updateButton.textContent = 'En attente…';
+    title.textContent = 'Update pending';
+    subtitle.textContent = 'It will install as soon as the track is paused or finishes.';
+    updateButton.textContent = 'Waiting…';
     updateButton.disabled = true;
-    notify('La mise à jour attend la pause ou la fin du morceau.');
+    notify('The update is waiting for the track to pause or finish.');
   }
 
   function handleUpdateClick() {
