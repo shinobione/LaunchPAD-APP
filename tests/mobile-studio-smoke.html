@@ -51,6 +51,15 @@
   <script type="module">
     const result = document.querySelector('#result');
     const frame = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const finish = message => {
+      document.querySelectorAll('video,audio').forEach(media => {
+        try { media.pause(); } catch {}
+        media.removeAttribute('src');
+        media.remove();
+      });
+      result.textContent = message;
+      window.stop();
+    };
 
     try {
       const mediaSources = new WeakMap();
@@ -123,9 +132,9 @@
       if (panel.scrollTop > 1) throw new Error('Reopened panel preserved stale scroll.');
       if (canvas.getBoundingClientRect().height < 120) throw new Error('Canvas disappeared after reopening.');
 
-      result.textContent = 'MOBILE STUDIO READY COLLAPSIBLE STICKY SAFE PLAYER PORTRAIT LANDSCAPE';
+      finish('MOBILE STUDIO READY COLLAPSIBLE STICKY SAFE PLAYER PORTRAIT LANDSCAPE');
     } catch (error) {
-      result.textContent = `MOBILE STUDIO ERROR ${error.message}`;
+      finish(`MOBILE STUDIO ERROR ${error.message}`);
     }
   </script>
 </body>
