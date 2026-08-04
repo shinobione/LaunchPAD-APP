@@ -1,3 +1,31 @@
+export function centeredScrollTop(reader, element) {
+  if (!reader || !element) return 0;
+
+  const readerRect = reader.getBoundingClientRect();
+  const elementRect = element.getBoundingClientRect();
+  const currentScroll = Number(reader.scrollTop) || 0;
+  const viewportHeight = reader.clientHeight || readerRect.height || 0;
+  const elementHeight = elementRect.height || element.offsetHeight || 0;
+
+  if (viewportHeight <= 0) return Math.max(0, currentScroll);
+
+  const offsetWithinReader = elementRect.top - readerRect.top;
+  const requested = currentScroll
+    + offsetWithinReader
+    - (viewportHeight - elementHeight) / 2;
+  const maximum = Math.max(0, reader.scrollHeight - viewportHeight);
+  return Math.min(maximum, Math.max(0, requested));
+}
+
+export function centerElementInScrollContainer(reader, element, behavior = 'smooth') {
+  if (!reader || !element) return false;
+  reader.scrollTo({
+    top: centeredScrollTop(reader, element),
+    behavior
+  });
+  return true;
+}
+
 export function createLyricsController({ tracks, audio, getCurrentIndex, selectTrack, switchView, $, $$, escapeHtml }) {
   const cache = new Map();
   let currentLines = [];
@@ -156,19 +184,36 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
   }
 
   function scrollLineIntoReader(element, behavior = 'smooth') {
+    return centerElementInScrollContainer($('#lyrics-reader'), element, behavior);
+  }
+
+  function lineIsInReaderFocusZone(element) {
     const reader = $('#lyrics-reader');
-    if (!reader || !element) return;
-    const target = element.offsetTop - (reader.clientHeight - element.offsetHeight) / 2;
-    reader.scrollTo({ top: Math.max(0, target), behavior });
+    if (!reader || !element) return false;
+    const readerRect = reader.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
+    if (readerRect.height <= 0 || elementRect.height <= 0) return false;
+
+    const center = elementRect.top + elementRect.height / 2;
+    const safeInset = Math.min(readerRect.height * .24, 120);
+    return center >= readerRect.top + safeInset
+      && center <= readerRect.bottom - safeInset;
   }
 
   function update(time) {
     if (!currentLines.length) return;
     const next = findIndex(time);
-    if (next === activeIndex) return;
-    activeIndex = next;
-
     const elements = $$('#lyrics-reader .lyric-line');
+
+    if (next === activeIndex) {
+      const activeElement = elements[activeIndex];
+      if (autoScroll && activeIndex >= 0 && !lineIsInReaderFocusZone(activeElement)) {
+        scrollLineIntoReader(activeElement);
+      }
+      return;
+    }
+
+    activeIndex = next;
     elements.forEach((element, index) => {
       element.classList.toggle('active', index === activeIndex);
       element.classList.toggle('past', index < activeIndex);
@@ -199,6 +244,10 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
     button.classList.toggle('active', autoScroll);
     button.setAttribute('aria-pressed', String(autoScroll));
     button.textContent = autoScroll ? 'Auto-scroll' : 'Manual scroll';
+
+    if (autoScroll && activeIndex >= 0) {
+      scrollLineIntoReader($(`#lyrics-reader .lyric-line[data-index="${activeIndex}"]`), 'auto');
+    }
   });
 
   $('#lyrics-track-select').addEventListener('change', event => {
