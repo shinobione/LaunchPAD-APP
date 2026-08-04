@@ -122,14 +122,20 @@ if (lyricsStudio.includes('audio.pause')) {
 
 const lyricsEngine = read('js/features/lyrics/lyrics-engine.js');
 for (const required of [
+  'centeredScrollTop',
+  'centerElementInScrollContainer',
+  'getBoundingClientRect',
+  'lineIsInReaderFocusZone',
   'scrollLineIntoReader',
   'reader.scrollTo',
   "button.setAttribute('aria-pressed', String(autoScroll))"
 ]) {
   if (!lyricsEngine.includes(required)) fail(`Lyrics reader state or bounded scrolling is missing ${required}.`);
 }
-if (lyricsEngine.includes('scrollIntoView')) {
-  fail('Lyrics auto-scroll must not move the whole mobile page.');
+for (const forbidden of ['scrollIntoView', 'element.offsetTop -']) {
+  if (lyricsEngine.includes(forbidden)) {
+    fail(`Lyrics auto-scroll must stay relative to its reader instead of the page: ${forbidden}.`);
+  }
 }
 
 const listeningSummary = read('js/features/listening-history-summary.js');
@@ -206,11 +212,12 @@ for (const required of [
   "'./css/track-videos.css'",
   "'./js/core/router.js'",
   "'./js/features/track-videos.js'",
+  "'./js/features/lyrics/lyrics-engine.js'",
   "'./js/features/lyrics-studio.js'",
   "'./js/features/listening-history-summary.js'",
-  'studio-route-20260804'
+  'lyrics-autoscroll-20260804'
 ]) {
   if (!worker.includes(required)) fail(`The service worker cache is missing ${required}.`);
 }
 
-console.log('Media artwork, playback readiness, lyrics timing, bounded scrolling, dedicated Studio URLs and listening summary regressions are covered.');
+console.log('Media artwork, playback readiness, lyrics timing, reader-relative auto-scroll, dedicated Studio URLs and listening summary regressions are covered.');
