@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Studio audio startup smoke test</title>
+</head>
+<body>
+  <div class="player-bar"></div>
+  <audio id="audio" preload="none"></audio>
+  <output id="result">STUDIO AUDIO PENDING</output>
+
+  <script type="module">
+    const result = document.querySelector('#result');
+    const audio = document.querySelector('#audio');
+    const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+
+    try {
+      let paused = true;
+      let readyState = HTMLMediaElement.HAVE_NOTHING;
+      let networkState = HTMLMediaElement.NETWORK_EMPTY;
+      let currentTime = 0;
+      let duration = 180;
+      let playCalls = 0;
+      let loadCalls = 0;
+
+      Object.defineProperties(audio, {
+        paused: { configurable: true, get: () => paused },
+        readyState: { configurable: true, get: () => readyState },
+        networkState: { configurable: true, get: () => networkState },
+        currentTime: {
+          configurable: true,
+          get: () => currentTime,
+          set: value => { currentTime = Number(value) || 0; }
+        },
+        duration: { configurable: true, get: () => duration },
+        error: { configurable: true, get: () => null }
+      });
+
+      HTMLMediaElement.prototype.pause = function () {
+        paused = true;
+        this.dispatchEvent(new Event('pause'));
+      };
+
+      HTMLMediaElement.prototype.load = function () {
+        loadCalls += 1;
+        readyState = HTMLMediaElement.HAVE_NOTHING;
+        networkState = HTMLMediaElement.NETWORK_LOADING;
+        window.setTimeout(() => {
+          readyState = HTMLMediaElement.HAVE_FUTURE_DATA;
+          networkState = HTMLMediaElement.NETWORK_IDLE;
+          this.dispatchEvent(new Event('loadedmetadata'));
+          this.dispatchEvent(new Event('canplay'));
+        }, 40);
+      };
+
+      HTMLMediaElement.prototype.play = function () {
+        playCalls += 1;
+        paused = false;
+        this.dispatchEvent(new Event('play'));
+
+        if (playCalls === 1) {
+          // Reproduce the Android failure: play() remains pending forever while
+          // Studio displays a pause icon and the media element never gains data.
+          return new Promise(() => {});
+        }
+
+        readyState = HTMLMediaElement.HAVE_FUTURE_DATA;
+        networkState = HTMLMediaElement.NETWORK_IDLE;
+        currentTime = Math.max(currentTime, 0.25);
+        this.dispatchEvent(new Event('playing'));
+        return Promise.resolve();
+      };
+
+      const [{ tracks }, { initAudioReadiness }, { initResilienceAccessibility }] = await Promise.all([
+        import('../js/core/catalog-store.js'),
+        import('../js/features/audio-readiness.js'),
+        import('../js/features/resilience-accessibility.js')
+      ]);
+
+      const track = tracks[0];
+      audio.dataset.trackId = track.id;
+      audio.setAttribute('src', track.file);
+      initAudioReadiness({ audio });
+
+      await Promise.race([
+        audio.play(),
+        wait(5000).then(() => { throw new Error('Direct Studio playback never recovered.'); })
+      ]);
+
+      if (playCalls < 2 || loadCalls < 1 || currentTime <= 0) {
+        throw new Error('The startup watchdog did not reload and restart playback.');
+      }
+
+      initResilienceAccessibility({ audio });
+      const loadsBeforeRetry = loadCalls;
+      const playsBeforeRetry = playCalls;
+      readyState = HTMLMediaElement.HAVE_NOTHING;
+      networkState = HTMLMediaElement.NETWORK_NO_SOURCE;
+      paused = true;
+      currentTime = 0;
+      audio.setAttribute('src', 'broken-audio-source.mp3');
+      audio.dispatchEvent(new Event('stalled'));
+
+      const retry = document.querySelector('[data-audio-retry]');
+      if (!retry || retry.hidden) throw new Error('Retry control was not shown.');
+      retry.click();
+      await wait(700);
+
+      if (audio.getAttribute('src') !== track.file) {
+        throw new Error('Retry did not rebuild the catalog audio source.');
+      }
+      if (loadCalls <= loadsBeforeRetry || playCalls <= playsBeforeRetry) {
+        throw new Error('Retry did not issue a fresh load and play intent.');
+      }
+
+      result.textContent = 'STUDIO AUDIO READY WATCHDOG SOURCE REBUILD RETRY';
+    } catch (error) {
+      result.textContent = `STUDIO AUDIO ERROR ${error.message}`;
+    }
+  </script>
+</body>
+</html>

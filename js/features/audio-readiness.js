@@ -1,5 +1,6 @@
 const PLAY_READY_EVENTS = ['loadedmetadata', 'canplay', 'canplaythrough'];
 const PLAY_RETRY_DELAY_MS = 900;
+const PLAY_START_WATCHDOG_MS = 1800;
 
 function abortError() {
   try {
@@ -31,6 +32,42 @@ export function initAudioReadiness({ audio }) {
     if (audio.dataset.forceLoad !== 'true') return;
     nativeLoad();
   };
+
+  function currentSource() {
+    return audio.getAttribute('src') || audio.currentSrc || '';
+  }
+
+  function restorePositionWhenReady(time) {
+    if (!(time > 0)) return;
+    audio.addEventListener('loadedmetadata', () => {
+      if (Number.isFinite(audio.duration) && time < audio.duration) audio.currentTime = time;
+    }, { once: true });
+  }
+
+  function refreshCurrentSource({ forceLoad = false } = {}) {
+    const source = currentSource();
+    if (!source) return false;
+
+    const time = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+    restorePositionWhenReady(time);
+    audio.setAttribute('src', source);
+
+    if (forceLoad) nativeLoad();
+    return true;
+  }
+
+  function prepareSourceInsideGesture() {
+    const sourceIsEmpty = audio.readyState === HTMLMediaElement.HAVE_NOTHING;
+    const networkIsEmpty = audio.networkState === HTMLMediaElement.NETWORK_EMPTY;
+    const sourceIsInvalid = audio.networkState === HTMLMediaElement.NETWORK_NO_SOURCE || Boolean(audio.error);
+
+    // A direct #studio route can select the track before the first user gesture.
+    // Some Android media stacks then leave the element in NETWORK_EMPTY. Re-applying
+    // the same source inside the Play tap primes it without calling load() first.
+    if (currentSource() && sourceIsEmpty && (networkIsEmpty || sourceIsInvalid)) {
+      refreshCurrentSource();
+    }
+  }
 
   function waitForReady(intent, args, firstError) {
     return new Promise((resolve, reject) => {
@@ -77,6 +114,52 @@ export function initAudioReadiness({ audio }) {
     });
   }
 
+  function recoverPendingStart(intent, args, firstAttempt) {
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const finish = (callback, value) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        callback(value);
+      };
+
+      const timer = window.setTimeout(() => {
+        if (intent !== playIntent || !playbackRequested) {
+          finish(reject, abortError());
+          return;
+        }
+
+        const playbackHasData =
+          audio.currentTime > 0
+          || audio.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
+
+        // A play() promise may stay pending forever while Android reports a stalled
+        // NETWORK_EMPTY media element. Force one real source reload, then retry the
+        // same playback intent without requiring the user to leave Studio.
+        if (!playbackHasData) refreshCurrentSource({ forceLoad: true });
+
+        let retryAttempt;
+        try {
+          retryAttempt = nativePlay(...args);
+        } catch (error) {
+          finish(reject, error);
+          return;
+        }
+
+        Promise.resolve(retryAttempt).then(
+          value => finish(resolve, value),
+          error => finish(reject, error)
+        );
+      }, PLAY_START_WATCHDOG_MS);
+
+      Promise.resolve(firstAttempt).then(
+        value => finish(resolve, value),
+        error => finish(reject, error)
+      );
+    });
+  }
+
   audio.play = (...args) => {
     playbackRequested = true;
     const intent = ++playIntent;
@@ -86,6 +169,8 @@ export function initAudioReadiness({ audio }) {
       pendingPlay = null;
     }
 
+    prepareSourceInsideGesture();
+
     let firstAttempt;
     try {
       firstAttempt = nativePlay(...args);
@@ -93,7 +178,7 @@ export function initAudioReadiness({ audio }) {
       firstAttempt = Promise.reject(error);
     }
 
-    pendingPlay = Promise.resolve(firstAttempt)
+    pendingPlay = recoverPendingStart(intent, args, firstAttempt)
       .catch(error => {
         if (error?.name === 'NotAllowedError') throw error;
         return waitForReady(intent, args, error);
@@ -125,5 +210,4 @@ export function initAudioReadiness({ audio }) {
     playIntent += 1;
     pendingPlay = null;
   });
-
 }
