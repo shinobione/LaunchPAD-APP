@@ -17,32 +17,59 @@
       </div>
     </article>
   </section>
-  <select id="lyrics-track-select"><option value="0">THICK</option></select>
+  <select id="lyrics-track-select">
+    <option value="0">THICK</option>
+    <option value="1">No Canvas</option>
+  </select>
   <audio id="audio" data-track-id="thick"></audio>
   <output id="result">LYRICS STUDIO PENDING</output>
 
   <script type="module">
     import { mergeRemoteTracks } from '../js/core/catalog-store.js';
-    import { initLyricsStudio, requestLyricsStudio } from '../js/features/lyrics-studio.js';
+    import { initLyricsStudio } from '../js/features/lyrics-studio.js';
+    import { parseRoute, routeToHash } from '../js/core/router.js';
 
-    const STUDIO_REQUEST_KEY = 'shinobi-launchpad-open-studio-track';
-
-    mergeRemoteTracks([{
-      id: 'thick',
-      title: 'THICK',
-      video: 'https://example.test/thick.mp4',
-      videoContentType: 'video/mp4'
-    }]);
+    mergeRemoteTracks([
+      {
+        id: 'thick',
+        title: 'THICK',
+        video: 'https://example.test/thick.mp4',
+        videoContentType: 'video/mp4'
+      },
+      {
+        id: 'no-canvas',
+        title: 'No Canvas'
+      }
+    ]);
 
     const view = document.querySelector('#view-lyrics');
     const audio = document.querySelector('#audio');
     const trackPanel = document.querySelector('.lyrics-track-panel');
     const result = document.querySelector('#result');
     const waitForFrame = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const waitForHashChange = () => new Promise(resolve => {
+      const timer = window.setTimeout(resolve, 500);
+      window.addEventListener('hashchange', () => {
+        window.clearTimeout(timer);
+        resolve();
+      }, { once: true });
+    });
+    const announceRoute = route => window.dispatchEvent(new CustomEvent('shinobi:route-change', {
+      detail: { route }
+    }));
+
     let audioPauseCalls = 0;
     audio.pause = () => { audioPauseCalls += 1; };
+    history.replaceState(null, '', '#lyrics=thick');
 
     try {
+      if (parseRoute('#studio=thick').type !== 'studio') {
+        throw new Error('Router does not parse dedicated Studio routes.');
+      }
+      if (routeToHash({ type: 'studio', id: 'my tyffany' }) !== '#studio=my%20tyffany') {
+        throw new Error('Router does not serialize Studio routes safely.');
+      }
+
       initLyricsStudio({ audio });
       const controls = document.querySelector('.lyrics-studio-controls');
       const autoScrollButton = document.querySelector('#lyrics-autoscroll');
@@ -64,12 +91,17 @@
         throw new Error('Fullscreen control still exists.');
       }
 
+      const studioHashChange = waitForHashChange();
       modeButton.click();
+      await studioHashChange;
       await waitForFrame();
       const canvas = view.querySelector('.lyrics-studio-canvas');
       const video = canvas?.querySelector('video');
+      if (window.location.hash !== '#studio=thick') {
+        throw new Error('Studio button did not create the dedicated Studio URL.');
+      }
       if (!view.classList.contains('lyrics-studio-mode') || !document.body.classList.contains('lyrics-studio-open')) {
-        throw new Error('Studio mode did not open cleanly.');
+        throw new Error('Studio route did not open Studio mode cleanly.');
       }
       if (!modeButton.classList.contains('active') || modeButton.getAttribute('aria-pressed') !== 'true') {
         throw new Error('Studio mode visual state did not turn on.');
@@ -84,7 +116,7 @@
         throw new Error('Studio Canvas must be integrated inside the track panel.');
       }
       if (!view.classList.contains('lyrics-studio-canvas-active') || canvas?.hidden) {
-        throw new Error('Canvas did not activate with Studio mode.');
+        throw new Error('Canvas did not activate with the Studio route.');
       }
       if (!video?.muted || !video?.loop || video?.controls || !video?.playsInline) {
         throw new Error('Studio Canvas is not configured as a silent inline loop.');
@@ -107,48 +139,50 @@
         throw new Error('Manual scroll state still looks active.');
       }
 
-      modeButton.click();
+      const backHashChange = waitForHashChange();
+      history.back();
+      await backHashChange;
       await waitForFrame();
-      if (view.classList.contains('lyrics-studio-mode') || !canvasButton.hidden) {
-        throw new Error('Studio mode did not close cleanly.');
+      if (window.location.hash !== '#lyrics=thick' || view.classList.contains('lyrics-studio-mode')) {
+        throw new Error('Browser Back did not return from Studio to Lyrics.');
       }
 
       view.classList.remove('active');
-      await waitForFrame();
-
-      const nativeSetItem = Storage.prototype.setItem;
-      Storage.prototype.setItem = function blockedStudioStorage() {
-        throw new DOMException('Storage blocked for smoke test.', 'SecurityError');
-      };
-      try {
-        requestLyricsStudio('thick');
-      } finally {
-        Storage.prototype.setItem = nativeSetItem;
-      }
-
+      history.replaceState(null, '', '#studio=thick');
+      announceRoute({ type: 'studio', id: 'thick' });
       await waitForFrame();
       if (view.classList.contains('lyrics-studio-mode')) {
-        throw new Error('Studio opened before the Lyrics route became active.');
+        throw new Error('Studio opened before the Lyrics view became active.');
       }
 
       view.classList.add('active');
       await waitForFrame();
       await waitForFrame();
-      await new Promise(resolve => setTimeout(resolve, 80));
       if (!view.classList.contains('lyrics-studio-mode')) {
-        throw new Error('Direct track Studio request did not survive the route transition.');
-      }
-      if (sessionStorage.getItem(STUDIO_REQUEST_KEY) !== null) {
-        throw new Error('Direct Studio request was not consumed.');
+        throw new Error('A reloaded Studio URL did not reopen Studio mode.');
       }
 
+      audio.dataset.trackId = 'no-canvas';
+      history.replaceState(null, '', '#studio=no-canvas');
+      announceRoute({ type: 'studio', id: 'no-canvas' });
+      await waitForFrame();
+      await waitForFrame();
+      if (!view.classList.contains('lyrics-studio-mode')) {
+        throw new Error('Studio route failed for a track without Canvas.');
+      }
+      if (!canvasButton.hidden || view.classList.contains('lyrics-studio-canvas-active')) {
+        throw new Error('A track without Canvas exposed active Canvas controls.');
+      }
+
+      history.replaceState(null, '', '#home');
+      announceRoute({ type: 'view', value: 'home' });
       view.classList.remove('active');
       await waitForFrame();
       if (view.classList.contains('lyrics-studio-mode') || document.body.classList.contains('lyrics-studio-open')) {
-        throw new Error('Studio mode did not close after leaving Lyrics.');
+        throw new Error('Studio mode did not close after leaving its route.');
       }
 
-      result.textContent = 'LYRICS STUDIO READY SINGLE MODE AUTO CLOSE ALIGNED STATES DIRECT ENTRY MEMORY ROUTE';
+      result.textContent = 'LYRICS STUDIO READY SINGLE MODE AUTO CLOSE ALIGNED STATES DIRECT ENTRY MEMORY ROUTE DEDICATED ROUTE BACK RELOAD';
     } catch (error) {
       result.textContent = `LYRICS STUDIO ERROR ${error.message}`;
     }
