@@ -53,6 +53,12 @@
     const frame = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
     try {
+      const mediaSources = new WeakMap();
+      Object.defineProperty(HTMLMediaElement.prototype, 'src', {
+        configurable: true,
+        get() { return mediaSources.get(this) || ''; },
+        set(value) { mediaSources.set(this, String(value)); }
+      });
       HTMLMediaElement.prototype.play = () => Promise.resolve();
       HTMLMediaElement.prototype.pause = () => {};
       HTMLMediaElement.prototype.load = () => {};
