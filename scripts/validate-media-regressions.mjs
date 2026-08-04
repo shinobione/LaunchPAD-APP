@@ -60,7 +60,8 @@ for (const required of [
   'video.dataset.src = track.video',
   'data-track-video-loop-action',
   'data-track-studio-action',
-  'shinobi-launchpad-open-studio-track',
+  "import { requestLyricsStudio } from './lyrics-studio.js'",
+  'requestLyricsStudio(trackId)',
   "button.textContent = 'Studio'"
 ]) {
   if (!trackVideos.includes(required)) fail(`Track Canvas and Studio entry are missing ${required}.`);
@@ -85,6 +86,10 @@ for (const required of [
   'has-canvas-control',
   'setPressed',
   'consumeStudioRequest',
+  'scheduleStudioRequestConsumption',
+  'requestLyricsStudio',
+  'pendingStudioTrackId',
+  'shinobi:lyrics-studio-request',
   'shinobi-launchpad-open-studio-track'
 ]) {
   if (!lyricsStudio.includes(required)) fail(`Lyrics Studio Canvas and controls are missing ${required}.`);
@@ -180,9 +185,9 @@ for (const required of [
   "'./js/features/track-videos.js'",
   "'./js/features/lyrics-studio.js'",
   "'./js/features/listening-history-summary.js'",
-  'studio-controls-20260804'
+  'studio-direct-routing-20260804'
 ]) {
   if (!worker.includes(required)) fail(`The service worker cache is missing ${required}.`);
 }
 
-console.log('Media artwork, playback readiness, lyrics timing, bounded scrolling, aligned Studio states, direct Studio entry and listening summary regressions are covered.');
+console.log('Media artwork, playback readiness, lyrics timing, bounded scrolling, aligned Studio states, resilient direct Studio routing and listening summary regressions are covered.');
