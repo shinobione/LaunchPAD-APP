@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Align Lyrics controls into one responsive state-driven group, remove sticky mobile hover states, keep lyric auto-scroll inside its reader and add direct **Studio** entry from Track detail pages.
 - Integrate each 9:16 Canvas directly into the Track detail hero and the existing Lyrics Studio track panel, removing the oversized standalone video section and keeping responsive mobile sizing bounded.
 - Present uploaded 9:16 MP4/WebM assets as compact, silent looping Spotify Canvases on Track detail pages and inside responsive Lyrics Studio without interrupting music playback.
 - Display uploaded MP4/WebM track videos on demand from Track detail pages and keep the played-track summary growing beyond the twelve-item recent-history window.
