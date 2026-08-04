@@ -1,25 +1,8 @@
 import { getTrack } from '../core/catalog-store.js';
 import { ensureStylesheet } from '../core/assets.js';
+import { parseRoute, routeToHash } from '../core/router.js';
 
-const STUDIO_REQUEST_KEY = 'shinobi-launchpad-open-studio-track';
-let pendingStudioTrackId = null;
-
-export function requestLyricsStudio(trackId) {
-  const requestedTrackId = String(trackId || '').trim();
-  if (!requestedTrackId) return false;
-
-  pendingStudioTrackId = requestedTrackId;
-  try {
-    window.sessionStorage.setItem(STUDIO_REQUEST_KEY, requestedTrackId);
-  } catch {
-    // The in-memory request remains authoritative when storage is blocked.
-  }
-
-  window.dispatchEvent(new CustomEvent('shinobi:lyrics-studio-request', {
-    detail: { trackId: requestedTrackId }
-  }));
-  return true;
-}
+const ROUTE_CHANGE_EVENT = 'shinobi:route-change';
 
 function currentTrack(audio) {
   return getTrack(audio?.dataset.trackId || '') || null;
@@ -103,7 +86,6 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
 
   let savedScrollY = 0;
   let canvasEnabled = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  let studioRequestTimer = null;
 
   function setCanvasButtonState() {
     setPressed(canvasButton, canvasEnabled);
@@ -186,7 +168,10 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
 
   function setStudioMode(active, { restoreScroll = true } = {}) {
     const wasActive = view.classList.contains('lyrics-studio-mode');
-    if (active === wasActive) return;
+    if (active === wasActive) {
+      if (active) syncCanvasTrack();
+      return;
+    }
 
     if (active) {
       savedScrollY = window.scrollY;
@@ -212,49 +197,58 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
     if (restoreScroll) window.scrollTo({ top: savedScrollY, behavior: 'auto' });
   }
 
-  function requestedStudioTrack() {
-    if (pendingStudioTrackId) return pendingStudioTrackId;
-
-    try {
-      const storedTrackId = window.sessionStorage.getItem(STUDIO_REQUEST_KEY);
-      if (storedTrackId) pendingStudioTrackId = storedTrackId;
-      return storedTrackId;
-    } catch {
-      return null;
-    }
-  }
-
-  function clearStudioRequest() {
-    pendingStudioTrackId = null;
-    try {
-      window.sessionStorage.removeItem(STUDIO_REQUEST_KEY);
-    } catch {
-      // Storage can be unavailable in hardened private browsing contexts.
-    }
-  }
-
-  function consumeStudioRequest() {
-    const requestedTrackId = requestedStudioTrack();
+  function routeMatchesCurrentStudio() {
+    const route = parseRoute();
     const track = currentTrack(audio);
-    if (!requestedTrackId || requestedTrackId !== track?.id || !view.classList.contains('active')) return false;
-    clearStudioRequest();
-    setStudioMode(true, { restoreScroll: false });
-    return true;
+    return Boolean(
+      route.type === 'studio'
+      && route.id === track?.id
+      && view.classList.contains('active')
+    );
   }
 
-  function scheduleStudioRequestConsumption(attempt = 0) {
-    window.clearTimeout(studioRequestTimer);
-    studioRequestTimer = window.setTimeout(() => {
-      studioRequestTimer = null;
-      if (consumeStudioRequest()) return;
-      if (requestedStudioTrack() && attempt < 10) {
-        scheduleStudioRequestConsumption(attempt + 1);
-      }
-    }, attempt === 0 ? 0 : 40);
+  function syncStudioRoute() {
+    const route = parseRoute();
+    const shouldOpen = routeMatchesCurrentStudio();
+    const restoreScroll = route.type === 'lyrics' && view.classList.contains('active');
+    setStudioMode(shouldOpen, { restoreScroll });
+  }
+
+  function dispatchRouteHash(hash, { replace = false } = {}) {
+    if (window.location.hash === hash) {
+      syncStudioRoute();
+      return;
+    }
+
+    if (!replace) {
+      window.location.hash = hash;
+      return;
+    }
+
+    window.history.replaceState(window.history.state, '', hash);
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+  }
+
+  function navigateStudioMode(active, { replace = false } = {}) {
+    const track = currentTrack(audio);
+    if (!track) return;
+    const type = active ? 'studio' : 'lyrics';
+    dispatchRouteHash(routeToHash({ type, id: track.id }), { replace });
+  }
+
+  function preserveStudioForCurrentTrack(shouldPreserve) {
+    const track = currentTrack(audio);
+    if (!shouldPreserve || !track || !view.classList.contains('active')) {
+      syncStudioRoute();
+      return;
+    }
+
+    const expectedHash = routeToHash({ type: 'studio', id: track.id });
+    dispatchRouteHash(expectedHash, { replace: true });
   }
 
   modeButton.addEventListener('click', () => {
-    setStudioMode(!view.classList.contains('lyrics-studio-mode'));
+    navigateStudioMode(!view.classList.contains('lyrics-studio-mode'));
   });
 
   canvasButton.addEventListener('click', () => {
@@ -265,7 +259,9 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   });
 
   document.addEventListener('keydown', event => {
-    if (event.key === 'Escape') setStudioMode(false);
+    if (event.key === 'Escape' && view.classList.contains('lyrics-studio-mode')) {
+      navigateStudioMode(false);
+    }
   });
 
   const activeViewObserver = new MutationObserver(() => {
@@ -273,38 +269,40 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
       setStudioMode(false, { restoreScroll: false });
       return;
     }
-    scheduleStudioRequestConsumption();
+    window.setTimeout(syncStudioRoute, 0);
   });
   activeViewObserver.observe(view, { attributes: true, attributeFilter: ['class'] });
 
   if (audio) {
     new MutationObserver(() => {
+      const preserveStudio = view.classList.contains('lyrics-studio-mode')
+        || parseRoute().type === 'studio';
       syncCanvasTrack();
-      scheduleStudioRequestConsumption();
+      window.setTimeout(() => preserveStudioForCurrentTrack(preserveStudio), 0);
     }).observe(audio, {
       attributes: true,
       attributeFilter: ['data-track-id']
     });
   }
+
   document.querySelector('#lyrics-track-select')?.addEventListener('change', () => {
+    const preserveStudio = view.classList.contains('lyrics-studio-mode')
+      || parseRoute().type === 'studio';
     window.setTimeout(() => {
       syncCanvasTrack();
-      scheduleStudioRequestConsumption();
+      preserveStudioForCurrentTrack(preserveStudio);
     }, 0);
   });
 
-  window.addEventListener('shinobi:lyrics-studio-request', event => {
-    const requestedTrackId = String(event.detail?.trackId || '').trim();
-    if (requestedTrackId) pendingStudioTrackId = requestedTrackId;
-    scheduleStudioRequestConsumption();
+  window.addEventListener(ROUTE_CHANGE_EVENT, () => {
+    window.setTimeout(syncStudioRoute, 0);
   });
 
   window.addEventListener('hashchange', () => {
-    scheduleStudioRequestConsumption();
+    window.setTimeout(syncStudioRoute, 0);
   });
 
   window.addEventListener('pagehide', () => {
-    window.clearTimeout(studioRequestTimer);
     pauseCanvas();
     canvasButton.hidden = true;
     updateControlsLayout();
@@ -316,5 +314,5 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   setCanvasButtonState();
   setModeButtonState(false);
   syncCanvasTrack();
-  scheduleStudioRequestConsumption();
+  window.setTimeout(syncStudioRoute, 0);
 }
