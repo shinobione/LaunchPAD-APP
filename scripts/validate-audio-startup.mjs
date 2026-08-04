@@ -58,6 +58,7 @@ for (const required of [
 
 const browserTest = read('tests/audio-startup-smoke.html');
 for (const required of [
+  'The tab title followed the viewed route instead of the loaded audio track.',
   'Direct Studio playback never recovered.',
   'Retry did not rebuild the catalog audio source.',
   'STUDIO AUDIO READY WATCHDOG SOURCE REBUILD RETRY'
