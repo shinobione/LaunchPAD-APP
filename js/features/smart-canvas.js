@@ -30,21 +30,19 @@ function currentTrackRouteId() {
 function contextFor(video) {
   if (video.classList.contains('track-video-player')) {
     const wrapper = video.closest('[data-track-video-panel]');
-    const view = video.closest('#view-track');
     return {
       type: 'track',
       wrapper,
-      view,
+      view: video.closest('#view-track'),
       trackId: wrapper?.dataset.trackVideoPanel || ''
     };
   }
 
   const wrapper = video.closest('.lyrics-studio-canvas');
-  const view = video.closest('#view-lyrics');
   return {
     type: 'studio',
     wrapper,
-    view,
+    view: video.closest('#view-lyrics'),
     trackId: wrapper?.dataset.trackId || ''
   };
 }
@@ -59,17 +57,6 @@ function contextIsActive(entry) {
   }
 
   return Boolean(trackId) && currentTrackRouteId() === trackId;
-}
-
-function syncKnownControl(video, playing) {
-  if (!video.classList.contains('track-video-player')) return;
-  const panel = video.closest('[data-track-video-panel]');
-  const control = panel?.querySelector('[data-track-video-loop-action]');
-  if (!control) return;
-
-  control.setAttribute('aria-pressed', String(playing));
-  control.classList.toggle('active', playing);
-  control.textContent = playing ? 'Pause' : 'Play';
 }
 
 function dispatchCanvasState(video, playing, reason) {
@@ -146,17 +133,28 @@ export function initSmartCanvasManager({ root = document } = {}) {
 
     if (activeEntry === entry) activeEntry = null;
     if (release) releaseSource(entry);
-    syncKnownControl(entry.video, false);
     dispatchCanvasState(entry.video, false, reason);
   }
 
   function eligibility(entry) {
-    if (!entry.video.isConnected) return { allowed: false, reason: 'detached', release: true, retainIntent: false };
-    if (!contextIsActive(entry)) return { allowed: false, reason: 'context-hidden', release: true, retainIntent: false };
-    if (document.visibilityState === 'hidden') return { allowed: false, reason: 'page-hidden', release: false, retainIntent: true };
-    if (policyBlocksPlayback()) return { allowed: false, reason: 'reduced-motion-or-data', release: false, retainIntent: true };
-    if (!entry.inViewport) return { allowed: false, reason: 'offscreen', release: false, retainIntent: true };
-    if (!sourceAvailable(entry.video)) return { allowed: false, reason: 'no-source', release: false, retainIntent: false };
+    if (!entry.video.isConnected) {
+      return { allowed: false, reason: 'detached', release: true, retainIntent: false };
+    }
+    if (!contextIsActive(entry)) {
+      return { allowed: false, reason: 'context-hidden', release: true, retainIntent: false };
+    }
+    if (document.visibilityState === 'hidden') {
+      return { allowed: false, reason: 'page-hidden', release: false, retainIntent: true };
+    }
+    if (policyBlocksPlayback()) {
+      return { allowed: false, reason: 'reduced-motion-or-data', release: false, retainIntent: true };
+    }
+    if (!entry.inViewport) {
+      return { allowed: false, reason: 'offscreen', release: false, retainIntent: true };
+    }
+    if (!sourceAvailable(entry.video)) {
+      return { allowed: false, reason: 'no-source', release: false, retainIntent: false };
+    }
     return { allowed: true, reason: 'visible', release: false, retainIntent: true };
   }
 
@@ -187,7 +185,6 @@ export function initSmartCanvasManager({ root = document } = {}) {
       result = entry.video.play();
     } catch (error) {
       if (activeEntry === entry) activeEntry = null;
-      syncKnownControl(entry.video, false);
       console.info('Smart Canvas playback awaits another user gesture.', error);
       return;
     }
@@ -200,11 +197,9 @@ export function initSmartCanvasManager({ root = document } = {}) {
         return;
       }
       claimActive(entry);
-      syncKnownControl(entry.video, true);
       dispatchCanvasState(entry.video, true, reason);
     }).catch(error => {
       if (activeEntry === entry) activeEntry = null;
-      syncKnownControl(entry.video, false);
       console.info('Smart Canvas playback awaits another user gesture.', error);
     });
   }
@@ -272,15 +267,17 @@ export function initSmartCanvasManager({ root = document } = {}) {
         return;
       }
       claimActive(entry);
-      syncKnownControl(video, true);
       dispatchCanvasState(video, true, 'native-play');
     };
 
     entry.onPause = () => {
       if (!entry.internalPause) entry.wanted = false;
       if (activeEntry === entry) activeEntry = null;
-      syncKnownControl(video, false);
-      dispatchCanvasState(video, false, entry.internalPause ? 'smart-pause' : 'manual-pause');
+      dispatchCanvasState(
+        video,
+        false,
+        entry.internalPause ? 'smart-pause' : 'manual-pause'
+      );
     };
 
     entries.set(video, entry);
