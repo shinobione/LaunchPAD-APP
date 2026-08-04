@@ -64,9 +64,10 @@ function createCanvasPanel(track) {
 function syncLoopControl(panel, playing) {
   const control = panel?.querySelector('[data-track-video-loop-action]');
   if (!control) return;
+  const label = playing ? 'Pause' : 'Play';
   control.setAttribute('aria-pressed', String(playing));
   control.classList.toggle('active', playing);
-  control.textContent = playing ? 'Pause' : 'Play';
+  if (control.textContent !== label) control.textContent = label;
 }
 
 function loadAndPlay(video, panel) {
@@ -118,7 +119,8 @@ function syncResponsiveCanvas(view, trackId, { resetMobile = false } = {}) {
     button.textContent = 'Hide Canvas';
     panel.hidden = false;
     hero.classList.add('has-track-canvas');
-    loadAndPlay(video, panel);
+    if (video.paused) loadAndPlay(video, panel);
+    else syncLoopControl(panel, true);
     return;
   }
 
