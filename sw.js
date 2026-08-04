@@ -1,6 +1,6 @@
 importScripts('./js/build-config.js');
-const RELEASE = 'lyrics-autoscroll-20260804';
-// Refresh the shell so reader-relative lyric centering replaces page-relative offsets.
+const RELEASE = globalThis.SHINOBIWAN_BUILD?.release || 'pwa-update-prompt-dev';
+// Keep a newly installed worker waiting until the user accepts the update.
 const VERSION = `${globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev'}-${RELEASE}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;
@@ -147,13 +147,10 @@ async function navigationResponse(request) {
 }
 
 self.addEventListener('install', event => {
-  event.waitUntil((async () => {
-    await Promise.all([
-      cacheSafely(SHELL_CACHE, SHELL_RESOURCES),
-      cacheSafely(IMAGE_CACHE, IMAGE_RESOURCES)
-    ]);
-    await self.skipWaiting();
-  })());
+  event.waitUntil(Promise.all([
+    cacheSafely(SHELL_CACHE, SHELL_RESOURCES),
+    cacheSafely(IMAGE_CACHE, IMAGE_RESOURCES)
+  ]));
 });
 
 self.addEventListener('activate', event => {
