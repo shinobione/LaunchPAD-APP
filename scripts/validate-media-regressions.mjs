@@ -180,7 +180,7 @@ for (const required of [
   "'./js/features/track-videos.js'",
   "'./js/features/lyrics-studio.js'",
   "'./js/features/listening-history-summary.js'",
-  'spotify-canvas-studio-20260804'
+  'studio-controls-20260804'
 ]) {
   if (!worker.includes(required)) fail(`The service worker cache is missing ${required}.`);
 }
