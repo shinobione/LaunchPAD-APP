@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add an audio-safe PWA update prompt with **Mettre à jour / Plus tard**, one-time reload protection, session dismissal and visible build metadata in About.
 - Add shareable `#studio=track-slug` routes that reopen Lyrics Studio directly, preserve browser history and no longer depend on temporary storage handoffs.
 - Align Lyrics controls into one responsive state-driven group, remove sticky mobile hover states, keep lyric auto-scroll inside its reader and add direct **Studio** entry from Track detail pages.
 - Integrate each 9:16 Canvas directly into the Track detail hero and the existing Lyrics Studio track panel, removing the oversized standalone video section and keeping responsive mobile sizing bounded.
