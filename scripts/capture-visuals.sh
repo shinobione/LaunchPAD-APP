@@ -38,7 +38,7 @@ run_mobile_studio_smoke() {
     --disable-features=OptimizationHints,OptimizationGuideModelDownloading,MediaRouter,Translate \
     --metrics-recording-only --no-first-run --disable-default-apps \
     --force-device-scale-factor=1 --window-size=390,844 \
-    --virtual-time-budget=9000 --run-all-compositor-stages-before-draw \
+    --virtual-time-budget=9000 \
     --user-data-dir="$profile" --dump-dom \
     "${BASE_URL}tests/mobile-studio-smoke.html" > "$output"
 
