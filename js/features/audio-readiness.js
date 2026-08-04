@@ -34,9 +34,6 @@ export function initAudioReadiness({ audio }) {
     }));
   }
 
-  // Route changes happen outside a user gesture and may safely preload metadata.
-  // Track selections made inside a tap must leave load + play in the same gesture,
-  // otherwise some Android media stacks consume the gesture on load().
   audio.load = (...args) => {
     const forced = audio.dataset.forceLoad === 'true';
     const activeGesture = navigator.userActivation?.isActive === true;
@@ -236,10 +233,6 @@ export function initAudioReadiness({ audio }) {
     }
   });
 
-  audio.addEventListener('error', () => {
-    if (!pendingPlay) setRequestState('idle');
-  });
-
   audio.addEventListener('ended', () => {
     playbackRequested = false;
     playIntent += 1;
@@ -247,8 +240,6 @@ export function initAudioReadiness({ audio }) {
     setRequestState('idle');
   });
 
-  // A second tap while Android is still starting playback must not be interpreted
-  // as Pause. Treat it as an explicit recovery request instead.
   document.addEventListener('click', event => {
     const toggle = event.target.closest?.('[data-action="toggle"]');
     if (!toggle || audio.dataset.playbackRequestState !== 'starting') return;
