@@ -40,6 +40,8 @@ if (injectionParts.length) {
 }
 
 source = source.replace('version: "4.6"', 'version: "4.7"');
+source = source.replace('<span class="version-pill">v4.5</span>', '<span class="version-pill">v4.7</span>');
+source = source.replace("version.textContent='v4.6'", "version.textContent='v4.7'");
 source = source.replace(
   ":' sans timestamps.'))}catch(error)",
   ":' sans timestamps.')))}catch(error)",
@@ -70,15 +72,18 @@ for (const forbidden of [
   'id="importGithub"',
   'id="migrateLegacy"',
   'id="migrationModal"',
-  'id="legacyPanel"'
+  'id="legacyPanel"',
+  '<span class="version-pill">v4.5</span>',
+  "version.textContent='v4.6'"
 ]) {
   if (source.includes(forbidden)) {
-    throw new Error(`Built Track Manager Worker still exposes obsolete migration UI: ${forbidden}.`);
+    throw new Error(`Built Track Manager Worker still exposes obsolete content: ${forbidden}.`);
   }
 }
 
 for (const required of [
   'version: "4.7"',
+  '<span class="version-pill">v4.7</span>',
   'const ADMIN_HTML = String.raw`',
   'rel="icon" href="data:image/svg+xml',
   'class="form-section"',
