@@ -18,8 +18,8 @@ const parts = fs.readdirSync(partsDirectory)
   .filter(filename => filename.endsWith('.part'))
   .sort((left, right) => left.localeCompare(right, 'en', { numeric: true }));
 
-if (parts.length < 10) {
-  throw new Error(`Expected at least 10 Track Manager source parts, received ${parts.length}.`);
+if (parts.length < 13) {
+  throw new Error(`Expected at least 13 Track Manager source parts, received ${parts.length}.`);
 }
 
 const injectionParts = parts.filter(filename => filename.includes('.inject.'));
@@ -104,6 +104,9 @@ for (const required of [
   'function applyLyricsTxtMetadata(result)',
   "elements.lyrics.addEventListener('change',importLyricsTxtFile)",
   'Métadonnées du TXT importées dans le formulaire.',
+  'baseParseLyricsTxtMetadata',
+  "metadata.type='album-track'",
+  'result.albumDetected=true',
   'async function inspectTrackQuality(',
   'function publicationQualityMessage(',
   'enrichTrackSummariesQuality',
@@ -113,6 +116,13 @@ for (const required of [
   'Contrôle avant publication',
   'qualityEvidence',
   'create_only',
+  'state.qualityRunPromise',
+  'state.qualityRerunRequested',
+  'refreshQualityFromCachedEvidence',
+  'client-lyrics-pending',
+  'Audio sélectionné : contrôle complet en attente.',
+  'qualityFileSignature()!==requestedSignature',
+  'Le contrôle a échoué',
   "version.textContent='v4.7'",
   "modal.id='batchImportModal'",
   'id="batchFiles"',
