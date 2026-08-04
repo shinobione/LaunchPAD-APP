@@ -39,10 +39,10 @@ if (!worker.includes("globalThis.SHINOBIWAN_BUILD?.release")) {
 }
 
 const build = read('js/build-config.js');
-if (!build.includes("display: '2026.08.04.6'")) {
+if (!build.includes("display: '2026.08.04.7'")) {
   fail('Build display metadata is missing.');
 }
-if (!build.includes("release: 'desktop-canvas-title-state-20260804'")) {
+if (!build.includes("release: 'smart-canvas-pause-20260804'")) {
   fail('Build release metadata is missing.');
 }
 for (const required of [
