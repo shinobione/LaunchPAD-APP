@@ -16,7 +16,8 @@ export function initAudioReadiness({ audio }) {
   if (!(audio instanceof HTMLMediaElement) || audio.dataset.audioReadinessReady === 'true') return;
 
   audio.dataset.audioReadinessReady = 'true';
-  audio.preload = 'none';
+  audio.preload = 'metadata';
+  audio.dataset.playbackRequestState = 'idle';
 
   let playbackRequested = false;
   let playIntent = 0;
@@ -25,12 +26,22 @@ export function initAudioReadiness({ audio }) {
   const nativePlay = audio.play.bind(audio);
   const nativePause = audio.pause.bind(audio);
 
-  // app-main selects a source and then calls load() before play(). On Android that
-  // explicit load can consume the first user gesture. Setting src is sufficient:
-  // native play() loads and starts playback in the same tap.
-  audio.load = () => {
-    if (audio.dataset.forceLoad !== 'true') return;
-    nativeLoad();
+  function setRequestState(state) {
+    if (audio.dataset.playbackRequestState === state) return;
+    audio.dataset.playbackRequestState = state;
+    audio.dispatchEvent(new CustomEvent('shinobi:audio-request-state', {
+      detail: { state }
+    }));
+  }
+
+  // Route changes happen outside a user gesture and may safely preload metadata.
+  // Track selections made inside a tap must leave load + play in the same gesture,
+  // otherwise some Android media stacks consume the gesture on load().
+  audio.load = (...args) => {
+    const forced = audio.dataset.forceLoad === 'true';
+    const activeGesture = navigator.userActivation?.isActive === true;
+    if (!forced && activeGesture) return;
+    return nativeLoad(...args);
   };
 
   function currentSource() {
@@ -50,6 +61,7 @@ export function initAudioReadiness({ audio }) {
 
     const time = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
     restorePositionWhenReady(time);
+    audio.preload = 'metadata';
     audio.setAttribute('src', source);
 
     if (forceLoad) nativeLoad();
@@ -61,9 +73,6 @@ export function initAudioReadiness({ audio }) {
     const networkIsEmpty = audio.networkState === HTMLMediaElement.NETWORK_EMPTY;
     const sourceIsInvalid = audio.networkState === HTMLMediaElement.NETWORK_NO_SOURCE || Boolean(audio.error);
 
-    // A direct #studio route can select the track before the first user gesture.
-    // Some Android media stacks then leave the element in NETWORK_EMPTY. Re-applying
-    // the same source inside the Play tap primes it without calling load() first.
     if (currentSource() && sourceIsEmpty && (networkIsEmpty || sourceIsInvalid)) {
       refreshCurrentSource();
     }
@@ -134,9 +143,6 @@ export function initAudioReadiness({ audio }) {
           audio.currentTime > 0
           || audio.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
 
-        // A play() promise may stay pending forever while Android reports a stalled
-        // NETWORK_EMPTY media element. Force one real source reload, then retry the
-        // same playback intent without requiring the user to leave Studio.
         if (!playbackHasData) refreshCurrentSource({ forceLoad: true });
 
         let retryAttempt;
@@ -160,16 +166,20 @@ export function initAudioReadiness({ audio }) {
     });
   }
 
-  audio.play = (...args) => {
+  function startPlayback(args = [], { forceReload = false } = {}) {
+    if (pendingPlay && playbackRequested && !forceReload) return pendingPlay;
+
     playbackRequested = true;
     const intent = ++playIntent;
+    setRequestState('starting');
 
     if (pendingPlay) {
       pendingPlay.catch(() => {});
       pendingPlay = null;
     }
 
-    prepareSourceInsideGesture();
+    if (forceReload) refreshCurrentSource({ forceLoad: true });
+    else prepareSourceInsideGesture();
 
     let firstAttempt;
     try {
@@ -183,31 +193,67 @@ export function initAudioReadiness({ audio }) {
         if (error?.name === 'NotAllowedError') throw error;
         return waitForReady(intent, args, error);
       })
+      .catch(error => {
+        if (intent === playIntent) setRequestState('idle');
+        throw error;
+      })
       .finally(() => {
         if (intent === playIntent) pendingPlay = null;
       });
 
     return pendingPlay;
-  };
+  }
+
+  audio.play = (...args) => startPlayback(args);
+  audio.shinobiRetryPlayback = () => startPlayback([], { forceReload: true });
 
   audio.pause = (...args) => {
     playbackRequested = false;
     playIntent += 1;
     pendingPlay = null;
+    setRequestState('idle');
     return nativePause(...args);
   };
 
   audio.addEventListener('play', () => {
     playbackRequested = true;
+    if (audio.dataset.playbackRequestState !== 'playing') setRequestState('starting');
+  });
+
+  audio.addEventListener('playing', () => {
+    playbackRequested = true;
+    setRequestState('playing');
+  });
+
+  audio.addEventListener('waiting', () => {
+    if (playbackRequested) setRequestState('starting');
   });
 
   audio.addEventListener('pause', () => {
-    if (!pendingPlay && !audio.error) playbackRequested = false;
+    if (!pendingPlay && !audio.error) {
+      playbackRequested = false;
+      setRequestState('idle');
+    }
+  });
+
+  audio.addEventListener('error', () => {
+    if (!pendingPlay) setRequestState('idle');
   });
 
   audio.addEventListener('ended', () => {
     playbackRequested = false;
     playIntent += 1;
     pendingPlay = null;
+    setRequestState('idle');
   });
+
+  // A second tap while Android is still starting playback must not be interpreted
+  // as Pause. Treat it as an explicit recovery request instead.
+  document.addEventListener('click', event => {
+    const toggle = event.target.closest?.('[data-action="toggle"]');
+    if (!toggle || audio.dataset.playbackRequestState !== 'starting') return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    audio.shinobiRetryPlayback().catch(() => {});
+  }, true);
 }
