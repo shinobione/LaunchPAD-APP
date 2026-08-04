@@ -26,6 +26,21 @@ export function centerElementInScrollContainer(reader, element, behavior = 'smoo
   return true;
 }
 
+export function seekAudioToTimestamp(audio, time) {
+  if (!audio || !Number.isFinite(time) || time < 0) return false;
+  const haveNothing = globalThis.HTMLMediaElement?.HAVE_NOTHING ?? 0;
+  const metadataReady = audio.readyState > haveNothing || Number.isFinite(audio.duration);
+  if (!metadataReady) return false;
+
+  try {
+    if (typeof audio.fastSeek === 'function') audio.fastSeek(time);
+    else audio.currentTime = time;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function createLyricsController({ tracks, audio, getCurrentIndex, selectTrack, switchView, $, $$, escapeHtml }) {
   const cache = new Map();
   let currentLines = [];
@@ -34,6 +49,8 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
   let autoScroll = true;
   let searchHydrated = false;
   let searchPromise = null;
+  let syncFrame = 0;
+  let lastSyncAt = 0;
 
   function extractLyricsBody(rawText) {
     const normalized = String(rawText || '').replace(/^\uFEFF/, '');
@@ -116,6 +133,53 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
     }).join('');
   }
 
+  function scrollLineIntoReader(element, behavior = 'smooth') {
+    return centerElementInScrollContainer($('#lyrics-reader'), element, behavior);
+  }
+
+  function applyActiveLine(index, behavior = 'smooth') {
+    const elements = $$('#lyrics-reader .lyric-line');
+    activeIndex = index;
+    elements.forEach((element, elementIndex) => {
+      element.classList.toggle('active', elementIndex === activeIndex);
+      element.classList.toggle('past', elementIndex < activeIndex);
+    });
+    renderHome(Math.max(0, activeIndex));
+    if (autoScroll && activeIndex >= 0) scrollLineIntoReader(elements[activeIndex], behavior);
+  }
+
+  function requestTimestamp(time, index, element) {
+    const readyEvents = ['loadedmetadata', 'durationchange', 'canplay'];
+    let finished = false;
+
+    const cleanup = () => {
+      readyEvents.forEach(eventName => audio.removeEventListener(eventName, applyWhenReady));
+    };
+
+    const applyWhenReady = () => {
+      if (finished) return true;
+      if (!seekAudioToTimestamp(audio, time)) return false;
+      finished = true;
+      cleanup();
+      update(time);
+      if (autoScroll) scrollLineIntoReader(element, 'auto');
+      return true;
+    };
+
+    applyActiveLine(index, 'auto');
+    if (!applyWhenReady()) {
+      readyEvents.forEach(eventName => audio.addEventListener(eventName, applyWhenReady));
+    }
+
+    if (audio.paused || audio.dataset.playbackRequestState !== 'playing') {
+      audio.play().catch(() => {});
+    }
+
+    // Setting currentTime can be ignored while metadata is transitioning. Repeat
+    // once after the play request, while the ready-event listeners remain armed.
+    window.setTimeout(applyWhenReady, 0);
+  }
+
   function render(lines) {
     if (!lines.length) {
       renderUnavailable();
@@ -140,10 +204,7 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
 
       if (Number.isFinite(line.time)) {
         button.dataset.time = String(line.time);
-        button.addEventListener('click', () => {
-          audio.currentTime = line.time;
-          if (audio.paused) audio.play().catch(() => {});
-        });
+        button.addEventListener('click', () => requestTimestamp(line.time, index, button));
       }
       fragment.appendChild(button);
     });
@@ -183,10 +244,6 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
     return result;
   }
 
-  function scrollLineIntoReader(element, behavior = 'smooth') {
-    return centerElementInScrollContainer($('#lyrics-reader'), element, behavior);
-  }
-
   function lineIsInReaderFocusZone(element) {
     const reader = $('#lyrics-reader');
     if (!reader || !element) return false;
@@ -213,16 +270,29 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
       return;
     }
 
-    activeIndex = next;
-    elements.forEach((element, index) => {
-      element.classList.toggle('active', index === activeIndex);
-      element.classList.toggle('past', index < activeIndex);
-    });
+    applyActiveLine(next);
+  }
 
-    renderHome(Math.max(0, activeIndex));
-    if (autoScroll && activeIndex >= 0) {
-      scrollLineIntoReader(elements[activeIndex]);
-    }
+  function stopSyncClock() {
+    if (!syncFrame) return;
+    cancelAnimationFrame(syncFrame);
+    syncFrame = 0;
+  }
+
+  function startSyncClock() {
+    if (syncFrame) return;
+    const tick = timestamp => {
+      if (audio.paused || audio.ended) {
+        syncFrame = 0;
+        return;
+      }
+      if (timestamp - lastSyncAt >= 90) {
+        lastSyncAt = timestamp;
+        update(audio.currentTime);
+      }
+      syncFrame = requestAnimationFrame(tick);
+    };
+    syncFrame = requestAnimationFrame(tick);
   }
 
   async function hydrateSearchIndex(onReady) {
@@ -254,6 +324,16 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
     selectTrack(Number(event.target.value), false);
     switchView('lyrics');
   });
+
+  ['seeking', 'seeked', 'loadedmetadata', 'durationchange'].forEach(eventName => {
+    audio.addEventListener(eventName, () => update(audio.currentTime));
+  });
+  audio.addEventListener('playing', () => {
+    update(audio.currentTime);
+    startSyncClock();
+  });
+  audio.addEventListener('pause', stopSyncClock);
+  audio.addEventListener('ended', stopSyncClock);
 
   return {
     load,
