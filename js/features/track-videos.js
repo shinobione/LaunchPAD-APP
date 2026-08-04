@@ -2,6 +2,7 @@ import { getTrack } from '../core/catalog-store.js';
 import { ensureStylesheet } from '../core/assets.js';
 
 const TRACK_HASH_PREFIX = '#track=';
+const STUDIO_REQUEST_KEY = 'shinobi-launchpad-open-studio-track';
 
 function currentTrack() {
   if (!window.location.hash.startsWith(TRACK_HASH_PREFIX)) return null;
@@ -60,6 +61,7 @@ function syncLoopControl(panel, playing) {
   const control = panel?.querySelector('[data-track-video-loop-action]');
   if (!control) return;
   control.setAttribute('aria-pressed', String(playing));
+  control.classList.toggle('active', playing);
   control.textContent = playing ? 'Pause' : 'Play';
 }
 
@@ -75,6 +77,23 @@ function loadAndPlay(video, panel) {
       syncLoopControl(panel, false);
       console.info('Canvas playback awaits another user gesture.', error);
     });
+}
+
+function installStudioEntry(view, track) {
+  if (!view || !track?.lyrics) return;
+  const actions = view.querySelector('.track-detail-actions');
+  if (!actions || actions.querySelector('[data-track-studio-action]')) return;
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'secondary track-detail-studio-entry';
+  button.dataset.trackStudioAction = track.id;
+  button.textContent = 'Studio';
+  button.setAttribute('aria-label', `Open Lyrics Studio for ${track.title}`);
+
+  const shareButton = actions.querySelector('[data-track-detail-action="share"]');
+  if (shareButton) shareButton.insertAdjacentElement('afterend', button);
+  else actions.appendChild(button);
 }
 
 function installVideoUI(view, track) {
@@ -93,8 +112,22 @@ function installVideoUI(view, track) {
   button.setAttribute('aria-expanded', 'false');
 
   const lyricsButton = actions.querySelector('[data-track-detail-route="lyrics"]');
-  actions.insertBefore(button, lyricsButton || actions.lastElementChild);
+  actions.insertBefore(button, lyricsButton || actions.firstElementChild?.nextSibling || null);
   hero.appendChild(createCanvasPanel(track));
+}
+
+function installTrackEnhancements(view, track) {
+  installStudioEntry(view, track);
+  installVideoUI(view, track);
+}
+
+function requestStudio(trackId) {
+  try {
+    window.sessionStorage.setItem(STUDIO_REQUEST_KEY, trackId);
+  } catch {
+    // The hash route still opens Lyrics when session storage is unavailable.
+  }
+  window.location.hash = `#lyrics=${encodeURIComponent(trackId)}`;
 }
 
 export function initTrackVideos() {
@@ -109,7 +142,7 @@ export function initTrackVideos() {
 
   function hydrate() {
     const track = currentTrack();
-    if (track) installVideoUI(view, track);
+    if (track) installTrackEnhancements(view, track);
   }
 
   function scheduleHydration() {
@@ -118,6 +151,13 @@ export function initTrackVideos() {
   }
 
   document.addEventListener('click', event => {
+    const studioButton = event.target.closest?.('[data-track-studio-action]');
+    if (studioButton) {
+      event.preventDefault();
+      requestStudio(studioButton.dataset.trackStudioAction);
+      return;
+    }
+
     const loopControl = event.target.closest?.('[data-track-video-loop-action]');
     if (loopControl) {
       event.preventDefault();
