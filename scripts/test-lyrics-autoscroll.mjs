@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import {
   centeredScrollTop,
-  centerElementInScrollContainer
+  centerElementInScrollContainer,
+  seekAudioToTimestamp
 } from '../js/features/lyrics/lyrics-engine.js';
 
 const scrollCalls = [];
@@ -19,8 +20,6 @@ const reader = {
 };
 
 const line = {
-  // Deliberately unrelated to the reader. The old implementation incorrectly
-  // used this page-relative value and would scroll far beyond the current line.
   offsetTop: 1230,
   offsetHeight: 52,
   getBoundingClientRect() {
@@ -53,4 +52,30 @@ const belowReader = {
 const maximum = reader.scrollHeight - reader.clientHeight;
 assert.equal(centeredScrollTop({ ...reader, scrollTop: 0 }, belowReader), maximum);
 
-console.log('Lyrics auto-scroll uses reader-relative geometry and clamps safely.');
+const readyAudio = {
+  readyState: 1,
+  duration: 220,
+  currentTime: 0
+};
+assert.equal(seekAudioToTimestamp(readyAudio, 42.5), true);
+assert.equal(readyAudio.currentTime, 42.5);
+
+let fastSeekValue = null;
+const fastSeekAudio = {
+  readyState: 2,
+  duration: 220,
+  fastSeek(value) { fastSeekValue = value; }
+};
+assert.equal(seekAudioToTimestamp(fastSeekAudio, 73.25), true);
+assert.equal(fastSeekValue, 73.25);
+
+const unreadyAudio = {
+  readyState: 0,
+  duration: Number.NaN,
+  currentTime: 0
+};
+assert.equal(seekAudioToTimestamp(unreadyAudio, 18), false);
+assert.equal(unreadyAudio.currentTime, 0);
+assert.equal(seekAudioToTimestamp(readyAudio, Number.NaN), false);
+
+console.log('Lyrics auto-scroll and timestamp seeking use deterministic reader and media readiness checks.');
