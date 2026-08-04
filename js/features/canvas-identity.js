@@ -4,6 +4,7 @@ import { ensureStylesheet } from '../core/assets.js';
 const CARD_SELECTOR = '.album-card[data-index]';
 const PREVIEW_SELECTOR = 'video.canvas-card-preview-video';
 const HOVER_DELAY = 420;
+const VIEWPORT_THRESHOLD = 0.22;
 const ROUTE_CHANGE_EVENT = 'shinobi:route-change';
 
 function fallbackMediaQuery() {
@@ -86,10 +87,12 @@ export function initCanvasIdentity({ root = document } = {}) {
   const reducedMotion = queryMedia('(prefers-reduced-motion: reduce)');
   const reducedData = queryMedia('(prefers-reduced-data: reduce)');
   const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  const visibleCards = new WeakSet();
 
   let activeCard = null;
   let hoverTimer = 0;
   let disposed = false;
+  let visibilityObserver = null;
 
   function policyAllowsPreview() {
     return !reducedMotion.matches
@@ -108,6 +111,13 @@ export function initCanvasIdentity({ root = document } = {}) {
 
   function previewButton(card) {
     return card?.querySelector('[data-canvas-preview-track]') || null;
+  }
+
+  function cardIsUseful(card) {
+    if (!card?.isConnected || card.hidden || document.visibilityState === 'hidden') return false;
+    const view = card.closest('.view');
+    if (view && !view.classList.contains('active')) return false;
+    return !visibilityObserver || visibleCards.has(card);
   }
 
   function releaseVideo(video) {
@@ -132,10 +142,21 @@ export function initCanvasIdentity({ root = document } = {}) {
     if (unavailable) {
       button.setAttribute('aria-disabled', 'true');
       button.title = 'Canvas preview unavailable';
-    } else {
+    } else if (policyAllowsPreview()) {
       button.removeAttribute('aria-disabled');
       button.removeAttribute('title');
     }
+  }
+
+  function syncPolicyControls() {
+    const allowed = policyAllowsPreview();
+    root.querySelectorAll?.('[data-canvas-preview-track]').forEach(button => {
+      const card = button.closest(CARD_SELECTOR);
+      if (card?.classList.contains('is-canvas-unavailable')) return;
+      button.setAttribute('aria-disabled', String(!allowed));
+      button.title = allowed ? '' : 'Canvas preview disabled by motion or data-saving settings';
+      card?.classList.toggle('is-canvas-policy-blocked', !allowed);
+    });
   }
 
   function stopPreview(card = activeCard, { release = true } = {}) {
@@ -150,8 +171,7 @@ export function initCanvasIdentity({ root = document } = {}) {
   async function startPreview(card, reason = 'manual') {
     const track = trackForCard(card);
     const video = previewVideo(card);
-    if (!track?.video || !video || !policyAllowsPreview()) return false;
-    if (card.hidden || !card.closest('.view')?.classList.contains('active')) return false;
+    if (!track?.video || !video || !policyAllowsPreview() || !cardIsUseful(card)) return false;
 
     if (activeCard && activeCard !== card) stopPreview(activeCard, { release: true });
     activeCard = card;
@@ -166,7 +186,10 @@ export function initCanvasIdentity({ root = document } = {}) {
     video.muted = true;
     try {
       await video.play();
-      if (activeCard !== card) return false;
+      if (activeCard !== card || !cardIsUseful(card)) {
+        stopPreview(card, { release: true });
+        return false;
+      }
       syncCardState(card, true);
       card.dataset.canvasPreviewReason = reason;
       return true;
@@ -193,11 +216,13 @@ export function initCanvasIdentity({ root = document } = {}) {
 
     cover.prepend(createPreviewVideo(track));
     cover.append(createBadge(track), createActions(track));
+    visibilityObserver?.observe(card);
   }
 
   function decorate(scope = root) {
     if (scope instanceof Element && scope.matches(CARD_SELECTOR)) decorateCard(scope);
     scope.querySelectorAll?.(CARD_SELECTOR).forEach(decorateCard);
+    syncPolicyControls();
   }
 
   function clearHoverTimer() {
@@ -205,17 +230,19 @@ export function initCanvasIdentity({ root = document } = {}) {
     hoverTimer = 0;
   }
 
-  function onPointerEnter(event) {
+  function onPointerOver(event) {
     const card = event.target.closest?.(CARD_SELECTOR);
     if (!card?.classList.contains('has-canvas-identity')) return;
-    if (!hoverPreview.matches || !policyAllowsPreview()) return;
+    if (event.relatedTarget instanceof Node && card.contains(event.relatedTarget)) return;
+    if (!hoverPreview.matches || !policyAllowsPreview() || !cardIsUseful(card)) return;
     clearHoverTimer();
     hoverTimer = window.setTimeout(() => startPreview(card, 'desktop-hover'), HOVER_DELAY);
   }
 
-  function onPointerLeave(event) {
+  function onPointerOut(event) {
     const card = event.target.closest?.(CARD_SELECTOR);
     if (!card?.classList.contains('has-canvas-identity')) return;
+    if (event.relatedTarget instanceof Node && card.contains(event.relatedTarget)) return;
     clearHoverTimer();
     if (activeCard === card) stopPreview(card, { release: true });
   }
@@ -245,16 +272,21 @@ export function initCanvasIdentity({ root = document } = {}) {
     window.location.hash = `#${route}=${encodeURIComponent(trackId)}`;
   }
 
-  function onCanvasState(event) {
+  function onPreviewPlay(event) {
     const video = event.target.closest?.(PREVIEW_SELECTOR);
     if (!video) return;
     const card = video.closest(CARD_SELECTOR);
-    const playing = Boolean(event.detail?.playing);
-    syncCardState(card, playing);
-    if (playing) activeCard = card;
-    else if (activeCard === card && event.detail?.reason !== 'page-hidden' && event.detail?.reason !== 'offscreen') {
-      activeCard = null;
-    }
+    if (activeCard && activeCard !== card) stopPreview(activeCard, { release: true });
+    activeCard = card;
+    syncCardState(card, true);
+  }
+
+  function onPreviewPause(event) {
+    const video = event.target.closest?.(PREVIEW_SELECTOR);
+    if (!video) return;
+    const card = video.closest(CARD_SELECTOR);
+    syncCardState(card, false);
+    if (activeCard === card) activeCard = null;
   }
 
   function onVideoError(event) {
@@ -268,12 +300,24 @@ export function initCanvasIdentity({ root = document } = {}) {
 
   function stopForPolicyChange() {
     if (!policyAllowsPreview()) stopPreview(activeCard, { release: true });
+    syncPolicyControls();
   }
 
-  function stopForRouteChange() {
+  function stopForContextChange() {
     clearHoverTimer();
     stopPreview(activeCard, { release: true });
   }
+
+  visibilityObserver = typeof IntersectionObserver === 'function'
+    ? new IntersectionObserver(records => {
+      records.forEach(record => {
+        const visible = Boolean(record.isIntersecting && record.intersectionRatio >= VIEWPORT_THRESHOLD);
+        if (visible) visibleCards.add(record.target);
+        else visibleCards.delete(record.target);
+        if (!visible && activeCard === record.target) stopPreview(record.target, { release: true });
+      });
+    }, { threshold: [0, VIEWPORT_THRESHOLD, 0.5, 1] })
+    : null;
 
   const observer = new MutationObserver(records => {
     records.forEach(record => record.addedNodes.forEach(node => {
@@ -283,14 +327,16 @@ export function initCanvasIdentity({ root = document } = {}) {
   });
   observer.observe(root.documentElement || root, { childList: true, subtree: true });
 
-  root.addEventListener('pointerenter', onPointerEnter, true);
-  root.addEventListener('pointerleave', onPointerLeave, true);
+  root.addEventListener('pointerover', onPointerOver, true);
+  root.addEventListener('pointerout', onPointerOut, true);
   root.addEventListener('click', onClick, true);
-  root.addEventListener('shinobi:canvas-state', onCanvasState);
+  root.addEventListener('play', onPreviewPlay, true);
+  root.addEventListener('pause', onPreviewPause, true);
   root.addEventListener('error', onVideoError, true);
-  window.addEventListener('hashchange', stopForRouteChange);
-  window.addEventListener(ROUTE_CHANGE_EVENT, stopForRouteChange);
-  window.addEventListener('pagehide', stopForRouteChange);
+  document.addEventListener('visibilitychange', stopForContextChange);
+  window.addEventListener('hashchange', stopForContextChange);
+  window.addEventListener(ROUTE_CHANGE_EVENT, stopForContextChange);
+  window.addEventListener('pagehide', stopForContextChange);
   reducedMotion.addEventListener?.('change', stopForPolicyChange);
   reducedData.addEventListener?.('change', stopForPolicyChange);
   connection?.addEventListener?.('change', stopForPolicyChange);
@@ -307,14 +353,17 @@ export function initCanvasIdentity({ root = document } = {}) {
       clearHoverTimer();
       stopPreview(activeCard, { release: true });
       observer.disconnect();
-      root.removeEventListener('pointerenter', onPointerEnter, true);
-      root.removeEventListener('pointerleave', onPointerLeave, true);
+      visibilityObserver?.disconnect();
+      root.removeEventListener('pointerover', onPointerOver, true);
+      root.removeEventListener('pointerout', onPointerOut, true);
       root.removeEventListener('click', onClick, true);
-      root.removeEventListener('shinobi:canvas-state', onCanvasState);
+      root.removeEventListener('play', onPreviewPlay, true);
+      root.removeEventListener('pause', onPreviewPause, true);
       root.removeEventListener('error', onVideoError, true);
-      window.removeEventListener('hashchange', stopForRouteChange);
-      window.removeEventListener(ROUTE_CHANGE_EVENT, stopForRouteChange);
-      window.removeEventListener('pagehide', stopForRouteChange);
+      document.removeEventListener('visibilitychange', stopForContextChange);
+      window.removeEventListener('hashchange', stopForContextChange);
+      window.removeEventListener(ROUTE_CHANGE_EVENT, stopForContextChange);
+      window.removeEventListener('pagehide', stopForContextChange);
       reducedMotion.removeEventListener?.('change', stopForPolicyChange);
       reducedData.removeEventListener?.('change', stopForPolicyChange);
       connection?.removeEventListener?.('change', stopForPolicyChange);
