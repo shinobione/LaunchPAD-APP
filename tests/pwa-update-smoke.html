@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>PWA update smoke test</title>
+</head>
+<body>
+  <audio id="audio"></audio>
+  <output id="result">PWA UPDATE PENDING</output>
+
+  <script type="module">
+    import { createPWAUpdateController } from '../js/features/pwa.js';
+
+    class MemoryStorage {
+      constructor() {
+        this.values = new Map();
+      }
+      getItem(key) {
+        return this.values.has(key) ? this.values.get(key) : null;
+      }
+      setItem(key, value) {
+        this.values.set(key, String(value));
+      }
+      removeItem(key) {
+        this.values.delete(key);
+      }
+    }
+
+    class FakeServiceWorker extends EventTarget {}
+
+    const result = document.querySelector('#result');
+    const audio = document.querySelector('#audio');
+    let playing = true;
+    let ended = false;
+    Object.defineProperty(audio, 'paused', { configurable: true, get: () => !playing });
+    Object.defineProperty(audio, 'ended', { configurable: true, get: () => ended });
+
+    const frame = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+
+    try {
+      const storage = new MemoryStorage();
+      const serviceWorker = new FakeServiceWorker();
+      const workerMessages = [];
+      const worker = {
+        postMessage(message) {
+          workerMessages.push(message);
+        }
+      };
+      let reloads = 0;
+
+      const controller = createPWAUpdateController({
+        audio,
+        serviceWorker,
+        storage,
+        reload: () => { reloads += 1; }
+      });
+
+      if (!controller.show(worker) || !controller.isVisible()) {
+        throw new Error('Waiting worker did not reveal the update prompt.');
+      }
+
+      document.querySelector('[data-pwa-update-now]').click();
+      if (!controller.isDeferred() || workerMessages.length !== 0) {
+        throw new Error('Playing audio was interrupted instead of deferring activation.');
+      }
+      if (document.querySelector('#pwa-update-banner')?.dataset.state !== 'deferred') {
+        throw new Error('Deferred update state was not exposed visually.');
+      }
+
+      playing = false;
+      audio.dispatchEvent(new Event('pause'));
+      if (workerMessages.length !== 1 || workerMessages[0]?.type !== 'SKIP_WAITING') {
+        throw new Error('Paused playback did not activate the waiting worker.');
+      }
+
+      serviceWorker.dispatchEvent(new Event('controllerchange'));
+      serviceWorker.dispatchEvent(new Event('controllerchange'));
+      if (reloads !== 1) {
+        throw new Error(`Controller change reloaded ${reloads} times instead of once.`);
+      }
+      controller.destroy();
+
+      document.querySelector('#pwa-update-banner')?.remove();
+      const laterStorage = new MemoryStorage();
+      const laterController = createPWAUpdateController({
+        audio,
+        serviceWorker: new FakeServiceWorker(),
+        storage: laterStorage,
+        reload: () => {}
+      });
+      laterController.show({ postMessage() {} });
+      document.querySelector('[data-pwa-update-later]').click();
+      await wait(260);
+      if (laterController.isVisible()) {
+        throw new Error('Plus tard did not close the prompt for the session.');
+      }
+      laterController.destroy();
+
+      document.querySelector('#pwa-update-banner')?.remove();
+      const dismissedController = createPWAUpdateController({
+        audio,
+        serviceWorker: new FakeServiceWorker(),
+        storage: laterStorage,
+        reload: () => {}
+      });
+      if (dismissedController.show({ postMessage() {} })) {
+        throw new Error('Dismissed update prompt returned during the same session.');
+      }
+      dismissedController.destroy();
+
+      document.querySelector('#pwa-update-banner')?.remove();
+      const immediateMessages = [];
+      const immediateController = createPWAUpdateController({
+        audio,
+        serviceWorker: new FakeServiceWorker(),
+        storage: new MemoryStorage(),
+        reload: () => {}
+      });
+      ended = true;
+      immediateController.show({
+        postMessage(message) {
+          immediateMessages.push(message);
+        }
+      });
+      document.querySelector('[data-pwa-update-now]').click();
+      await frame();
+      if (immediateMessages[0]?.type !== 'SKIP_WAITING') {
+        throw new Error('Paused or ended playback did not update immediately.');
+      }
+      immediateController.destroy();
+
+      result.textContent = 'PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RELOAD';
+    } catch (error) {
+      result.textContent = `PWA UPDATE ERROR ${error.message}`;
+    }
+  </script>
+</body>
+</html>
