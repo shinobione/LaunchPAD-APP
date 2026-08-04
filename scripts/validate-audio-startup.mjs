@@ -32,7 +32,12 @@ for (const required of [
 
 const player = read('js/features/player-experience.js');
 for (const required of [
-  "document.title = `ShinoBiWan LaunchPAD — ${track.title}`",
+  "const SITE_TITLE = 'ShinoBiWan LaunchPAD'",
+  'return getTrack(audio.dataset.trackId) || null',
+  'function syncDocumentTitle()',
+  'const titleObserver = new MutationObserver',
+  "titleObserver.observe(titleElement",
+  "window.addEventListener('shinobi:route-change', scheduleSync)",
   "audio.dataset.playbackRequestState === 'starting'",
   "button.dataset.playbackState = 'loading'",
   '#view-lyrics.lyrics-studio-mode .lyrics-track-select'
@@ -53,6 +58,7 @@ for (const required of [
 
 const browserTest = read('tests/audio-startup-smoke.html');
 for (const required of [
+  'The tab title followed the viewed route instead of the loaded audio track.',
   'Direct Studio playback never recovered.',
   'Retry did not rebuild the catalog audio source.',
   'STUDIO AUDIO READY WATCHDOG SOURCE REBUILD RETRY'
@@ -65,4 +71,4 @@ if (!visualRunner.includes('run_audio_startup_smoke')) {
   fail('Studio audio startup browser regression is not wired into CI.');
 }
 
-console.log('Studio metadata preparation, honest loading state, lyric seeking, source rebuild and Retry recovery are covered.');
+console.log('Studio metadata preparation, playback-driven browser titles, honest loading state, lyric seeking, source rebuild and Retry recovery are covered.');

@@ -2,11 +2,16 @@ import { getTrack } from '../core/catalog-store.js';
 import { ensureStylesheet } from '../core/assets.js';
 
 const TRACK_HASH_PREFIX = '#track=';
+const MOBILE_CANVAS_QUERY = '(max-width: 760px)';
 
 function currentTrack() {
   if (!window.location.hash.startsWith(TRACK_HASH_PREFIX)) return null;
   const id = decodeURIComponent(window.location.hash.slice(TRACK_HASH_PREFIX.length));
   return getTrack(id);
+}
+
+function mobileCanvasLayout() {
+  return window.matchMedia(MOBILE_CANVAS_QUERY).matches;
 }
 
 function createCanvasPanel(track) {
@@ -59,9 +64,10 @@ function createCanvasPanel(track) {
 function syncLoopControl(panel, playing) {
   const control = panel?.querySelector('[data-track-video-loop-action]');
   if (!control) return;
+  const label = playing ? 'Pause' : 'Play';
   control.setAttribute('aria-pressed', String(playing));
   control.classList.toggle('active', playing);
-  control.textContent = playing ? 'Pause' : 'Play';
+  if (control.textContent !== label) control.textContent = label;
 }
 
 function loadAndPlay(video, panel) {
@@ -95,9 +101,47 @@ function installStudioEntry(view, track) {
   else actions.appendChild(button);
 }
 
+function canvasElements(view, trackId) {
+  const panel = view.querySelector(`[data-track-video-panel="${CSS.escape(trackId)}"]`);
+  const button = view.querySelector(`[data-track-video-action="${CSS.escape(trackId)}"]`);
+  const hero = panel?.closest('.track-detail-hero');
+  const video = panel?.querySelector('video.track-video-player');
+  return { panel, button, hero, video };
+}
+
+function syncResponsiveCanvas(view, trackId, { resetMobile = false } = {}) {
+  const { panel, button, hero, video } = canvasElements(view, trackId);
+  if (!panel || !button || !hero || !video) return;
+
+  if (!mobileCanvasLayout()) {
+    button.hidden = true;
+    button.setAttribute('aria-expanded', 'true');
+    button.textContent = 'Hide Canvas';
+    panel.hidden = false;
+    hero.classList.add('has-track-canvas');
+    if (video.paused) loadAndPlay(video, panel);
+    else syncLoopControl(panel, true);
+    return;
+  }
+
+  button.hidden = false;
+  if (!resetMobile && button.dataset.mobileReady === 'true') return;
+
+  button.dataset.mobileReady = 'true';
+  button.setAttribute('aria-expanded', 'false');
+  button.textContent = 'Open Canvas';
+  panel.hidden = true;
+  hero.classList.remove('has-track-canvas');
+  video.pause();
+  syncLoopControl(panel, false);
+}
+
 function installVideoUI(view, track) {
   if (!view || !track?.video) return;
-  if (view.querySelector(`[data-track-video-panel="${CSS.escape(track.id)}"]`)) return;
+  if (view.querySelector(`[data-track-video-panel="${CSS.escape(track.id)}"]`)) {
+    syncResponsiveCanvas(view, track.id);
+    return;
+  }
 
   const actions = view.querySelector('.track-detail-actions');
   const hero = view.querySelector('.track-detail-hero');
@@ -105,7 +149,7 @@ function installVideoUI(view, track) {
 
   const button = document.createElement('button');
   button.type = 'button';
-  button.className = 'secondary';
+  button.className = 'secondary track-detail-canvas-toggle';
   button.dataset.trackVideoAction = track.id;
   button.textContent = 'Open Canvas';
   button.setAttribute('aria-expanded', 'false');
@@ -113,6 +157,7 @@ function installVideoUI(view, track) {
   const lyricsButton = actions.querySelector('[data-track-detail-route="lyrics"]');
   actions.insertBefore(button, lyricsButton || actions.firstElementChild?.nextSibling || null);
   hero.appendChild(createCanvasPanel(track));
+  syncResponsiveCanvas(view, track.id, { resetMobile: true });
 }
 
 function installTrackEnhancements(view, track) {
@@ -167,13 +212,11 @@ export function initTrackVideos() {
     }
 
     const button = event.target.closest?.('[data-track-video-action]');
-    if (!button) return;
+    if (!button || button.hidden || !mobileCanvasLayout()) return;
 
     event.preventDefault();
     const trackId = button.dataset.trackVideoAction;
-    const panel = view.querySelector(`[data-track-video-panel="${CSS.escape(trackId)}"]`);
-    const hero = panel?.closest('.track-detail-hero');
-    const video = panel?.querySelector('video.track-video-player');
+    const { panel, hero, video } = canvasElements(view, trackId);
     if (!panel || !hero || !video) return;
 
     const opening = panel.hidden;
@@ -189,13 +232,18 @@ export function initTrackVideos() {
     }
 
     loadAndPlay(video, panel);
-    if (window.matchMedia('(max-width: 760px)').matches) {
-      window.setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 0);
-    }
+    window.setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 0);
   }, true);
 
   new MutationObserver(scheduleHydration).observe(view, { childList: true, subtree: true });
   window.addEventListener('hashchange', scheduleHydration);
   window.addEventListener('popstate', scheduleHydration);
+
+  const mediaQuery = window.matchMedia(MOBILE_CANVAS_QUERY);
+  mediaQuery.addEventListener?.('change', () => {
+    const track = currentTrack();
+    if (track) syncResponsiveCanvas(view, track.id, { resetMobile: true });
+  });
+
   scheduleHydration();
 }

@@ -5,11 +5,17 @@ const fail = message => { throw new Error(message); };
 
 const trackVideos = read('js/features/track-videos.js');
 for (const required of [
+  "const MOBILE_CANVAS_QUERY = '(max-width: 760px)'",
   "panel.className = 'track-detail-canvas-panel'",
   'hero.appendChild(createCanvasPanel(track))',
+  'function syncResponsiveCanvas',
+  'if (!mobileCanvasLayout())',
+  'button.hidden = true',
+  'panel.hidden = false',
+  "hero.classList.add('has-track-canvas')",
   "hero.classList.toggle('has-track-canvas', opening)",
   "button.textContent = 'Open Canvas'",
-  "window.matchMedia('(max-width: 760px)')"
+  "mediaQuery.addEventListener?.('change'"
 ]) {
   if (!trackVideos.includes(required)) fail(`Track detail Canvas integration is missing ${required}.`);
 }
@@ -60,4 +66,4 @@ for (const required of [
   if (!fixture.includes(required)) fail(`CI cannot exercise THICK Canvas without ${required}.`);
 }
 
-console.log('Track detail and Lyrics Studio Canvas layouts are integrated and mobile-bounded.');
+console.log('Desktop Canvas is always visible, while mobile keeps its compact toggle and bounded layout.');

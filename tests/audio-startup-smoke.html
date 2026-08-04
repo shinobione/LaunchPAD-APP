@@ -71,16 +71,25 @@
         return Promise.resolve();
       };
 
-      const [{ tracks }, { initAudioReadiness }, { initResilienceAccessibility }] = await Promise.all([
+      const [{ tracks }, { initAudioReadiness }, { initResilienceAccessibility }, { createPlayerExperience }] = await Promise.all([
         import('../js/core/catalog-store.js'),
         import('../js/features/audio-readiness.js'),
-        import('../js/features/resilience-accessibility.js')
+        import('../js/features/resilience-accessibility.js'),
+        import('../js/features/player-experience.js')
       ]);
 
       const track = tracks[0];
       audio.dataset.trackId = track.id;
       audio.setAttribute('src', track.file);
       initAudioReadiness({ audio });
+      createPlayerExperience({ audio });
+
+      document.title = 'THICK — Track details — SHINOBIWAN';
+      window.dispatchEvent(new CustomEvent('shinobi:route-change'));
+      await wait(80);
+      if (document.title !== `ShinoBiWan LaunchPAD — ${track.title}`) {
+        throw new Error('The tab title followed the viewed route instead of the loaded audio track.');
+      }
 
       await Promise.race([
         audio.play(),

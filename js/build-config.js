@@ -3,8 +3,8 @@
     id: '20260802-wave14',
     cache: 'shinobi-launchpad-v11',
     revision: 'hero-first-paint-1',
-    display: '2026.08.04.5',
-    release: 'unified-neon-app-icons-20260804'
+    display: '2026.08.04.6',
+    release: 'desktop-canvas-title-state-20260804'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;

@@ -1,5 +1,7 @@
 import { getTrack, tracks } from '../core/catalog-store.js';
 
+const SITE_TITLE = 'ShinoBiWan LaunchPAD';
+
 function formatReleaseDate(value) {
   if (!value) return 'Date TBD';
   const date = new Date(`${value}T00:00:00`);
@@ -85,6 +87,24 @@ export function createPlayerExperience({ audio = document.querySelector('#audio'
   if (panel) installTrackDNA(panel);
 
   let scheduled = false;
+  let correctingTitle = false;
+
+  function playingTrack() {
+    return getTrack(audio.dataset.trackId) || null;
+  }
+
+  function expectedTitle() {
+    const track = playingTrack();
+    return track ? `${SITE_TITLE} — ${track.title}` : SITE_TITLE;
+  }
+
+  function syncDocumentTitle() {
+    const expected = expectedTitle();
+    if (document.title === expected) return;
+    correctingTitle = true;
+    document.title = expected;
+    queueMicrotask(() => { correctingTitle = false; });
+  }
 
   function isPlaying() {
     return !audio.paused && !audio.ended;
@@ -92,6 +112,7 @@ export function createPlayerExperience({ audio = document.querySelector('#audio'
 
   function sync() {
     scheduled = false;
+    syncDocumentTitle();
     if (audio.dataset.playbackRequestState === 'starting') {
       applyLoadingState(document);
       return;
@@ -105,14 +126,9 @@ export function createPlayerExperience({ audio = document.querySelector('#audio'
     requestAnimationFrame(sync);
   }
 
-  function updateTrack(track = getTrack(audio.dataset.trackId) || tracks[0]) {
-    if (!track) {
-      document.title = 'ShinoBiWan LaunchPAD';
-      return;
-    }
-
-    document.title = `ShinoBiWan LaunchPAD — ${track.title}`;
-    if (!panel) return;
+  function updateTrack(track = playingTrack() || tracks[0]) {
+    syncDocumentTitle();
+    if (!track || !panel) return;
 
     const languages = Array.isArray(track.languages) && track.languages.length
       ? track.languages.join(' / ')
@@ -145,11 +161,21 @@ export function createPlayerExperience({ audio = document.querySelector('#audio'
   });
   controlsObserver.observe(document.body, { childList: true, subtree: true });
 
+  const titleElement = document.querySelector('title') || document.head.appendChild(document.createElement('title'));
+  const titleObserver = new MutationObserver(() => {
+    if (!correctingTitle) scheduleSync();
+  });
+  titleObserver.observe(titleElement, { childList: true, characterData: true, subtree: true });
+
   const trackObserver = new MutationObserver(() => {
     updateTrack();
     scheduleSync();
   });
   trackObserver.observe(audio, { attributes: true, attributeFilter: ['data-track-id'] });
+
+  window.addEventListener('shinobi:route-change', scheduleSync);
+  window.addEventListener('hashchange', scheduleSync);
+  window.addEventListener('popstate', scheduleSync);
 
   updateTrack();
   sync();
