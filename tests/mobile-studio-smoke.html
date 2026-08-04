@@ -75,6 +75,7 @@
       const view = document.querySelector('#view-lyrics');
       const panel = document.querySelector('.lyrics-track-panel');
       const toggle = document.querySelector('.lyrics-mobile-track-toggle');
+      const canvas = document.querySelector('.lyrics-studio-canvas');
       const readerShell = document.querySelector('.lyrics-reader-shell');
       const readerHead = document.querySelector('.lyrics-reader-head');
       const player = document.querySelector('.player-bar');
@@ -94,10 +95,24 @@
       await frame();
       if (panel.classList.contains('lyrics-track-panel-collapsed')) throw new Error('Track panel did not expand.');
       if (toggle.getAttribute('aria-expanded') !== 'true') throw new Error('Expanded state is not announced.');
+      if (panel.scrollTop > 1) throw new Error('Expanded panel did not reset to the Canvas.');
+      const panelRect = panel.getBoundingClientRect();
+      const canvasRect = canvas.getBoundingClientRect();
+      if (canvas.hidden || canvasRect.height < 120) throw new Error('Expanded Canvas is not visibly sized.');
+      if (canvasRect.top < panelRect.top - 1 || canvasRect.bottom > panelRect.bottom + 1) {
+        throw new Error('Expanded Canvas is outside the visible track panel.');
+      }
 
+      panel.scrollTop = panel.scrollHeight;
+      await frame();
       toggle.click();
       await frame();
       if (!panel.classList.contains('lyrics-track-panel-collapsed')) throw new Error('Track panel did not collapse again.');
+
+      toggle.click();
+      await frame();
+      if (panel.scrollTop > 1) throw new Error('Reopened panel preserved stale scroll.');
+      if (canvas.getBoundingClientRect().height < 120) throw new Error('Canvas disappeared after reopening.');
 
       result.textContent = 'MOBILE STUDIO READY COLLAPSIBLE STICKY SAFE PLAYER PORTRAIT LANDSCAPE';
     } catch (error) {
