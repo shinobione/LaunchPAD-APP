@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add smart Canvas lifecycle management: pause silent loops when hidden or offscreen, resume them when useful, respect reduced-motion/data-saving signals, enforce one active Canvas and release video resources on route or track changes without touching audio playback.
 - Add an audio-safe PWA update prompt with **Mettre à jour / Plus tard**, one-time reload protection, session dismissal and visible build metadata in About.
 - Add shareable `#studio=track-slug` routes that reopen Lyrics Studio directly, preserve browser history and no longer depend on temporary storage handoffs.
 - Align Lyrics controls into one responsive state-driven group, remove sticky mobile hover states, keep lyric auto-scroll inside its reader and add direct **Studio** entry from Track detail pages.
