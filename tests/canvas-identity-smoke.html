@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Canvas identity smoke test</title>
+</head>
+<body>
+  <section id="view-library" class="view active">
+    <div id="grid"></div>
+  </section>
+  <output id="result">CANVAS IDENTITY PENDING</output>
+
+  <script type="module">
+    import { mergeRemoteTracks, getTrackIndex } from '../js/core/catalog-store.js';
+
+    const result = document.querySelector('#result');
+    const wait = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms));
+    const fail = message => {
+      result.textContent = `CANVAS IDENTITY ERROR ${message}`;
+      throw new Error(message);
+    };
+    const assert = (condition, message) => {
+      if (!condition) fail(message);
+    };
+
+    class FakeMediaQuery {
+      constructor(matches = false) {
+        this.matches = matches;
+        this.listeners = new Set();
+      }
+      addEventListener(type, listener) {
+        if (type === 'change') this.listeners.add(listener);
+      }
+      removeEventListener(type, listener) {
+        if (type === 'change') this.listeners.delete(listener);
+      }
+      set(matches) {
+        this.matches = matches;
+        this.listeners.forEach(listener => listener({ matches }));
+      }
+    }
+
+    const hover = new FakeMediaQuery(false);
+    const reducedMotion = new FakeMediaQuery(false);
+    const reducedData = new FakeMediaQuery(false);
+    window.matchMedia = query => {
+      if (query.includes('hover: hover')) return hover;
+      if (query.includes('prefers-reduced-motion')) return reducedMotion;
+      if (query.includes('prefers-reduced-data')) return reducedData;
+      return new FakeMediaQuery(false);
+    };
+
+    const connectionListeners = new Set();
+    const connection = {
+      saveData: false,
+      addEventListener(type, listener) {
+        if (type === 'change') connectionListeners.add(listener);
+      },
+      removeEventListener(type, listener) {
+        if (type === 'change') connectionListeners.delete(listener);
+      }
+    };
+    Object.defineProperty(navigator, 'connection', {
+      configurable: true,
+      value: connection
+    });
+
+    class FakeIntersectionObserver {
+      static latest = null;
+      constructor(callback) {
+        this.callback = callback;
+        this.targets = new Set();
+        FakeIntersectionObserver.latest = this;
+      }
+      observe(target) {
+        this.targets.add(target);
+      }
+      unobserve(target) {
+        this.targets.delete(target);
+      }
+      disconnect() {
+        this.targets.clear();
+      }
+      set(target, ratio) {
+        this.callback([{
+          target,
+          isIntersecting: ratio > 0,
+          intersectionRatio: ratio
+        }]);
+      }
+    }
+    window.IntersectionObserver = FakeIntersectionObserver;
+
+    mergeRemoteTracks([
+      {
+        id: 'canvas-alpha',
+        title: 'Canvas Alpha',
+        album: 'Singles',
+        albumId: 'singles',
+        genre: 'Pop',
+        mood: 'Bright',
+        cover: 'alpha.jpg',
+        file: 'alpha.mp3',
+        video: 'alpha.mp4',
+        lyrics: 'alpha.txt',
+        languages: ['English']
+      },
+      {
+        id: 'canvas-beta',
+        title: 'Canvas Beta',
+        album: 'Singles',
+        albumId: 'singles',
+        genre: 'R&B',
+        mood: 'Night',
+        cover: 'beta.jpg',
+        file: 'beta.mp3',
+        video: 'beta.mp4',
+        languages: ['English']
+      },
+      {
+        id: 'static-gamma',
+        title: 'Static Gamma',
+        album: 'Singles',
+        albumId: 'singles',
+        genre: 'Hip-hop',
+        mood: 'Calm',
+        cover: 'gamma.jpg',
+        file: 'gamma.mp3',
+        languages: ['English']
+      }
+    ]);
+
+    const grid = document.querySelector('#grid');
+    const makeCard = id => {
+      const index = getTrackIndex(id);
+      const article = document.createElement('article');
+      article.className = 'album-card';
+      article.dataset.index = String(index);
+      article.innerHTML = `
+        <div class="cover-wrap">
+          <img src="${id}.jpg" alt="${id}">
+          <span class="lyrics-card-badge">LYRICS</span>
+          <button class="play-overlay" type="button">▶</button>
+        </div>
+        <h3>${id}</h3>
+      `;
+      return article;
+    };
+
+    const cardA = makeCard('canvas-alpha');
+    const cardB = makeCard('canvas-beta');
+    const cardStatic = makeCard('static-gamma');
+    grid.append(cardA, cardB, cardStatic);
+
+    const { initCanvasIdentity } = await import('../js/features/canvas-identity.js');
+    const controller = initCanvasIdentity();
+    const observer = FakeIntersectionObserver.latest;
+    assert(observer, 'Visibility observer was not created.');
+    observer.set(cardA, 1);
+    observer.set(cardB, 1);
+    observer.set(cardStatic, 1);
+
+    assert(cardA.classList.contains('has-canvas-identity'), 'Canvas card A was not decorated.');
+    assert(cardB.classList.contains('has-canvas-identity'), 'Canvas card B was not decorated.');
+    assert(!cardStatic.classList.contains('has-canvas-identity'), 'A track without video received Canvas identity.');
+    assert(cardA.querySelector('.canvas-card-badge')?.textContent === 'CANVAS', 'Canvas badge is missing.');
+    assert(cardA.querySelector('[data-canvas-studio-track]')?.textContent === 'Studio', 'Studio shortcut is missing.');
+    assert(cardB.querySelector('[data-canvas-studio-track]')?.textContent === 'Track', 'Track fallback shortcut is missing.');
+
+    function stubVideo(video) {
+      const state = { paused: true, plays: 0, pauses: 0, loads: 0 };
+      Object.defineProperty(video, 'paused', {
+        configurable: true,
+        get: () => state.paused
+      });
+      video.load = () => { state.loads += 1; };
+      video.play = () => {
+        state.plays += 1;
+        state.paused = false;
+        video.dispatchEvent(new Event('play'));
+        return Promise.resolve();
+      };
+      video.pause = () => {
+        state.pauses += 1;
+        state.paused = true;
+        video.dispatchEvent(new Event('pause'));
+      };
+      return state;
+    }
+
+    const videoA = cardA.querySelector('video');
+    const videoB = cardB.querySelector('video');
+    const stateA = stubVideo(videoA);
+    const stateB = stubVideo(videoB);
+
+    assert(!videoA.getAttribute('src') && videoA.dataset.src === 'alpha.mp4', 'Canvas A loaded before interaction.');
+    assert(!videoB.getAttribute('src') && videoB.dataset.src === 'beta.mp4', 'Canvas B loaded before interaction.');
+
+    cardA.querySelector('[data-canvas-preview-track]').click();
+    await wait();
+    assert(videoA.getAttribute('src')?.endsWith('alpha.mp4'), 'Explicit preview did not hydrate Canvas A.');
+    assert(cardA.classList.contains('is-canvas-previewing'), 'Canvas A did not become visibly active.');
+    assert(controller.activePreview === videoA, 'Canvas A was not registered as active preview.');
+
+    cardB.querySelector('[data-canvas-preview-track]').click();
+    await wait();
+    assert(stateA.pauses >= 1, 'Starting Canvas B did not pause Canvas A.');
+    assert(!videoA.getAttribute('src'), 'Canvas A source was not released.');
+    assert(cardB.classList.contains('is-canvas-previewing'), 'Canvas B did not become active.');
+    assert(controller.activePreview === videoB, 'Only Canvas B should remain active.');
+
+    observer.set(cardB, 0.05);
+    await wait();
+    assert(stateB.pauses >= 1, 'Offscreen Canvas B was not paused.');
+    assert(!videoB.getAttribute('src'), 'Offscreen Canvas B source was not released.');
+
+    observer.set(cardB, 1);
+    connection.saveData = true;
+    connectionListeners.forEach(listener => listener(new Event('change')));
+    await wait();
+    const buttonB = cardB.querySelector('[data-canvas-preview-track]');
+    assert(buttonB.getAttribute('aria-disabled') === 'true', 'Save-Data did not disable previews.');
+    buttonB.click();
+    await wait();
+    assert(stateB.plays === 1, 'Save-Data allowed a new preview to start.');
+
+    connection.saveData = false;
+    connectionListeners.forEach(listener => listener(new Event('change')));
+    await wait();
+    assert(buttonB.getAttribute('aria-disabled') === 'false', 'Preview did not recover after Save-Data ended.');
+
+    const fixedImage = cardB.querySelector('img');
+    videoB.dispatchEvent(new Event('error'));
+    await wait();
+    assert(fixedImage?.isConnected, 'Video failure removed the fixed cover fallback.');
+    assert(!videoB.getAttribute('src'), 'Video failure did not release the source.');
+
+    const dynamicCard = makeCard('canvas-alpha');
+    grid.appendChild(dynamicCard);
+    await wait();
+    assert(dynamicCard.classList.contains('has-canvas-identity'), 'A dynamically rendered Favorites-style card was not decorated.');
+
+    cardA.querySelector('[data-canvas-studio-track]').click();
+    await wait();
+    assert(location.hash === '#studio=canvas-alpha', 'Studio shortcut did not create the expected route.');
+
+    assert(stateA.plays === 1 && stateB.plays === 1, 'Unexpected automatic grid playback occurred.');
+    controller.destroy();
+    result.textContent = 'CANVAS IDENTITY READY BADGES LAZY SINGLE ACTIVE MOBILE ACTION STUDIO DATA SAVER FALLBACK DYNAMIC';
+  </script>
+</body>
+</html>
