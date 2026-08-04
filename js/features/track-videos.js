@@ -92,7 +92,7 @@ function installStudioEntry(view, track) {
   button.setAttribute('aria-label', `Open Lyrics Studio for ${track.title}`);
 
   const shareButton = actions.querySelector('[data-track-detail-action="share"]');
-  if (shareButton) shareButton.insertAdjacentElement('afterend', button);
+  if (shareButton) shareButton.after(button);
   else actions.appendChild(button);
 }
 
