@@ -1,6 +1,5 @@
 import { getTrack } from '../core/catalog-store.js';
 import { ensureStylesheet } from '../core/assets.js';
-import { requestLyricsStudio } from './lyrics-studio.js';
 
 const TRACK_HASH_PREFIX = '#track=';
 
@@ -121,9 +120,8 @@ function installTrackEnhancements(view, track) {
   installVideoUI(view, track);
 }
 
-function requestStudio(trackId) {
-  requestLyricsStudio(trackId);
-  window.location.hash = `#lyrics=${encodeURIComponent(trackId)}`;
+function openStudioRoute(trackId) {
+  window.location.hash = `#studio=${encodeURIComponent(trackId)}`;
 }
 
 export function initTrackVideos() {
@@ -150,7 +148,7 @@ export function initTrackVideos() {
     const studioButton = event.target.closest?.('[data-track-studio-action]');
     if (studioButton) {
       event.preventDefault();
-      requestStudio(studioButton.dataset.trackStudioAction);
+      openStudioRoute(studioButton.dataset.trackStudioAction);
       return;
     }
 
