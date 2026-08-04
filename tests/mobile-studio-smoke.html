@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Mobile Studio smoke test</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/lyrics.css">
+  <link rel="stylesheet" href="../css/launchpad-features.css">
+  <link rel="stylesheet" href="../css/track-videos.css">
+  <link rel="stylesheet" href="../css/mobile-studio.css">
+  <style>
+    :root{--line:rgba(255,255,255,.12);--panel:#0b0713;--muted:#948a9f;--accent:#a63cff;--accent2:#49c5d8}
+    html,body{margin:0;width:100%;height:100%;background:#06040d;color:#fff;font-family:Arial,sans-serif}
+    .player-bar{position:fixed;left:0;right:0;bottom:54px;height:68px;background:#090610}
+    .mobile-nav{position:fixed;left:0;right:0;bottom:0;height:54px;background:#08050e}
+    #result{position:fixed;left:4px;top:4px;z-index:900;font-size:6px;color:transparent}
+  </style>
+</head>
+<body>
+  <section id="view-lyrics" class="view active">
+    <article class="lyrics-stage">
+      <div class="lyrics-track-panel">
+        <div class="lyrics-cover-wrap"><img alt="THICK" src="../assets/coal-to-diamond.jpeg"></div>
+        <span class="eyebrow">COAL TO DIAMOND</span>
+        <h2>THICK</h2>
+        <p>Hip-hop · Heavy confidence</p>
+        <div class="lyrics-transport"><button>Prev</button><button>Play</button><button>Next</button></div>
+        <div class="lyrics-progress"><span>0:20</span><span class="lyrics-progress-track"><i></i></span><span>3:51</span></div>
+        <label class="lyrics-track-select-label" for="lyrics-track-select">Choose a track</label>
+        <select id="lyrics-track-select" class="lyrics-track-select"><option value="0">THICK</option></select>
+      </div>
+      <div class="lyrics-reader-shell">
+        <div class="lyrics-reader-head">
+          <span id="lyrics-reader-label">84 TIMESTAMPED LINES</span>
+          <button id="lyrics-autoscroll" class="chip active" type="button" aria-pressed="true">Auto-scroll</button>
+        </div>
+        <div id="lyrics-reader" class="lyrics-reader">
+          <button class="lyric-line">Bring the bounce</button>
+          <button class="lyric-line active">Current lyric stays visible</button>
+          <button class="lyric-line">Blackout the block</button>
+        </div>
+      </div>
+    </article>
+  </section>
+  <div class="player-bar">Compact player</div>
+  <nav class="mobile-nav">Mobile nav</nav>
+  <audio id="audio" data-track-id="thick"></audio>
+  <output id="result">MOBILE STUDIO PENDING</output>
+
+  <script type="module">
+    const result = document.querySelector('#result');
+    const frame = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    try {
+      const [{ mergeRemoteTracks }, { initLyricsStudio }] = await Promise.all([
+        import('../js/core/catalog-store.js'),
+        import('../js/features/lyrics-studio.js')
+      ]);
+
+      mergeRemoteTracks([{
+        id:'thick',
+        title:'THICK',
+        video:'https://example.test/thick.mp4',
+        videoContentType:'video/mp4'
+      }]);
+
+      const audio = document.querySelector('#audio');
+      audio.pause = () => {};
+      history.replaceState(null,'','#studio=thick');
+      initLyricsStudio({ audio });
+      await frame();
+      await frame();
+
+      const view = document.querySelector('#view-lyrics');
+      const panel = document.querySelector('.lyrics-track-panel');
+      const toggle = document.querySelector('.lyrics-mobile-track-toggle');
+      const readerShell = document.querySelector('.lyrics-reader-shell');
+      const readerHead = document.querySelector('.lyrics-reader-head');
+      const player = document.querySelector('.player-bar');
+      const mobileNav = document.querySelector('.mobile-nav');
+
+      if (!view.classList.contains('lyrics-studio-mode')) throw new Error('Studio route did not open.');
+      if (!toggle || toggle.hidden) throw new Error('Mobile panel toggle is unavailable.');
+      if (!panel.classList.contains('lyrics-track-panel-collapsed')) throw new Error('Track panel did not start collapsed.');
+      if (toggle.getAttribute('aria-expanded') !== 'false') throw new Error('Collapsed state is not announced.');
+      if (getComputedStyle(readerHead).position !== 'sticky') throw new Error('Studio controls are not sticky.');
+      if (getComputedStyle(player).visibility === 'hidden') throw new Error('Compact player is hidden in Studio.');
+      if (getComputedStyle(player).bottom !== '0px') throw new Error('Compact player is not docked to the safe bottom edge.');
+      if (getComputedStyle(mobileNav).visibility !== 'hidden') throw new Error('Mobile navigation remained visible in Studio.');
+      if (readerShell.getBoundingClientRect().height < 260) throw new Error('Lyrics do not receive enough mobile height.');
+
+      toggle.click();
+      await frame();
+      if (panel.classList.contains('lyrics-track-panel-collapsed')) throw new Error('Track panel did not expand.');
+      if (toggle.getAttribute('aria-expanded') !== 'true') throw new Error('Expanded state is not announced.');
+
+      toggle.click();
+      await frame();
+      if (!panel.classList.contains('lyrics-track-panel-collapsed')) throw new Error('Track panel did not collapse again.');
+
+      result.textContent = 'MOBILE STUDIO READY COLLAPSIBLE STICKY SAFE PLAYER PORTRAIT LANDSCAPE';
+    } catch (error) {
+      result.textContent = `MOBILE STUDIO ERROR ${error.message}`;
+    }
+  </script>
+</body>
+</html>
