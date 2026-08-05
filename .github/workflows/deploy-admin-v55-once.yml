@@ -1,0 +1,64 @@
+name: Deploy Track Manager Admin v5.5 Once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/deploy-admin-v55-once.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: launchpad-cloudflare-production
+  cancel-in-progress: false
+
+jobs:
+  deploy-admin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: cloudflare-production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      ADMIN_WORKER_URL: https://launchpad-r2-api.jerryquinet.workers.dev
+      EXPECTED_ADMIN_VERSION: '5.5'
+      CLOUDFLARE_ACCESS_CLIENT_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
+      CLOUDFLARE_ACCESS_CLIENT_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Validate admin Worker
+        run: npm run validate:cloudflare && npm run check:wrangler:admin
+
+      - name: Deploy private Track Manager Worker
+        run: npm run deploy:cloudflare:admin
+        env:
+          WRANGLER_OUTPUT_FILE_PATH: ${{ runner.temp }}/wrangler-admin.ndjson
+
+      - name: Record private Worker version
+        run: node scripts/report-wrangler-deploy.mjs "$RUNNER_TEMP/wrangler-admin.ndjson" admin
+
+      - name: Verify private Worker and Cloudflare Access
+        run: node scripts/verify-cloudflare-deployment.mjs admin
+
+      - name: Deployment summary
+        run: |
+          {
+            echo '## Track Manager v5.5 deployed'
+            echo
+            echo "- Source SHA: \`$GITHUB_SHA\`"
+            echo '- Target: `admin` only'
+            echo '- Public Worker: unchanged'
+            echo '- R2 catalog/media: unchanged'
+          } >> "$GITHUB_STEP_SUMMARY"
