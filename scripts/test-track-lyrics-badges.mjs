@@ -63,8 +63,12 @@ assert.match(appendedStyles[0].textContent, /lyrics-unsynced/);
 assert.match(appendedStyles[0].textContent, /lyrics-synced/);
 assert.match(summarySource, /lyricsStatusFromQuality/);
 assert.match(summarySource, /lyricsStatus,/);
+assert.match(summarySource, /releaseDate: manifest\.releaseDate \|\| null/);
+assert.match(summarySource, /themes: Array\.isArray\(manifest\.themes\)/);
+assert.match(summarySource, /languages: Array\.isArray\(manifest\.languages\)/);
+assert.match(summarySource, /explicit: manifest\.explicit == null/);
 assert.match(source, /TRACK_MANAGER_LYRICS_BADGES_VERSION='5\.0'/);
 assert.match(source, /track\.quality\.timestampsAvailable===true/);
 assert.match(source, /data-lyrics-status/);
 
-console.log('Track Manager lyrics badges use authoritative missing, invalid, unsynced and synced states.');
+console.log('Track Manager summaries expose editorial metadata and authoritative lyrics states.');
