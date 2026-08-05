@@ -36,24 +36,28 @@ assert.ok(!visuals.includes("{ id: 'pulse', label: 'Pulse' }"));
 
 const coreVisuals = read('js/features/visual/visual-engine-core-modes.js');
 for (const required of [
-  "{ id: 'prism-tunnel', label: 'Prism Tunnel' }",
-  "{ id: 'aurora-glass', label: 'Aurora Glass' }",
-  "{ id: 'cyber-rain', label: 'Cyber Rain' }",
-  "{ id: 'wave-cathedral', label: 'Wave Cathedral' }",
-  "{ id: 'quantum-grid', label: 'Quantum Grid' }",
   'drawOrbitMode(',
   'drawPrismTunnelMode(',
   'drawAuroraGlassMode(',
   'drawCyberRainMode(',
   'drawWaveCathedralMode(',
-  'drawQuantumGridMode(',
-  "controls.querySelector('[data-visual=\"constellation\"]')?.remove()"
+  'drawQuantumGridMode('
 ]) assert.ok(coreVisuals.includes(required), `Audio Lab showcase renderer is missing ${required}.`);
 assert.ok(!coreVisuals.includes('drawConstellationMode'));
+
+const liveVisuals = read('js/features/visual/visual-engine-live.js');
+for (const required of [
+  "const DEFAULT_MODE = 'wave-cathedral'",
+  'readAudioLabSpectrum(raw)',
+  'renderMode(homeCanvas, drawWaveCathedralMode',
+  "homeTitle.textContent = 'Wave Cathedral'",
+  "dataset.audioLabRenderer = 'live-analyser'"
+]) assert.ok(liveVisuals.includes(required), `Live Audio Lab renderer is missing ${required}.`);
 
 const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
   'initAudioLabSignalBridge',
+  'readAudioLabSpectrum',
   'synthesizePlaybackSpectrum',
   'waveformToSpectrum',
   "audio.addEventListener('playing', recover)",
@@ -62,7 +66,7 @@ for (const required of [
 ]) assert.ok(signal.includes(required), `AudioLab signal recovery is missing ${required}.`);
 
 const bridge = read('js/features/visual/visual-engine.js');
-assert.equal(bridge.trim(), "export { createVisualController } from './visual-engine-core-modes.js';");
+assert.equal(bridge.trim(), "export { createVisualController } from './visual-engine-live.js';");
 
 const manager = read('cloudflare/admin-worker.parts/19-phase-13-visuals-palette-filters.inject.part');
 for (const required of [
@@ -87,6 +91,7 @@ assert.ok(worker.includes("'./js/features/audio-lab-signal.js'"));
 assert.ok(worker.includes("'./js/features/feature-13.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-v2.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-core-modes.js'"));
+assert.ok(worker.includes("'./js/features/visual/visual-engine-live.js'"));
 
 const publicWorker = read('cloudflare/public-worker-v25.js');
 for (const required of [
@@ -98,14 +103,19 @@ for (const required of [
 ]) assert.ok(publicWorker.includes(required), `Public media Worker v2.5 is missing ${required}.`);
 
 const build = read('js/build-config.js');
-assert.ok(build.includes("display: '2026.08.05.16'"));
-assert.ok(build.includes("release: 'audiolab-signal-recovery-20260805'"));
-assert.ok(build.includes("cache: 'shinobi-launchpad-v16'"));
-assert.ok(build.includes("display: '2026.08.05.22'"));
-assert.ok(build.includes("release: 'audiolab-core-modes-fix-20260805'"));
-assert.ok(build.includes("cache: 'shinobi-launchpad-v22'"));
-assert.ok(build.includes("display: '2026.08.05.23'"));
-assert.ok(build.includes("release: 'audiolab-showcase-five-20260805'"));
-assert.ok(build.includes("cache: 'shinobi-launchpad-v23'"));
+for (const required of [
+  "display: '2026.08.05.16'",
+  "release: 'audiolab-signal-recovery-20260805'",
+  "cache: 'shinobi-launchpad-v16'",
+  "display: '2026.08.05.22'",
+  "release: 'audiolab-core-modes-fix-20260805'",
+  "cache: 'shinobi-launchpad-v22'",
+  "display: '2026.08.05.23'",
+  "release: 'audiolab-showcase-five-20260805'",
+  "cache: 'shinobi-launchpad-v23'",
+  "display: '2026.08.05.24'",
+  "release: 'audiolab-live-reactivity-20260805'",
+  "cache: 'shinobi-launchpad-v24'"
+]) assert.ok(build.includes(required), `Build history is missing ${required}.`);
 
-console.log('Phase 13 palette, legacy visuals and five Audio Lab showcase modes are valid.');
+console.log('Phase 13 palette, premium visuals and live sound-reactive Wave Cathedral defaults are valid.');
