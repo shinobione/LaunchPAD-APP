@@ -36,12 +36,20 @@ assert.ok(!visuals.includes("{ id: 'pulse', label: 'Pulse' }"));
 
 const coreVisuals = read('js/features/visual/visual-engine-core-modes.js');
 for (const required of [
-  "const CORE_MODES = new Set(['circle', 'bars', 'constellation'])",
+  "{ id: 'prism-tunnel', label: 'Prism Tunnel' }",
+  "{ id: 'aurora-glass', label: 'Aurora Glass' }",
+  "{ id: 'cyber-rain', label: 'Cyber Rain' }",
+  "{ id: 'wave-cathedral', label: 'Wave Cathedral' }",
+  "{ id: 'quantum-grid', label: 'Quantum Grid' }",
   'drawOrbitMode(',
-  'drawConstellationMode(',
-  "if (mode === 'circle')",
-  "mode !== 'bars'"
-]) assert.ok(coreVisuals.includes(required), `Audio Lab core renderer is missing ${required}.`);
+  'drawPrismTunnelMode(',
+  'drawAuroraGlassMode(',
+  'drawCyberRainMode(',
+  'drawWaveCathedralMode(',
+  'drawQuantumGridMode(',
+  "controls.querySelector('[data-visual=\"constellation\"]')?.remove()"
+]) assert.ok(coreVisuals.includes(required), `Audio Lab showcase renderer is missing ${required}.`);
+assert.ok(!coreVisuals.includes('drawConstellationMode'));
 
 const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
@@ -96,5 +104,8 @@ assert.ok(build.includes("cache: 'shinobi-launchpad-v16'"));
 assert.ok(build.includes("display: '2026.08.05.22'"));
 assert.ok(build.includes("release: 'audiolab-core-modes-fix-20260805'"));
 assert.ok(build.includes("cache: 'shinobi-launchpad-v22'"));
+assert.ok(build.includes("display: '2026.08.05.23'"));
+assert.ok(build.includes("release: 'audiolab-showcase-five-20260805'"));
+assert.ok(build.includes("cache: 'shinobi-launchpad-v23'"));
 
-console.log('Phase 13 local palette, visuals, AudioLab signal recovery, core modes, color extraction and filters are valid.');
+console.log('Phase 13 palette, legacy visuals and five Audio Lab showcase modes are valid.');
