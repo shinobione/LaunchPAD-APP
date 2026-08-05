@@ -3,11 +3,11 @@
   // id: '20260802-wave14'
   // cache: 'shinobi-launchpad-v11'
   const config = Object.freeze({
-    id: '20260805-phase13',
-    cache: 'shinobi-launchpad-v15',
-    revision: 'phase13-mobile-about-layout-1',
-    display: '2026.08.05.15',
-    release: 'phase-13-mobile-about-layout-20260805'
+    id: '20260805-audiolab-signal',
+    cache: 'shinobi-launchpad-v16',
+    revision: 'audiolab-signal-recovery-1',
+    display: '2026.08.05.16',
+    release: 'audiolab-signal-recovery-20260805'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
