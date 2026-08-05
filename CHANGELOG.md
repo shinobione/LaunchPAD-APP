@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix Track Manager v4.9 Lyrics badges by carrying the authoritative R2 quality result into every catalogue card, correctly distinguishing absent, invalid, unsynced and timestamped Lyrics.
 - Upgrade Track Manager to v4.8 with explicit Lyrics badges on every track card: red when lyrics are absent or invalid, yellow when lyrics are present without timestamps, and green when timestamped lyrics are available.
 - Fix Track Manager v4.7 quality checks for cover-only edits by safely ignoring generated assets without file inputs, while keeping R2 thumbnail inspection and publication controls intact.
 - Fix Track Manager v4.7 quality checks so selected audio and Lyrics are never reported as absent during metadata edits, manual control and publication share one non-stalling media analysis, and `ALBUM:` TXT metadata automatically creates an album-track with a normalized album ID.
