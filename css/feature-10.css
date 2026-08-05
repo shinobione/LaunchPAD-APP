@@ -1,0 +1,60 @@
+.track-cover-status-stack{
+  position:absolute;
+  z-index:4;
+  left:9px;
+  top:9px;
+  display:grid;
+  justify-items:start;
+  gap:5px;
+  pointer-events:none;
+}
+
+.track-cover-status-stack .lyrics-card-badge{
+  position:static;
+  display:inline-flex;
+}
+
+.content-advisory-badge{
+  display:inline-flex;
+  align-items:center;
+  min-height:20px;
+  padding:4px 7px;
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:999px;
+  background:rgba(5,3,11,.78);
+  box-shadow:0 7px 22px rgba(0,0,0,.25);
+  backdrop-filter:blur(8px);
+  font-size:7px;
+  font-weight:850;
+  letter-spacing:.1em;
+}
+
+.content-advisory-badge.clean{
+  color:#83efab;
+  border-color:rgba(84,230,155,.34);
+  background:rgba(9,38,24,.82);
+}
+
+.content-advisory-badge.explicit{
+  color:#ffabb4;
+  border-color:rgba(255,70,86,.36);
+  background:rgba(46,10,17,.84);
+}
+
+.lyrics-studio-canvas-badge{
+  display:none!important;
+}
+
+@media(max-width:760px){
+  .track-cover-status-stack{
+    left:7px;
+    top:7px;
+    gap:4px;
+  }
+
+  .content-advisory-badge{
+    min-height:18px;
+    padding:3px 6px;
+    font-size:6px;
+  }
+}
