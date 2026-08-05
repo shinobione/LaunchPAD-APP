@@ -4,7 +4,8 @@ const BUILD = globalThis.SHINOBIWAN_BUILD?.id || 'dev';
 const CRITICAL_STYLES = [
   'css/launchpad-features.css',
   'css/catalog-filters.css',
-  'css/feature-10.css'
+  'css/feature-10.css',
+  'css/feature-11.css'
 ];
 
 const LAYOUT_STYLES = [
@@ -43,15 +44,18 @@ async function boot() {
     pwa,
     remoteCatalog,
     { normalizeCatalogEditorialTags },
-    { initAudioReadiness }
+    { initAudioReadiness },
+    feature11
   ] = await Promise.all([
     import(versioned('./features/library-memory-shell.js')),
     import(versioned('./features/pwa.js')),
     import(versioned('./core/remote-catalog.js')),
     import(versioned('./core/editorial-normalization.js')),
-    import(versioned('./features/audio-readiness.js'))
+    import(versioned('./features/audio-readiness.js')),
+    import(versioned('./features/feature-11.js'))
   ]);
 
+  feature11.normalizeLaunchRoute();
   prepareLibraryMemoryShell();
   pwa.preparePWAHead();
 
@@ -61,6 +65,7 @@ async function boot() {
   try {
     const state = await remoteCatalog.hydrateRemoteCatalog();
     normalizeCatalogEditorialTags();
+    feature11.prepareFeature11Catalog();
     document.documentElement.dataset.remoteCatalog = state.added || state.updated
       ? 'connected'
       : 'empty';
@@ -128,6 +133,7 @@ async function boot() {
   initMobileNavigation();
   initAdminAccess();
   initVisualCard({ audio });
+  feature11.initFeature11({ audio });
   pwa.initPWA();
   initAudioFocus({ audio });
   initLyricsWakeLock({ audio });
