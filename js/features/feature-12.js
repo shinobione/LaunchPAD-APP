@@ -72,15 +72,15 @@ export function initPhase12() {
       synchronizePhase12();
     });
   };
-  const observer = new MutationObserver(records => {
-    if (records.some(record => record.addedNodes.length || record.type === 'attributes')) schedule();
-  });
-  observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'aria-pressed'] });
 
   window.addEventListener('hashchange', schedule);
   window.addEventListener('shinobi:route-change', schedule);
   window.addEventListener('shinobi:catalog-filtered', schedule);
   window.addEventListener('shinobi:ready', schedule);
+  document.addEventListener('click', event => {
+    if (event.target.closest?.('[data-lyrics-studio="canvas"], [data-lyrics-studio="mode"]')) schedule();
+  });
+  document.querySelector('#lyrics-track-select')?.addEventListener('change', schedule);
 
   synchronizePhase12();
 }
