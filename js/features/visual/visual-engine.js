@@ -1,1 +1,1 @@
-export { createVisualController } from './visual-engine-core-modes.js';
+export { createVisualController } from './visual-engine-live.js';

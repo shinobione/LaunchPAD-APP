@@ -2,7 +2,7 @@
 {
   "$schema": "../node_modules/wrangler/config-schema.json",
   "name": "launchpad-media",
-  "main": "public-worker-v25.js",
+  "main": "public-worker-v26.js",
   "compatibility_date": "2026-08-03",
   "workers_dev": true,
   "keep_vars": true,

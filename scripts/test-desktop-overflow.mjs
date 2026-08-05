@@ -53,11 +53,13 @@ for (const required of [
 
 const build = read('js/build-config.js');
 for (const required of [
+  "id: '20260805-audiolab-live-reactivity'",
+  "cache: 'shinobi-launchpad-v24'",
+  "revision: 'audiolab-live-reactivity-1'",
+  "display: '2026.08.05.24'",
+  "release: 'audiolab-live-reactivity-20260805'",
   "id: '20260805-audiolab-core-modes'",
-  "cache: 'shinobi-launchpad-v22'",
-  "revision: 'audiolab-core-modes-1'",
-  "display: '2026.08.05.22'",
-  "release: 'audiolab-core-modes-fix-20260805'",
+  "cache: 'shinobi-launchpad-v23'",
   "id: '20260805-fixed-shell'",
   "cache: 'shinobi-launchpad-v21'",
   "revision: 'fixed-shell-scroll-boundary-1'",
@@ -72,6 +74,7 @@ for (const required of [
 }
 
 const activeId = build.match(/const config = Object\.freeze\(\{[\s\S]*?id:\s*'([^']+)'/)?.[1];
-assert.equal(activeId, '20260805-audiolab-core-modes', 'The active stylesheet cache key must match the Audio Lab core-mode release.');
+assert.equal(activeId, '20260805-audiolab-live-reactivity', 'The active runtime cache key must match Build 24.');
+assert.ok(build.includes("const stylesheetVersion = visualTest ? '20260805-audiolab-core-modes' : config.id"));
 
-console.log('Desktop viewport, sidebar and player stay fixed while main-content owns vertical scrolling under Build 22.');
+console.log('Desktop viewport, sidebar and player stay fixed while main-content owns vertical scrolling under Build 24.');

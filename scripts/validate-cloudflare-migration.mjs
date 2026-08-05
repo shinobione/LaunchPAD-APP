@@ -73,16 +73,18 @@ if (!publicWorker.includes('/" + kind + "/" + encodeURIComponent(filename)')) {
   fail('Public media URLs must end with their real filename.');
 }
 
-const publicWrapper = fs.readFileSync('cloudflare/public-worker-v25.js', 'utf8');
+const publicWrapper = fs.readFileSync('cloudflare/public-worker-v26.js', 'utf8');
 for (const required of [
-  'PUBLIC_WORKER_VERSION = 2.5',
+  'PUBLIC_WORKER_VERSION = 2.6',
   "headers.set('Access-Control-Allow-Origin', '*')",
   "headers.set('Cross-Origin-Resource-Policy', 'cross-origin')",
   "headers.set('Timing-Allow-Origin', '*')",
   "headers.set('X-LaunchPAD-Media-Version', String(PUBLIC_WORKER_VERSION))",
-  'payload.audioLabCors = true'
+  "headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')",
+  'payload.audioLabCors = true',
+  "payload.crossOriginResourcePolicy = 'cross-origin'"
 ]) {
-  if (!publicWrapper.includes(required)) fail(`Public Worker v2.5 wrapper is missing ${required}.`);
+  if (!publicWrapper.includes(required)) fail(`Public Worker v2.6 wrapper is missing ${required}.`);
 }
 
 const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
@@ -91,7 +93,7 @@ if (packageJson.devDependencies?.wrangler !== '4.118.0') {
 }
 
 for (const [configPath, expected] of [
-  ['cloudflare/wrangler.public.jsonc', { name: 'launchpad-media', main: 'public-worker-v25.js' }],
+  ['cloudflare/wrangler.public.jsonc', { name: 'launchpad-media', main: 'public-worker-v26.js' }],
   ['cloudflare/wrangler.admin.jsonc', { name: 'launchpad-r2-api', main: '../dist/launchpad-r2-admin-worker.js' }]
 ]) {
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -105,4 +107,4 @@ for (const [configPath, expected] of [
   }
 }
 
-console.log(`Cloudflare migration plan is valid: ${plan.tracks.length} legacy tracks and public Worker v2.5 CORS wrapper.`);
+console.log(`Cloudflare migration plan is valid: ${plan.tracks.length} legacy tracks and public Worker v2.6 hardened CORS wrapper.`);
