@@ -1,0 +1,48 @@
+.lyrics-studio-canvas-badge{
+  display:none!important;
+}
+
+#view-track[data-local-track-theme] .track-detail-hero{
+  border-color:color-mix(in srgb,var(--accent) 30%,rgba(255,255,255,.09));
+  background:
+    radial-gradient(circle at 17% 18%,color-mix(in srgb,var(--accent) 24%,transparent),transparent 35%),
+    radial-gradient(circle at 88% 82%,color-mix(in srgb,var(--accent2) 16%,transparent),transparent 31%),
+    linear-gradient(145deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+}
+
+#view-track[data-local-track-theme] .track-detail-actions .primary{
+  border-color:color-mix(in srgb,var(--accent) 54%,rgba(255,255,255,.14));
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  box-shadow:0 12px 30px color-mix(in srgb,var(--accent) 25%,transparent);
+}
+
+.track-detail-hero-signals{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin:18px 0 0;
+}
+
+.track-detail-hero-signals .track-detail-signal-group{
+  padding:13px;
+  border-color:color-mix(in srgb,var(--accent) 18%,rgba(255,255,255,.07));
+  background:color-mix(in srgb,var(--accent) 5%,rgba(255,255,255,.022));
+}
+
+.track-detail-hero-signals .track-detail-signal-chips span{
+  border-color:color-mix(in srgb,var(--accent) 24%,rgba(255,255,255,.08));
+  color:#f1eaf5;
+  background:color-mix(in srgb,var(--accent) 9%,rgba(255,255,255,.025));
+}
+
+.catalog-filter-groups[data-phase12-order]{
+  display:flex;
+  flex-direction:column;
+}
+
+@media(max-width:760px){
+  .track-detail-hero-signals{
+    grid-template-columns:1fr;
+    text-align:left;
+  }
+}
