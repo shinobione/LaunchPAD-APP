@@ -76,10 +76,10 @@ for (const required of ['./css/feature-10.css','./js/core/editorial-normalizatio
 }
 
 const deployWorkflow = read('.github/workflows/deploy-cloudflare.yml');
-assert.ok(deployWorkflow.includes("EXPECTED_ADMIN_VERSION: '5.4'"));
+assert.ok(deployWorkflow.includes("EXPECTED_ADMIN_VERSION: '5.5'"));
 
 const build = read('js/build-config.js');
-assert.ok(build.includes("display: '2026.08.05.13'"));
-assert.ok(build.includes("release: 'phase-12-hotfixes-20260805'"));
+assert.ok(build.includes("display: '2026.08.05.14'"));
+assert.ok(build.includes("release: 'phase-13-visuals-palette-filters-20260805'"));
 
-console.log('Feature 10 remains valid under the Phase 12 release and Track Manager v5.4.');
+console.log('Feature 10 remains valid under the Phase 13 release and Track Manager v5.5.');

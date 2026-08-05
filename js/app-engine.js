@@ -97,7 +97,8 @@ async function boot() {
     { initCanvasIdentity },
     { initMobileNavigation },
     { initAdminAccess },
-    { initPhase12 }
+    { initPhase12 },
+    { initPhase13 }
   ] = await Promise.all([
     import(versioned('./features/content/content-controller.js')),
     import(versioned('./features/catalog-filters.js')),
@@ -116,7 +117,8 @@ async function boot() {
     import(versioned('./features/canvas-identity.js')),
     import(versioned('./features/mobile-navigation.js')),
     import(versioned('./features/admin-access.js')),
-    import(versioned('./features/feature-12.js'))
+    import(versioned('./features/feature-12.js')),
+    import(versioned('./features/feature-13.js'))
   ]);
 
   installContentV4();
@@ -138,6 +140,7 @@ async function boot() {
   initVisualCard({ audio });
   feature11.initFeature11({ audio });
   initPhase12();
+  initPhase13({ audio });
   pwa.initPWA();
   initAudioFocus({ audio });
   initLyricsWakeLock({ audio });

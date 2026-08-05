@@ -27,7 +27,7 @@ if (!worker.includes("url.pathname.endsWith('/js/build-config.js')")) fail('Buil
 for (const required of [
   './css/catalog-filters.css','./js/features/catalog-filters.js','./css/feature-10.css','./js/core/editorial-normalization.js',
   './js/features/content-advisory-badges.js','./css/feature-11.css','./js/core/catalog-ordering.js','./js/features/feature-11.js',
-  './css/feature-12.css','./js/features/feature-12.js'
+  './css/feature-12.css','./js/features/feature-12.js','./js/features/feature-13.js','./js/features/visual/visual-engine-v2.js'
 ]) {
   if (!worker.includes(required)) fail(`Offline shell is missing ${required}.`);
 }
@@ -35,11 +35,11 @@ if (!worker.includes("request.destination === 'video'")) fail('Service worker do
 
 const build = read('js/build-config.js');
 for (const required of [
-  "id: '20260805-phase12'",
-  "cache: 'shinobi-launchpad-v13'",
-  "revision: 'phase12-ui-hotfixes-1'",
-  "display: '2026.08.05.13'",
-  "release: 'phase-12-hotfixes-20260805'"
+  "id: '20260805-phase13'",
+  "cache: 'shinobi-launchpad-v14'",
+  "revision: 'phase13-visuals-palette-filters-1'",
+  "display: '2026.08.05.14'",
+  "release: 'phase-13-visuals-palette-filters-20260805'"
 ]) {
   if (!build.includes(required)) fail(`Build metadata is missing ${required}.`);
 }
@@ -62,4 +62,4 @@ if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RE
   fail('Browser regression coverage for the PWA update prompt is not wired into CI.');
 }
 
-console.log('Phase 12 PWA shell, update recovery, install promotion and video range handling are valid.');
+console.log('Phase 13 PWA shell, update recovery, install promotion and visual assets are valid.');

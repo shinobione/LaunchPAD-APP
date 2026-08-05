@@ -80,7 +80,7 @@ assert.ok(!managerClient.includes('buildCanonicalTrackSummaries'), 'Browser UI m
 assert.ok(!managerClient.includes('readManifest'), 'Browser UI must not reference the server-only manifest reader.');
 
 const build = read('js/build-config.js');
-assert.ok(build.includes("display: '2026.08.05.13'"));
-assert.ok(build.includes("release: 'phase-12-hotfixes-20260805'"));
+assert.ok(build.includes("display: '2026.08.05.14'"));
+assert.ok(build.includes("release: 'phase-13-visuals-palette-filters-20260805'"));
 
-console.log('Super Extra Feature 11 remains valid under the Phase 12 release.');
+console.log('Super Extra Feature 11 remains valid under the Phase 13 release.');
