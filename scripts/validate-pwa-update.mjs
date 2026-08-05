@@ -27,7 +27,7 @@ if (!worker.includes("url.pathname.endsWith('/js/build-config.js')")) fail('Buil
 for (const required of [
   './css/catalog-filters.css','./js/features/catalog-filters.js','./css/feature-10.css','./js/core/editorial-normalization.js',
   './js/features/content-advisory-badges.js','./css/feature-11.css','./js/core/catalog-ordering.js','./js/features/feature-11.js',
-  './css/feature-12.css','./js/features/feature-12.js','./js/features/feature-13.js','./js/features/visual/visual-engine-v2.js'
+  './css/feature-12.css','./js/features/feature-12.js','./js/features/feature-13.js','./js/features/audio-lab-signal.js','./js/features/visual/visual-engine-v2.js'
 ]) {
   if (!worker.includes(required)) fail(`Offline shell is missing ${required}.`);
 }
@@ -35,16 +35,25 @@ if (!worker.includes("request.destination === 'video'")) fail('Service worker do
 
 const build = read('js/build-config.js');
 for (const required of [
-  "id: '20260805-phase13'",
-  "cache: 'shinobi-launchpad-v15'",
-  "revision: 'phase13-mobile-about-layout-1'",
-  "display: '2026.08.05.15'",
-  "release: 'phase-13-mobile-about-layout-20260805'"
+  "id: '20260805-audiolab-signal'",
+  "cache: 'shinobi-launchpad-v16'",
+  "revision: 'audiolab-signal-recovery-1'",
+  "display: '2026.08.05.16'",
+  "release: 'audiolab-signal-recovery-20260805'"
 ]) {
   if (!build.includes(required)) fail(`Build metadata is missing ${required}.`);
 }
 for (const required of ['installAppIconLinks',"assets/app-icon-neon.svg","assets/app-icon-neon-192.png","link[rel=\"alternate icon\"]","link[rel=\"manifest\"]"]) {
   if (!build.includes(required)) fail(`Cache-busting app icon wiring is missing ${required}.`);
+}
+
+const signal = read('js/features/audio-lab-signal.js');
+for (const required of [
+  'initAudioLabSignalBridge','synthesizePlaybackSpectrum','waveformToSpectrum',
+  "audio.addEventListener('play', recover)","audio.addEventListener('playing', recover)",
+  "markSignal('live')","markSignal('fallback')"
+]) {
+  if (!signal.includes(required)) fail(`AudioLab signal recovery is missing ${required}.`);
 }
 
 const about = read('js/features/about/about-controller.js');
@@ -71,4 +80,4 @@ if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RE
   fail('Browser regression coverage for the PWA update prompt is not wired into CI.');
 }
 
-console.log('Phase 13 PWA shell, update recovery, mobile About ordering and visual assets are valid.');
+console.log('AudioLab signal recovery PWA shell, update flow, mobile About ordering and visual assets are valid.');
