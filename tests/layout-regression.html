@@ -8,7 +8,7 @@
 const result=document.querySelector('#result');
 const READY=['LAYOUT','READY'].join(' ');
 const ERROR=['LAYOUT','ERROR'].join(' ');
-const BUILD='20260805-mobile-hero-order';
+const BUILD='20260805-fixed-shell';
 const frames=[...document.querySelectorAll('iframe')];
 const sleep=delay=>new Promise(resolve=>setTimeout(resolve,delay));
 const rect=node=>node?.getBoundingClientRect();
@@ -63,14 +63,40 @@ loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   const mobileRailRect=rect(md.querySelector('.launchpad-hero .launchpad-banner-rail'));
   if(!mobileHero||!mobileBodyRect||!mobileRailRect||mobileRailRect.top>=mobileBodyRect.top) failures.push('mobile-launchpad-banner-order');
 
-  const sidebar=rect(dd.querySelector('.sidebar'));
-  const player=rect(dd.querySelector('.player-bar'));
+  const shell=rect(dd.querySelector('.app-shell'));
+  const sidebarNode=dd.querySelector('.sidebar');
+  const playerNode=dd.querySelector('.player-bar');
+  const mainScroller=dd.querySelector('.main-content');
+  const sidebar=rect(sidebarNode);
+  const player=rect(playerNode);
   const desktopGrid=dd.querySelectorAll('#featured-grid .album-card').length;
   const mobileNav=rect(md.querySelector('.mobile-nav'));
   const mobilePlayer=rect(md.querySelector('.player-bar'));
   const homePanels=rect(dd.querySelector('.home-panels'));
   if(!sidebar||sidebar.width<170||sidebar.width>280) failures.push('desktop-sidebar');
   if(!player||player.height<65||player.height>110||player.bottom<980) failures.push('desktop-player');
+  if(!shell||Math.abs(shell.height-desktop.contentWindow.innerHeight)>2) failures.push('desktop-shell-height');
+  if(!mainScroller||mainScroller.scrollHeight<=mainScroller.clientHeight+20) failures.push('desktop-main-not-scrollable');
+  if(sidebar&&player&&Math.abs(sidebar.right-player.left)>2) failures.push('desktop-player-sidebar-gap');
+  if(sidebar&&Math.abs(sidebar.bottom-desktop.contentWindow.innerHeight)>2) failures.push('desktop-sidebar-viewport');
+  if(player&&Math.abs(player.bottom-desktop.contentWindow.innerHeight)>2) failures.push('desktop-player-viewport');
+  const htmlOverflow=desktop.contentWindow.getComputedStyle(dd.documentElement).overflowY;
+  const bodyOverflow=desktop.contentWindow.getComputedStyle(dd.body).overflowY;
+  if(htmlOverflow!=='hidden'||bodyOverflow!=='hidden') failures.push('desktop-root-scroll-lock');
+
+  const sidebarBefore=rect(sidebarNode);
+  const playerBefore=rect(playerNode);
+  desktop.contentWindow.scrollTo(0,320);
+  mainScroller.scrollTop=320;
+  await sleep(120);
+  const sidebarAfter=rect(sidebarNode);
+  const playerAfter=rect(playerNode);
+  if(Math.abs(desktop.contentWindow.scrollY)>1) failures.push('desktop-window-scrolled');
+  if(mainScroller.scrollTop<100) failures.push('desktop-main-scroll-owner');
+  if(!sidebarBefore||!sidebarAfter||Math.abs(sidebarBefore.top-sidebarAfter.top)>1||Math.abs(sidebarBefore.bottom-sidebarAfter.bottom)>1) failures.push('desktop-sidebar-moved');
+  if(!playerBefore||!playerAfter||Math.abs(playerBefore.top-playerAfter.top)>1||Math.abs(playerBefore.bottom-playerAfter.bottom)>1) failures.push('desktop-player-moved');
+  mainScroller.scrollTop=0;
+
   if(desktopGrid!==4) failures.push('featured-grid');
   if(!homePanels||homePanels.width<800) failures.push('home-panels');
   if(!mobileNav||mobileNav.height<45||mobileNav.height>75||mobileNav.bottom<830) failures.push('mobile-nav');
@@ -127,7 +153,8 @@ loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   });
 
   const trackNavigationPreserved=navigationLoadCalls===0&&homeAudio?.dataset.trackId==='thick';
-  const snapshot={sidebarWidth:Math.round(sidebar?.width||0),playerHeight:Math.round(player?.height||0),homePanelsWidth:Math.round(homePanels?.width||0),mobileNavHeight:Math.round(mobileNav?.height||0),mobilePlayerHeight:Math.round(mobilePlayer?.height||0),featured:desktopGrid,trackMetadata:metadataLabels.length,trackTags:directTags,mobileAlbumRows:albumRows.length,mobileAboutPortrait:mobileAboutPortrait?`${Math.round(mobileAboutPortrait.width)}x${Math.round(mobileAboutPortrait.height)}`:'missing',mobileLaunchpadFirst:Boolean(mobileRailRect&&mobileBodyRect&&mobileRailRect.top<mobileBodyRect.top),initialStyles:localStyles(dd).length,appReadyTimeouts:frames.filter(frame=>frame.dataset.appReadyTimeout==='true').length,appReady,trackNavigationPreserved};
+  const fixedDesktopShell=Math.abs(desktop.contentWindow.scrollY)<=1&&mainScroller?.scrollHeight>mainScroller?.clientHeight&&Math.abs((sidebar?.right||0)-(player?.left||0))<=2;
+  const snapshot={sidebarWidth:Math.round(sidebar?.width||0),playerHeight:Math.round(player?.height||0),homePanelsWidth:Math.round(homePanels?.width||0),mobileNavHeight:Math.round(mobileNav?.height||0),mobilePlayerHeight:Math.round(mobilePlayer?.height||0),featured:desktopGrid,trackMetadata:metadataLabels.length,trackTags:directTags,mobileAlbumRows:albumRows.length,mobileAboutPortrait:mobileAboutPortrait?`${Math.round(mobileAboutPortrait.width)}x${Math.round(mobileAboutPortrait.height)}`:'missing',mobileLaunchpadFirst:Boolean(mobileRailRect&&mobileBodyRect&&mobileRailRect.top<mobileBodyRect.top),fixedDesktopShell,initialStyles:localStyles(dd).length,appReadyTimeouts:frames.filter(frame=>frame.dataset.appReadyTimeout==='true').length,appReady,trackNavigationPreserved};
   result.textContent=failures.length?`${ERROR} ${failures.join(' ')}`:`${READY} ${JSON.stringify(snapshot)}`;
 }).catch(error=>{result.textContent=`${ERROR} harness-${String(error?.message||error).replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()}`;});
 </script>
