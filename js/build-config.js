@@ -89,7 +89,21 @@
     }
   }
 
+  function installTypographyStylesheet() {
+    let typography = document.querySelector('link[data-launchpad-typography]');
+    if (!typography) {
+      typography = document.createElement('link');
+      typography.rel = 'stylesheet';
+      typography.dataset.launchpadTypography = 'true';
+      document.head.appendChild(typography);
+    }
+    const typographyUrl = new URL('css/typography-refresh.css', document.baseURI);
+    typographyUrl.searchParams.set('v', config.id);
+    typography.href = typographyUrl.href;
+  }
+
   installAppIconLinks();
+  installTypographyStylesheet();
 
   function findEquivalentStylesheet(link, url) {
     return [...document.querySelectorAll('link[rel="stylesheet"]')].find(candidate => {
