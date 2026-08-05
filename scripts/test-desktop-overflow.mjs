@@ -21,18 +21,42 @@ for (const required of [
   '.sidebar .social-dock',
   '.sidebar .social-platform',
   'box-sizing:border-box',
-  'text-overflow:ellipsis'
+  'text-overflow:ellipsis',
+  '@media(min-width:761px)',
+  'height:100dvh',
+  'grid-template-columns:230px minmax(0,1fr)',
+  'grid-template-rows:minmax(0,1fr) 88px',
+  'grid-row:1 / 3',
+  'overflow-y:auto',
+  'overscroll-behavior-y:contain',
+  'scrollbar-gutter:stable',
+  'grid-row:2',
+  'position:relative',
+  'padding-bottom:32px'
 ]) {
-  assert.ok(styles.includes(required), `Desktop native scrollbar guard is missing ${required}.`);
+  assert.ok(styles.includes(required), `Desktop fixed-shell guard is missing ${required}.`);
+}
+
+const desktopShellBlock = styles.match(/@media\(min-width:761px\)\{[\s\S]*?\n\}/)?.[0] || '';
+for (const required of [
+  'overflow:hidden!important',
+  '.app-shell{',
+  '.sidebar{',
+  '.main-content{',
+  '.player-bar{'
+]) {
+  assert.ok(desktopShellBlock.includes(required), `Desktop shell block is missing ${required}.`);
 }
 
 const build = read('js/build-config.js');
 for (const required of [
+  "id: '20260805-fixed-shell'",
+  "cache: 'shinobi-launchpad-v21'",
+  "revision: 'fixed-shell-scroll-boundary-1'",
+  "display: '2026.08.05.21'",
+  "release: 'fixed-shell-scroll-boundary-20260805'",
   "id: '20260805-mobile-hero-order'",
   "cache: 'shinobi-launchpad-v20'",
-  "revision: 'mobile-hero-order-1'",
-  "display: '2026.08.05.20'",
-  "release: 'mobile-hero-order-fix-20260805'",
   "id: '20260805-native-scrollbar-fix'",
   "cache: 'shinobi-launchpad-v19'"
 ]) {
@@ -40,6 +64,6 @@ for (const required of [
 }
 
 const activeId = build.match(/const config = Object\.freeze\(\{[\s\S]*?id:\s*'([^']+)'/)?.[1];
-assert.equal(activeId, '20260805-mobile-hero-order', 'The active stylesheet cache key must match the current release.');
+assert.equal(activeId, '20260805-fixed-shell', 'The active stylesheet cache key must match the fixed-shell release.');
 
-console.log('Installed-PWA native scrollbar suppression remains present under the mobile hero cache refresh.');
+console.log('Desktop viewport, sidebar and player stay fixed while main-content owns vertical scrolling.');
