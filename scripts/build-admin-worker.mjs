@@ -16,7 +16,7 @@ const parts = fs.readdirSync(partsDirectory)
   .filter(filename => filename.endsWith('.part'))
   .sort((left, right) => left.localeCompare(right, 'en', { numeric: true }));
 
-if (parts.length < 21) throw new Error(`Expected at least 21 Track Manager source parts, received ${parts.length}.`);
+if (parts.length < 22) throw new Error(`Expected at least 22 Track Manager source parts, received ${parts.length}.`);
 
 const injectionParts = parts.filter(filename => filename.includes('.inject.'));
 const sourceParts = parts.filter(filename => !filename.includes('.inject.'));
@@ -33,14 +33,14 @@ if (injectionParts.length) {
   source = source.replace(insertionMarker, `\n${injectionSource}${insertionMarker}`);
 }
 
-for (const stale of ['version: "4.5"','version: "4.6"','version: "4.7"','version: "4.8"','version: "4.9"','version: "5.0"','version: "5.1"']) {
-  source = source.replaceAll(stale, 'version: "5.2"');
+for (const stale of ['version: "4.5"','version: "4.6"','version: "4.7"','version: "4.8"','version: "4.9"','version: "5.0"','version: "5.1"','version: "5.2"']) {
+  source = source.replaceAll(stale, 'version: "5.3"');
 }
-for (const stale of ['<span class="version-pill">v4.5</span>','<span class="version-pill">v4.6</span>','<span class="version-pill">v4.7</span>','<span class="version-pill">v4.8</span>','<span class="version-pill">v4.9</span>','<span class="version-pill">v5.0</span>','<span class="version-pill">v5.1</span>']) {
-  source = source.replaceAll(stale, '<span class="version-pill">v5.2</span>');
+for (const stale of ['<span class="version-pill">v4.5</span>','<span class="version-pill">v4.6</span>','<span class="version-pill">v4.7</span>','<span class="version-pill">v4.8</span>','<span class="version-pill">v4.9</span>','<span class="version-pill">v5.0</span>','<span class="version-pill">v5.1</span>','<span class="version-pill">v5.2</span>']) {
+  source = source.replaceAll(stale, '<span class="version-pill">v5.3</span>');
 }
-for (const stale of ["version.textContent='v4.5'","version.textContent='v4.6'","version.textContent='v4.7'","version.textContent='v4.8'","version.textContent='v4.9'","version.textContent='v5.0'","version.textContent='v5.1'"]) {
-  source = source.replaceAll(stale, "version.textContent='v5.2'");
+for (const stale of ["version.textContent='v4.5'","version.textContent='v4.6'","version.textContent='v4.7'","version.textContent='v4.8'","version.textContent='v4.9'","version.textContent='v5.0'","version.textContent='v5.1'","version.textContent='v5.2'"]) {
+  source = source.replaceAll(stale, "version.textContent='v5.3'");
 }
 source = source.replace(":' sans timestamps.'))}catch(error)",":' sans timestamps.')))}catch(error)");
 
@@ -54,18 +54,24 @@ if (!embeddedScript) throw new Error('Built Track Manager Worker is missing its 
 try { new vm.Script(embeddedScript, { filename: 'track-manager-ui.js' }); }
 catch (error) { throw new Error(`Built Track Manager UI script has invalid syntax:\n${error.stack || error.message}`); }
 
+for (const serverOnlySymbol of ['buildCanonicalTrackSummaries', 'readManifest', 'writeCatalogIndex']) {
+  if (new RegExp(`\\b${serverOnlySymbol}\\b`).test(embeddedScript)) {
+    throw new Error(`Built Track Manager UI references server-only symbol: ${serverOnlySymbol}.`);
+  }
+}
+
 for (const forbidden of [
   'id="importGithub"','id="migrateLegacy"','id="migrationModal"','id="legacyPanel"',
-  '<span class="version-pill">v4.5</span>','<span class="version-pill">v4.7</span>','<span class="version-pill">v4.8</span>','<span class="version-pill">v4.9</span>','<span class="version-pill">v5.0</span>','<span class="version-pill">v5.1</span>',
-  "version.textContent='v4.6'","version.textContent='v4.7'","version.textContent='v4.8'","version.textContent='v4.9'","version.textContent='v5.0'","version.textContent='v5.1'",
-  'version: "4.7"','version: "4.8"','version: "4.9"','version: "5.0"','version: "5.1"',
+  '<span class="version-pill">v4.5</span>','<span class="version-pill">v4.7</span>','<span class="version-pill">v4.8</span>','<span class="version-pill">v4.9</span>','<span class="version-pill">v5.0</span>','<span class="version-pill">v5.1</span>','<span class="version-pill">v5.2</span>',
+  "version.textContent='v4.6'","version.textContent='v4.7'","version.textContent='v4.8'","version.textContent='v4.9'","version.textContent='v5.0'","version.textContent='v5.1'","version.textContent='v5.2'",
+  'version: "4.7"','version: "4.8"','version: "4.9"','version: "5.0"','version: "5.1"','version: "5.2"',
   "TRACK_MANAGER_LYRICS_BADGES_VERSION='4.9'"
 ]) {
   if (source.includes(forbidden)) throw new Error(`Built Track Manager Worker still exposes obsolete content: ${forbidden}.`);
 }
 
 for (const required of [
-  'version: "5.2"','<span class="version-pill">v5.2</span>','const ADMIN_HTML = String.raw`','rel="icon" href="data:image/svg+xml','class="form-section"','justify-content:space-between','document.querySelector','aria-label="Actions du catalogue"',
+  'version: "5.3"','<span class="version-pill">v5.3</span>','const ADMIN_HTML = String.raw`','rel="icon" href="data:image/svg+xml','class="form-section"','justify-content:space-between','document.querySelector','aria-label="Actions du catalogue"',
   'function writeCatalogIndex(','function parseTimestampedLyrics(','timestampsAvailable',"THUMBNAIL_PIPELINE_VERSION='v2'",'THUMBNAIL_RENDER_SIZE=1024','THUMBNAIL_TARGET_BYTES=180*1024',"imageSmoothingQuality='high'",'async function createThumbnailResult(blob)','Régénérer les ',
   'TXT_METADATA_FIELD_MAP','function parseLyricsTxtMetadata(text)','function applyLyricsTxtMetadata(result)',"elements.lyrics.addEventListener('change',importLyricsTxtFile)",'Métadonnées du TXT importées dans le formulaire.','baseParseLyricsTxtMetadata',"metadata.type='album-track'",'result.albumDetected=true',
   'async function inspectTrackQuality(','function publicationQualityMessage(','enrichTrackSummariesQuality','function lyricsStatusFromQuality(','lyricsStatus,','Publication bloquée par le contrôle qualité.',"panel.id='qualityPanel'",'id="qualityCheck"','Contrôle avant publication','qualityEvidence','create_only','state.qualityRunPromise','state.qualityRerunRequested','refreshQualityFromCachedEvidence','client-lyrics-pending','Audio sélectionné : contrôle complet en attente.','qualityFileSignature()!==requestedSignature','Le contrôle a échoué','qualityFileInputGuard','element&&element.files&&element.files[0]',
@@ -73,7 +79,8 @@ for (const required of [
   "TRACK_MANAGER_SMART_PARSING_VERSION='10.2'",'function feature10ParseReleaseDate(text)','function feature10InferSignals(payload)','async function feature10ExtractCoverColors(blob)','id="feature10Recalculate"','Analyser / recalculer',
   "TRACK_MANAGER_COLOR_DIVERSITY_VERSION='10.3'",'function feature103ChooseThemeColors(candidates)','feature103HueDistance',
   "TRACK_MANAGER_FEATURE_10_VERSION='5.1'",'data-catalog-filter','function feature10StatusMatches(track,filter)','function feature10IssueMatches(track,filter)','function feature10LyricsMatches(track,filter)','function feature10ContentMatches(track,filter)',"panel.id='catalogAdvancedFilters'",'id="catalogIssueFilter"','id="catalogLyricsFilter"','id="catalogContentFilter"','Complets mais sans date','DATE ABSENTE','data-content-rating','CONTENU NON VÉRIFIÉ',
-  "TRACK_MANAGER_FEATURE_11_VERSION='5.2'",'function feature11CompareTracks(left,right)','function feature11SortTracks(list)','releaseDate:manifest.releaseDate','createdAt:manifest.createdAt',"version.textContent='v5.2'",
+  "TRACK_MANAGER_FEATURE_11_SERVER_VERSION='5.3'",'function feature11ServerCompareTracks(left, right)','buildCanonicalTrackSummariesV53','releaseDate: manifest.releaseDate','createdAt: manifest.createdAt',
+  "TRACK_MANAGER_FEATURE_11_VERSION='5.3'",'function feature11CompareTracks(left,right)','function feature11SortTracks(list)',"feature11VersionPill.textContent='v5.3'",
   "modal.id='batchImportModal'",'id="batchFiles"','id="batchFolder"','webkitdirectory','function batchGroupFiles(','function batchAssociationProblems(','async function batchAnalyzeGroup(','async function startBatchImport(','Compléter l’existant','Aucun fichier ne part vers R2 avant confirmation.','thumbnail.webp'
 ]) {
   if (!source.includes(required)) throw new Error(`Built Track Manager Worker is missing ${required}.`);

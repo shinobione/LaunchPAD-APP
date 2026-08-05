@@ -1,0 +1,70 @@
+
+var TRACK_MANAGER_FEATURE_11_SERVER_VERSION='5.3';
+
+function feature11ServerDateValue(value) {
+  var parsed = Date.parse(value || '');
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function feature11ServerTrackTimestamp(track) {
+  return feature11ServerDateValue(track.releaseDate)
+    || feature11ServerDateValue(track.createdAt)
+    || feature11ServerDateValue(track.updatedAt)
+    || null;
+}
+
+function feature11ServerTrackSequence(track, index) {
+  var values = [track.sequence, track.order, track.position];
+  for (var i = 0; i < values.length; i++) {
+    var value = Number(values[i]);
+    if (Number.isFinite(value)) return value;
+  }
+  var match = String(track.slug || '').match(/(?:^|[-_])(\d+)$/);
+  return match ? Number(match[1]) : index;
+}
+
+function feature11ServerCompareTracks(left, right) {
+  var leftTime = feature11ServerTrackTimestamp(left.track || left);
+  var rightTime = feature11ServerTrackTimestamp(right.track || right);
+  if (leftTime !== null || rightTime !== null) {
+    if (leftTime === null) return 1;
+    if (rightTime === null) return -1;
+    if (leftTime !== rightTime) return rightTime - leftTime;
+  }
+  var leftIndex = left.index || 0;
+  var rightIndex = right.index || 0;
+  var sequence = feature11ServerTrackSequence(right.track || right, rightIndex)
+    - feature11ServerTrackSequence(left.track || left, leftIndex);
+  if (sequence) return sequence;
+  return String((left.track || left).title || '').localeCompare(
+    String((right.track || right).title || ''),
+    'fr',
+    { numeric: true, sensitivity: 'base' }
+  );
+}
+
+function feature11ServerSortTracks(list) {
+  return list
+    .map(function(track, index) { return { track: track, index: index }; })
+    .sort(feature11ServerCompareTracks)
+    .map(function(entry) { return entry.track; });
+}
+
+var feature11ServerBuildCanonicalTrackSummaries = buildCanonicalTrackSummaries;
+buildCanonicalTrackSummaries = async function buildCanonicalTrackSummariesV53(objects, bucket) {
+  var summaries = await feature11ServerBuildCanonicalTrackSummaries(objects, bucket);
+  var enriched = await Promise.all(summaries.map(async function(summary, index) {
+    var manifest = await readManifest(bucket, summary.slug);
+    if (!manifest) return summary;
+    return Object.assign({}, summary, {
+      releaseDate: manifest.releaseDate || null,
+      createdAt: manifest.createdAt || (manifest.migration && manifest.migration.importedAt) || null,
+      updatedAt: manifest.updatedAt || summary.updatedAt || null,
+      sequence: Number.isFinite(Number(manifest.sequence)) ? Number(manifest.sequence) : index,
+      themes: Array.isArray(manifest.themes) ? manifest.themes : [],
+      languages: Array.isArray(manifest.languages) ? manifest.languages : [],
+      explicit: typeof manifest.explicit === 'boolean' ? manifest.explicit : null
+    });
+  }));
+  return feature11ServerSortTracks(enriched);
+};
