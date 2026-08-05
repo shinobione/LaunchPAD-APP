@@ -36,8 +36,8 @@ requirePattern(
 
 requirePattern(
   buildConfig,
-  /revision:\s*'routing-video-sorting-1'/,
-  'The build config must refresh cached routing, video and mobile hero assets for Feature 11.'
+  /revision:\s*'(?:routing-video-sorting-1|phase12-ui-hotfixes-1)'/,
+  'The build config must refresh cached routing, video, mobile hero and Phase 12 assets.'
 );
 
-console.log('Hero profile sizing, artwork visibility and Feature 11 mobile ordering are guarded.');
+console.log('Hero profile sizing, artwork visibility and inherited Feature 11 mobile ordering are guarded.');
