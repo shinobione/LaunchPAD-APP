@@ -25,7 +25,12 @@ export const catalogFixture = [
     explicit: false,
     duration: 237,
     remote: true,
-    source: 'local-test-fixture'
+    source: 'local-test-fixture',
+    remoteMetadata: {
+      type: 'album-track', year: 2026, genres: ['Hip-hop', 'Boom Bap'],
+      moods: ['Digital melancholy'], themes: ['Introspection'], era: 'Kinetic Flow Era',
+      energy: 'Medium', timestampsAvailable: true
+    }
   },
   {
     id: 'thick',
@@ -51,7 +56,12 @@ export const catalogFixture = [
     explicit: false,
     duration: 231.6,
     remote: true,
-    source: 'local-test-fixture'
+    source: 'local-test-fixture',
+    remoteMetadata: {
+      type: 'album-track', year: 2026, genres: ['Hip-hop', 'Cyberpunk Trap'],
+      moods: ['Confidence', 'Aggressive'], themes: ['Self-belief'], era: 'Kinetic Flow Era',
+      energy: 'High', timestampsAvailable: true
+    }
   },
   {
     id: 'saigon-bound',
@@ -74,7 +84,12 @@ export const catalogFixture = [
     explicit: false,
     duration: 209.76,
     remote: true,
-    source: 'local-test-fixture'
+    source: 'local-test-fixture',
+    remoteMetadata: {
+      type: 'album-track', year: 2026, genres: ['Hip-hop', 'Vietnam'],
+      moods: ['Romantic', 'Travel story'], themes: ['Vietnam', 'Love'], era: 'My Tyffany Era',
+      energy: 'Medium', timestampsAvailable: false
+    }
   },
   {
     id: 'ghost-signal',
@@ -97,6 +112,11 @@ export const catalogFixture = [
     explicit: null,
     duration: 205.2,
     remote: true,
-    source: 'local-test-fixture'
+    source: 'local-test-fixture',
+    remoteMetadata: {
+      type: 'single', year: 2026, genres: ['R&B', 'Synthwave'],
+      moods: ['Romantic', 'Melancholic'], themes: ['Distance', 'Signal'], era: 'My Tyffany Era',
+      energy: 'Low', timestampsAvailable: false
+    }
   }
 ];

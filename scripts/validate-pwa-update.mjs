@@ -37,13 +37,22 @@ if (!worker.includes("event.data?.type === 'SKIP_WAITING'")) {
 if (!worker.includes("globalThis.SHINOBIWAN_BUILD?.release")) {
   fail('Service worker cache version is not connected to central release metadata.');
 }
+for (const required of [
+  './css/catalog-filters.css',
+  './js/features/catalog-filters.js'
+]) {
+  if (!worker.includes(required)) fail(`Feature 09 offline shell is missing ${required}.`);
+}
 
 const build = read('js/build-config.js');
-if (!build.includes("display: '2026.08.05.7'")) {
-  fail('Build display metadata is missing.');
-}
-if (!build.includes("release: 'track-manager-v49-lyrics-detection-20260805'")) {
-  fail('Build release metadata is missing.');
+for (const required of [
+  "id: '20260802-wave14'",
+  "cache: 'shinobi-launchpad-v11'",
+  "revision: 'hero-first-paint-1'",
+  "display: '2026.08.05.8'",
+  "release: 'feature-09-editorial-catalog-filters-20260805'"
+]) {
+  if (!build.includes(required)) fail(`Build metadata is missing ${required}.`);
 }
 for (const required of [
   'installAppIconLinks',
@@ -80,4 +89,4 @@ if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RE
   fail('Browser regression coverage for the PWA update prompt is not wired into CI.');
 }
 
-console.log('PWA update prompt, unified icon cache busting, current build metadata, deferred audio-safe activation, session dismissal and single reload safeguards are valid.');
+console.log('PWA update prompt, Feature 09 offline assets, current build metadata and audio-safe activation are valid.');

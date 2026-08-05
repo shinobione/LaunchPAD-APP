@@ -2,7 +2,8 @@
 const BUILD = globalThis.SHINOBIWAN_BUILD?.id || 'dev';
 
 const CRITICAL_STYLES = [
-  'css/launchpad-features.css'
+  'css/launchpad-features.css',
+  'css/catalog-filters.css'
 ];
 
 const LAYOUT_STYLES = [
@@ -70,6 +71,7 @@ async function boot() {
 
   const [
     { installContentV4 },
+    { initCatalogFilters },
     { initAudioFocus },
     { initLyricsWakeLock },
     { initAboutEnhancements },
@@ -86,6 +88,7 @@ async function boot() {
     { initAdminAccess }
   ] = await Promise.all([
     import(versioned('./features/content/content-controller.js')),
+    import(versioned('./features/catalog-filters.js')),
     import(versioned('./features/audio/audio-focus.js')),
     import(versioned('./features/lyrics/wake-lock.js')),
     import(versioned('./features/about/about-controller.js')),
@@ -103,6 +106,7 @@ async function boot() {
   ]);
 
   installContentV4();
+  initCatalogFilters();
   initAboutEnhancements();
   installStylesheets(LAYOUT_STYLES);
 

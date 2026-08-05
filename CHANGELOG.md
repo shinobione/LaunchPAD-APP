@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add **Feature 09 — Editorial catalog filters** with combinable R2-powered Era, Energy, Mood, Genre, Language, release type, Canvas, Lyrics, synchronized Lyrics, Explicit/Clean and Year filters, responsive mobile drawer, active chips, result counts, reset action and shareable URL state.
 - Fix Track Manager v4.9 Lyrics badges by carrying the authoritative R2 quality result into every catalogue card, correctly distinguishing absent, invalid, unsynced and timestamped Lyrics.
 - Upgrade Track Manager to v4.8 with explicit Lyrics badges on every track card: red when lyrics are absent or invalid, yellow when lyrics are present without timestamps, and green when timestamped lyrics are available.
 - Fix Track Manager v4.7 quality checks for cover-only edits by safely ignoring generated assets without file inputs, while keeping R2 thumbnail inspection and publication controls intact.
