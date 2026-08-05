@@ -1,4 +1,4 @@
-import { tracks } from './catalog-store.js';
+import { tracks, reindexCatalog } from './catalog-store.js';
 
 function timestamp(value) {
   if (!value) return null;
@@ -50,6 +50,7 @@ export function compareTracksNewestFirst(left, right) {
 
 export function harmonizeCatalogOrder(catalog = tracks) {
   catalog.sort(compareTracksNewestFirst);
+  if (catalog === tracks) reindexCatalog();
   return catalog;
 }
 
