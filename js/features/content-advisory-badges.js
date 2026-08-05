@@ -48,10 +48,19 @@ function removeSpotifyCanvasBadges(root = document) {
   root.querySelectorAll?.('.lyrics-studio-canvas-badge').forEach(element => element.remove());
 }
 
+function identifyInstallControl(root = document) {
+  const banner = root instanceof HTMLElement && root.id === 'pwa-install-banner'
+    ? root
+    : root.querySelector?.('#pwa-install-banner');
+  const copy = banner?.querySelector('.pwa-install-copy');
+  if (copy && !document.querySelector('#pwa-install-control')) copy.id = 'pwa-install-control';
+}
+
 function hydrate(root = document) {
   if (root instanceof HTMLElement && root.matches('.lyrics-card-badge')) decorateLyricsBadge(root);
   root.querySelectorAll?.('.lyrics-card-badge').forEach(decorateLyricsBadge);
   removeSpotifyCanvasBadges(root);
+  identifyInstallControl(root);
 }
 
 export function initContentAdvisoryBadges() {
