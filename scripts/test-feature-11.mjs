@@ -59,18 +59,28 @@ assert.ok(mobileStyles.includes('order: 1'));
 assert.ok(mobileStyles.includes('.launchpad-hero .launchpad-banner-rail'));
 assert.ok(mobileStyles.includes('order: 2'));
 
-const manager = read('cloudflare/admin-worker.parts/17-feature-11-sorting.inject.part');
+const managerServer = read('cloudflare/admin-worker.parts/03c-feature-11-sorting-server.part');
 for (const required of [
-  "TRACK_MANAGER_FEATURE_11_VERSION='5.2'",
+  "TRACK_MANAGER_FEATURE_11_SERVER_VERSION='5.3'",
+  'buildCanonicalTrackSummariesV53',
+  'feature11ServerBuildCanonicalTrackSummaries',
+  'releaseDate: manifest.releaseDate',
+  'createdAt: manifest.createdAt',
+  'return feature11ServerSortTracks(enriched)'
+]) assert.ok(managerServer.includes(required), `Track Manager server sorting is missing ${required}.`);
+
+const managerClient = read('cloudflare/admin-worker.parts/17-feature-11-sorting.inject.part');
+for (const required of [
+  "TRACK_MANAGER_FEATURE_11_VERSION='5.3'",
   'function feature11CompareTracks(left,right)',
-  'releaseDate:manifest.releaseDate',
-  'createdAt:manifest.createdAt',
   'state.tracks=feature11SortTracks(state.tracks||[])',
-  "feature11VersionPill.textContent='v5.2'"
-]) assert.ok(manager.includes(required), `Track Manager Feature 11 is missing ${required}.`);
+  "feature11VersionPill.textContent='v5.3'"
+]) assert.ok(managerClient.includes(required), `Track Manager client sorting is missing ${required}.`);
+assert.ok(!managerClient.includes('buildCanonicalTrackSummaries'), 'Browser UI must not reference the server-only catalog builder.');
+assert.ok(!managerClient.includes('readManifest'), 'Browser UI must not reference the server-only manifest reader.');
 
 const build = read('js/build-config.js');
 assert.ok(build.includes("display: '2026.08.05.12'"));
 assert.ok(build.includes("release: 'super-extra-feature-11-20260805'"));
 
-console.log('Super Extra Feature 11 routing, release ordering, video stability, labels and mobile header swap are valid.');
+console.log('Super Extra Feature 11 routing, ordering, video stability and Track Manager server/client boundaries are valid.');
