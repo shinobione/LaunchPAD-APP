@@ -80,7 +80,7 @@ assert.ok(!managerClient.includes('buildCanonicalTrackSummaries'), 'Browser UI m
 assert.ok(!managerClient.includes('readManifest'), 'Browser UI must not reference the server-only manifest reader.');
 
 const build = read('js/build-config.js');
-assert.ok(build.includes("display: '2026.08.05.12'"));
-assert.ok(build.includes("release: 'super-extra-feature-11-20260805'"));
+assert.ok(build.includes("display: '2026.08.05.13'"));
+assert.ok(build.includes("release: 'phase-12-hotfixes-20260805'"));
 
-console.log('Super Extra Feature 11 routing, ordering, video stability and Track Manager server/client boundaries are valid.');
+console.log('Super Extra Feature 11 remains valid under the Phase 12 release.');

@@ -76,10 +76,10 @@ for (const required of ['./css/feature-10.css','./js/core/editorial-normalizatio
 }
 
 const deployWorkflow = read('.github/workflows/deploy-cloudflare.yml');
-assert.ok(deployWorkflow.includes("EXPECTED_ADMIN_VERSION: '5.3'"));
+assert.ok(deployWorkflow.includes("EXPECTED_ADMIN_VERSION: '5.4'"));
 
 const build = read('js/build-config.js');
-assert.ok(build.includes("display: '2026.08.05.12'"));
-assert.ok(build.includes("release: 'super-extra-feature-11-20260805'"));
+assert.ok(build.includes("display: '2026.08.05.13'"));
+assert.ok(build.includes("release: 'phase-12-hotfixes-20260805'"));
 
-console.log('Feature 10 remains valid under the Feature 11 release and Track Manager v5.3 hotfix.');
+console.log('Feature 10 remains valid under the Phase 12 release and Track Manager v5.4.');

@@ -26,7 +26,8 @@ if (!worker.includes("globalThis.SHINOBIWAN_BUILD?.release")) fail('Service work
 if (!worker.includes("url.pathname.endsWith('/js/build-config.js')")) fail('Build metadata is not fetched network-first.');
 for (const required of [
   './css/catalog-filters.css','./js/features/catalog-filters.js','./css/feature-10.css','./js/core/editorial-normalization.js',
-  './js/features/content-advisory-badges.js','./css/feature-11.css','./js/core/catalog-ordering.js','./js/features/feature-11.js'
+  './js/features/content-advisory-badges.js','./css/feature-11.css','./js/core/catalog-ordering.js','./js/features/feature-11.js',
+  './css/feature-12.css','./js/features/feature-12.js'
 ]) {
   if (!worker.includes(required)) fail(`Offline shell is missing ${required}.`);
 }
@@ -34,11 +35,11 @@ if (!worker.includes("request.destination === 'video'")) fail('Service worker do
 
 const build = read('js/build-config.js');
 for (const required of [
-  "id: '20260805-feature11'",
-  "cache: 'shinobi-launchpad-v12'",
-  "revision: 'routing-video-sorting-1'",
-  "display: '2026.08.05.12'",
-  "release: 'super-extra-feature-11-20260805'"
+  "id: '20260805-phase12'",
+  "cache: 'shinobi-launchpad-v13'",
+  "revision: 'phase12-ui-hotfixes-1'",
+  "display: '2026.08.05.13'",
+  "release: 'phase-12-hotfixes-20260805'"
 ]) {
   if (!build.includes(required)) fail(`Build metadata is missing ${required}.`);
 }
@@ -61,4 +62,4 @@ if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RE
   fail('Browser regression coverage for the PWA update prompt is not wired into CI.');
 }
 
-console.log('Feature 11 PWA shell, update recovery, install promotion and video range handling are valid.');
+console.log('Phase 12 PWA shell, update recovery, install promotion and video range handling are valid.');
