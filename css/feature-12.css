@@ -44,7 +44,7 @@
    Chromium on Windows can still paint its minimum horizontal scrollbar thumb
    at the bottom of an installed PWA even when horizontal movement is locked.
    Clip the structural scrollers and explicitly suppress only their horizontal
-   native scrollbar while preserving the vertical page scrollbar. */
+   native scrollbar while preserving the vertical content scrollbar. */
 html,
 body{
   width:100%;
@@ -99,6 +99,58 @@ body::-webkit-scrollbar:horizontal,
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
+}
+
+/* Desktop app shell: the viewport itself never scrolls.
+   Sidebar and player remain locked together while main-content is the only
+   vertical scroller. */
+@media(min-width:761px){
+  html,
+  body{
+    height:100%;
+    overflow:hidden!important;
+    overscroll-behavior:none;
+  }
+
+  .app-shell{
+    height:100dvh;
+    min-height:0;
+    grid-template-columns:230px minmax(0,1fr);
+    grid-template-rows:minmax(0,1fr) 88px;
+    overflow:hidden!important;
+  }
+
+  .sidebar{
+    grid-column:1;
+    grid-row:1 / 3;
+    position:relative;
+    inset:auto;
+    height:auto;
+    min-height:0;
+    overflow:hidden!important;
+  }
+
+  .main-content{
+    grid-column:2;
+    grid-row:1;
+    height:auto;
+    min-height:0;
+    overflow-x:clip!important;
+    overflow-y:auto;
+    overscroll-behavior-y:contain;
+    scrollbar-gutter:stable;
+    padding-bottom:32px;
+  }
+
+  .player-bar{
+    grid-column:2;
+    grid-row:2;
+    position:relative;
+    inset:auto;
+    width:auto;
+    height:88px;
+    align-self:stretch;
+  }
 }
 
 @media(max-width:760px){
