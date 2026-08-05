@@ -93,14 +93,16 @@ assert.ok(worker.includes("'./js/features/visual/visual-engine-v2.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-core-modes.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-live.js'"));
 
-const publicWorker = read('cloudflare/public-worker-v25.js');
+const publicWorker = read('cloudflare/public-worker-v26.js');
 for (const required of [
-  'PUBLIC_WORKER_VERSION = 2.5',
+  'PUBLIC_WORKER_VERSION = 2.6',
   "headers.set('Access-Control-Allow-Origin', '*')",
   "headers.set('Cross-Origin-Resource-Policy', 'cross-origin')",
   "headers.set('X-LaunchPAD-Media-Version', String(PUBLIC_WORKER_VERSION))",
-  'payload.audioLabCors = true'
-]) assert.ok(publicWorker.includes(required), `Public media Worker v2.5 is missing ${required}.`);
+  "headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')",
+  'payload.audioLabCors = true',
+  "payload.crossOriginResourcePolicy = 'cross-origin'"
+]) assert.ok(publicWorker.includes(required), `Public media Worker v2.6 is missing ${required}.`);
 
 const build = read('js/build-config.js');
 for (const required of [
@@ -118,4 +120,4 @@ for (const required of [
   "cache: 'shinobi-launchpad-v24'"
 ]) assert.ok(build.includes(required), `Build history is missing ${required}.`);
 
-console.log('Phase 13 palette, premium visuals and live sound-reactive Wave Cathedral defaults are valid.');
+console.log('Phase 13 palette, premium visuals, public Worker v2.6 and live sound-reactive Wave Cathedral defaults are valid.');
