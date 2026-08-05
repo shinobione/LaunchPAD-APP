@@ -40,9 +40,32 @@
   flex-direction:column;
 }
 
-/* Desktop/PWA sidebar overflow fix.
-   The white mark at the lower-left was the thumb of the sidebar's
-   horizontal scrollbar, caused by a child becoming a few pixels wider. */
+/* Desktop/PWA root overflow lock.
+   Off-canvas fixed panels can extend the root scroll area even while hidden.
+   Lock horizontal scrolling at the viewport so Chromium cannot draw the
+   tiny scrollbar thumb below the fixed sidebar and player. */
+html,
+body{
+  width:100%;
+  max-width:100%;
+  overflow-x:hidden;
+  overscroll-behavior-x:none;
+}
+
+.app-shell,
+.main-content,
+.topbar,
+.view,
+.player-bar{
+  min-width:0;
+  max-width:100%;
+}
+
+.app-shell{
+  width:100%;
+  overflow-x:clip;
+}
+
 .sidebar{
   overflow-x:hidden;
   overflow-x:clip;

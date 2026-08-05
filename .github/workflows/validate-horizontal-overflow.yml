@@ -1,0 +1,38 @@
+name: Validate Horizontal Overflow
+
+on:
+  push:
+    branches:
+      - main
+      - 'agent/**'
+      - 'fix/**'
+      - 'feature/**'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-overflow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Test installed-PWA width in Chrome
+        shell: bash
+        run: |
+          python3 -m http.server 4173 >/tmp/launchpad-overflow-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+          sleep 2
+
+          google-chrome --headless=new --no-sandbox --disable-gpu \
+            --virtual-time-budget=18000 --dump-dom \
+            'http://127.0.0.1:4173/tests/horizontal-overflow-smoke.html' \
+            > /tmp/horizontal-overflow.html
+
+          grep -o 'HORIZONTAL OVERFLOW [^<]*' /tmp/horizontal-overflow.html || true
+          grep -q 'HORIZONTAL OVERFLOW READY' /tmp/horizontal-overflow.html
+          ! grep -q 'HORIZONTAL OVERFLOW ERROR' /tmp/horizontal-overflow.html
+          grep -q '"locked":true' /tmp/horizontal-overflow.html
