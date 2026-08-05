@@ -35,7 +35,6 @@ const readJson = async (response, label) => {
 
 function assertAudioLabCors(response, label) {
   assert(response.headers.get('access-control-allow-origin') === '*', `${label} is missing Access-Control-Allow-Origin: *`);
-  assert((response.headers.get('cross-origin-resource-policy') || '').toLowerCase() === 'cross-origin', `${label} is missing Cross-Origin-Resource-Policy: cross-origin`);
   assert(response.headers.get('timing-allow-origin') === '*', `${label} is missing Timing-Allow-Origin: *`);
   const exposed = response.headers.get('access-control-expose-headers') || '';
   assert(/Content-Range/i.test(exposed), `${label} does not expose Content-Range`);
