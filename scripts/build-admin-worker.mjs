@@ -18,8 +18,8 @@ const parts = fs.readdirSync(partsDirectory)
   .filter(filename => filename.endsWith('.part'))
   .sort((left, right) => left.localeCompare(right, 'en', { numeric: true }));
 
-if (parts.length < 15) {
-  throw new Error(`Expected at least 15 Track Manager source parts, received ${parts.length}.`);
+if (parts.length < 16) {
+  throw new Error(`Expected at least 16 Track Manager source parts, received ${parts.length}.`);
 }
 
 const injectionParts = parts.filter(filename => filename.includes('.inject.'));
@@ -39,9 +39,9 @@ if (injectionParts.length) {
   source = source.replace(insertionMarker, `\n${injectionSource}${insertionMarker}`);
 }
 
-source = source.replace('version: "4.6"', 'version: "4.7"');
-source = source.replace('<span class="version-pill">v4.5</span>', '<span class="version-pill">v4.7</span>');
-source = source.replace("version.textContent='v4.6'", "version.textContent='v4.7'");
+source = source.replace('version: "4.6"', 'version: "4.8"');
+source = source.replace('<span class="version-pill">v4.5</span>', '<span class="version-pill">v4.8</span>');
+source = source.replace("version.textContent='v4.6'", "version.textContent='v4.8'");
 source = source.replace(
   ":' sans timestamps.'))}catch(error)",
   ":' sans timestamps.')))}catch(error)",
@@ -74,7 +74,10 @@ for (const forbidden of [
   'id="migrationModal"',
   'id="legacyPanel"',
   '<span class="version-pill">v4.5</span>',
-  "version.textContent='v4.6'"
+  '<span class="version-pill">v4.7</span>',
+  "version.textContent='v4.6'",
+  "version.textContent='v4.7'",
+  'version: "4.7"'
 ]) {
   if (source.includes(forbidden)) {
     throw new Error(`Built Track Manager Worker still exposes obsolete content: ${forbidden}.`);
@@ -82,8 +85,8 @@ for (const forbidden of [
 }
 
 for (const required of [
-  'version: "4.7"',
-  '<span class="version-pill">v4.7</span>',
+  'version: "4.8"',
+  '<span class="version-pill">v4.8</span>',
   'const ADMIN_HTML = String.raw`',
   'rel="icon" href="data:image/svg+xml',
   'class="form-section"',
@@ -125,7 +128,13 @@ for (const required of [
   'Le contrôle a échoué',
   'qualityFileInputGuard',
   'element&&element.files&&element.files[0]',
-  "version.textContent='v4.7'",
+  "TRACK_MANAGER_LYRICS_BADGES_VERSION='4.8'",
+  'function trackLyricsBadge(track)',
+  'lyrics absentes',
+  'lyrics non timestampées',
+  'lyrics timestampées',
+  'data-lyrics-status',
+  "version.textContent='v4.8'",
   "modal.id='batchImportModal'",
   'id="batchFiles"',
   'id="batchFolder"',
