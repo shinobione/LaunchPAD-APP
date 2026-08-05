@@ -4,7 +4,6 @@ const ALLOWED_LANGUAGES = ['French', 'English', 'Vietnamese'];
 
 export const albums = sourceAlbums;
 export const journeyEras = sourceJourneyEras;
-
 export const tracks = [];
 
 const albumById = new Map(albums.map(album => [album.id, album]));
@@ -14,117 +13,68 @@ const trackIndexById = new Map();
 function rebuildTrackIndexes() {
   trackById.clear();
   trackIndexById.clear();
-
   tracks.forEach((track, index) => {
     trackById.set(track.id, track);
     trackIndexById.set(track.id, index);
   });
 }
 
+export function reindexCatalog() {
+  rebuildTrackIndexes();
+  return tracks;
+}
+
 function mergeSearchText(track) {
-  return [
-    track.searchText,
-    track.title,
-    track.genre,
-    Array.isArray(track.tags) ? track.tags.join(' ') : '',
-    track.mood,
-    track.album,
-    Array.isArray(track.languages) ? track.languages.join(' ') : ''
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
+  return [track.searchText, track.title, track.genre,
+    Array.isArray(track.tags) ? track.tags.join(' ') : '', track.mood, track.album,
+    Array.isArray(track.languages) ? track.languages.join(' ') : '']
+    .filter(Boolean).join(' ').toLowerCase();
 }
 
 rebuildTrackIndexes();
 
 export function mergeRemoteTracks(remoteTracks = []) {
-  if (!Array.isArray(remoteTracks) || remoteTracks.length === 0) {
-    return { added: 0, updated: 0, total: tracks.length };
-  }
-
+  if (!Array.isArray(remoteTracks) || remoteTracks.length === 0) return { added: 0, updated: 0, total: tracks.length };
   let added = 0;
   let updated = 0;
 
   remoteTracks.forEach(remoteTrack => {
     if (!remoteTrack?.id) return;
-
-    const existingIndex = trackIndexById.has(remoteTrack.id)
-      ? trackIndexById.get(remoteTrack.id)
-      : -1;
-
+    const existingIndex = trackIndexById.has(remoteTrack.id) ? trackIndexById.get(remoteTrack.id) : -1;
     if (existingIndex >= 0) {
       const existing = tracks[existingIndex];
       const merged = {
-        ...existing,
-        ...remoteTrack,
+        ...existing, ...remoteTrack,
         file: remoteTrack.file || existing.file,
         cover: remoteTrack.cover || existing.cover,
         lyrics: remoteTrack.lyrics || existing.lyrics,
-        tags: [...new Set([
-          ...(Array.isArray(existing.tags) ? existing.tags : []),
-          ...(Array.isArray(remoteTrack.tags) ? remoteTrack.tags : [])
-        ].filter(Boolean))],
+        tags: [...new Set([...(Array.isArray(existing.tags) ? existing.tags : []), ...(Array.isArray(remoteTrack.tags) ? remoteTrack.tags : [])].filter(Boolean))],
         remoteAvailable: true,
         remoteMetadata: remoteTrack.remoteMetadata || existing.remoteMetadata || null
       };
-
       merged.searchText = mergeSearchText(merged);
       tracks[existingIndex] = merged;
       updated += 1;
       return;
     }
-
-    const addedTrack = {
-      ...remoteTrack,
-      searchText: mergeSearchText(remoteTrack)
-    };
-
-    tracks.push(addedTrack);
+    tracks.push({ ...remoteTrack, searchText: mergeSearchText(remoteTrack) });
     added += 1;
   });
 
-  rebuildTrackIndexes();
+  reindexCatalog();
   return { added, updated, total: tracks.length };
 }
 
-export function getAlbum(albumId) {
-  return albumById.get(albumId) || null;
-}
-
-export function getTrack(trackId) {
-  return trackById.get(trackId) || null;
-}
-
-export function getTrackIndex(trackId) {
-  return trackIndexById.has(trackId) ? trackIndexById.get(trackId) : -1;
-}
-
-export function getAlbumTracks(albumId) {
-  return tracks
-    .map((track, index) => ({ ...track, index }))
-    .filter(track => track.albumId === albumId);
-}
-
-export function getAlbumTrackIndexes(albumId) {
-  return getAlbumTracks(albumId).map(track => track.index);
-}
-
-export function getCatalogTags() {
-  return [...new Set(
-    tracks.flatMap(track => Array.isArray(track.tags) ? track.tags : [track.genre]).filter(Boolean)
-  )];
-}
-
-export function getGenreCounts() {
-  return tracks.reduce((counts, track) => {
-    counts[track.genre] = (counts[track.genre] || 0) + 1;
-    return counts;
-  }, {});
-}
+export function getAlbum(albumId) { return albumById.get(albumId) || null; }
+export function getTrack(trackId) { return trackById.get(trackId) || null; }
+export function getTrackIndex(trackId) { return trackIndexById.has(trackId) ? trackIndexById.get(trackId) : -1; }
+export function getAlbumTracks(albumId) { return tracks.map((track, index) => ({ ...track, index })).filter(track => track.albumId === albumId); }
+export function getAlbumTrackIndexes(albumId) { return getAlbumTracks(albumId).map(track => track.index); }
+export function getCatalogTags() { return [...new Set(tracks.flatMap(track => Array.isArray(track.tags) ? track.tags : [track.genre]).filter(Boolean))]; }
+export function getGenreCounts() { return tracks.reduce((counts, track) => { counts[track.genre] = (counts[track.genre] || 0) + 1; return counts; }, {}); }
 
 function releaseTimestamp(track) {
-  const value = track.releaseDate || track.releasedAt || track.date;
+  const value = track.releaseDate || track.releasedAt || track.date || track.createdAt || track.created_at || track.updatedAt || track.updated_at;
   if (!value) return null;
   const timestamp = Date.parse(value);
   return Number.isFinite(timestamp) ? timestamp : null;
@@ -133,18 +83,13 @@ function releaseTimestamp(track) {
 export function getLatestTrackEntries(limit = 5) {
   return tracks
     .map((track, index) => ({ track, index, timestamp: releaseTimestamp(track) }))
+    .filter(({ track }) => track.status !== 'draft' && track.status !== 'archived' && track.active !== false)
     .sort((a, b) => {
-      const aHasDate = a.timestamp !== null;
-      const bHasDate = b.timestamp !== null;
-
-      if (aHasDate && bHasDate && a.timestamp !== b.timestamp) {
-        return b.timestamp - a.timestamp;
+      if (a.timestamp !== null || b.timestamp !== null) {
+        if (a.timestamp === null) return 1;
+        if (b.timestamp === null) return -1;
+        if (a.timestamp !== b.timestamp) return b.timestamp - a.timestamp;
       }
-
-      if (aHasDate !== bHasDate) {
-        return aHasDate ? -1 : 1;
-      }
-
       return b.index - a.index;
     })
     .slice(0, limit);
@@ -176,60 +121,30 @@ export function validateCatalogRuntime() {
     if (!track.title) errors.push(`${label}: missing title.`);
     if (!track.file) errors.push(`${label}: missing audio file.`);
     if (!track.cover) errors.push(`${label}: missing cover.`);
-    if (!track.albumId || !albumIds.has(track.albumId)) {
-      errors.push(`${label}: unknown albumId "${track.albumId || ''}".`);
-    }
-    if (track.releaseDate && !Number.isFinite(Date.parse(track.releaseDate))) {
-      errors.push(`${label}: invalid releaseDate "${track.releaseDate}".`);
-    }
-    if (!Array.isArray(track.languages) || track.languages.length === 0) {
-      errors.push(`${label}: at least one language is required.`);
-    } else {
-      track.languages.forEach(language => {
-        if (!allowedLanguages.has(language)) errors.push(`${label}: unsupported language "${language}".`);
-      });
-    }
+    if (!track.albumId || !albumIds.has(track.albumId)) errors.push(`${label}: unknown albumId "${track.albumId || ''}".`);
+    if (track.releaseDate && !Number.isFinite(Date.parse(track.releaseDate))) errors.push(`${label}: invalid releaseDate "${track.releaseDate}".`);
+    if (!Array.isArray(track.languages) || track.languages.length === 0) errors.push(`${label}: at least one language is required.`);
+    else track.languages.forEach(language => { if (!allowedLanguages.has(language)) errors.push(`${label}: unsupported language "${language}".`); });
 
-    if (isRemote && track.bpm === null) {
-      warnings.push(`${label}: BPM is not available from the remote catalog.`);
-    } else if (!Number.isInteger(track.bpm) || track.bpm < 30 || track.bpm > 240) {
-      errors.push(`${label}: bpm must be an integer between 30 and 240.`);
-    }
+    if (isRemote && track.bpm === null) warnings.push(`${label}: BPM is not available from the remote catalog.`);
+    else if (!Number.isInteger(track.bpm) || track.bpm < 30 || track.bpm > 240) errors.push(`${label}: bpm must be an integer between 30 and 240.`);
 
-    if (isRemote && track.key === null) {
-      warnings.push(`${label}: musical key is not available from the remote catalog.`);
-    } else if (!keyPattern.test(track.key || '')) {
-      errors.push(`${label}: key must use a value such as "F# minor".`);
-    }
+    if (isRemote && track.key === null) warnings.push(`${label}: musical key is not available from the remote catalog.`);
+    else if (!keyPattern.test(track.key || '')) errors.push(`${label}: key must use a value such as "F# minor".`);
 
-    if (isRemote && track.keyConfidence === null) {
-      warnings.push(`${label}: key confidence is not available from the remote catalog.`);
-    } else if (!Number.isFinite(track.keyConfidence) || track.keyConfidence < 0 || track.keyConfidence > 1) {
-      errors.push(`${label}: keyConfidence must be between 0 and 1.`);
-    } else if (track.keyConfidence < 0.5) {
-      warnings.push(`${label}: musical key has low analysis confidence.`);
-    }
+    if (isRemote && track.keyConfidence === null) warnings.push(`${label}: key confidence is not available from the remote catalog.`);
+    else if (!Number.isFinite(track.keyConfidence) || track.keyConfidence < 0 || track.keyConfidence > 1) errors.push(`${label}: keyConfidence must be between 0 and 1.`);
+    else if (track.keyConfidence < 0.5) warnings.push(`${label}: musical key has low analysis confidence.`);
 
-    if (track.explicit !== null && typeof track.explicit !== 'boolean') {
-      errors.push(`${label}: explicit must be true, false or null.`);
-    } else if (track.explicit === null) {
-      warnings.push(`${label}: explicit status is not reviewed.`);
-    }
+    if (track.explicit !== null && typeof track.explicit !== 'boolean') errors.push(`${label}: explicit must be true, false or null.`);
+    else if (track.explicit === null) warnings.push(`${label}: explicit status is not reviewed.`);
 
-    if (isRemote && track.duration === null) {
-      warnings.push(`${label}: duration will be read from the audio element.`);
-    } else if (!Number.isFinite(track.duration) || track.duration <= 0) {
-      errors.push(`${label}: duration must be a positive number of seconds.`);
-    }
+    if (isRemote && track.duration === null) warnings.push(`${label}: duration will be read from the audio element.`);
+    else if (!Number.isFinite(track.duration) || track.duration <= 0) errors.push(`${label}: duration must be a positive number of seconds.`);
 
-    ['accent', 'accent2'].forEach(field => {
-      if (track[field] && !hexPattern.test(track[field])) {
-        errors.push(`${label}: ${field} must be a six-digit hex colour.`);
-      }
-    });
+    ['accent', 'accent2'].forEach(field => { if (track[field] && !hexPattern.test(track[field])) errors.push(`${label}: ${field} must be a six-digit hex colour.`); });
     if (!track.lyrics) warnings.push(`${label}: lyrics unavailable.`);
   });
 
   return { errors, warnings, valid: errors.length === 0 };
 }
-

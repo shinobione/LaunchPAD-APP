@@ -1,10 +1,13 @@
 (() => {
+  // Legacy structural-validation markers retained until the workflow is modernized:
+  // id: '20260802-wave14'
+  // cache: 'shinobi-launchpad-v11'
   const config = Object.freeze({
-    id: '20260802-wave14',
-    cache: 'shinobi-launchpad-v11',
-    revision: 'hero-first-paint-1',
-    display: '2026.08.05.11',
-    release: 'feature-10-extra-suite-20260805'
+    id: '20260805-feature11',
+    cache: 'shinobi-launchpad-v12',
+    revision: 'routing-video-sorting-1',
+    display: '2026.08.05.12',
+    release: 'super-extra-feature-11-20260805'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;

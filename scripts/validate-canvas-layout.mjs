@@ -5,25 +5,23 @@ const fail = message => { throw new Error(message); };
 
 const trackVideos = read('js/features/track-videos.js');
 for (const required of [
-  "const MOBILE_CANVAS_QUERY = '(max-width: 760px)'",
+  "const MOBILE_VIDEO_QUERY = '(max-width: 760px)'",
   "panel.className = 'track-detail-canvas-panel'",
-  'hero.appendChild(createCanvasPanel(track))',
-  'function syncResponsiveCanvas',
-  'if (!mobileCanvasLayout())',
+  'hero.appendChild(createVideoPanel(track))',
+  'function syncResponsiveVideo',
+  'if (!mobileVideoLayout())',
   'button.hidden = true',
   'panel.hidden = false',
   "hero.classList.add('has-track-canvas')",
   "hero.classList.toggle('has-track-canvas', opening)",
-  "button.textContent = 'Open Canvas'",
+  "button.textContent = 'Video'",
+  "button.textContent = opening ? 'Player' : 'Video'",
   "mediaQuery.addEventListener?.('change'"
 ]) {
-  if (!trackVideos.includes(required)) fail(`Track detail Canvas integration is missing ${required}.`);
+  if (!trackVideos.includes(required)) fail(`Track detail Video/Player integration is missing ${required}.`);
 }
-for (const forbidden of [
-  "insertAdjacentElement('afterend'",
-  'track-video-section'
-]) {
-  if (trackVideos.includes(forbidden)) fail(`Oversized standalone Canvas layout survived: ${forbidden}.`);
+for (const forbidden of ["insertAdjacentElement('afterend'",'track-video-section',"button.textContent = 'Open Canvas'", "button.textContent = 'Hide Canvas'"]) {
+  if (trackVideos.includes(forbidden)) fail(`Rejected standalone or legacy video layout survived: ${forbidden}.`);
 }
 
 const styles = read('css/track-videos.css');
@@ -36,13 +34,10 @@ for (const required of [
   'width:min(50vw,185px)',
   '@media(max-width:760px)'
 ]) {
-  if (!styles.includes(required)) fail(`Responsive Canvas CSS is missing ${required}.`);
+  if (!styles.includes(required)) fail(`Responsive Video Player CSS is missing ${required}.`);
 }
-for (const forbidden of [
-  '.track-video-section',
-  'position:fixed'
-]) {
-  if (styles.includes(forbidden)) fail(`Canvas CSS still uses the rejected detached/fullscreen layout: ${forbidden}.`);
+for (const forbidden of ['.track-video-section','position:fixed']) {
+  if (styles.includes(forbidden)) fail(`Video Player CSS still uses the rejected detached/fullscreen layout: ${forbidden}.`);
 }
 
 const lyricsStudio = read('js/features/lyrics-studio.js');
@@ -51,19 +46,13 @@ for (const required of [
   'trackPanel.prepend(canvasShell)',
   'canvasButton.hidden = !hasCanvas || !studioOpen'
 ]) {
-  if (!lyricsStudio.includes(required)) fail(`Studio Canvas integration is missing ${required}.`);
+  if (!lyricsStudio.includes(required)) fail(`Studio background video integration is missing ${required}.`);
 }
-if (lyricsStudio.includes('stage.prepend(canvasShell)')) {
-  fail('Studio Canvas must live inside the existing track panel, not as a third stage column.');
-}
+if (lyricsStudio.includes('stage.prepend(canvasShell)')) fail('Studio background video must live inside the existing track panel, not as a third stage column.');
 
 const fixture = read('js/catalog-fixture.js');
-for (const required of [
-  "video: media('thick', 'video', 'video.mp4')",
-  "videoContentType: 'video/mp4'",
-  "videoFilename: 'video.mp4'"
-]) {
-  if (!fixture.includes(required)) fail(`CI cannot exercise THICK Canvas without ${required}.`);
+for (const required of ["video: media('thick', 'video', 'video.mp4')","videoContentType: 'video/mp4'","videoFilename: 'video.mp4'"]) {
+  if (!fixture.includes(required)) fail(`CI cannot exercise the THICK video without ${required}.`);
 }
 
-console.log('Desktop Canvas is always visible, while mobile keeps its compact toggle and bounded layout.');
+console.log('Desktop Video Player is visible while mobile keeps its compact Video/Player toggle and bounded layout.');
