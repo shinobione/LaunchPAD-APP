@@ -2,7 +2,7 @@ import { getTrack } from '../core/catalog-store.js';
 import { ensureStylesheet } from '../core/assets.js';
 
 const TRACK_HASH_PREFIX = '#track=';
-const MOBILE_CANVAS_QUERY = '(max-width: 760px)';
+const MOBILE_VIDEO_QUERY = '(max-width: 760px)';
 
 function currentTrack() {
   if (!window.location.hash.startsWith(TRACK_HASH_PREFIX)) return null;
@@ -10,23 +10,23 @@ function currentTrack() {
   return getTrack(id);
 }
 
-function mobileCanvasLayout() {
-  return window.matchMedia(MOBILE_CANVAS_QUERY).matches;
+function mobileVideoLayout() {
+  return window.matchMedia(MOBILE_VIDEO_QUERY).matches;
 }
 
-function createCanvasPanel(track) {
+function createVideoPanel(track) {
   const panel = document.createElement('aside');
   panel.className = 'track-detail-canvas-panel';
   panel.dataset.trackVideoPanel = track.id;
   panel.hidden = true;
-  panel.setAttribute('aria-label', `Spotify Canvas for ${track.title}`);
+  panel.setAttribute('aria-label', `Looping track video for ${track.title}`);
 
   const toolbar = document.createElement('div');
   toolbar.className = 'track-detail-canvas-toolbar';
 
   const badge = document.createElement('span');
   badge.className = 'track-detail-canvas-badge';
-  badge.textContent = 'CANVAS';
+  badge.textContent = 'VIDEO';
 
   const toggle = document.createElement('button');
   toggle.type = 'button';
@@ -45,14 +45,16 @@ function createCanvasPanel(track) {
   video.defaultMuted = true;
   video.loop = true;
   video.playsInline = true;
-  video.preload = 'none';
+  video.preload = 'auto';
   video.disablePictureInPicture = true;
   video.dataset.src = track.video;
   video.dataset.contentType = track.videoContentType || 'video/mp4';
   video.setAttribute('muted', '');
   video.setAttribute('loop', '');
   video.setAttribute('playsinline', '');
-  video.setAttribute('aria-label', `Silent looping Spotify Canvas for ${track.title}`);
+  video.setAttribute('webkit-playsinline', '');
+  video.setAttribute('preload', 'auto');
+  video.setAttribute('aria-label', `Silent looping track video for ${track.title}`);
   video.setAttribute('controlslist', 'nodownload noplaybackrate noremoteplayback');
 
   toolbar.append(badge, toggle);
@@ -80,7 +82,7 @@ function loadAndPlay(video, panel) {
     .then(() => syncLoopControl(panel, true))
     .catch(error => {
       syncLoopControl(panel, false);
-      console.info('Canvas playback awaits another user gesture.', error);
+      console.info('Video playback awaits another user gesture.', error);
     });
 }
 
@@ -101,7 +103,7 @@ function installStudioEntry(view, track) {
   else actions.appendChild(button);
 }
 
-function canvasElements(view, trackId) {
+function videoElements(view, trackId) {
   const panel = view.querySelector(`[data-track-video-panel="${CSS.escape(trackId)}"]`);
   const button = view.querySelector(`[data-track-video-action="${CSS.escape(trackId)}"]`);
   const hero = panel?.closest('.track-detail-hero');
@@ -109,14 +111,14 @@ function canvasElements(view, trackId) {
   return { panel, button, hero, video };
 }
 
-function syncResponsiveCanvas(view, trackId, { resetMobile = false } = {}) {
-  const { panel, button, hero, video } = canvasElements(view, trackId);
+function syncResponsiveVideo(view, trackId, { resetMobile = false } = {}) {
+  const { panel, button, hero, video } = videoElements(view, trackId);
   if (!panel || !button || !hero || !video) return;
 
-  if (!mobileCanvasLayout()) {
+  if (!mobileVideoLayout()) {
     button.hidden = true;
     button.setAttribute('aria-expanded', 'true');
-    button.textContent = 'Hide Canvas';
+    button.textContent = 'Player';
     panel.hidden = false;
     hero.classList.add('has-track-canvas');
     if (video.paused) loadAndPlay(video, panel);
@@ -126,10 +128,9 @@ function syncResponsiveCanvas(view, trackId, { resetMobile = false } = {}) {
 
   button.hidden = false;
   if (!resetMobile && button.dataset.mobileReady === 'true') return;
-
   button.dataset.mobileReady = 'true';
   button.setAttribute('aria-expanded', 'false');
-  button.textContent = 'Open Canvas';
+  button.textContent = 'Video';
   panel.hidden = true;
   hero.classList.remove('has-track-canvas');
   video.pause();
@@ -139,7 +140,7 @@ function syncResponsiveCanvas(view, trackId, { resetMobile = false } = {}) {
 function installVideoUI(view, track) {
   if (!view || !track?.video) return;
   if (view.querySelector(`[data-track-video-panel="${CSS.escape(track.id)}"]`)) {
-    syncResponsiveCanvas(view, track.id);
+    syncResponsiveVideo(view, track.id);
     return;
   }
 
@@ -151,13 +152,14 @@ function installVideoUI(view, track) {
   button.type = 'button';
   button.className = 'secondary track-detail-canvas-toggle';
   button.dataset.trackVideoAction = track.id;
-  button.textContent = 'Open Canvas';
+  button.textContent = 'Video';
   button.setAttribute('aria-expanded', 'false');
+  button.setAttribute('aria-label', `Show track video for ${track.title}`);
 
   const lyricsButton = actions.querySelector('[data-track-detail-route="lyrics"]');
   actions.insertBefore(button, lyricsButton || actions.firstElementChild?.nextSibling || null);
-  hero.appendChild(createCanvasPanel(track));
-  syncResponsiveCanvas(view, track.id, { resetMobile: true });
+  hero.appendChild(createVideoPanel(track));
+  syncResponsiveVideo(view, track.id, { resetMobile: true });
 }
 
 function installTrackEnhancements(view, track) {
@@ -176,7 +178,6 @@ export function initTrackVideos() {
 
   const view = document.querySelector('#view-track');
   if (!view) return;
-
   let hydrationTimer = null;
 
   function hydrate() {
@@ -212,18 +213,18 @@ export function initTrackVideos() {
     }
 
     const button = event.target.closest?.('[data-track-video-action]');
-    if (!button || button.hidden || !mobileCanvasLayout()) return;
+    if (!button || button.hidden || !mobileVideoLayout()) return;
 
     event.preventDefault();
     const trackId = button.dataset.trackVideoAction;
-    const { panel, hero, video } = canvasElements(view, trackId);
+    const { panel, hero, video } = videoElements(view, trackId);
     if (!panel || !hero || !video) return;
 
     const opening = panel.hidden;
     panel.hidden = !opening;
     hero.classList.toggle('has-track-canvas', opening);
     button.setAttribute('aria-expanded', String(opening));
-    button.textContent = opening ? 'Hide Canvas' : 'Open Canvas';
+    button.textContent = opening ? 'Player' : 'Video';
 
     if (!opening) {
       video.pause();
@@ -239,10 +240,10 @@ export function initTrackVideos() {
   window.addEventListener('hashchange', scheduleHydration);
   window.addEventListener('popstate', scheduleHydration);
 
-  const mediaQuery = window.matchMedia(MOBILE_CANVAS_QUERY);
+  const mediaQuery = window.matchMedia(MOBILE_VIDEO_QUERY);
   mediaQuery.addEventListener?.('change', () => {
     const track = currentTrack();
-    if (track) syncResponsiveCanvas(view, track.id, { resetMobile: true });
+    if (track) syncResponsiveVideo(view, track.id, { resetMobile: true });
   });
 
   scheduleHydration();
