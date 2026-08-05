@@ -39,9 +39,15 @@ if (injectionParts.length) {
   source = source.replace(insertionMarker, `\n${injectionSource}${insertionMarker}`);
 }
 
-source = source.replace('version: "4.6"', 'version: "4.8"');
-source = source.replace('<span class="version-pill">v4.5</span>', '<span class="version-pill">v4.8</span>');
-source = source.replace("version.textContent='v4.6'", "version.textContent='v4.8'");
+for (const stale of ['version: "4.6"', 'version: "4.7"']) {
+  source = source.replaceAll(stale, 'version: "4.8"');
+}
+for (const stale of ['<span class="version-pill">v4.5</span>', '<span class="version-pill">v4.7</span>']) {
+  source = source.replaceAll(stale, '<span class="version-pill">v4.8</span>');
+}
+for (const stale of ["version.textContent='v4.6'", "version.textContent='v4.7'"]) {
+  source = source.replaceAll(stale, "version.textContent='v4.8'");
+}
 source = source.replace(
   ":' sans timestamps.'))}catch(error)",
   ":' sans timestamps.')))}catch(error)",
