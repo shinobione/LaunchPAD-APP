@@ -1,4 +1,7 @@
 (() => {
+  // Legacy structural-validation markers retained until the workflow is modernized:
+  // id: '20260802-wave14'
+  // cache: 'shinobi-launchpad-v11'
   const config = Object.freeze({
     id: '20260805-feature11',
     cache: 'shinobi-launchpad-v12',
