@@ -24,6 +24,7 @@ const SHELL_RESOURCES = [
   './css/mobile-navigation.css',
   './css/launchpad-features.css',
   './css/catalog-filters.css',
+  './css/feature-10.css',
   './css/about-enhancements.css',
   './css/library-memory.css',
   './css/pwa.css',
@@ -39,6 +40,7 @@ const SHELL_RESOURCES = [
   './js/catalog.js',
   './js/core/assets.js',
   './js/core/catalog-store.js',
+  './js/core/editorial-normalization.js',
   './js/core/remote-catalog.js',
   './js/core/player-queue.js',
   './js/core/router.js',
@@ -46,6 +48,7 @@ const SHELL_RESOURCES = [
   './js/core/theme.js',
   './js/features/ui/ui-controller.js',
   './js/features/catalog-filters.js',
+  './js/features/content-advisory-badges.js',
   './js/features/lyrics/lyrics-engine.js',
   './js/features/visual/visual-engine.js',
   './js/features/media-session.js',
@@ -133,6 +136,23 @@ async function staleWhileRevalidate(request) {
   return (await networkPromise) || new Response('', { status: 504, statusText: 'Offline' });
 }
 
+async function freshBuildMetadata(request) {
+  try {
+    const response = await fetch(request, { cache: 'no-store' });
+    if (response.ok) {
+      const runtime = await caches.open(RUNTIME_CACHE);
+      await runtime.put(new Request('./js/build-config.js'), response.clone());
+    }
+    return response;
+  } catch {
+    const runtime = await caches.open(RUNTIME_CACHE);
+    const shell = await caches.open(SHELL_CACHE);
+    return (await runtime.match('./js/build-config.js', { ignoreSearch: true }))
+      || (await shell.match('./js/build-config.js', { ignoreSearch: true }))
+      || new Response('', { status: 504, statusText: 'Offline' });
+  }
+}
+
 async function navigationResponse(request) {
   try {
     const response = await fetch(request);
@@ -177,6 +197,11 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+
+  if (url.pathname.endsWith('/js/build-config.js')) {
+    event.respondWith(freshBuildMetadata(request));
+    return;
+  }
 
   const isAudio = request.destination === 'audio'
     || /\.(mp3|m4a|wav|ogg|flac)$/i.test(url.pathname)

@@ -63,7 +63,7 @@ assert.match(appendedStyles[0].textContent, /lyrics-unsynced/);
 assert.match(appendedStyles[0].textContent, /lyrics-synced/);
 assert.match(summarySource, /lyricsStatusFromQuality/);
 assert.match(summarySource, /lyricsStatus,/);
-assert.match(source, /TRACK_MANAGER_LYRICS_BADGES_VERSION='4\.9'/);
+assert.match(source, /TRACK_MANAGER_LYRICS_BADGES_VERSION='5\.0'/);
 assert.match(source, /track\.quality\.timestampsAvailable===true/);
 assert.match(source, /data-lyrics-status/);
 

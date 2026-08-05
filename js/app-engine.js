@@ -3,7 +3,8 @@ const BUILD = globalThis.SHINOBIWAN_BUILD?.id || 'dev';
 
 const CRITICAL_STYLES = [
   'css/launchpad-features.css',
-  'css/catalog-filters.css'
+  'css/catalog-filters.css',
+  'css/feature-10.css'
 ];
 
 const LAYOUT_STYLES = [
@@ -41,11 +42,13 @@ async function boot() {
     { prepareLibraryMemoryShell },
     pwa,
     remoteCatalog,
+    { normalizeCatalogEditorialTags },
     { initAudioReadiness }
   ] = await Promise.all([
     import(versioned('./features/library-memory-shell.js')),
     import(versioned('./features/pwa.js')),
     import(versioned('./core/remote-catalog.js')),
+    import(versioned('./core/editorial-normalization.js')),
     import(versioned('./features/audio-readiness.js'))
   ]);
 
@@ -57,6 +60,7 @@ async function boot() {
 
   try {
     const state = await remoteCatalog.hydrateRemoteCatalog();
+    normalizeCatalogEditorialTags();
     document.documentElement.dataset.remoteCatalog = state.added || state.updated
       ? 'connected'
       : 'empty';
@@ -72,6 +76,7 @@ async function boot() {
   const [
     { installContentV4 },
     { initCatalogFilters },
+    { initContentAdvisoryBadges },
     { initAudioFocus },
     { initLyricsWakeLock },
     { initAboutEnhancements },
@@ -89,6 +94,7 @@ async function boot() {
   ] = await Promise.all([
     import(versioned('./features/content/content-controller.js')),
     import(versioned('./features/catalog-filters.js')),
+    import(versioned('./features/content-advisory-badges.js')),
     import(versioned('./features/audio/audio-focus.js')),
     import(versioned('./features/lyrics/wake-lock.js')),
     import(versioned('./features/about/about-controller.js')),
@@ -107,6 +113,7 @@ async function boot() {
 
   installContentV4();
   initCatalogFilters();
+  initContentAdvisoryBadges();
   initAboutEnhancements();
   installStylesheets(LAYOUT_STYLES);
 

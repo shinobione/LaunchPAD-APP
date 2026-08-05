@@ -1,5 +1,5 @@
 
-var TRACK_MANAGER_LYRICS_BADGES_VERSION='4.9';
+var TRACK_MANAGER_LYRICS_BADGES_VERSION='5.0';
 
 function trackLyricsBadge(track){
   var status=track&&track.quality&&track.quality.lyricsStatus;
@@ -39,7 +39,7 @@ renderTracks=function(){
     element.className='chip '+badge.className;
     element.setAttribute('data-lyrics-status',badge.className);
     element.textContent=badge.label;
-    var thumbnailChip=Array.from(chips.children).find(function(chip){return /^thumbnail\b/i.test(chip.textContent||'')});
+    var thumbnailChip=Array.from(chips.children).find(function(chip){return /^(?:thumbnail|cover)\b/i.test(chip.textContent||'')});
     chips.insertBefore(element,thumbnailChip||null);
   });
 };

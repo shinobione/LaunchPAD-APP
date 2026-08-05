@@ -1,0 +1,6 @@
+
+var TRACK_MANAGER_SMART_PARSING_SCOPE_VERSION='10.2.1';
+feature10InferSignals=function(payload){payload=payload||{};var metadata=payload.metadata||{};var stylePrompt=String(payload.stylePrompt||'');var lyricsText=String(payload.lyricsText||'');var combined=[payload.rawText,stylePrompt,lyricsText,payload.extraSignal||''].join(' ');var explicitGenres=split(metadata.genres||'');var genres=feature10NormalizeGenres(explicitGenres.concat(feature10MatchedLabels(combined,FEATURE_10_GENRE_RULES)));var moods=feature10Unique(split(metadata.moods||'').concat(feature10MatchedLabels(combined,FEATURE_10_MOOD_RULES))).slice(0,8);var themes=feature10Unique(split(metadata.themes||'').concat(feature10MatchedLabels(combined,FEATURE_10_THEME_RULES))).slice(0,8);return {genres:genres,moods:moods,themes:themes}};
+function feature10MergeCurrentFormSignals(){var signal=feature10FormSignalText();var inferred=feature10InferSignals({metadata:{},rawText:'',lyricsText:'',stylePrompt:'',extraSignal:signal});feature10MergeField('genres',inferred.genres);feature10MergeField('moods',inferred.moods);feature10MergeField('themes',inferred.themes)}
+$('#feature10Recalculate')?.addEventListener('click',feature10MergeCurrentFormSignals,true);
+$('#trackForm')?.elements.lyrics?.addEventListener('change',feature10MergeCurrentFormSignals,true);

@@ -1,8 +1,27 @@
 import { ensureStylesheet, versionedAsset } from '../core/assets.js';
 
-const UPDATE_DISMISS_KEY = 'shinobi-pwa-update-dismissed-session';
+const UPDATE_DISMISS_KEY = 'shinobi-pwa-update-dismissed-release';
 const RELOAD_REQUEST_KEY = 'shinobi-pwa-update-reload-requested';
-const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
+const INSTALL_DISMISS_KEY = 'shinobi-pwa-install-dismissed-at';
+const UPDATE_CHECK_INTERVAL = 2 * 60 * 1000;
+const INSTALL_DISMISS_MS = 3 * 24 * 60 * 60 * 1000;
+const ACTIVATION_TIMEOUT_MS = 9000;
+const RELEASE_CHANNEL = 'shinobi-pwa-release';
+
+let capturedInstallPrompt = null;
+let installPromptListenerReady = false;
+
+function captureInstallPrompt() {
+  if (installPromptListenerReady) return;
+  installPromptListenerReady = true;
+  window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault();
+    capturedInstallPrompt = event;
+    window.dispatchEvent(new CustomEvent('shinobi:pwa-install-ready'));
+  });
+}
+
+captureInstallPrompt();
 
 function ensureMeta(name, content) {
   let meta = document.head.querySelector(`meta[name="${name}"]`);
@@ -26,7 +45,7 @@ function safeStorageSet(storage, key, value) {
   try {
     storage?.setItem(key, value);
   } catch {
-    // Hardened browsing modes may block session storage.
+    // Hardened browsing modes may block web storage.
   }
 }
 
@@ -34,11 +53,12 @@ function safeStorageRemove(storage, key) {
   try {
     storage?.removeItem(key);
   } catch {
-    // Hardened browsing modes may block session storage.
+    // Hardened browsing modes may block web storage.
   }
 }
 
 export function preparePWAHead() {
+  captureInstallPrompt();
   if (!document.head.querySelector('link[rel="manifest"]')) {
     const manifest = document.createElement('link');
     manifest.rel = 'manifest';
@@ -54,7 +74,7 @@ export function preparePWAHead() {
 }
 
 function isStandalone() {
-  return window.matchMedia('(display-mode: standalone)').matches
+  return window.matchMedia?.('(display-mode: standalone)').matches
     || window.navigator.standalone === true;
 }
 
@@ -78,25 +98,32 @@ function createToast() {
   };
 }
 
-function createInstallControl() {
-  const existing = document.querySelector('#pwa-install-control');
+function createInstallBanner() {
+  const existing = document.querySelector('#pwa-install-banner');
   if (existing) return existing;
 
-  const control = document.createElement('div');
-  control.id = 'pwa-install-control';
-  control.className = 'pwa-install-control';
-  control.hidden = true;
-  control.innerHTML = `
-    <button type="button" class="pwa-install-button">
-      <span aria-hidden="true">↓</span>
-      <span><strong>Install app</strong><small>Launch from your device</small></span>
-    </button>
+  const banner = document.createElement('section');
+  banner.id = 'pwa-install-banner';
+  banner.className = 'pwa-install-banner';
+  banner.hidden = true;
+  banner.setAttribute('role', 'region');
+  banner.setAttribute('aria-live', 'polite');
+  banner.setAttribute('aria-label', 'Install LaunchPAD');
+  banner.innerHTML = `
+    <div class="pwa-install-copy">
+      <span class="pwa-install-icon" aria-hidden="true">LP</span>
+      <span>
+        <strong>Install LaunchPAD</strong>
+        <small>One-tap access, fullscreen Canvas and a smoother app experience.</small>
+      </span>
+    </div>
+    <div class="pwa-install-actions">
+      <button type="button" class="primary" data-pwa-install-now>Install the app</button>
+      <button type="button" class="secondary" data-pwa-install-later>Not now</button>
+    </div>
   `;
-
-  const nav = document.querySelector('.main-nav');
-  nav?.insertAdjacentElement('afterend', control);
-  if (!nav) document.querySelector('.sidebar')?.prepend(control);
-  return control;
+  document.body.appendChild(banner);
+  return banner;
 }
 
 function createUpdateBanner() {
@@ -127,10 +154,27 @@ function createUpdateBanner() {
   return banner;
 }
 
+function bannerShow(banner) {
+  banner.hidden = false;
+  window.requestAnimationFrame(() => banner.classList.add('show'));
+}
+
+function bannerHide(banner, { immediate = false } = {}) {
+  banner.classList.remove('show');
+  if (immediate) {
+    banner.hidden = true;
+    return;
+  }
+  window.setTimeout(() => {
+    if (!banner.classList.contains('show')) banner.hidden = true;
+  }, 220);
+}
+
 export function createPWAUpdateController({
   audio = document.querySelector('#audio'),
   serviceWorker = navigator.serviceWorker,
   storage = window.sessionStorage,
+  currentRelease = globalThis.SHINOBIWAN_BUILD?.release || 'development',
   reload = () => window.location.reload(),
   notify = () => {}
 } = {}) {
@@ -141,52 +185,87 @@ export function createPWAUpdateController({
   const subtitle = banner.querySelector('small');
 
   let waitingWorker = null;
+  let pendingRelease = null;
+  let reloadOnly = false;
   let deferredUntilPlaybackStops = false;
   let activationRequested = false;
   let refreshing = false;
-  let dismissedForSession = safeStorageGet(storage, UPDATE_DISMISS_KEY) === '1';
-  let reloadAuthorized = safeStorageGet(storage, RELOAD_REQUEST_KEY) === '1';
+  let activationTimer = 0;
+  let dismissedRelease = safeStorageGet(storage, UPDATE_DISMISS_KEY);
+  const reloadWasRequested = safeStorageGet(storage, RELOAD_REQUEST_KEY) === '1';
   safeStorageRemove(storage, RELOAD_REQUEST_KEY);
 
   function resetCopy() {
     banner.dataset.state = 'ready';
     title.textContent = 'A new version of LaunchPAD is available.';
     subtitle.textContent = 'The update will be applied without abruptly interrupting the music.';
-    updateButton.textContent = 'Update now';
+    updateButton.textContent = reloadOnly ? 'Reload latest' : 'Update now';
     updateButton.disabled = false;
     laterButton.disabled = false;
   }
 
-  function hide() {
-    banner.classList.remove('show');
-    window.setTimeout(() => {
-      if (!banner.classList.contains('show')) banner.hidden = true;
-    }, 220);
+  function hide(options) {
+    bannerHide(banner, options);
   }
 
-  function show(worker) {
+  function show(worker, { release = null, forceReload = false } = {}) {
     waitingWorker = worker || waitingWorker;
-    if (!waitingWorker || dismissedForSession || activationRequested) return false;
+    pendingRelease = release || pendingRelease || 'next';
+    reloadOnly = Boolean(forceReload && !waitingWorker);
+    if ((!waitingWorker && !reloadOnly) || activationRequested) return false;
+    if (dismissedRelease === pendingRelease) return false;
     resetCopy();
-    banner.hidden = false;
-    window.requestAnimationFrame(() => banner.classList.add('show'));
+    bannerShow(banner);
     return true;
   }
 
+  function completeWithReload() {
+    if (refreshing) return;
+    refreshing = true;
+    window.clearTimeout(activationTimer);
+    safeStorageRemove(storage, RELOAD_REQUEST_KEY);
+    hide({ immediate: true });
+    reload();
+  }
+
+  function reloadLatest() {
+    activationRequested = true;
+    safeStorageSet(storage, RELOAD_REQUEST_KEY, '1');
+    banner.dataset.state = 'applying';
+    title.textContent = 'Loading the latest LaunchPAD…';
+    subtitle.textContent = 'The app will reload once.';
+    updateButton.textContent = 'Reloading…';
+    updateButton.disabled = true;
+    laterButton.disabled = true;
+    window.setTimeout(() => {
+      hide({ immediate: true });
+      completeWithReload();
+    }, 180);
+  }
+
   function requestActivation() {
-    if (!waitingWorker || activationRequested) return false;
+    if (activationRequested) return false;
+    if (!waitingWorker) {
+      if (reloadOnly) reloadLatest();
+      return reloadOnly;
+    }
+
     deferredUntilPlaybackStops = false;
     activationRequested = true;
-    reloadAuthorized = true;
     safeStorageSet(storage, RELOAD_REQUEST_KEY, '1');
     safeStorageRemove(storage, UPDATE_DISMISS_KEY);
     banner.dataset.state = 'applying';
     title.textContent = 'Updating LaunchPAD…';
-    subtitle.textContent = 'LaunchPAD will reload once.';
+    subtitle.textContent = 'The app will reload once when the new version takes control.';
     updateButton.textContent = 'Installing…';
     updateButton.disabled = true;
     laterButton.disabled = true;
     waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+
+    activationTimer = window.setTimeout(() => {
+      notify('The update is ready. Reloading LaunchPAD.');
+      completeWithReload();
+    }, ACTIVATION_TIMEOUT_MS);
     return true;
   }
 
@@ -201,7 +280,6 @@ export function createPWAUpdateController({
   }
 
   function handleUpdateClick() {
-    if (!waitingWorker) return;
     if (audio && !audio.paused && !audio.ended) {
       deferActivation();
       return;
@@ -211,8 +289,8 @@ export function createPWAUpdateController({
 
   function handleLaterClick() {
     deferredUntilPlaybackStops = false;
-    dismissedForSession = true;
-    safeStorageSet(storage, UPDATE_DISMISS_KEY, '1');
+    dismissedRelease = pendingRelease || 'next';
+    safeStorageSet(storage, UPDATE_DISMISS_KEY, dismissedRelease);
     hide();
   }
 
@@ -221,10 +299,9 @@ export function createPWAUpdateController({
   }
 
   function handleControllerChange() {
-    if (refreshing || (!activationRequested && !reloadAuthorized)) return;
-    refreshing = true;
-    safeStorageRemove(storage, RELOAD_REQUEST_KEY);
-    reload();
+    if (refreshing) return;
+    if (!activationRequested && !reloadWasRequested) return;
+    completeWithReload();
   }
 
   updateButton.addEventListener('click', handleUpdateClick);
@@ -240,6 +317,7 @@ export function createPWAUpdateController({
     isVisible: () => !banner.hidden,
     isDeferred: () => deferredUntilPlaybackStops,
     destroy() {
+      window.clearTimeout(activationTimer);
       updateButton.removeEventListener('click', handleUpdateClick);
       laterButton.removeEventListener('click', handleLaterClick);
       audio?.removeEventListener('pause', handlePlaybackStop);
@@ -250,6 +328,10 @@ export function createPWAUpdateController({
   };
 }
 
+function parseRemoteRelease(source) {
+  return source.match(/release:\s*['"]([^'"]+)['"]/)?.[1] || null;
+}
+
 export function initPWA() {
   if (window.__shinobiPWAReady) return;
   window.__shinobiPWAReady = true;
@@ -257,79 +339,118 @@ export function initPWA() {
   ensureStylesheet('css/pwa.css');
 
   const notify = createToast();
-  const control = createInstallControl();
-  const button = control.querySelector('button');
-  const title = control.querySelector('strong');
-  const subtitle = control.querySelector('small');
+  const installBanner = createInstallBanner();
+  const installButton = installBanner.querySelector('[data-pwa-install-now]');
+  const installLater = installBanner.querySelector('[data-pwa-install-later]');
+  const installTitle = installBanner.querySelector('strong');
+  const installSubtitle = installBanner.querySelector('small');
   const audio = document.querySelector('#audio');
-  let deferredPrompt = null;
+  const currentRelease = globalThis.SHINOBIWAN_BUILD?.release || 'development';
   let registration = null;
   let lastUpdateCheck = 0;
   let updateController = null;
+  let remoteRelease = currentRelease;
+  let releaseChannel = null;
 
-  function setVisible(visible) {
-    control.hidden = !visible || isStandalone();
+  function installDismissed() {
+    const dismissedAt = Number(safeStorageGet(window.localStorage, INSTALL_DISMISS_KEY));
+    return Number.isFinite(dismissedAt) && Date.now() - dismissedAt < INSTALL_DISMISS_MS;
   }
 
-  function setInstallState() {
-    title.textContent = 'Install app';
-    subtitle.textContent = isIOS() ? 'Add to Home Screen' : 'Launch from your device';
-    button.querySelector('[aria-hidden]')?.replaceChildren(document.createTextNode('↓'));
-    setVisible(Boolean(deferredPrompt) || isIOS());
+  function canOfferInstall() {
+    return !isStandalone()
+      && !installDismissed()
+      && (Boolean(capturedInstallPrompt) || isIOS());
+  }
+
+  function syncInstallBanner() {
+    if (!canOfferInstall() || updateController?.isVisible()) {
+      bannerHide(installBanner, { immediate: true });
+      return;
+    }
+    installTitle.textContent = isIOS() ? 'Add LaunchPAD to your Home Screen' : 'Install LaunchPAD';
+    installSubtitle.textContent = isIOS()
+      ? 'Open Share, then choose “Add to Home Screen” for the full app experience.'
+      : 'One-tap access, fullscreen Canvas and a smoother app experience.';
+    installButton.textContent = isIOS() ? 'Show me how' : 'Install the app';
+    bannerShow(installBanner);
   }
 
   function syncConnectivity() {
     document.documentElement.dataset.connectivity = navigator.onLine ? 'online' : 'offline';
-    if (!navigator.onLine) notify('Offline mode: the Launchpad interface and cached covers remain available.');
+    if (!navigator.onLine) notify('Offline mode: the LaunchPAD interface and cached covers remain available.');
   }
 
-  window.addEventListener('beforeinstallprompt', event => {
-    event.preventDefault();
-    deferredPrompt = event;
-    setInstallState();
+  window.addEventListener('shinobi:pwa-install-ready', syncInstallBanner);
+  window.addEventListener('appinstalled', () => {
+    capturedInstallPrompt = null;
+    safeStorageRemove(window.localStorage, INSTALL_DISMISS_KEY);
+    bannerHide(installBanner, { immediate: true });
+    notify('SHINOBIWAN LaunchPAD installed.');
   });
 
-  window.addEventListener('appinstalled', () => {
-    deferredPrompt = null;
-    setVisible(false);
-    notify('SHINOBIWAN Launchpad installed.');
+  installButton.addEventListener('click', async () => {
+    if (capturedInstallPrompt) {
+      const prompt = capturedInstallPrompt;
+      capturedInstallPrompt = null;
+      await prompt.prompt();
+      const choice = await prompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        bannerHide(installBanner, { immediate: true });
+        notify('Installation started.');
+      } else {
+        safeStorageSet(window.localStorage, INSTALL_DISMISS_KEY, String(Date.now()));
+        bannerHide(installBanner);
+      }
+      return;
+    }
+
+    if (isIOS()) notify('Tap Share, then “Add to Home Screen”.');
+  });
+
+  installLater.addEventListener('click', () => {
+    safeStorageSet(window.localStorage, INSTALL_DISMISS_KEY, String(Date.now()));
+    bannerHide(installBanner);
   });
 
   window.addEventListener('online', syncConnectivity);
   window.addEventListener('offline', syncConnectivity);
   syncConnectivity();
 
-  button.addEventListener('click', async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
-      deferredPrompt = null;
-      setVisible(false);
-      if (choice.outcome === 'accepted') notify('Installation started.');
-      return;
-    }
-
-    if (isIOS()) {
-      notify('Open the Share menu, then choose “Add to Home Screen”.');
-    }
-  });
+  function showUpdate(worker, options = {}) {
+    const shown = updateController?.show(worker, options);
+    if (shown) bannerHide(installBanner, { immediate: true });
+    return shown;
+  }
 
   function watchRegistration(nextRegistration) {
     registration = nextRegistration;
-    updateController ||= createPWAUpdateController({ audio, notify });
+    updateController ||= createPWAUpdateController({ audio, notify, currentRelease });
 
     if (registration.waiting && navigator.serviceWorker.controller) {
-      updateController.show(registration.waiting);
+      showUpdate(registration.waiting, { release: remoteRelease });
     }
 
     registration.addEventListener('updatefound', () => {
       const worker = registration.installing;
       worker?.addEventListener('statechange', () => {
         if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-          updateController.show(worker);
+          showUpdate(registration.waiting || worker, { release: remoteRelease });
         }
       });
     });
+  }
+
+  async function fetchRemoteRelease() {
+    if (!navigator.onLine) return currentRelease;
+    const url = new URL('js/build-config.js', document.baseURI);
+    url.searchParams.set('release-check', String(Date.now()));
+    const response = await fetch(url, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+    });
+    if (!response.ok) throw new Error(`Build metadata HTTP ${response.status}`);
+    return parseRemoteRelease(await response.text()) || currentRelease;
   }
 
   async function checkForUpdate({ force = false } = {}) {
@@ -337,8 +458,16 @@ export function initPWA() {
     const now = Date.now();
     if (!force && now - lastUpdateCheck < UPDATE_CHECK_INTERVAL) return;
     lastUpdateCheck = now;
+
     try {
+      remoteRelease = await fetchRemoteRelease();
       await registration.update();
+      if (registration.waiting && navigator.serviceWorker.controller) {
+        showUpdate(registration.waiting, { release: remoteRelease });
+      } else if (remoteRelease !== currentRelease) {
+        showUpdate(null, { release: remoteRelease, forceReload: true });
+      }
+      releaseChannel?.postMessage({ release: remoteRelease });
     } catch (error) {
       console.info('PWA update check postponed.', error);
     }
@@ -346,15 +475,26 @@ export function initPWA() {
 
   async function registerServiceWorker() {
     try {
-      const nextRegistration = await navigator.serviceWorker.register(versionedAsset('./sw.js'), {
+      const workerUrl = new URL('./sw.js', document.baseURI);
+      workerUrl.searchParams.set('release', currentRelease);
+      const nextRegistration = await navigator.serviceWorker.register(workerUrl, {
         scope: './',
         updateViaCache: 'none'
       });
       watchRegistration(nextRegistration);
+      await navigator.serviceWorker.ready;
       checkForUpdate({ force: true });
     } catch (error) {
       console.warn('PWA service worker registration failed', error);
     }
+  }
+
+  if ('BroadcastChannel' in window) {
+    releaseChannel = new BroadcastChannel(RELEASE_CHANNEL);
+    releaseChannel.addEventListener('message', event => {
+      const release = event.data?.release;
+      if (release && release !== currentRelease) checkForUpdate({ force: true });
+    });
   }
 
   if ('serviceWorker' in navigator) {
@@ -362,18 +502,23 @@ export function initPWA() {
     else window.addEventListener('load', registerServiceWorker, { once: true });
 
     window.addEventListener('online', () => checkForUpdate({ force: true }));
+    window.addEventListener('focus', () => checkForUpdate({ force: true }));
+    window.addEventListener('pageshow', event => checkForUpdate({ force: event.persisted }));
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') checkForUpdate();
+      if (document.visibilityState === 'visible') checkForUpdate({ force: true });
     });
+    window.setInterval(() => {
+      if (document.visibilityState === 'visible') checkForUpdate();
+    }, UPDATE_CHECK_INTERVAL);
   }
 
-  if (isStandalone()) setVisible(false);
-  else setInstallState();
+  window.setTimeout(syncInstallBanner, 900);
 
   window.__shinobiPWA = {
     isStandalone,
     getRegistration: () => registration,
-    getDeferredPrompt: () => deferredPrompt,
-    checkForUpdate: () => checkForUpdate({ force: true })
+    getDeferredPrompt: () => capturedInstallPrompt,
+    checkForUpdate: () => checkForUpdate({ force: true }),
+    showInstallPrompt: syncInstallBanner
   };
 }
