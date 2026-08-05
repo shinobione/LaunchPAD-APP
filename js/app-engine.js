@@ -46,6 +46,7 @@ async function boot() {
     remoteCatalog,
     { normalizeCatalogEditorialTags },
     { initAudioReadiness },
+    { initAudioLabSignalBridge },
     feature11
   ] = await Promise.all([
     import(versioned('./features/library-memory-shell.js')),
@@ -53,6 +54,7 @@ async function boot() {
     import(versioned('./core/remote-catalog.js')),
     import(versioned('./core/editorial-normalization.js')),
     import(versioned('./features/audio-readiness.js')),
+    import(versioned('./features/audio-lab-signal.js')),
     import(versioned('./features/feature-11.js'))
   ]);
 
@@ -61,6 +63,7 @@ async function boot() {
   pwa.preparePWAHead();
 
   const audio = document.querySelector('#audio');
+  initAudioLabSignalBridge({ audio });
   initAudioReadiness({ audio });
 
   try {
