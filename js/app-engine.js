@@ -5,7 +5,8 @@ const CRITICAL_STYLES = [
   'css/launchpad-features.css',
   'css/catalog-filters.css',
   'css/feature-10.css',
-  'css/feature-11.css'
+  'css/feature-11.css',
+  'css/feature-12.css'
 ];
 
 const LAYOUT_STYLES = [
@@ -95,7 +96,8 @@ async function boot() {
     { initSmartCanvasManager },
     { initCanvasIdentity },
     { initMobileNavigation },
-    { initAdminAccess }
+    { initAdminAccess },
+    { initPhase12 }
   ] = await Promise.all([
     import(versioned('./features/content/content-controller.js')),
     import(versioned('./features/catalog-filters.js')),
@@ -113,7 +115,8 @@ async function boot() {
     import(versioned('./features/smart-canvas.js')),
     import(versioned('./features/canvas-identity.js')),
     import(versioned('./features/mobile-navigation.js')),
-    import(versioned('./features/admin-access.js'))
+    import(versioned('./features/admin-access.js')),
+    import(versioned('./features/feature-12.js'))
   ]);
 
   installContentV4();
@@ -134,6 +137,7 @@ async function boot() {
   initAdminAccess();
   initVisualCard({ audio });
   feature11.initFeature11({ audio });
+  initPhase12();
   pwa.initPWA();
   initAudioFocus({ audio });
   initLyricsWakeLock({ audio });
