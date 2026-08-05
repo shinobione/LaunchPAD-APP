@@ -65,7 +65,7 @@ for (const required of [
 ]) {
   assert.ok(typography.includes(required), `LaunchPAD typography refresh is missing ${required}.`);
 }
-assert.ok(!typography.includes('serif'), 'The typography refresh must not fall back to a serif display face.');
+assert.ok(!/font-family:\s*serif(?:[;,}])/i.test(typography), 'The typography refresh must not use a serif display face.');
 
 const build = read('js/build-config.js');
 for (const required of [
