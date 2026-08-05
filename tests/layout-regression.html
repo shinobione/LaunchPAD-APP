@@ -97,7 +97,9 @@ loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   const mobileHero=md.querySelector('.launchpad-hero');
   const mobileBody=md.querySelector('.launchpad-hero .hero-body');
   const mobileRail=md.querySelector('.launchpad-hero .launchpad-banner-rail');
-  if(!mobileHero||!mobileBody||!mobileRail||[...mobileHero.children].indexOf(mobileBody)>[...mobileHero.children].indexOf(mobileRail)) failures.push('mobile-feature11-header-order');
+  const mobileBodyRect=rect(mobileBody);
+  const mobileRailRect=rect(mobileRail);
+  if(!mobileHero||!mobileBodyRect||!mobileRailRect||mobileBodyRect.top>=mobileRailRect.top) failures.push('mobile-feature11-header-order');
 
   md.querySelector('[data-view="about"]')?.click();
   await sleep(300);
