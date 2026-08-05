@@ -1,0 +1,52 @@
+
+var TRACK_MANAGER_COLOR_DIVERSITY_VERSION='10.3';
+
+function feature103ColorMetrics(rgb){
+  var r=rgb[0]/255,g=rgb[1]/255,b=rgb[2]/255;var max=Math.max(r,g,b),min=Math.min(r,g,b),delta=max-min;var hue=0;
+  if(delta){if(max===r)hue=60*(((g-b)/delta)%6);else if(max===g)hue=60*((b-r)/delta+2);else hue=60*((r-g)/delta+4);if(hue<0)hue+=360}
+  return {hue:hue,saturation:max?delta/max:0,value:max,lightness:(max+min)/2,chroma:delta};
+}
+function feature103HueDistance(left,right){var distance=Math.abs(left-right)%360;return Math.min(distance,360-distance)}
+function feature103CandidateScore(candidate){
+  var metrics=candidate.metrics;if(metrics.value<.18||metrics.lightness>.94&&metrics.saturation<.12)return 0;
+  var brightness=Math.max(.15,1-Math.abs(metrics.value-.58)*1.8);
+  return candidate.count*(.25+metrics.saturation*1.7)*(.5+brightness);
+}
+function feature103HsvToRgb(hue,saturation,value){
+  var chroma=value*saturation;var sector=((hue%360)+360)%360/60;var x=chroma*(1-Math.abs(sector%2-1));var rgb;
+  if(sector<1)rgb=[chroma,x,0];else if(sector<2)rgb=[x,chroma,0];else if(sector<3)rgb=[0,chroma,x];else if(sector<4)rgb=[0,x,chroma];else if(sector<5)rgb=[x,0,chroma];else rgb=[chroma,0,x];
+  var match=value-chroma;return rgb.map(function(channel){return Math.round((channel+match)*255)});
+}
+function feature103DisplayColor(candidate){
+  var metrics=candidate.metrics;var value=metrics.value;var saturation=metrics.saturation;
+  if(value<.28)value=.32;
+  if(value>.9&&saturation<.15)value=.84;
+  if(saturation>.88)saturation=.82;
+  return feature103HsvToRgb(metrics.hue,saturation,value);
+}
+function feature103ChooseThemeColors(candidates){
+  var ranked=candidates.filter(function(candidate){return candidate.score>0}).sort(function(left,right){return right.score-left.score});
+  var primary=ranked[0]||{rgb:[29,185,84],metrics:feature103ColorMetrics([29,185,84]),score:1,count:1};
+  var secondary=ranked.filter(function(candidate){return candidate!==primary&&candidate.metrics.saturation>=.22&&feature103HueDistance(primary.metrics.hue,candidate.metrics.hue)>=42&&feature10ColorDistance(primary.rgb,candidate.rgb)>2200}).sort(function(left,right){var leftDiversity=1+feature103HueDistance(primary.metrics.hue,left.metrics.hue)/180*.55;var rightDiversity=1+feature103HueDistance(primary.metrics.hue,right.metrics.hue)/180*.55;return right.score*rightDiversity-left.score*leftDiversity})[0];
+  if(!secondary)secondary=ranked.find(function(candidate){return candidate!==primary&&feature10ColorDistance(primary.rgb,candidate.rgb)>1600})||{rgb:[85,107,255],metrics:feature103ColorMetrics([85,107,255]),score:1,count:1};
+  return [feature103DisplayColor(primary),feature103DisplayColor(secondary)];
+}
+
+feature10ExtractCoverColors=async function(blob){
+  var source=await loadImageSource(blob);
+  try{
+    var canvas=document.createElement('canvas');canvas.width=96;canvas.height=96;
+    var context=canvas.getContext('2d',{alpha:false,willReadFrequently:true});if(!context)throw new Error('Canvas indisponible.');
+    context.drawImage(source,0,0,96,96);
+    var data=context.getImageData(0,0,96,96).data;var buckets=new Map();var step=24;
+    for(var i=0;i<data.length;i+=8){
+      var r=data[i],g=data[i+1],b=data[i+2];var max=Math.max(r,g,b),min=Math.min(r,g,b);
+      if(max<18||min>242&&max-min<8)continue;
+      var qr=Math.min(255,Math.round(r/step)*step),qg=Math.min(255,Math.round(g/step)*step),qb=Math.min(255,Math.round(b/step)*step);var key=qr+','+qg+','+qb;
+      var bucket=buckets.get(key)||{count:0,r:0,g:0,b:0};bucket.count++;bucket.r+=r;bucket.g+=g;bucket.b+=b;buckets.set(key,bucket);
+    }
+    var candidates=Array.from(buckets.values()).map(function(bucket){var rgb=[Math.round(bucket.r/bucket.count),Math.round(bucket.g/bucket.count),Math.round(bucket.b/bucket.count)];var candidate={count:bucket.count,rgb:rgb,metrics:feature103ColorMetrics(rgb)};candidate.score=feature103CandidateScore(candidate);return candidate});
+    var colors=feature103ChooseThemeColors(candidates);
+    return [feature10Hex(colors[0]),feature10Hex(colors[1])];
+  }finally{if(source&&source.close)source.close()}
+};
