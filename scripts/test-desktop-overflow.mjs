@@ -5,18 +5,20 @@ const read = path => fs.readFileSync(path, 'utf8');
 
 const styles = read('css/feature-12.css');
 for (const required of [
-  'html,\nbody',
+  '.sidebar{',
   'overflow-x:clip',
-  'overscroll-behavior-x:none',
-  '.app-shell',
-  '.sidebar',
+  '.sidebar .main-nav',
+  '.sidebar .side-player',
   '.sidebar .social-dock',
   '.sidebar .social-platform',
-  '.player-bar',
-  'width:min(250px,88vw)'
+  'box-sizing:border-box',
+  'text-overflow:ellipsis'
 ]) {
-  assert.ok(styles.includes(required), `Desktop overflow guard is missing ${required}.`);
+  assert.ok(styles.includes(required), `Desktop sidebar overflow guard is missing ${required}.`);
 }
+
+assert.ok(!styles.includes('html,\nbody{'), 'Overflow fix must not clip the entire application document.');
+assert.ok(!styles.includes('.app-shell{\n  width:100%'), 'Overflow fix must remain scoped to the sidebar.');
 
 const build = read('js/build-config.js');
 for (const required of [
@@ -29,4 +31,4 @@ for (const required of [
   assert.ok(build.includes(required), `Desktop overflow release metadata is missing ${required}.`);
 }
 
-console.log('Desktop and installed-PWA horizontal overflow guards are present.');
+console.log('Desktop and installed-PWA sidebar overflow guards are present.');
