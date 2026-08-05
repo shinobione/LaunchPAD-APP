@@ -1,3 +1,5 @@
+import { tracks as catalogTracks } from './catalog-store.js';
+
 const HIDDEN_TAG_PATTERN = /^(?:spotify\s+)?canva(?:s)?$/i;
 
 const PARENT_TAG_RULES = [
@@ -94,7 +96,7 @@ export function normalizeTrackEditorialTags(track, { max = 4 } = {}) {
   return track.tags;
 }
 
-export function normalizeCatalogEditorialTags(tracks = []) {
+export function normalizeCatalogEditorialTags(tracks = catalogTracks) {
   tracks.forEach(track => normalizeTrackEditorialTags(track));
   return tracks;
 }
