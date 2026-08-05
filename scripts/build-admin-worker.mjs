@@ -18,8 +18,8 @@ const parts = fs.readdirSync(partsDirectory)
   .filter(filename => filename.endsWith('.part'))
   .sort((left, right) => left.localeCompare(right, 'en', { numeric: true }));
 
-if (parts.length < 19) {
-  throw new Error(`Expected at least 19 Track Manager source parts, received ${parts.length}.`);
+if (parts.length < 20) {
+  throw new Error(`Expected at least 20 Track Manager source parts, received ${parts.length}.`);
 }
 
 const injectionParts = parts.filter(filename => filename.includes('.inject.'));
@@ -44,27 +44,30 @@ for (const stale of [
   'version: "4.6"',
   'version: "4.7"',
   'version: "4.8"',
-  'version: "4.9"'
+  'version: "4.9"',
+  'version: "5.0"'
 ]) {
-  source = source.replaceAll(stale, 'version: "5.0"');
+  source = source.replaceAll(stale, 'version: "5.1"');
 }
 for (const stale of [
   '<span class="version-pill">v4.5</span>',
   '<span class="version-pill">v4.6</span>',
   '<span class="version-pill">v4.7</span>',
   '<span class="version-pill">v4.8</span>',
-  '<span class="version-pill">v4.9</span>'
+  '<span class="version-pill">v4.9</span>',
+  '<span class="version-pill">v5.0</span>'
 ]) {
-  source = source.replaceAll(stale, '<span class="version-pill">v5.0</span>');
+  source = source.replaceAll(stale, '<span class="version-pill">v5.1</span>');
 }
 for (const stale of [
   "version.textContent='v4.5'",
   "version.textContent='v4.6'",
   "version.textContent='v4.7'",
   "version.textContent='v4.8'",
-  "version.textContent='v4.9'"
+  "version.textContent='v4.9'",
+  "version.textContent='v5.0'"
 ]) {
-  source = source.replaceAll(stale, "version.textContent='v5.0'");
+  source = source.replaceAll(stale, "version.textContent='v5.1'");
 }
 source = source.replace(
   ":' sans timestamps.'))}catch(error)",
@@ -101,13 +104,16 @@ for (const forbidden of [
   '<span class="version-pill">v4.7</span>',
   '<span class="version-pill">v4.8</span>',
   '<span class="version-pill">v4.9</span>',
+  '<span class="version-pill">v5.0</span>',
   "version.textContent='v4.6'",
   "version.textContent='v4.7'",
   "version.textContent='v4.8'",
   "version.textContent='v4.9'",
+  "version.textContent='v5.0'",
   'version: "4.7"',
   'version: "4.8"',
   'version: "4.9"',
+  'version: "5.0"',
   "TRACK_MANAGER_LYRICS_BADGES_VERSION='4.9'"
 ]) {
   if (source.includes(forbidden)) {
@@ -116,8 +122,8 @@ for (const forbidden of [
 }
 
 for (const required of [
-  'version: "5.0"',
-  '<span class="version-pill">v5.0</span>',
+  'version: "5.1"',
+  '<span class="version-pill">v5.1</span>',
   'const ADMIN_HTML = String.raw`',
   'rel="icon" href="data:image/svg+xml',
   'class="form-section"',
@@ -174,12 +180,24 @@ for (const required of [
   'async function feature10ExtractCoverColors(blob)',
   'id="feature10Recalculate"',
   'Analyser / recalculer',
-  "TRACK_MANAGER_FEATURE_10_VERSION='5.0'",
+  "TRACK_MANAGER_COLOR_DIVERSITY_VERSION='10.3'",
+  'function feature103ChooseThemeColors(candidates)',
+  'feature103HueDistance',
+  "TRACK_MANAGER_FEATURE_10_VERSION='5.1'",
   'data-catalog-filter',
   'function feature10StatusMatches(track,filter)',
+  'function feature10IssueMatches(track,filter)',
+  'function feature10LyricsMatches(track,filter)',
+  'function feature10ContentMatches(track,filter)',
+  'id="catalogAdvancedFilters"',
+  'id="catalogIssueFilter"',
+  'id="catalogLyricsFilter"',
+  'id="catalogContentFilter"',
+  'Complets mais sans date',
+  'DATE ABSENTE',
   'data-content-rating',
   'CONTENU NON VÉRIFIÉ',
-  "version.textContent='v5.0'",
+  "version.textContent='v5.1'",
   "modal.id='batchImportModal'",
   'id="batchFiles"',
   'id="batchFolder"',
