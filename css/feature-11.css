@@ -17,13 +17,14 @@ video.lyrics-studio-canvas-video {
     flex-direction: column;
   }
 
-  .launchpad-hero .hero-body {
+  .launchpad-hero .launchpad-banner-rail {
     order: 1;
+    margin-top: 0;
+    margin-bottom: 14px;
   }
 
-  .launchpad-hero .launchpad-banner-rail {
+  .launchpad-hero .hero-body {
     order: 2;
-    margin-top: 14px;
   }
 
   .launchpad-hero .hero-wordmark-heading {

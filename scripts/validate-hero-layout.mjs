@@ -30,14 +30,14 @@ requirePattern(
 
 requirePattern(
   feature11,
-  /@media\s*\(max-width:\s*760px\)[\s\S]*?\.launchpad-hero\s+\.hero-body\s*\{[\s\S]*?order:\s*1[\s\S]*?\.launchpad-hero\s+\.launchpad-banner-rail\s*\{[\s\S]*?order:\s*2/,
-  'Feature 11 must place the SHINOBIWAN identity before the LAUNCHPAD frame on mobile.'
+  /@media\s*\(max-width:\s*760px\)[\s\S]*?\.launchpad-hero\s+\.launchpad-banner-rail\s*\{[\s\S]*?order:\s*1[\s\S]*?\.launchpad-hero\s+\.hero-body\s*\{[\s\S]*?order:\s*2/,
+  'The LAUNCHPAD banner must remain above the artist photo and identity on mobile.'
 );
 
 requirePattern(
   buildConfig,
-  /revision:\s*'(?:routing-video-sorting-1|phase12-ui-hotfixes-1|phase13-visuals-palette-filters-1|phase13-mobile-about-layout-1|audiolab-signal-recovery-1)'/,
+  /revision:\s*'(?:routing-video-sorting-1|phase12-ui-hotfixes-1|phase13-visuals-palette-filters-1|phase13-mobile-about-layout-1|audiolab-signal-recovery-1|mobile-hero-order-1)'/,
   'The build config must refresh cached routing, video, mobile hero and current phase assets.'
 );
 
-console.log('Hero profile sizing, artwork visibility and inherited Feature 11 mobile ordering are guarded.');
+console.log('Hero profile sizing, artwork visibility and LAUNCHPAD-first mobile ordering are guarded.');
