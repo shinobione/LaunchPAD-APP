@@ -59,7 +59,7 @@
   if (typeof document === 'undefined') return;
 
   const visualTest = new URLSearchParams(location.search).has('visual-test');
-  const stylesheetVersion = visualTest ? '20260806-audiolab-unified-v2' : config.id;
+  const stylesheetVersion = visualTest ? '20260805-audiolab-core-modes' : config.id;
   if (visualTest) document.documentElement.dataset.visualTest = 'true';
 
   function installAppIconLinks() {
@@ -96,15 +96,16 @@
 
   function installTypographyStylesheet() {
     let typography = document.querySelector('link[data-launchpad-typography]');
-    if (!typography) {
+    const isNew = !typography;
+    if (isNew) {
       typography = document.createElement('link');
       typography.rel = 'stylesheet';
       typography.dataset.launchpadTypography = 'true';
-      document.head.appendChild(typography);
     }
     const typographyUrl = new URL('css/typography-refresh.css', document.baseURI);
-    typographyUrl.searchParams.set('v', config.id);
+    typographyUrl.searchParams.set('v', stylesheetVersion);
     typography.href = typographyUrl.href;
+    if (isNew) document.head.appendChild(typography);
   }
 
   installAppIconLinks();
