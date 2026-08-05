@@ -3,7 +3,7 @@
   // id: '20260802-wave14'
   // cache: 'shinobi-launchpad-v11'
   const config = Object.freeze({
-    id: '20260805-phase13-mobile-about',
+    id: '20260805-phase13',
     cache: 'shinobi-launchpad-v15',
     revision: 'phase13-mobile-about-layout-1',
     display: '2026.08.05.15',
