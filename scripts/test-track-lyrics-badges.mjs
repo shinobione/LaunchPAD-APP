@@ -19,25 +19,26 @@ const context = vm.createContext({
 
 vm.runInContext(`${source}\nglobalThis.__lyricsBadge=trackLyricsBadge;`, context);
 const badge = context.__lyricsBadge;
+const plain = value => JSON.parse(JSON.stringify(value));
 
 assert.deepEqual(
-  badge({ assets: { lyrics: null }, quality: { items: [{ code: 'lyrics-absent' }] } }),
+  plain(badge({ assets: { lyrics: null }, quality: { items: [{ code: 'lyrics-absent' }] } })),
   { className: 'lyrics-missing', label: 'lyrics absentes' },
 );
 assert.deepEqual(
-  badge({ assets: { lyrics: { present: true } }, quality: { items: [{ code: 'lyrics-readable' }, { code: 'lyrics-unsynced' }] } }),
+  plain(badge({ assets: { lyrics: { present: true } }, quality: { items: [{ code: 'lyrics-readable' }, { code: 'lyrics-unsynced' }] } })),
   { className: 'lyrics-unsynced', label: 'lyrics non timestampées' },
 );
 assert.deepEqual(
-  badge({ assets: { lyrics: { present: true } }, quality: { items: [{ code: 'timestamps-present' }] } }),
+  plain(badge({ assets: { lyrics: { present: true } }, quality: { items: [{ code: 'timestamps-present' }] } })),
   { className: 'lyrics-synced', label: 'lyrics timestampées' },
 );
 assert.deepEqual(
-  badge({ assets: { lyrics: { present: true } }, quality: { items: [{ code: 'lyrics-empty' }] } }),
+  plain(badge({ assets: { lyrics: { present: true } }, quality: { items: [{ code: 'lyrics-empty' }] } })),
   { className: 'lyrics-missing', label: 'lyrics invalides' },
 );
 assert.deepEqual(
-  badge({ assets: { lyrics: { present: true } }, lyricsAvailable: true, timestampsAvailable: true }),
+  plain(badge({ assets: { lyrics: { present: true } }, lyricsAvailable: true, timestampsAvailable: true })),
   { className: 'lyrics-synced', label: 'lyrics timestampées' },
 );
 
