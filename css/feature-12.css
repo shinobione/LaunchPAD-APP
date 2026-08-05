@@ -40,15 +40,16 @@
   flex-direction:column;
 }
 
-/* Desktop/PWA root overflow lock.
-   Off-canvas fixed panels can extend the root scroll area even while hidden.
-   Lock horizontal scrolling at the viewport so Chromium cannot draw the
-   tiny scrollbar thumb below the fixed sidebar and player. */
+/* Desktop/PWA horizontal overflow protection.
+   Chromium on Windows can still paint its minimum horizontal scrollbar thumb
+   at the bottom of an installed PWA even when horizontal movement is locked.
+   Clip the structural scrollers and explicitly suppress only their horizontal
+   native scrollbar while preserving the vertical page scrollbar. */
 html,
 body{
   width:100%;
   max-width:100%;
-  overflow-x:hidden;
+  overflow-x:clip!important;
   overscroll-behavior-x:none;
 }
 
@@ -61,14 +62,20 @@ body{
   max-width:100%;
 }
 
-.app-shell{
-  width:100%;
-  overflow-x:clip;
+.app-shell,
+.main-content,
+.sidebar{
+  overflow-x:clip!important;
 }
 
-.sidebar{
-  overflow-x:hidden;
-  overflow-x:clip;
+html::-webkit-scrollbar:horizontal,
+body::-webkit-scrollbar:horizontal,
+.app-shell::-webkit-scrollbar:horizontal,
+.main-content::-webkit-scrollbar:horizontal,
+.sidebar::-webkit-scrollbar:horizontal{
+  display:none!important;
+  width:0!important;
+  height:0!important;
 }
 
 .sidebar > *,

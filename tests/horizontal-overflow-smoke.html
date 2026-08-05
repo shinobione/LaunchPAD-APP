@@ -2,18 +2,39 @@
 <meta charset="utf-8">
 <title>Horizontal overflow smoke test</title>
 <div id="result">HORIZONTAL OVERFLOW PENDING</div>
-<iframe id="app" data-src="../?visual-test=1#about" style="width:1649px;height:889px;border:0"></iframe>
+<iframe id="app" data-src="../?visual-test=1#about" style="width:1919px;height:1039px;border:0"></iframe>
 <script>
 const result=document.querySelector('#result');
 const frame=document.querySelector('#app');
 const sleep=delay=>new Promise(resolve=>setTimeout(resolve,delay));
 
 async function waitForApp(){
-  for(let attempt=0;attempt<120;attempt+=1){
+  for(let attempt=0;attempt<160;attempt+=1){
     if(frame.contentDocument?.documentElement?.dataset?.appReady==='true') return;
     await sleep(100);
   }
   throw new Error('app-ready-timeout');
+}
+
+function describeElement(view,element){
+  const style=view.getComputedStyle(element);
+  const rect=element.getBoundingClientRect();
+  return {
+    tag:element.tagName.toLowerCase(),
+    id:element.id||'',
+    class:String(element.className||'').slice(0,120),
+    clientWidth:element.clientWidth,
+    scrollWidth:element.scrollWidth,
+    clientHeight:element.clientHeight,
+    scrollHeight:element.scrollHeight,
+    overflowX:style.overflowX,
+    overflowY:style.overflowY,
+    position:style.position,
+    left:Math.round(rect.left),
+    right:Math.round(rect.right),
+    top:Math.round(rect.top),
+    bottom:Math.round(rect.bottom)
+  };
 }
 
 frame.addEventListener('load',async()=>{
@@ -23,25 +44,36 @@ frame.addEventListener('load',async()=>{
     const document=frame.contentDocument;
     const root=document.documentElement;
     const body=document.body;
-    const rootOverflow=view.getComputedStyle(root).overflowX;
-    const bodyOverflow=view.getComputedStyle(body).overflowX;
+    const scrolling=document.scrollingElement||root;
     const accepted=value=>value==='hidden'||value==='clip';
 
-    view.scrollTo(100000,0);
+    view.scrollTo(0,scrolling.scrollHeight);
+    await sleep(300);
+
+    const candidates=[...document.querySelectorAll('*')]
+      .filter(element=>element.clientWidth>0&&element.scrollWidth>element.clientWidth+1)
+      .map(element=>describeElement(view,element))
+      .sort((a,b)=>(b.scrollWidth-b.clientWidth)-(a.scrollWidth-a.clientWidth))
+      .slice(0,25);
+
+    view.scrollTo(100000,scrolling.scrollHeight);
     await sleep(120);
     const locked=Math.abs(view.scrollX)<1;
-    view.scrollTo(0,0);
 
     const snapshot={
       viewport:root.clientWidth,
+      viewportHeight:root.clientHeight,
       rootScrollWidth:root.scrollWidth,
       bodyScrollWidth:body.scrollWidth,
-      rootOverflow,
-      bodyOverflow,
-      locked
+      scrollTop:Math.round(view.scrollY),
+      scrollHeight:scrolling.scrollHeight,
+      rootOverflow:view.getComputedStyle(root).overflowX,
+      bodyOverflow:view.getComputedStyle(body).overflowX,
+      locked,
+      candidates
     };
 
-    if(!accepted(rootOverflow)||!accepted(bodyOverflow)||!locked){
+    if(!accepted(snapshot.rootOverflow)||!accepted(snapshot.bodyOverflow)||!locked){
       result.textContent=`HORIZONTAL OVERFLOW ERROR ${JSON.stringify(snapshot)}`;
       return;
     }
