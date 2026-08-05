@@ -5,9 +5,8 @@ import vm from 'node:vm';
 import { spawnSync } from 'node:child_process';
 
 const partsDirectory = 'cloudflare/admin-worker.parts';
-const outputArgument = process.argv[2];
-const outputPath = outputArgument
-  ? path.resolve(outputArgument)
+const outputPath = process.argv[2]
+  ? path.resolve(process.argv[2])
   : path.join(os.tmpdir(), 'launchpad-r2-admin-worker.js');
 
 if (!fs.existsSync(partsDirectory)) throw new Error(`Missing ${partsDirectory}.`);
@@ -16,33 +15,30 @@ const parts = fs.readdirSync(partsDirectory)
   .filter(filename => filename.endsWith('.part'))
   .sort((left, right) => left.localeCompare(right, 'en', { numeric: true }));
 
-if (parts.length < 23) throw new Error(`Expected at least 23 Track Manager source parts, received ${parts.length}.`);
+if (parts.length < 24) throw new Error(`Expected at least 24 Track Manager source parts, received ${parts.length}.`);
 
-const injectionParts = parts.filter(filename => filename.includes('.inject.'));
-const sourceParts = parts.filter(filename => !filename.includes('.inject.'));
-let source = sourceParts
+const injections = parts.filter(filename => filename.includes('.inject.'));
+const sources = parts.filter(filename => !filename.includes('.inject.'));
+let source = sources
   .map(filename => fs.readFileSync(path.join(partsDirectory, filename), 'utf8').replace(/[\r\n]+$/, ''))
   .join('');
 
-if (injectionParts.length) {
-  const insertionMarker = '\ninstallQualityWorkspace();';
-  if (!source.includes(insertionMarker)) throw new Error('Unable to locate the Track Manager UI installation marker.');
-  const injectionSource = injectionParts
+if (injections.length) {
+  const marker = '\ninstallQualityWorkspace();';
+  if (!source.includes(marker)) throw new Error('Unable to locate the Track Manager UI installation marker.');
+  const injected = injections
     .map(filename => fs.readFileSync(path.join(partsDirectory, filename), 'utf8').trim())
     .join('\n');
-  source = source.replace(insertionMarker, `\n${injectionSource}${insertionMarker}`);
+  source = source.replace(marker, `\n${injected}${marker}`);
 }
 
-for (const stale of ['version: "4.5"','version: "4.6"','version: "4.7"','version: "4.8"','version: "4.9"','version: "5.0"','version: "5.1"','version: "5.2"','version: "5.3"']) {
-  source = source.replaceAll(stale, 'version: "5.4"');
+const staleVersions = ['4.5','4.6','4.7','4.8','4.9','5.0','5.1','5.2','5.3','5.4'];
+for (const stale of staleVersions) {
+  source = source.replaceAll(`version: "${stale}"`, 'version: "5.5"');
+  source = source.replaceAll(`<span class="version-pill">v${stale}</span>`, '<span class="version-pill">v5.5</span>');
+  source = source.replaceAll(`version.textContent='v${stale}'`, "version.textContent='v5.5'");
 }
-for (const stale of ['<span class="version-pill">v4.5</span>','<span class="version-pill">v4.6</span>','<span class="version-pill">v4.7</span>','<span class="version-pill">v4.8</span>','<span class="version-pill">v4.9</span>','<span class="version-pill">v5.0</span>','<span class="version-pill">v5.1</span>','<span class="version-pill">v5.2</span>','<span class="version-pill">v5.3</span>']) {
-  source = source.replaceAll(stale, '<span class="version-pill">v5.4</span>');
-}
-for (const stale of ["version.textContent='v4.5'","version.textContent='v4.6'","version.textContent='v4.7'","version.textContent='v4.8'","version.textContent='v4.9'","version.textContent='v5.0'","version.textContent='v5.1'","version.textContent='v5.2'","version.textContent='v5.3'"]) {
-  source = source.replaceAll(stale, "version.textContent='v5.4'");
-}
-source = source.replace(":' sans timestamps.'))}catch(error)",":' sans timestamps.')))}catch(error)");
+source = source.replace(":' sans timestamps.'))}catch(error)", ":' sans timestamps.')))}catch(error)");
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 fs.writeFileSync(outputPath, source, 'utf8');
@@ -51,8 +47,11 @@ if (syntax.status !== 0) process.exit(syntax.status || 1);
 
 const embeddedScript = source.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 if (!embeddedScript) throw new Error('Built Track Manager Worker is missing its embedded UI script.');
-try { new vm.Script(embeddedScript, { filename: 'track-manager-ui.js' }); }
-catch (error) { throw new Error(`Built Track Manager UI script has invalid syntax:\n${error.stack || error.message}`); }
+try {
+  new vm.Script(embeddedScript, { filename: 'track-manager-ui.js' });
+} catch (error) {
+  throw new Error(`Built Track Manager UI script has invalid syntax:\n${error.stack || error.message}`);
+}
 
 for (const serverOnlySymbol of ['buildCanonicalTrackSummaries', 'readManifest', 'writeCatalogIndex']) {
   if (new RegExp(`\\b${serverOnlySymbol}\\b`).test(embeddedScript)) {
@@ -60,31 +59,36 @@ for (const serverOnlySymbol of ['buildCanonicalTrackSummaries', 'readManifest', 
   }
 }
 
-for (const forbidden of [
-  'id="importGithub"','id="migrateLegacy"','id="migrationModal"','id="legacyPanel"',
-  '<span class="version-pill">v4.5</span>','<span class="version-pill">v4.7</span>','<span class="version-pill">v4.8</span>','<span class="version-pill">v4.9</span>','<span class="version-pill">v5.0</span>','<span class="version-pill">v5.1</span>','<span class="version-pill">v5.2</span>','<span class="version-pill">v5.3</span>',
-  "version.textContent='v4.6'","version.textContent='v4.7'","version.textContent='v4.8'","version.textContent='v4.9'","version.textContent='v5.0'","version.textContent='v5.1'","version.textContent='v5.2'","version.textContent='v5.3'",
-  'version: "4.7"','version: "4.8"','version: "4.9"','version: "5.0"','version: "5.1"','version: "5.2"','version: "5.3"',
-  "TRACK_MANAGER_LYRICS_BADGES_VERSION='4.9'"
-]) {
-  if (source.includes(forbidden)) throw new Error(`Built Track Manager Worker still exposes obsolete content: ${forbidden}.`);
-}
-
 for (const required of [
-  'version: "5.4"','<span class="version-pill">v5.4</span>','const ADMIN_HTML = String.raw`','rel="icon" href="data:image/svg+xml','class="form-section"','justify-content:space-between','document.querySelector','aria-label="Actions du catalogue"',
-  'function writeCatalogIndex(','function parseTimestampedLyrics(','timestampsAvailable',"THUMBNAIL_PIPELINE_VERSION='v2'",'THUMBNAIL_RENDER_SIZE=1024','THUMBNAIL_TARGET_BYTES=180*1024',"imageSmoothingQuality='high'",'async function createThumbnailResult(blob)','Régénérer les ',
-  'TXT_METADATA_FIELD_MAP','function parseLyricsTxtMetadata(text)','function applyLyricsTxtMetadata(result)',"elements.lyrics.addEventListener('change',importLyricsTxtFile)",'Métadonnées du TXT importées dans le formulaire.','baseParseLyricsTxtMetadata',"metadata.type='album-track'",'result.albumDetected=true',
-  'async function inspectTrackQuality(','function publicationQualityMessage(','enrichTrackSummariesQuality','function lyricsStatusFromQuality(','lyricsStatus,','Publication bloquée par le contrôle qualité.',"panel.id='qualityPanel'",'id="qualityCheck"','Contrôle avant publication','qualityEvidence','create_only','state.qualityRunPromise','state.qualityRerunRequested','refreshQualityFromCachedEvidence','client-lyrics-pending','Audio sélectionné : contrôle complet en attente.','qualityFileSignature()!==requestedSignature','Le contrôle a échoué','qualityFileInputGuard','element&&element.files&&element.files[0]',
-  "TRACK_MANAGER_LYRICS_BADGES_VERSION='5.0'",'function trackLyricsBadge(track)',"track.quality.timestampsAvailable===true",'lyrics absentes','lyrics non timestampées','lyrics timestampées','data-lyrics-status',
-  "TRACK_MANAGER_SMART_PARSING_VERSION='10.2'",'function feature10ParseReleaseDate(text)','function feature10InferSignals(payload)','async function feature10ExtractCoverColors(blob)','id="feature10Recalculate"','Analyser / recalculer',
-  "TRACK_MANAGER_COLOR_DIVERSITY_VERSION='10.3'",'function feature103ChooseThemeColors(candidates)','feature103HueDistance',
-  "TRACK_MANAGER_FEATURE_10_VERSION='5.1'",'data-catalog-filter','function feature10StatusMatches(track,filter)','function feature10IssueMatches(track,filter)','function feature10LyricsMatches(track,filter)','function feature10ContentMatches(track,filter)',"panel.id='catalogAdvancedFilters'",'id="catalogIssueFilter"','id="catalogLyricsFilter"','id="catalogContentFilter"','Complets mais sans date','DATE ABSENTE','data-content-rating','CONTENU NON VÉRIFIÉ',
-  "TRACK_MANAGER_FEATURE_11_SERVER_VERSION='5.3'",'function feature11ServerCompareTracks(left, right)','buildCanonicalTrackSummariesV53','releaseDate: manifest.releaseDate','createdAt: manifest.createdAt',
-  "TRACK_MANAGER_FEATURE_11_VERSION='5.3'",'function feature11CompareTracks(left,right)','function feature11SortTracks(list)',
-  "TRACK_MANAGER_PHASE_12_VERSION='5.4'",'function phase12TrackMatches(track)','function phase12TrackCard(track)','id=\'phase12ApplyFilters\'','Extraire les couleurs','phase12ManualColorRequest',"phase12VersionPill.textContent='v5.4'",
-  "modal.id='batchImportModal'",'id="batchFiles"','id="batchFolder"','webkitdirectory','function batchGroupFiles(','function batchAssociationProblems(','async function batchAnalyzeGroup(','async function startBatchImport(','Compléter l’existant','Aucun fichier ne part vers R2 avant confirmation.','thumbnail.webp'
+  'version: "5.5"',
+  '<span class="version-pill">v5.5</span>',
+  'const ADMIN_HTML = String.raw`',
+  'function parseLyricsTxtMetadata(text)',
+  'async function inspectTrackQuality(',
+  'function trackLyricsBadge(track)',
+  'function feature10ExtractCoverColors(blob)',
+  'function phase12TrackMatches(track)',
+  'Extraire les couleurs',
+  "TRACK_MANAGER_PHASE_13_VERSION='5.5'",
+  'function phase13ChooseThemeColors(candidates)',
+  'Sans lyrics',
+  'Lyrics non timestampées',
+  "phase13VersionPill.textContent='v5.5'",
+  "modal.id='batchImportModal'",
+  'thumbnail.webp'
 ]) {
   if (!source.includes(required)) throw new Error(`Built Track Manager Worker is missing ${required}.`);
 }
 
-console.log(`Built ${outputPath} from ${sourceParts.length} source parts and ${injectionParts.length} UI injection(s) (${Buffer.byteLength(source)} bytes).`);
+for (const forbidden of [
+  'id="importGithub"',
+  'id="migrateLegacy"',
+  'id="migrationModal"',
+  'id="legacyPanel"',
+  '<span class="version-pill">v5.4</span>',
+  'version: "5.4"'
+]) {
+  if (source.includes(forbidden)) throw new Error(`Built Track Manager Worker still exposes obsolete content: ${forbidden}.`);
+}
+
+console.log(`Built ${outputPath} from ${sources.length} source parts and ${injections.length} UI injection(s) (${Buffer.byteLength(source)} bytes).`);
