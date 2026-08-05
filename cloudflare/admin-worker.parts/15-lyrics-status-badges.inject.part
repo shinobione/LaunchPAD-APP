@@ -1,19 +1,17 @@
 
-var TRACK_MANAGER_LYRICS_BADGES_VERSION='4.8';
+var TRACK_MANAGER_LYRICS_BADGES_VERSION='4.9';
 
 function trackLyricsBadge(track){
-  var items=track&&track.quality&&Array.isArray(track.quality.items)?track.quality.items:[];
-  var codes=items.map(function(item){return item&&item.code}).filter(Boolean);
+  var status=track&&track.quality&&track.quality.lyricsStatus;
+  if(status==='missing')return {className:'lyrics-missing',label:'lyrics absentes'};
+  if(status==='invalid')return {className:'lyrics-missing',label:'lyrics invalides'};
+  if(status==='synced')return {className:'lyrics-synced',label:'lyrics timestampées'};
+  if(status==='unsynced')return {className:'lyrics-unsynced',label:'lyrics non timestampées'};
+
   var lyricsPresent=Boolean(track&&track.assets&&track.assets.lyrics&&track.assets.lyrics.present);
-  if(track&&track.lyricsAvailable===false)lyricsPresent=false;
-  if(!lyricsPresent||codes.includes('lyrics-absent')||codes.includes('lyrics-r2-missing')){
-    return {className:'lyrics-missing',label:'lyrics absentes'};
-  }
-  if((track&&track.timestampsAvailable===true)||codes.includes('timestamps-present')){
+  if(!lyricsPresent)return {className:'lyrics-missing',label:'lyrics absentes'};
+  if(track&&track.quality&&track.quality.timestampsAvailable===true){
     return {className:'lyrics-synced',label:'lyrics timestampées'};
-  }
-  if(codes.includes('lyrics-empty')||codes.includes('lyrics-unreadable')||codes.includes('lyrics-too-large')){
-    return {className:'lyrics-missing',label:'lyrics invalides'};
   }
   return {className:'lyrics-unsynced',label:'lyrics non timestampées'};
 }

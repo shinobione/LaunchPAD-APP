@@ -1,0 +1,31 @@
+
+function lyricsStatusFromQuality(track, report) {
+  const codes = new Set((report?.items || []).map(item => item?.code).filter(Boolean));
+  const lyricsPresent = Boolean(track?.assets?.lyrics?.present);
+
+  if (!lyricsPresent || codes.has("lyrics-absent") || codes.has("lyrics-r2-missing")) return "missing";
+  if (codes.has("lyrics-empty") || codes.has("lyrics-unreadable") || codes.has("lyrics-too-large")) return "invalid";
+  if (report?.timestampsAvailable === true || codes.has("timestamps-present")) return "synced";
+  return "unsynced";
+}
+
+enrichTrackSummariesQuality = async function enrichTrackSummariesQualityV49(tracks, objects, bucket) {
+  return Promise.all(tracks.map(async track => {
+    const manifest = await readManifest(bucket, track.slug);
+    if (!manifest) return track;
+    const scoped = objects.filter(object => object.key.startsWith(trackPrefix(track.slug)));
+    const quality = await inspectTrackQuality(bucket, manifest, scoped);
+    const lyricsStatus = lyricsStatusFromQuality(track, quality);
+    return {
+      ...track,
+      complete: quality.counts.error === 0,
+      quality: {
+        state: quality.state,
+        publishable: quality.publishable,
+        counts: quality.counts,
+        timestampsAvailable: quality.timestampsAvailable,
+        lyricsStatus,
+      },
+    };
+  }));
+};

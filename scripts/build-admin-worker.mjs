@@ -18,8 +18,8 @@ const parts = fs.readdirSync(partsDirectory)
   .filter(filename => filename.endsWith('.part'))
   .sort((left, right) => left.localeCompare(right, 'en', { numeric: true }));
 
-if (parts.length < 16) {
-  throw new Error(`Expected at least 16 Track Manager source parts, received ${parts.length}.`);
+if (parts.length < 17) {
+  throw new Error(`Expected at least 17 Track Manager source parts, received ${parts.length}.`);
 }
 
 const injectionParts = parts.filter(filename => filename.includes('.inject.'));
@@ -39,14 +39,14 @@ if (injectionParts.length) {
   source = source.replace(insertionMarker, `\n${injectionSource}${insertionMarker}`);
 }
 
-for (const stale of ['version: "4.6"', 'version: "4.7"']) {
-  source = source.replaceAll(stale, 'version: "4.8"');
+for (const stale of ['version: "4.6"', 'version: "4.7"', 'version: "4.8"']) {
+  source = source.replaceAll(stale, 'version: "4.9"');
 }
-for (const stale of ['<span class="version-pill">v4.5</span>', '<span class="version-pill">v4.7</span>']) {
-  source = source.replaceAll(stale, '<span class="version-pill">v4.8</span>');
+for (const stale of ['<span class="version-pill">v4.5</span>', '<span class="version-pill">v4.7</span>', '<span class="version-pill">v4.8</span>']) {
+  source = source.replaceAll(stale, '<span class="version-pill">v4.9</span>');
 }
-for (const stale of ["version.textContent='v4.6'", "version.textContent='v4.7'"]) {
-  source = source.replaceAll(stale, "version.textContent='v4.8'");
+for (const stale of ["version.textContent='v4.6'", "version.textContent='v4.7'", "version.textContent='v4.8'"]) {
+  source = source.replaceAll(stale, "version.textContent='v4.9'");
 }
 source = source.replace(
   ":' sans timestamps.'))}catch(error)",
@@ -81,9 +81,13 @@ for (const forbidden of [
   'id="legacyPanel"',
   '<span class="version-pill">v4.5</span>',
   '<span class="version-pill">v4.7</span>',
+  '<span class="version-pill">v4.8</span>',
   "version.textContent='v4.6'",
   "version.textContent='v4.7'",
-  'version: "4.7"'
+  "version.textContent='v4.8'",
+  'version: "4.7"',
+  'version: "4.8"',
+  "TRACK_MANAGER_LYRICS_BADGES_VERSION='4.8'"
 ]) {
   if (source.includes(forbidden)) {
     throw new Error(`Built Track Manager Worker still exposes obsolete content: ${forbidden}.`);
@@ -91,8 +95,8 @@ for (const forbidden of [
 }
 
 for (const required of [
-  'version: "4.8"',
-  '<span class="version-pill">v4.8</span>',
+  'version: "4.9"',
+  '<span class="version-pill">v4.9</span>',
   'const ADMIN_HTML = String.raw`',
   'rel="icon" href="data:image/svg+xml',
   'class="form-section"',
@@ -119,6 +123,8 @@ for (const required of [
   'async function inspectTrackQuality(',
   'function publicationQualityMessage(',
   'enrichTrackSummariesQuality',
+  'function lyricsStatusFromQuality(',
+  'lyricsStatus,',
   'Publication bloquée par le contrôle qualité.',
   "panel.id='qualityPanel'",
   'id="qualityCheck"',
@@ -134,13 +140,14 @@ for (const required of [
   'Le contrôle a échoué',
   'qualityFileInputGuard',
   'element&&element.files&&element.files[0]',
-  "TRACK_MANAGER_LYRICS_BADGES_VERSION='4.8'",
+  "TRACK_MANAGER_LYRICS_BADGES_VERSION='4.9'",
   'function trackLyricsBadge(track)',
+  "track.quality.timestampsAvailable===true",
   'lyrics absentes',
   'lyrics non timestampées',
   'lyrics timestampées',
   'data-lyrics-status',
-  "version.textContent='v4.8'",
+  "version.textContent='v4.9'",
   "modal.id='batchImportModal'",
   'id="batchFiles"',
   'id="batchFolder"',
