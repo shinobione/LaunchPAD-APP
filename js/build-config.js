@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260802-wave14',
-    cache: 'shinobi-launchpad-v11',
-    revision: 'hero-first-paint-1',
-    display: '2026.08.05.7',
-    release: 'track-manager-v49-lyrics-detection-20260805'
+    id: '20260805-feature09',
+    cache: 'shinobi-launchpad-v12',
+    revision: 'editorial-catalog-filters-1',
+    display: '2026.08.05.8',
+    release: 'feature-09-editorial-catalog-filters-20260805'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
