@@ -18,8 +18,8 @@ const parts = fs.readdirSync(partsDirectory)
   .filter(filename => filename.endsWith('.part'))
   .sort((left, right) => left.localeCompare(right, 'en', { numeric: true }));
 
-if (parts.length < 13) {
-  throw new Error(`Expected at least 13 Track Manager source parts, received ${parts.length}.`);
+if (parts.length < 15) {
+  throw new Error(`Expected at least 15 Track Manager source parts, received ${parts.length}.`);
 }
 
 const injectionParts = parts.filter(filename => filename.includes('.inject.'));
@@ -123,6 +123,8 @@ for (const required of [
   'Audio sélectionné : contrôle complet en attente.',
   'qualityFileSignature()!==requestedSignature',
   'Le contrôle a échoué',
+  'qualityFileInputGuard',
+  'element&&element.files&&element.files[0]',
   "version.textContent='v4.7'",
   "modal.id='batchImportModal'",
   'id="batchFiles"',
