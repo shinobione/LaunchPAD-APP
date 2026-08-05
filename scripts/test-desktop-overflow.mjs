@@ -37,7 +37,10 @@ for (const required of [
   assert.ok(styles.includes(required), `Desktop fixed-shell guard is missing ${required}.`);
 }
 
-const desktopShellBlock = styles.match(/@media\(min-width:761px\)\{[\s\S]*?\n\}/)?.[0] || '';
+const desktopStart = styles.indexOf('@media(min-width:761px)');
+const mobileStart = styles.indexOf('@media(max-width:760px)');
+assert.ok(desktopStart >= 0 && mobileStart > desktopStart, 'Desktop shell media block must precede the mobile block.');
+const desktopShellBlock = styles.slice(desktopStart, mobileStart);
 for (const required of [
   'overflow:hidden!important',
   '.app-shell{',
