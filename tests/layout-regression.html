@@ -8,7 +8,7 @@
 const result=document.querySelector('#result');
 const READY=['LAYOUT','READY'].join(' ');
 const ERROR=['LAYOUT','ERROR'].join(' ');
-const BUILD='20260805-feature11';
+const BUILD='20260805-phase12';
 const frames=[document.querySelector('#desktop'),document.querySelector('#mobile'),document.querySelector('#track'),document.querySelector('#mobile-album')];
 const sleep=delay=>new Promise(resolve=>setTimeout(resolve,delay));
 const rect=node=>node?.getBoundingClientRect();
@@ -60,7 +60,7 @@ loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   desktopChanges.filter(change=>change.delta>2).slice(0,4).forEach(change=>failures.push(`desktop-first-paint-shift-${failureToken(change)}`));
   mobileChanges.filter(change=>change.delta>2).slice(0,4).forEach(change=>failures.push(`mobile-first-paint-shift-${failureToken(change)}`));
 
-  const expectedStyles=['style.css','header.css','refinements.css','lyrics.css','fixes-v2.css','content-v4.css','desktop-hero-wide.css','mobile-top-cleanup.css','mobile-navigation.css','launchpad-features.css','about-enhancements.css','library-memory.css','pwa.css','visual-card.css','track-detail.css','feature-11.css'];
+  const expectedStyles=['style.css','header.css','refinements.css','lyrics.css','fixes-v2.css','content-v4.css','desktop-hero-wide.css','mobile-top-cleanup.css','mobile-navigation.css','launchpad-features.css','about-enhancements.css','library-memory.css','pwa.css','visual-card.css','track-detail.css','feature-11.css','feature-12.css'];
   for(const document of [dd,md]){
     const styles=localStyles(document);
     const names=styles.map(url=>url.pathname.split('/').pop());
