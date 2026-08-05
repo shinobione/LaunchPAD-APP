@@ -1,0 +1,54 @@
+
+var TRACK_MANAGER_PHASE_12_VERSION='5.4';
+var phase12ManagerStyle=document.createElement('style');
+phase12ManagerStyle.textContent='.catalog-filter-apply{min-height:40px;background:linear-gradient(135deg,rgba(29,185,84,.2),rgba(29,185,84,.08));border-color:rgba(125,231,163,.3)}.phase12-color-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px;border:1px solid rgba(125,231,163,.18);border-radius:12px;background:rgba(29,185,84,.045)}.phase12-color-tools small{display:block;color:var(--muted);font-size:.7rem;line-height:1.4}.phase12-color-tools .btn{white-space:nowrap}@media(max-width:700px){.phase12-color-tools{align-items:stretch;flex-direction:column}.phase12-color-tools .btn{width:100%}}';
+document.head.appendChild(phase12ManagerStyle);
+
+function phase12SearchMatches(track){var q=$('#search').value.trim().toLowerCase();if(!q)return true;return [track.title,track.slug,track.album&&track.album.title,(track.genres||[]).join(' '),(track.moods||[]).join(' '),(track.themes||[]).join(' '),(track.languages||[]).join(' '),track.releaseDate].join(' ').toLowerCase().includes(q)}
+function phase12TrackMatches(track){return phase12SearchMatches(track)&&feature10StatusMatches(track,state.catalogStatusFilter)&&feature10IssueMatches(track,state.catalogIssueFilter)&&feature10LyricsMatches(track,state.catalogLyricsFilter)&&feature10ContentMatches(track,state.catalogContentFilter)}
+function phase12QualityBadge(track){var errors=Number(track&&track.quality&&track.quality.counts&&track.quality.counts.error||0);var warnings=Number(track&&track.quality&&track.quality.counts&&track.quality.counts.warning||0);if(errors)return {className:'error',label:'qualité à corriger'};if(warnings)return {className:'warn',label:'qualité à vérifier'};return {className:'ok',label:'qualité OK'}}
+function phase12TrackCard(track){
+  var cover=track.assets&&track.assets.cover&&track.assets.cover.present?'/api/media/'+encodeURIComponent(track.slug)+'/cover':'';
+  var lyrics=trackLyricsBadge(track);var content=feature10ContentBadge(track);var quality=phase12QualityBadge(track);
+  var chips=['<span class="chip '+(track.status==='published'?'ok':'warn')+'">'+esc(track.status)+'</span>','<span class="chip '+quality.className+'">'+esc(quality.label)+'</span>','<span class="chip '+lyrics.className+'" data-lyrics-status="'+esc(lyrics.className)+'">'+esc(lyrics.label)+'</span>','<span class="chip '+content.className+'" data-content-rating="'+esc(content.className)+'">'+esc(content.label)+'</span>'];
+  if(!feature10TrackReleaseDate(track))chips.push('<span class="chip release-missing" data-release-date="missing">DATE ABSENTE</span>');
+  chips.push('<span class="chip '+(track.assets&&track.assets.thumbnail&&track.assets.thumbnail.present?'ok':'warn')+'">'+(track.assets&&track.assets.thumbnail&&track.assets.thumbnail.present?'thumbnail optimisée':'cover lourde')+'</span>');
+  feature10NormalizeGenres(track.genres||[]).slice(0,3).forEach(function(label){chips.push('<span class="chip">'+esc(label)+'</span>')});
+  return '<article class="track">'+(cover?'<img class="cover" loading="lazy" src="'+cover+'" alt="">':'<div class="cover placeholder">NO COVER</div>')+'<div><h3>'+esc(track.title)+'</h3><div class="sub">'+esc(track.album&&track.album.title||'Singles')+' · '+esc(track.year||'—')+'</div><div class="chips">'+chips.join('')+'</div><div class="sub">'+formatBytes(track.totalBytes)+'</div><div class="trackactions"><button class="btn small" data-edit="'+esc(track.slug)+'">Modifier</button><button class="btn small danger" data-delete="'+esc(track.slug)+'">Supprimer</button></div></div></article>';
+}
+
+renderTracks=function(){
+  var tracks=(state.tracks||[]).filter(phase12TrackMatches);var grid=$('#trackGrid');var labels=feature10FilterLabel();
+  $('#countLabel').textContent=tracks.length+(tracks.length>1?' morceaux':' morceau')+(labels.length?' · '+labels.join(' + '):'');
+  feature10UpdateFilterSummary(tracks.length);
+  if(!tracks.length){grid.innerHTML='<div class="empty"><strong>Aucun titre dans cette vue</strong><span class="sub">Modifie la recherche ou réinitialise un filtre.</span></div>';return}
+  grid.innerHTML=tracks.map(phase12TrackCard).join('');
+};
+
+function phase12InstallFilterTrigger(){
+  var panel=$('#catalogAdvancedFilters');var reset=$('#catalogFilterReset');if(!panel||$('#phase12ApplyFilters'))return;
+  var apply=document.createElement('button');apply.type='button';apply.className='btn catalog-filter-apply';apply.id='phase12ApplyFilters';apply.textContent='Appliquer';apply.addEventListener('click',renderTracks);panel.insertBefore(apply,reset||null);
+  var summary=$('#catalogFilterSummary');if(summary&&!feature10FilterLabel().length)summary.textContent='Filtrage instantané · bouton Appliquer disponible';
+}
+
+var phase12BaseApplyCoverColors=feature10ApplyCoverColors;
+var phase12ManualColorRequest=false;
+feature10ApplyCoverColors=async function(blob){
+  if(!phase12ManualColorRequest){var form=$('#trackForm');var status=$('#feature10AnalysisStatus');if(status)status.textContent='Pochette prête · utilise « Extraire les couleurs » pour modifier le thème.';return [form&&form.elements.accent&&form.elements.accent.value,form&&form.elements.accent2&&form.elements.accent2.value]}
+  phase12ManualColorRequest=false;return phase12BaseApplyCoverColors(blob);
+};
+async function phase12ExtractColors(){
+  var button=$('#phase12ExtractColors');var status=$('#phase12ColorStatus');var form=$('#trackForm');if(!form)return;
+  if(button)button.disabled=true;if(status)status.textContent='Analyse de la pochette en cours…';
+  try{var input=form.elements.cover;var blob=input&&input.files&&input.files[0];if(!blob)blob=await feature10ExistingBlob('cover');if(!blob)throw new Error('Aucune pochette disponible.');phase12ManualColorRequest=true;var colors=await feature10ApplyCoverColors(blob);if(status)status.textContent='Thème extrait : '+colors[0]+' + '+colors[1];showNotice('Couleurs de la pochette extraites.')}catch(error){phase12ManualColorRequest=false;if(status)status.textContent='Extraction impossible : '+error.message;showNotice('Extraction des couleurs impossible : '+error.message,true)}finally{if(button)button.disabled=false}
+}
+function phase12InstallColorButton(){
+  var form=$('#trackForm');if(!form||$('#phase12ExtractColors'))return;var accent2=form.elements.accent2;var anchor=accent2&&accent2.closest('.field');if(!anchor)return;
+  var tools=document.createElement('div');tools.className='field full phase12-color-tools';tools.innerHTML='<div><strong>Couleurs de la pochette</strong><small id="phase12ColorStatus">Extraction manuelle : les couleurs actuelles restent inchangées tant que tu ne lances pas l’analyse.</small></div><button type="button" class="btn small" id="phase12ExtractColors">Extraire les couleurs</button>';anchor.insertAdjacentElement('afterend',tools);$('#phase12ExtractColors').addEventListener('click',phase12ExtractColors);
+  if(form.elements.cover)form.elements.cover.addEventListener('change',function(event){if(event.target.files&&event.target.files[0]){$('#phase12ColorStatus').textContent='Nouvelle pochette sélectionnée · clique sur « Extraire les couleurs ».'}});
+}
+
+phase12InstallFilterTrigger();
+phase12InstallColorButton();
+renderTracks();
+var phase12VersionPill=document.querySelector('.version-pill');if(phase12VersionPill)phase12VersionPill.textContent='v5.4';
