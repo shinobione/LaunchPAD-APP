@@ -58,8 +58,8 @@ assert.ok(worker.includes("'./js/features/feature-13.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-v2.js'"));
 
 const build = read('js/build-config.js');
-assert.ok(build.includes("display: '2026.08.05.14'"));
-assert.ok(build.includes("release: 'phase-13-visuals-palette-filters-20260805'"));
-assert.ok(build.includes("cache: 'shinobi-launchpad-v14'"));
+assert.ok(build.includes("display: '2026.08.05.15'"));
+assert.ok(build.includes("release: 'phase-13-mobile-about-layout-20260805'"));
+assert.ok(build.includes("cache: 'shinobi-launchpad-v15'"));
 
-console.log('Phase 13 local palette, AudioLab visuals, color extraction and Track Manager filter cleanup are valid.');
+console.log('Phase 13 local palette, AudioLab visuals, color extraction, filters and mobile About layout are valid.');
