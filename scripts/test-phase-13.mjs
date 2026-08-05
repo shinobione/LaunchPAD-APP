@@ -34,6 +34,16 @@ for (const required of [
 assert.ok(!visuals.includes("{ id: 'vortex', label: 'Vortex' }"));
 assert.ok(!visuals.includes("{ id: 'pulse', label: 'Pulse' }"));
 
+const signal = read('js/features/audio-lab-signal.js');
+for (const required of [
+  'initAudioLabSignalBridge',
+  'synthesizePlaybackSpectrum',
+  'waveformToSpectrum',
+  "audio.addEventListener('playing', recover)",
+  "markSignal('fallback')",
+  "document.documentElement.dataset.audioLabSignal"
+]) assert.ok(signal.includes(required), `AudioLab signal recovery is missing ${required}.`);
+
 const bridge = read('js/features/visual/visual-engine.js');
 assert.equal(bridge.trim(), "export { createVisualController } from './visual-engine-v2.js';");
 
@@ -50,16 +60,28 @@ for (const required of [
 assert.ok(!manager.includes('option value="missing-release">Sans date de sortie</option>'));
 
 const engine = read('js/app-engine.js');
+assert.ok(engine.includes("import(versioned('./features/audio-lab-signal.js'))"));
+assert.ok(engine.includes('initAudioLabSignalBridge({ audio });'));
 assert.ok(engine.includes("import(versioned('./features/feature-13.js'))"));
 assert.ok(engine.includes('initPhase13({ audio });'));
 
 const worker = read('sw.js');
+assert.ok(worker.includes("'./js/features/audio-lab-signal.js'"));
 assert.ok(worker.includes("'./js/features/feature-13.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-v2.js'"));
 
-const build = read('js/build-config.js');
-assert.ok(build.includes("display: '2026.08.05.15'"));
-assert.ok(build.includes("release: 'phase-13-mobile-about-layout-20260805'"));
-assert.ok(build.includes("cache: 'shinobi-launchpad-v15'"));
+const publicWorker = read('cloudflare/public-worker-v25.js');
+for (const required of [
+  'PUBLIC_WORKER_VERSION = 2.5',
+  "headers.set('Access-Control-Allow-Origin', '*')",
+  "headers.set('Cross-Origin-Resource-Policy', 'cross-origin')",
+  "headers.set('X-LaunchPAD-Media-Version', String(PUBLIC_WORKER_VERSION))",
+  'payload.audioLabCors = true'
+]) assert.ok(publicWorker.includes(required), `Public media Worker v2.5 is missing ${required}.`);
 
-console.log('Phase 13 local palette, AudioLab visuals, color extraction, filters and mobile About layout are valid.');
+const build = read('js/build-config.js');
+assert.ok(build.includes("display: '2026.08.05.16'"));
+assert.ok(build.includes("release: 'audiolab-signal-recovery-20260805'"));
+assert.ok(build.includes("cache: 'shinobi-launchpad-v16'"));
+
+console.log('Phase 13 local palette, visuals, AudioLab signal recovery, color extraction and filters are valid.');
