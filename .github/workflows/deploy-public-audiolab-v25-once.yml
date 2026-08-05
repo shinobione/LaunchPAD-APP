@@ -1,0 +1,52 @@
+name: Deploy Public Media Worker v2.5 Once
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/deploy-public-audiolab-v25-once.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: launchpad-cloudflare-production
+  cancel-in-progress: false
+
+jobs:
+  deploy-public:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: cloudflare-production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      PUBLIC_WORKER_URL: https://launchpad-media.jerryquinet.workers.dev
+      EXPECTED_PUBLIC_VERSION: '2.5'
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Validate public Worker and AudioLab recovery
+        run: npm run validate:cloudflare && npm run check:wrangler:public
+
+      - name: Deploy public media Worker v2.5
+        run: npm run deploy:cloudflare:public
+        env:
+          WRANGLER_OUTPUT_FILE_PATH: ${{ runner.temp }}/wrangler-public.ndjson
+
+      - name: Record public Worker deployment
+        run: node scripts/report-wrangler-deploy.mjs "$RUNNER_TEMP/wrangler-public.ndjson" public
+
+      - name: Verify public media CORS and streaming
+        run: node scripts/verify-cloudflare-deployment.mjs public
