@@ -1,0 +1,47 @@
+
+var TRACK_MANAGER_LYRICS_BADGES_VERSION='4.8';
+
+function trackLyricsBadge(track){
+  var items=track&&track.quality&&Array.isArray(track.quality.items)?track.quality.items:[];
+  var codes=items.map(function(item){return item&&item.code}).filter(Boolean);
+  var lyricsPresent=Boolean(track&&track.assets&&track.assets.lyrics&&track.assets.lyrics.present);
+  if(track&&track.lyricsAvailable===false)lyricsPresent=false;
+  if(!lyricsPresent||codes.includes('lyrics-absent')||codes.includes('lyrics-r2-missing')){
+    return {className:'lyrics-missing',label:'lyrics absentes'};
+  }
+  if((track&&track.timestampsAvailable===true)||codes.includes('timestamps-present')){
+    return {className:'lyrics-synced',label:'lyrics timestampées'};
+  }
+  if(codes.includes('lyrics-empty')||codes.includes('lyrics-unreadable')||codes.includes('lyrics-too-large')){
+    return {className:'lyrics-missing',label:'lyrics invalides'};
+  }
+  return {className:'lyrics-unsynced',label:'lyrics non timestampées'};
+}
+
+var lyricsBadgeStyle=document.createElement('style');
+lyricsBadgeStyle.textContent='.chip.lyrics-missing{color:#ff9aa4;background:rgba(255,70,86,.12);border-color:rgba(255,70,86,.24)}.chip.lyrics-unsynced{color:#ffd08a;background:rgba(255,174,54,.12);border-color:rgba(255,174,54,.22)}.chip.lyrics-synced{color:#89edab;background:rgba(29,185,84,.13);border-color:rgba(29,185,84,.22)}';
+document.head.appendChild(lyricsBadgeStyle);
+
+var renderTracksBeforeLyricsBadges=renderTracks;
+renderTracks=function(){
+  renderTracksBeforeLyricsBadges();
+  var q=$('#search').value.trim().toLowerCase();
+  var tracks=state.tracks.filter(function(track){
+    return !q||[track.title,track.slug,track.album&&track.album.title,(track.genres||[]).join(' '),(track.moods||[]).join(' ')].join(' ').toLowerCase().includes(q);
+  });
+  var cards=Array.from(document.querySelectorAll('#trackGrid .track'));
+  cards.forEach(function(card,index){
+    var track=tracks[index];
+    var chips=card.querySelector('.chips');
+    if(!track||!chips)return;
+    var existing=chips.querySelector('[data-lyrics-status]');
+    if(existing)existing.remove();
+    var badge=trackLyricsBadge(track);
+    var element=document.createElement('span');
+    element.className='chip '+badge.className;
+    element.setAttribute('data-lyrics-status',badge.className);
+    element.textContent=badge.label;
+    var thumbnailChip=Array.from(chips.children).find(function(chip){return /^thumbnail\b/i.test(chip.textContent||'')});
+    chips.insertBefore(element,thumbnailChip||null);
+  });
+};
