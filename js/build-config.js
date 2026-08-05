@@ -2,13 +2,12 @@
   // Legacy structural-validation markers retained until the workflow is modernized:
   // id: '20260802-wave14'
   // cache: 'shinobi-launchpad-v11'
-  // id: '20260805-audiolab-signal'
   // cache: 'shinobi-launchpad-v16'
   // revision: 'audiolab-signal-recovery-1'
   // display: '2026.08.05.16'
   // release: 'audiolab-signal-recovery-20260805'
   const config = Object.freeze({
-    id: '20260805-overflow-fix',
+    id: '20260805-audiolab-signal',
     cache: 'shinobi-launchpad-v17',
     revision: 'desktop-overflow-fix-1',
     display: '2026.08.05.17',
