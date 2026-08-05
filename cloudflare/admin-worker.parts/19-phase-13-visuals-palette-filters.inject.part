@@ -1,0 +1,67 @@
+var TRACK_MANAGER_PHASE_13_VERSION='5.5';
+
+function phase13ColorMetrics(rgb){
+  var r=rgb[0]/255,g=rgb[1]/255,b=rgb[2]/255;var max=Math.max(r,g,b),min=Math.min(r,g,b),delta=max-min;var hue=0;
+  if(delta){if(max===r)hue=60*(((g-b)/delta)%6);else if(max===g)hue=60*((b-r)/delta+2);else hue=60*((r-g)/delta+4);if(hue<0)hue+=360}
+  return {hue:hue,saturation:max?delta/max:0,value:max,lightness:(max+min)/2,chroma:delta};
+}
+function phase13HueDistance(left,right){var distance=Math.abs(left-right)%360;return Math.min(distance,360-distance)}
+function phase13HsvToRgb(hue,saturation,value){var chroma=value*saturation;var sector=((hue%360)+360)%360/60;var x=chroma*(1-Math.abs(sector%2-1));var rgb;if(sector<1)rgb=[chroma,x,0];else if(sector<2)rgb=[x,chroma,0];else if(sector<3)rgb=[0,chroma,x];else if(sector<4)rgb=[0,x,chroma];else if(sector<5)rgb=[x,0,chroma];else rgb=[chroma,0,x];var match=value-chroma;return rgb.map(function(channel){return Math.round((channel+match)*255)})}
+function phase13DisplayColor(candidate){
+  var metrics=candidate.metrics;var value=Math.max(.52,Math.min(.86,metrics.value));var saturation=Math.max(.3,Math.min(.82,metrics.saturation));
+  if(metrics.saturation<.13){saturation=.24;value=Math.max(.68,value)}
+  return phase13HsvToRgb(metrics.hue,saturation,value);
+}
+function phase13ColorCandidateScore(candidate){
+  var metrics=candidate.metrics;if(metrics.value<.13)return 0;if(metrics.value>.975&&metrics.saturation<.04)return 0;
+  var visibility=.32+metrics.value*.92+metrics.saturation*1.35;var mids=Math.max(.35,1-Math.abs(metrics.value-.68)*.9);
+  return candidate.weight*visibility*mids;
+}
+function phase13ChooseThemeColors(candidates){
+  var ranked=candidates.filter(function(candidate){return candidate.score>0}).sort(function(left,right){return right.score-left.score});
+  var primary=ranked.find(function(candidate){return candidate.metrics.value>=.35&&candidate.metrics.saturation>=.16})||ranked[0];
+  if(!primary)primary={rgb:[72,145,205],metrics:phase13ColorMetrics([72,145,205]),score:1};
+  var secondary=ranked.filter(function(candidate){return candidate!==primary&&candidate.metrics.value>=.3&&candidate.metrics.saturation>=.25&&phase13HueDistance(primary.metrics.hue,candidate.metrics.hue)>=55&&feature10ColorDistance(primary.rgb,candidate.rgb)>3000}).sort(function(left,right){var leftBonus=1+phase13HueDistance(primary.metrics.hue,left.metrics.hue)/150;var rightBonus=1+phase13HueDistance(primary.metrics.hue,right.metrics.hue)/150;return right.score*rightBonus-left.score*leftBonus})[0];
+  if(!secondary)secondary=ranked.find(function(candidate){return candidate!==primary&&feature10ColorDistance(primary.rgb,candidate.rgb)>4200})||{rgb:[235,123,58],metrics:phase13ColorMetrics([235,123,58]),score:1};
+  return [phase13DisplayColor(primary),phase13DisplayColor(secondary)];
+}
+
+feature10ExtractCoverColors=async function(blob){
+  var source=await loadImageSource(blob);
+  try{
+    var size=128;var canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;
+    var context=canvas.getContext('2d',{alpha:false,willReadFrequently:true});if(!context)throw new Error('Canvas indisponible.');
+    context.drawImage(source,0,0,size,size);
+    var data=context.getImageData(0,0,size,size).data;var buckets=new Map();var step=20;
+    for(var y=0;y<size;y+=2){for(var x=0;x<size;x+=2){
+      var offset=(y*size+x)*4;var r=data[offset],g=data[offset+1],b=data[offset+2];var metrics=phase13ColorMetrics([r,g,b]);
+      if(metrics.value<.13||metrics.value>.98&&metrics.saturation<.035)continue;
+      var edge=Math.min(x,y,size-1-x,size-1-y)/(size/2);var spatial=.78+Math.min(1,edge)*.22;
+      var chromaWeight=.35+metrics.saturation*1.45+metrics.value*.82;var weight=spatial*chromaWeight;
+      var qr=Math.min(255,Math.round(r/step)*step),qg=Math.min(255,Math.round(g/step)*step),qb=Math.min(255,Math.round(b/step)*step);var key=qr+','+qg+','+qb;
+      var bucket=buckets.get(key)||{count:0,weight:0,r:0,g:0,b:0};bucket.count++;bucket.weight+=weight;bucket.r+=r;bucket.g+=g;bucket.b+=b;buckets.set(key,bucket);
+    }}
+    var candidates=Array.from(buckets.values()).map(function(bucket){var rgb=[Math.round(bucket.r/bucket.count),Math.round(bucket.g/bucket.count),Math.round(bucket.b/bucket.count)];var candidate={count:bucket.count,weight:bucket.weight,rgb:rgb,metrics:phase13ColorMetrics(rgb)};candidate.score=phase13ColorCandidateScore(candidate);return candidate});
+    var colors=phase13ChooseThemeColors(candidates);return [feature10Hex(colors[0]),feature10Hex(colors[1])];
+  }finally{if(source&&source.close)source.close()}
+};
+
+function phase13CleanFilterPanel(){
+  var issue=$('#catalogIssueFilter');var lyrics=$('#catalogLyricsFilter');if(!issue||!lyrics)return;
+  issue.innerHTML='<option value="all">Tous les titres</option><option value="complete-missing-release">Sans date de sortie</option><option value="metadata-gaps">Métadonnées à compléter</option><option value="unoptimized-cover">Cover non optimisée</option>';
+  if(state.catalogIssueFilter==='missing-release')state.catalogIssueFilter='complete-missing-release';
+  issue.value=state.catalogIssueFilter;
+  lyrics.innerHTML='<option value="all">Tous les statuts</option><option value="missing">Sans lyrics</option><option value="unsynced">Lyrics non timestampées</option><option value="synced">Lyrics timestampées</option>';
+  lyrics.value=state.catalogLyricsFilter;
+}
+
+var phase13BaseFilterLabel=feature10FilterLabel;
+feature10FilterLabel=function(){
+  var labels=phase13BaseFilterLabel();
+  return labels.map(function(label){if(label==='Lyrics absentes')return 'Sans lyrics';if(label==='Complets sans date')return 'Sans date';return label});
+};
+
+phase13CleanFilterPanel();
+var phase13FilterPanel=$('#catalogAdvancedFilters');if(phase13FilterPanel)phase13FilterPanel.dataset.phase13='cleaned';
+var phase13VersionPill=document.querySelector('.version-pill');if(phase13VersionPill)phase13VersionPill.textContent='v5.5';
+renderTracks();
