@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {
   buildEditorialCatalogIndex,
   catalogTrackFacets,
@@ -106,4 +107,18 @@ const elapsed = performance.now() - started;
 assert.equal(visible.length, 3334);
 assert.ok(elapsed < 500, `Filtering 5000 tracks took ${elapsed.toFixed(1)} ms.`);
 
-console.log('Feature 09 editorial filters combine R2 metadata safely and quickly.');
+const engine = fs.readFileSync('js/app-engine.js', 'utf8');
+assert.match(engine, /css\/catalog-filters\.css/);
+assert.match(engine, /features\/catalog-filters\.js/);
+assert.match(engine, /initCatalogFilters\(\)/);
+
+const remoteCatalog = fs.readFileSync('js/core/remote-catalog.js', 'utf8');
+assert.match(remoteCatalog, /remoteMetadata:\s*\{[\s\S]*genres,[\s\S]*moods/);
+assert.match(remoteCatalog, /timestampsAvailable: timestampState/);
+
+const styles = fs.readFileSync('css/catalog-filters.css', 'utf8');
+assert.match(styles, /catalog-filter-panel/);
+assert.match(styles, /@media\(max-width:760px\)/);
+assert.match(styles, /catalog-filter-backdrop/);
+
+console.log('Feature 09 editorial filters combine R2 metadata safely, responsively and quickly.');
