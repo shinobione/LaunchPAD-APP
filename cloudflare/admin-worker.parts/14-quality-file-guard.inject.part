@@ -1,0 +1,7 @@
+
+var qualityFileInputGuard=true;
+selectedFile=function(kind){
+  var form=$('#trackForm');
+  var element=form&&form.elements&&form.elements[kind];
+  return element&&element.files&&element.files[0]||null;
+};

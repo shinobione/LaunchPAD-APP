@@ -3,8 +3,8 @@
     id: '20260802-wave14',
     cache: 'shinobi-launchpad-v11',
     revision: 'hero-first-paint-1',
-    display: '2026.08.05.4',
-    release: 'track-manager-duration-format-fix-20260805'
+    display: '2026.08.05.5',
+    release: 'track-manager-file-input-guard-20260805'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
