@@ -1,6 +1,5 @@
 importScripts('./js/build-config.js');
 const RELEASE = globalThis.SHINOBIWAN_BUILD?.release || 'pwa-update-prompt-dev';
-// Keep a newly installed worker waiting until the user accepts the update.
 const VERSION = `${globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev'}-${RELEASE}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;
@@ -8,85 +7,28 @@ const RUNTIME_CACHE = `${VERSION}-runtime`;
 const CACHE_NAMES = new Set([SHELL_CACHE, IMAGE_CACHE, RUNTIME_CACHE]);
 
 const SHELL_RESOURCES = [
-  './',
-  './index.html',
-  './manifest.webmanifest',
-  './robots.txt',
-  './sitemap.xml',
-  './css/style.css',
-  './css/header.css',
-  './css/refinements.css',
-  './css/lyrics.css',
-  './css/fixes-v2.css',
-  './css/content-v4.css',
-  './css/desktop-hero-wide.css',
-  './css/mobile-top-cleanup.css',
-  './css/mobile-navigation.css',
-  './css/launchpad-features.css',
-  './css/catalog-filters.css',
-  './css/feature-10.css',
-  './css/about-enhancements.css',
-  './css/library-memory.css',
-  './css/pwa.css',
-  './css/visual-card.css',
-  './css/track-detail.css',
-  './css/track-videos.css',
-  './css/mobile-studio.css',
-  './css/canvas-identity.css',
-  './css/r2-track-details.css',
-  './js/build-config.js',
-  './js/app-engine.js',
-  './js/app-main.js',
-  './js/catalog.js',
-  './js/core/assets.js',
-  './js/core/catalog-store.js',
-  './js/core/editorial-normalization.js',
-  './js/core/remote-catalog.js',
-  './js/core/player-queue.js',
-  './js/core/router.js',
-  './js/core/share.js',
-  './js/core/theme.js',
-  './js/features/ui/ui-controller.js',
-  './js/features/catalog-filters.js',
-  './js/features/content-advisory-badges.js',
-  './js/features/lyrics/lyrics-engine.js',
-  './js/features/visual/visual-engine.js',
-  './js/features/media-session.js',
-  './js/features/queue-ui.js',
-  './js/features/album-detail.js',
-  './js/features/track-detail.js',
-  './js/features/track-videos.js',
-  './js/features/smart-canvas.js',
-  './js/features/canvas-identity.js',
-  './js/features/mobile-navigation.js',
-  './js/features/lyrics-studio.js',
-  './js/features/player-experience.js',
-  './js/features/resilience-accessibility.js',
-  './js/features/audio-readiness.js',
-  './js/features/content/content-controller.js',
-  './js/features/audio/audio-focus.js',
-  './js/features/lyrics/wake-lock.js',
-  './js/features/about/about-controller.js',
-  './js/features/library-memory-shell.js',
-  './js/features/library-memory.js',
-  './js/features/listening-history-summary.js',
-  './js/features/pwa.js',
-  './js/features/visual-card.js',
-  './js/features/admin-access.js'
+  './','./index.html','./manifest.webmanifest','./robots.txt','./sitemap.xml',
+  './css/style.css','./css/header.css','./css/refinements.css','./css/lyrics.css','./css/fixes-v2.css','./css/content-v4.css',
+  './css/desktop-hero-wide.css','./css/mobile-top-cleanup.css','./css/mobile-navigation.css','./css/launchpad-features.css',
+  './css/catalog-filters.css','./css/feature-10.css','./css/feature-11.css','./css/about-enhancements.css','./css/library-memory.css',
+  './css/pwa.css','./css/visual-card.css','./css/track-detail.css','./css/track-videos.css','./css/mobile-studio.css','./css/canvas-identity.css','./css/r2-track-details.css',
+  './js/build-config.js','./js/app-engine.js','./js/app-main.js','./js/catalog.js',
+  './js/core/assets.js','./js/core/catalog-store.js','./js/core/catalog-ordering.js','./js/core/editorial-normalization.js','./js/core/remote-catalog.js',
+  './js/core/player-queue.js','./js/core/router.js','./js/core/share.js','./js/core/theme.js',
+  './js/features/ui/ui-controller.js','./js/features/catalog-filters.js','./js/features/content-advisory-badges.js','./js/features/feature-11.js',
+  './js/features/lyrics/lyrics-engine.js','./js/features/visual/visual-engine.js','./js/features/media-session.js','./js/features/queue-ui.js',
+  './js/features/album-detail.js','./js/features/track-detail.js','./js/features/track-videos.js','./js/features/smart-canvas.js',
+  './js/features/canvas-identity.js','./js/features/mobile-navigation.js','./js/features/lyrics-studio.js','./js/features/player-experience.js',
+  './js/features/resilience-accessibility.js','./js/features/audio-readiness.js','./js/features/content/content-controller.js',
+  './js/features/audio/audio-focus.js','./js/features/lyrics/wake-lock.js','./js/features/about/about-controller.js',
+  './js/features/library-memory-shell.js','./js/features/library-memory.js','./js/features/listening-history-summary.js',
+  './js/features/pwa.js','./js/features/visual-card.js','./js/features/admin-access.js'
 ];
 
 const IMAGE_RESOURCES = [
-  './assets/app-icon-neon.svg',
-  './assets/app-icon-neon-maskable.svg',
-  './assets/app-icon-neon-192.png',
-  './assets/app-icon-neon-512.png',
-  './assets/logo.png',
-  './assets/shinoprofil.jpeg',
-  './assets/launchpad.png',
-  './assets/neon-heartbreaks.jpeg',
-  './assets/coal-to-diamond.jpeg',
-  './assets/love-letters.jpeg',
-  './assets/singles.jpeg',
+  './assets/app-icon-neon.svg','./assets/app-icon-neon-maskable.svg','./assets/app-icon-neon-192.png','./assets/app-icon-neon-512.png',
+  './assets/logo.png','./assets/shinoprofil.jpeg','./assets/launchpad.png','./assets/neon-heartbreaks.jpeg','./assets/coal-to-diamond.jpeg',
+  './assets/love-letters.jpeg','./assets/singles.jpeg'
 ];
 
 async function cacheSafely(cacheName, resources) {
@@ -108,7 +50,6 @@ async function cacheFirst(request, cacheName, maximumEntries = 80) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(request, { ignoreSearch: true });
   if (cached) return cached;
-
   const response = await fetch(request);
   if (response.ok) {
     await cache.put(request, response.clone());
@@ -120,18 +61,14 @@ async function cacheFirst(request, cacheName, maximumEntries = 80) {
 async function staleWhileRevalidate(request) {
   const runtime = await caches.open(RUNTIME_CACHE);
   const shell = await caches.open(SHELL_CACHE);
-  const cached = (await runtime.match(request, { ignoreSearch: true }))
-    || (await shell.match(request, { ignoreSearch: true }));
-  const networkPromise = fetch(request)
-    .then(async response => {
-      if (response.ok) {
-        await runtime.put(request, response.clone());
-        trimCache(RUNTIME_CACHE, 120);
-      }
-      return response;
-    })
-    .catch(() => null);
-
+  const cached = (await runtime.match(request, { ignoreSearch: true })) || (await shell.match(request, { ignoreSearch: true }));
+  const networkPromise = fetch(request).then(async response => {
+    if (response.ok) {
+      await runtime.put(request, response.clone());
+      trimCache(RUNTIME_CACHE, 120);
+    }
+    return response;
+  }).catch(() => null);
   if (cached) return cached;
   return (await networkPromise) || new Response('', { status: 504, statusText: 'Offline' });
 }
@@ -165,18 +102,12 @@ async function navigationResponse(request) {
     const shell = await caches.open(SHELL_CACHE);
     return (await shell.match('./index.html', { ignoreSearch: true }))
       || (await shell.match('./', { ignoreSearch: true }))
-      || new Response('SHINOBIWAN Launchpad is offline.', {
-        status: 503,
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-      });
+      || new Response('SHINOBIWAN Launchpad is offline.', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   }
 }
 
 self.addEventListener('install', event => {
-  event.waitUntil(Promise.all([
-    cacheSafely(SHELL_CACHE, SHELL_RESOURCES),
-    cacheSafely(IMAGE_CACHE, IMAGE_RESOURCES)
-  ]));
+  event.waitUntil(Promise.all([cacheSafely(SHELL_CACHE, SHELL_RESOURCES), cacheSafely(IMAGE_CACHE, IMAGE_RESOURCES)]));
 });
 
 self.addEventListener('activate', event => {
@@ -194,7 +125,6 @@ self.addEventListener('message', event => {
 self.addEventListener('fetch', event => {
   const { request } = event;
   if (request.method !== 'GET') return;
-
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
@@ -203,9 +133,13 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  const isAudio = request.destination === 'audio'
-    || /\.(mp3|m4a|wav|ogg|flac)$/i.test(url.pathname)
-    || request.headers.has('range');
+  const isVideo = request.destination === 'video' || /\.(mp4|webm|mov)$/i.test(url.pathname);
+  if (isVideo) {
+    event.respondWith(fetch(request, { cache: request.headers.has('range') ? 'no-store' : 'force-cache' }));
+    return;
+  }
+
+  const isAudio = request.destination === 'audio' || /\.(mp3|m4a|wav|ogg|flac)$/i.test(url.pathname);
   if (isAudio) {
     event.respondWith(fetch(request));
     return;
