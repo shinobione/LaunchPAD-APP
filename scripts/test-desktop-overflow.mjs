@@ -53,6 +53,11 @@ for (const required of [
 
 const build = read('js/build-config.js');
 for (const required of [
+  "id: '20260805-audiolab-core-modes'",
+  "cache: 'shinobi-launchpad-v22'",
+  "revision: 'audiolab-core-modes-1'",
+  "display: '2026.08.05.22'",
+  "release: 'audiolab-core-modes-fix-20260805'",
   "id: '20260805-fixed-shell'",
   "cache: 'shinobi-launchpad-v21'",
   "revision: 'fixed-shell-scroll-boundary-1'",
@@ -67,6 +72,6 @@ for (const required of [
 }
 
 const activeId = build.match(/const config = Object\.freeze\(\{[\s\S]*?id:\s*'([^']+)'/)?.[1];
-assert.equal(activeId, '20260805-fixed-shell', 'The active stylesheet cache key must match the fixed-shell release.');
+assert.equal(activeId, '20260805-audiolab-core-modes', 'The active stylesheet cache key must match the Audio Lab core-mode release.');
 
-console.log('Desktop viewport, sidebar and player stay fixed while main-content owns vertical scrolling.');
+console.log('Desktop viewport, sidebar and player stay fixed while main-content owns vertical scrolling under Build 22.');
