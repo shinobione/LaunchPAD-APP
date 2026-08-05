@@ -97,12 +97,18 @@ export function catalogTrackFacets(track) {
 }
 
 export function buildEditorialCatalogIndex(tracks = []) {
-  return tracks.map((track, index) => ({
-    index,
-    track,
-    facets: catalogTrackFacets(track),
-    searchText: String(track?.searchText || '').toLowerCase()
-  }));
+  return tracks.map((track, index) => {
+    const entry = {
+      index,
+      track,
+      facets: catalogTrackFacets(track)
+    };
+    Object.defineProperty(entry, 'searchText', {
+      enumerable: true,
+      get: () => String(track?.searchText || '').toLowerCase()
+    });
+    return entry;
+  });
 }
 
 export function countActiveCatalogFilters(state) {
@@ -280,7 +286,9 @@ export function initCatalogFilters({ tracks = catalogTracks } = {}) {
     backdrop.hidden = !open;
     toggle.setAttribute('aria-expanded', String(open));
     document.documentElement.classList.toggle('catalog-filters-open', open);
-    if (open && matchMedia('(max-width: 760px)').matches) close.focus({ preventScroll: true });
+    if (open && globalThis.matchMedia?.('(max-width: 760px)').matches) {
+      close.focus({ preventScroll: true });
+    }
   }
 
   function renderSelection() {

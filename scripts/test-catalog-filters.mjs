@@ -64,6 +64,10 @@ assert.deepEqual(catalogTrackFacets(tracks[0]).synced, ['synchronized']);
 assert.deepEqual(catalogTrackFacets(tracks[2]).era, []);
 assert.deepEqual(catalogTrackFacets(tracks[2]).content, []);
 
+assert.equal(index[0].searchText.includes('ocean heartbeat'), false);
+tracks[0].searchText += ' ocean heartbeat';
+assert.equal(index[0].searchText.includes('ocean heartbeat'), true, 'Lyrics hydrated after boot must remain searchable.');
+
 const state = createEmptyCatalogFilterState();
 assert.equal(countActiveCatalogFilters(state), 0);
 assert.ok(index.every(entry => trackMatchesEditorialFilters(entry, state)));
@@ -121,4 +125,4 @@ assert.match(styles, /catalog-filter-panel/);
 assert.match(styles, /@media\(max-width:760px\)/);
 assert.match(styles, /catalog-filter-backdrop/);
 
-console.log('Feature 09 editorial filters combine R2 metadata safely, responsively and quickly.');
+console.log('Feature 09 editorial filters combine R2 metadata, live Lyrics search, responsive UI and fast filtering.');
