@@ -18,6 +18,7 @@ const FILTER_CATEGORIES = [
   'year'
 ];
 
+const TECHNICAL_CATEGORIES = new Set(['type', 'canvas', 'lyrics', 'synced', 'content']);
 const VALUE_LABELS = new Map([
   ['single', 'Single'],
   ['album-track', 'Album track'],
@@ -27,6 +28,14 @@ const VALUE_LABELS = new Map([
   ['synchronized', 'Synchronized lyrics'],
   ['explicit', 'Explicit'],
   ['clean', 'Clean']
+]);
+const TOKEN_LABELS = new Map([
+  ['r&b', 'R&B'],
+  ['y2k', 'Y2K'],
+  ['edm', 'EDM'],
+  ['uk', 'UK'],
+  ['ai', 'AI'],
+  ['ep', 'EP']
 ]);
 
 const GROUPS = [
@@ -41,24 +50,37 @@ const GROUPS = [
   { key: 'year', label: 'Year', categories: ['year'] }
 ];
 
-function cleanValue(value) {
-  const normalized = String(value ?? '').trim();
-  return normalized || null;
+function cleanValue(value, category = '') {
+  let normalized = String(value ?? '')
+    .normalize('NFKC')
+    .replace(/[\u00a0\u2007\u202f]/g, ' ')
+    .trim();
+  if (!normalized) return null;
+
+  if (category === 'year') return normalized;
+
+  normalized = TECHNICAL_CATEGORIES.has(category)
+    ? normalized.replace(/[\s_\u2010-\u2015\u2212-]+/g, '-')
+    : normalized.replace(/[\s_\u2010-\u2015\u2212-]+/g, ' ');
+
+  return normalized.toLocaleLowerCase('en');
 }
 
-function cleanValues(values) {
+function cleanValues(values, category) {
   const source = Array.isArray(values) ? values : [values];
-  return [...new Set(source.map(cleanValue).filter(Boolean))];
+  return [...new Set(source.map(value => cleanValue(value, category)).filter(Boolean))];
 }
 
 function titleCase(value) {
   return String(value)
-    .replaceAll('-', ' ')
-    .replace(/\b\w/g, letter => letter.toUpperCase());
+    .split(' ')
+    .map(token => TOKEN_LABELS.get(token) || token.replace(/(^|[\/])\p{L}/gu, match => match.toLocaleUpperCase('en')))
+    .join(' ');
 }
 
 export function filterValueLabel(value) {
-  return VALUE_LABELS.get(value) || titleCase(value);
+  const canonical = String(value ?? '').trim().toLocaleLowerCase('en');
+  return VALUE_LABELS.get(canonical) || titleCase(canonical);
 }
 
 export function createEmptyCatalogFilterState() {
@@ -78,12 +100,12 @@ export function catalogTrackFacets(track) {
   const timestamped = Boolean(track?.lyrics && metadata.timestampsAvailable === true);
 
   return {
-    era: cleanValues(metadata.era),
-    energy: cleanValues(metadata.energy),
-    mood: cleanValues(metadata.moods),
-    genre: cleanValues(metadata.genres?.length ? metadata.genres : track?.genre),
-    language: cleanValues(track?.languages),
-    type: cleanValues(metadata.type),
+    era: cleanValues(metadata.era, 'era'),
+    energy: cleanValues(metadata.energy, 'energy'),
+    mood: cleanValues(metadata.moods, 'mood'),
+    genre: cleanValues(metadata.genres?.length ? metadata.genres : track?.genre, 'genre'),
+    language: cleanValues(track?.languages, 'language'),
+    type: cleanValues(metadata.type, 'type'),
     canvas: track?.video ? ['with-canvas'] : [],
     lyrics: track?.lyrics ? ['with-lyrics'] : [],
     synced: timestamped ? ['synchronized'] : [],
@@ -92,17 +114,13 @@ export function catalogTrackFacets(track) {
       : track?.explicit === false
         ? ['clean']
         : [],
-    year: cleanValues(metadata.year)
+    year: cleanValues(metadata.year, 'year')
   };
 }
 
 export function buildEditorialCatalogIndex(tracks = []) {
   return tracks.map((track, index) => {
-    const entry = {
-      index,
-      track,
-      facets: catalogTrackFacets(track)
-    };
+    const entry = { index, track, facets: catalogTrackFacets(track) };
     Object.defineProperty(entry, 'searchText', {
       enumerable: true,
       get: () => String(track?.searchText || '').toLowerCase()
@@ -129,7 +147,7 @@ export function readCatalogFilterStateFromUrl(input = globalThis.location?.href 
   const state = createEmptyCatalogFilterState();
   FILTER_CATEGORIES.forEach(category => {
     url.searchParams.getAll(`${URL_PREFIX}${category}`)
-      .map(cleanValue)
+      .map(value => cleanValue(value, category))
       .filter(Boolean)
       .forEach(value => state[category].add(value));
   });
@@ -181,9 +199,12 @@ function sortedOptions(category, values) {
 
 function sanitizeState(state, options) {
   FILTER_CATEGORIES.forEach(category => {
+    const normalized = new Set();
     for (const value of state[category]) {
-      if (!options[category].has(value)) state[category].delete(value);
+      const canonical = cleanValue(value, category);
+      if (canonical && options[category].has(canonical)) normalized.add(canonical);
     }
+    state[category] = normalized;
   });
   return state;
 }

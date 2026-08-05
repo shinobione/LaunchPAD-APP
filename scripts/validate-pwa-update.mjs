@@ -40,8 +40,8 @@ for (const required of [
   "id: '20260802-wave14'",
   "cache: 'shinobi-launchpad-v11'",
   "revision: 'hero-first-paint-1'",
-  "display: '2026.08.05.9'",
-  "release: 'feature-09-editorial-catalog-filters-search-sync-20260805'"
+  "display: '2026.08.05.10'",
+  "release: 'feature-09-editorial-catalog-facet-normalization-20260805'"
 ]) {
   if (!build.includes(required)) fail(`Build metadata is missing ${required}.`);
 }
@@ -70,4 +70,4 @@ if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RE
   fail('Browser regression coverage for the PWA update prompt is not wired into CI.');
 }
 
-console.log('PWA update prompt, Feature 09 search synchronization, offline assets and audio-safe activation are valid.');
+console.log('PWA update prompt, Feature 09 facet normalization, offline assets and audio-safe activation are valid.');
