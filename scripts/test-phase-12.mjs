@@ -25,11 +25,12 @@ const feature = read('js/features/feature-12.js');
 for (const required of [
   "const FILTER_GROUP_ORDER = ['genre', 'language', 'content', 'energy', 'era', 'type', 'media', 'year', 'mood']",
   "root.querySelectorAll('.lyrics-studio-canvas-badge').forEach(badge => badge.remove())",
-  "button.textContent = active ? 'Video on' : 'Video off'",
+  "const text = active ? 'Video on' : 'Video off'",
   "view.style.setProperty('--accent', accent)",
   "view.style.setProperty('--accent2', accent2)",
   "signals.classList.add('track-detail-hero-signals')",
-  'tags.insertAdjacentElement(\'afterend\', signals)',
+  "signals.previousElementSibling !== tags",
+  "current.join('|') !== desired.join('|')",
   'export function initPhase12()'
 ]) assert.ok(feature.includes(required), `Public Phase 12 module is missing ${required}.`);
 
