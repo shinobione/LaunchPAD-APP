@@ -9,7 +9,7 @@ function lyricsStatusFromQuality(track, report) {
   return "unsynced";
 }
 
-enrichTrackSummariesQuality = async function enrichTrackSummariesQualityV49(tracks, objects, bucket) {
+enrichTrackSummariesQuality = async function enrichTrackSummariesQualityV51(tracks, objects, bucket) {
   return Promise.all(tracks.map(async track => {
     const manifest = await readManifest(bucket, track.slug);
     if (!manifest) return track;
@@ -18,6 +18,10 @@ enrichTrackSummariesQuality = async function enrichTrackSummariesQualityV49(trac
     const lyricsStatus = lyricsStatusFromQuality(track, quality);
     return {
       ...track,
+      releaseDate: manifest.releaseDate || null,
+      themes: Array.isArray(manifest.themes) ? manifest.themes : [],
+      languages: Array.isArray(manifest.languages) ? manifest.languages : [],
+      explicit: manifest.explicit == null ? null : Boolean(manifest.explicit),
       complete: quality.counts.error === 0,
       quality: {
         state: quality.state,
