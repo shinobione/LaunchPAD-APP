@@ -20,7 +20,7 @@ for (const required of [
 
 const build = read('js/build-config.js');
 for (const required of [
-  "id: '20260805-overflow-fix'",
+  "id: '20260805-audiolab-signal'",
   "cache: 'shinobi-launchpad-v17'",
   "revision: 'desktop-overflow-fix-1'",
   "display: '2026.08.05.17'",
