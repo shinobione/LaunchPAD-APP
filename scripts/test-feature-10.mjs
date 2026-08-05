@@ -90,7 +90,7 @@ for (const required of [
   "window.addEventListener('pageshow'",
   'ACTIVATION_TIMEOUT_MS',
   'completeWithReload',
-  'bannerHide(banner, { immediate: true })'
+  'hide({ immediate: true })'
 ]) {
   assert.ok(pwa.includes(required), `PWA Feature 10 is missing ${required}.`);
 }
