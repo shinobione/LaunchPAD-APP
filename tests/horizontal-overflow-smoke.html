@@ -1,0 +1,56 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Horizontal overflow smoke test</title>
+<div id="result">HORIZONTAL OVERFLOW PENDING</div>
+<iframe id="app" data-src="../?visual-test=1#about" style="width:1649px;height:889px;border:0"></iframe>
+<script>
+const result=document.querySelector('#result');
+const frame=document.querySelector('#app');
+const sleep=delay=>new Promise(resolve=>setTimeout(resolve,delay));
+
+async function waitForApp(){
+  for(let attempt=0;attempt<120;attempt+=1){
+    if(frame.contentDocument?.documentElement?.dataset?.appReady==='true') return;
+    await sleep(100);
+  }
+  throw new Error('app-ready-timeout');
+}
+
+frame.addEventListener('load',async()=>{
+  try{
+    await waitForApp();
+    const view=frame.contentWindow;
+    const document=frame.contentDocument;
+    const root=document.documentElement;
+    const body=document.body;
+    const rootOverflow=view.getComputedStyle(root).overflowX;
+    const bodyOverflow=view.getComputedStyle(body).overflowX;
+    const accepted=value=>value==='hidden'||value==='clip';
+
+    view.scrollTo(100000,0);
+    await sleep(120);
+    const locked=Math.abs(view.scrollX)<1;
+    view.scrollTo(0,0);
+
+    const snapshot={
+      viewport:root.clientWidth,
+      rootScrollWidth:root.scrollWidth,
+      bodyScrollWidth:body.scrollWidth,
+      rootOverflow,
+      bodyOverflow,
+      locked
+    };
+
+    if(!accepted(rootOverflow)||!accepted(bodyOverflow)||!locked){
+      result.textContent=`HORIZONTAL OVERFLOW ERROR ${JSON.stringify(snapshot)}`;
+      return;
+    }
+
+    result.textContent=`HORIZONTAL OVERFLOW READY ${JSON.stringify(snapshot)}`;
+  }catch(error){
+    result.textContent=`HORIZONTAL OVERFLOW ERROR ${String(error?.message||error)}`;
+  }
+},{once:true});
+
+frame.src=frame.dataset.src;
+</script>
