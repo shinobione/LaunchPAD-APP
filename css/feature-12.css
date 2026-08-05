@@ -40,6 +40,37 @@
   flex-direction:column;
 }
 
+/* Desktop/PWA sidebar overflow fix.
+   The white mark at the lower-left was the thumb of the sidebar's
+   horizontal scrollbar, caused by a child becoming a few pixels wider. */
+.sidebar{
+  overflow-x:hidden;
+  overflow-x:clip;
+}
+
+.sidebar > *,
+.sidebar .main-nav,
+.sidebar .side-player,
+.sidebar .social-dock,
+.sidebar .social-platform{
+  box-sizing:border-box;
+  min-width:0;
+  max-width:100%;
+}
+
+.sidebar .social-platform > div{
+  min-width:0;
+}
+
+.sidebar .social-platform strong,
+.sidebar .social-platform small,
+.sidebar .side-track-info strong,
+.sidebar .side-track-info small{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
 @media(max-width:760px){
   .track-detail-hero-signals{
     grid-template-columns:1fr;

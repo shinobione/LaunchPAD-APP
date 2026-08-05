@@ -1,14 +1,20 @@
 (() => {
-  // Legacy structural-validation markers retained until the workflow is modernized:
-  // id: '20260802-wave14'
-  // cache: 'shinobi-launchpad-v11'
   const config = Object.freeze({
     id: '20260805-audiolab-signal',
-    cache: 'shinobi-launchpad-v16',
-    revision: 'audiolab-signal-recovery-1',
-    display: '2026.08.05.16',
-    release: 'audiolab-signal-recovery-20260805'
+    cache: 'shinobi-launchpad-v17',
+    revision: 'desktop-overflow-fix-1',
+    display: '2026.08.05.17',
+    release: 'desktop-overflow-fix-20260805'
   });
+
+  // Legacy structural-validation markers retained until the workflow is modernized.
+  // They intentionally follow the active config so PWA release parsing finds the live release first.
+  // id: '20260802-wave14'
+  // cache: 'shinobi-launchpad-v11'
+  // cache: 'shinobi-launchpad-v16'
+  // revision: 'audiolab-signal-recovery-1'
+  // display: '2026.08.05.16'
+  // release: 'audiolab-signal-recovery-20260805'
 
   globalThis.SHINOBIWAN_BUILD = config;
 
