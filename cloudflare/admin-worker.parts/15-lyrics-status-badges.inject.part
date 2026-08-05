@@ -39,7 +39,7 @@ renderTracks=function(){
     var badge=trackLyricsBadge(track);
     var element=document.createElement('span');
     element.className='chip '+badge.className;
-    element.dataset.lyricsStatus=badge.className;
+    element.setAttribute('data-lyrics-status',badge.className);
     element.textContent=badge.label;
     var thumbnailChip=Array.from(chips.children).find(function(chip){return /^thumbnail\b/i.test(chip.textContent||'')});
     chips.insertBefore(element,thumbnailChip||null);
