@@ -30,7 +30,7 @@ for (const required of [
   'function drawLiquidChrome(',
   'function drawHexReactor(',
   "controls.querySelectorAll('[data-visual=\"vortex\"], [data-visual=\"pulse\"]')"
-]) assert.ok(visuals.includes(required), `Phase 13 AudioLab is missing ${required}.`);
+]) assert.ok(visuals.includes(required), `Phase 13 legacy Audio Lab compatibility is missing ${required}.`);
 assert.ok(!visuals.includes("{ id: 'vortex', label: 'Vortex' }"));
 assert.ok(!visuals.includes("{ id: 'pulse', label: 'Pulse' }"));
 
@@ -42,17 +42,39 @@ for (const required of [
   'drawCyberRainMode(',
   'drawWaveCathedralMode(',
   'drawQuantumGridMode('
-]) assert.ok(coreVisuals.includes(required), `Audio Lab showcase renderer is missing ${required}.`);
+]) assert.ok(coreVisuals.includes(required), `Legacy Audio Lab showcase renderer is missing ${required}.`);
 assert.ok(!coreVisuals.includes('drawConstellationMode'));
 
 const liveVisuals = read('js/features/visual/visual-engine-live.js');
 for (const required of [
   "const DEFAULT_MODE = 'wave-cathedral'",
+  'const VISUAL_MODES = [',
   'readAudioLabSpectrum(raw)',
+  'function createSignalPipeline(',
   'renderMode(homeCanvas, drawWaveCathedralMode',
+  'renderMode(labCanvas, MODE_RENDERERS.get(mode)',
   "homeTitle.textContent = 'Wave Cathedral'",
-  "dataset.audioLabRenderer = 'live-analyser'"
-]) assert.ok(liveVisuals.includes(required), `Live Audio Lab renderer is missing ${required}.`);
+  "dataset.audioLabRenderer = 'unified-live-v2'",
+  "dataset.audioLabPipeline = 'frequency-bands-transients'"
+]) assert.ok(liveVisuals.includes(required), `Unified live Audio Lab renderer is missing ${required}.`);
+assert.ok(!liveVisuals.includes('createBaseVisualController'), 'The unified controller must not start the legacy base loop.');
+
+const premiumVisuals = read('js/features/visual/visual-engine-premium-modes.js');
+for (const required of [
+  'drawSpectrumMode(',
+  'drawNebulaMode(',
+  'drawSingularityMode(',
+  'drawNeonShatterMode(',
+  'drawLiquidChromeMode(',
+  'const violence = clamp('
+]) assert.ok(premiumVisuals.includes(required), `Unified premium renderer is missing ${required}.`);
+
+const showcaseVisuals = read('js/features/visual/visual-engine-showcase-v2.js');
+for (const required of [
+  'drawPrismTunnelMode(',
+  'drawCyberRainMode(',
+  'drawQuantumGridMode('
+]) assert.ok(showcaseVisuals.includes(required), `Redesigned showcase renderer is missing ${required}.`);
 
 const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
@@ -87,11 +109,14 @@ assert.ok(engine.includes("import(versioned('./features/feature-13.js'))"));
 assert.ok(engine.includes('initPhase13({ audio });'));
 
 const worker = read('sw.js');
-assert.ok(worker.includes("'./js/features/audio-lab-signal.js'"));
-assert.ok(worker.includes("'./js/features/feature-13.js'"));
-assert.ok(worker.includes("'./js/features/visual/visual-engine-v2.js'"));
-assert.ok(worker.includes("'./js/features/visual/visual-engine-core-modes.js'"));
-assert.ok(worker.includes("'./js/features/visual/visual-engine-live.js'"));
+for (const required of [
+  "'./js/features/audio-lab-signal.js'",
+  "'./js/features/feature-13.js'",
+  "'./js/features/visual/visual-engine-live.js'",
+  "'./js/features/visual/visual-engine-utils.js'",
+  "'./js/features/visual/visual-engine-premium-modes.js'",
+  "'./js/features/visual/visual-engine-showcase-v2.js'"
+]) assert.ok(worker.includes(required), `Service worker shell is missing ${required}.`);
 
 const publicWorker = read('cloudflare/public-worker-v26.js');
 for (const required of [
@@ -108,16 +133,18 @@ const build = read('js/build-config.js');
 for (const required of [
   "display: '2026.08.05.16'",
   "release: 'audiolab-signal-recovery-20260805'",
-  "cache: 'shinobi-launchpad-v16'",
+  "cache: 'shinobi-launchpad-v22'",
   "display: '2026.08.05.22'",
   "release: 'audiolab-core-modes-fix-20260805'",
-  "cache: 'shinobi-launchpad-v22'",
+  "cache: 'shinobi-launchpad-v23'",
   "display: '2026.08.05.23'",
   "release: 'audiolab-showcase-five-20260805'",
-  "cache: 'shinobi-launchpad-v23'",
+  "cache: 'shinobi-launchpad-v24'",
   "display: '2026.08.05.24'",
   "release: 'audiolab-live-reactivity-20260805'",
-  "cache: 'shinobi-launchpad-v24'"
+  "cache: 'shinobi-launchpad-v25'",
+  "display: '2026.08.06.25'",
+  "release: 'audiolab-unified-reactivity-20260806'"
 ]) assert.ok(build.includes(required), `Build history is missing ${required}.`);
 
-console.log('Phase 13 palette, premium visuals, public Worker v2.6 and live sound-reactive Wave Cathedral defaults are valid.');
+console.log('Phase 13 palette, unified Audio Lab visuals, public Worker v2.6 and signal-aware renderers are valid.');
