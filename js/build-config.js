@@ -3,8 +3,8 @@
     id: '20260802-wave14',
     cache: 'shinobi-launchpad-v11',
     revision: 'hero-first-paint-1',
-    display: '2026.08.05.8',
-    release: 'feature-09-editorial-catalog-filters-20260805'
+    display: '2026.08.05.9',
+    release: 'feature-09-editorial-catalog-filters-search-sync-20260805'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
