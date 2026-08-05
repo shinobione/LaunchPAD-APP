@@ -1,0 +1,45 @@
+name: Verify Public Media Worker v2.5 Once
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/verify-public-media-v25-once.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: launchpad-cloudflare-public-verification
+  cancel-in-progress: false
+
+jobs:
+  verify-public:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: cloudflare-production
+    env:
+      PUBLIC_WORKER_URL: https://launchpad-media.jerryquinet.workers.dev
+      EXPECTED_PUBLIC_VERSION: '2.5'
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify deployed public catalog, CORS and media streaming
+        run: node scripts/verify-cloudflare-deployment.mjs public
+
+      - name: Record verification result
+        run: |
+          {
+            echo '## LaunchPAD public Worker verification'
+            echo
+            echo '- Worker deployment: unchanged'
+            echo '- Expected public version: `2.5`'
+            echo '- Catalog, CORS, byte-range streaming and audio HEAD checks: passed'
+          } >> "$GITHUB_STEP_SUMMARY"
