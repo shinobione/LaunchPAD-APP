@@ -36,10 +36,10 @@ if (!worker.includes("request.destination === 'video'")) fail('Service worker do
 const build = read('js/build-config.js');
 for (const required of [
   "id: '20260805-phase13'",
-  "cache: 'shinobi-launchpad-v14'",
-  "revision: 'phase13-visuals-palette-filters-1'",
-  "display: '2026.08.05.14'",
-  "release: 'phase-13-visuals-palette-filters-20260805'"
+  "cache: 'shinobi-launchpad-v15'",
+  "revision: 'phase13-mobile-about-layout-1'",
+  "display: '2026.08.05.15'",
+  "release: 'phase-13-mobile-about-layout-20260805'"
 ]) {
   if (!build.includes(required)) fail(`Build metadata is missing ${required}.`);
 }
@@ -48,8 +48,17 @@ for (const required of ['installAppIconLinks',"assets/app-icon-neon.svg","assets
 }
 
 const about = read('js/features/about/about-controller.js');
-for (const required of ['installBuildInfo','about-build-info','Build ${build.display','Release ${build.release']) {
+for (const required of [
+  'installBuildInfo','about-build-info','Build ${build.display','Release ${build.release',
+  'function placeBuildInfo()','ABOUT_MOBILE_QUERY',"logo.insertAdjacentElement('afterend', info)",
+  'installGoldenLogo();\n  installBuildInfo();','installBuildInfoPlacementWatcher()'
+]) {
   if (!about.includes(required)) fail(`About build information is missing ${required}.`);
+}
+
+const aboutStyles = read('css/about-enhancements.css');
+for (const required of ['#view-about .about-card>.about-build-info','margin-top:4px']) {
+  if (!aboutStyles.includes(required)) fail(`About mobile layout is missing ${required}.`);
 }
 
 const styles = read('css/pwa.css');
@@ -62,4 +71,4 @@ if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RE
   fail('Browser regression coverage for the PWA update prompt is not wired into CI.');
 }
 
-console.log('Phase 13 PWA shell, update recovery, install promotion and visual assets are valid.');
+console.log('Phase 13 PWA shell, update recovery, mobile About ordering and visual assets are valid.');

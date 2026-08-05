@@ -129,6 +129,10 @@
     text-align:center;
   }
 
+  #view-about .about-card>.about-build-info{
+    margin-top:4px;
+  }
+
   .about-golden-logo-wrap{
     width:100%;
     margin-top:12px;

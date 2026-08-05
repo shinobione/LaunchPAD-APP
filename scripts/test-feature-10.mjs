@@ -79,7 +79,7 @@ const deployWorkflow = read('.github/workflows/deploy-cloudflare.yml');
 assert.ok(deployWorkflow.includes("EXPECTED_ADMIN_VERSION: '5.5'"));
 
 const build = read('js/build-config.js');
-assert.ok(build.includes("display: '2026.08.05.14'"));
-assert.ok(build.includes("release: 'phase-13-visuals-palette-filters-20260805'"));
+assert.ok(build.includes("display: '2026.08.05.15'"));
+assert.ok(build.includes("release: 'phase-13-mobile-about-layout-20260805'"));
 
-console.log('Feature 10 remains valid under the Phase 13 release and Track Manager v5.5.');
+console.log('Feature 10 remains valid under the Phase 13 mobile About hotfix and Track Manager v5.5.');

@@ -4,10 +4,10 @@
   // cache: 'shinobi-launchpad-v11'
   const config = Object.freeze({
     id: '20260805-phase13',
-    cache: 'shinobi-launchpad-v14',
-    revision: 'phase13-visuals-palette-filters-1',
-    display: '2026.08.05.14',
-    release: 'phase-13-visuals-palette-filters-20260805'
+    cache: 'shinobi-launchpad-v15',
+    revision: 'phase13-mobile-about-layout-1',
+    display: '2026.08.05.15',
+    release: 'phase-13-mobile-about-layout-20260805'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;

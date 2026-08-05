@@ -1,5 +1,32 @@
 import { ensureStylesheet } from '../../core/assets.js';
 
+const ABOUT_MOBILE_QUERY = '(max-width:760px)';
+
+function findAboutCopy(card) {
+  return card?.querySelector(':scope > div:not(.about-golden-logo-wrap):not(.about-build-info)') || null;
+}
+
+function placeBuildInfo() {
+  const card = document.querySelector('#view-about .about-card');
+  const copy = findAboutCopy(card);
+  const info = card?.querySelector('.about-build-info');
+  const logo = card?.querySelector(':scope > .about-golden-logo-wrap');
+  if (!card || !copy || !info) return;
+
+  const mobile = globalThis.matchMedia?.(ABOUT_MOBILE_QUERY).matches === true;
+  if (mobile && logo) logo.insertAdjacentElement('afterend', info);
+  else copy.appendChild(info);
+}
+
+function installBuildInfoPlacementWatcher() {
+  const card = document.querySelector('#view-about .about-card');
+  const media = globalThis.matchMedia?.(ABOUT_MOBILE_QUERY);
+  if (!card || !media || card.dataset.buildInfoPlacementWatcher === 'true') return;
+
+  media.addEventListener?.('change', placeBuildInfo);
+  card.dataset.buildInfoPlacementWatcher = 'true';
+}
+
 function installAboutSocialCards() {
   const actions = document.querySelector(
     '#view-about .about-card .hero-actions, #view-about .about-card .about-social-links'
@@ -18,10 +45,10 @@ function installAboutSocialCards() {
 
 function installBuildInfo() {
   const card = document.querySelector('#view-about .about-card');
-  const copy = card?.querySelector(':scope > div:not(.about-golden-logo-wrap)');
+  const copy = findAboutCopy(card);
   if (!card || !copy) return;
 
-  copy.querySelector('.about-build-info')?.remove();
+  card.querySelector('.about-build-info')?.remove();
   const build = globalThis.SHINOBIWAN_BUILD || {};
   const info = document.createElement('div');
   info.className = 'about-build-info';
@@ -38,6 +65,7 @@ function installBuildInfo() {
 
   info.append(heading, buildLine, cacheLine);
   copy.appendChild(info);
+  placeBuildInfo();
 }
 
 function installGoldenLogo() {
@@ -61,6 +89,7 @@ function installGoldenLogo() {
 export function initAboutEnhancements() {
   ensureStylesheet('css/about-enhancements.css');
   installAboutSocialCards();
-  installBuildInfo();
   installGoldenLogo();
+  installBuildInfo();
+  installBuildInfoPlacementWatcher();
 }
