@@ -189,7 +189,7 @@ for (const required of [
   'function feature10IssueMatches(track,filter)',
   'function feature10LyricsMatches(track,filter)',
   'function feature10ContentMatches(track,filter)',
-  'id="catalogAdvancedFilters"',
+  "panel.id='catalogAdvancedFilters'",
   'id="catalogIssueFilter"',
   'id="catalogLyricsFilter"',
   'id="catalogContentFilter"',
