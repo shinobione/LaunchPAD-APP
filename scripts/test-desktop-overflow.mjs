@@ -51,6 +51,22 @@ for (const required of [
   assert.ok(desktopShellBlock.includes(required), `Desktop shell block is missing ${required}.`);
 }
 
+const typography = read('css/typography-refresh.css');
+for (const required of [
+  '--font-ui:"Manrope",Inter,Arial,sans-serif',
+  '--font-display:"Outfit","Manrope",Inter,Arial,sans-serif',
+  '.page-intro h1',
+  '.hero h1',
+  '.about-card h2',
+  '.lyrics-track-panel h2',
+  '.lyric-line',
+  'font-family:var(--font-display)',
+  'letter-spacing:-.045em'
+]) {
+  assert.ok(typography.includes(required), `LaunchPAD typography refresh is missing ${required}.`);
+}
+assert.ok(!typography.includes('serif'), 'The typography refresh must not fall back to a serif display face.');
+
 const build = read('js/build-config.js');
 for (const required of [
   "id: '20260805-audiolab-live-reactivity'",
@@ -68,7 +84,10 @@ for (const required of [
   "id: '20260805-mobile-hero-order'",
   "cache: 'shinobi-launchpad-v20'",
   "id: '20260805-native-scrollbar-fix'",
-  "cache: 'shinobi-launchpad-v19'"
+  "cache: 'shinobi-launchpad-v19'",
+  'function installTypographyStylesheet()',
+  "new URL('css/typography-refresh.css', document.baseURI)",
+  'installTypographyStylesheet();'
 ]) {
   assert.ok(build.includes(required), `PWA release metadata is missing ${required}.`);
 }
@@ -77,4 +96,4 @@ const activeId = build.match(/const config = Object\.freeze\(\{[\s\S]*?id:\s*'([
 assert.equal(activeId, '20260805-audiolab-live-reactivity', 'The active runtime cache key must match Build 24.');
 assert.ok(build.includes("const stylesheetVersion = visualTest ? '20260805-audiolab-core-modes' : config.id"));
 
-console.log('Desktop viewport, sidebar and player stay fixed while main-content owns vertical scrolling under Build 24.');
+console.log('Desktop fixed shell and the Outfit/Manrope LaunchPAD typography override remain valid under Build 24.');
