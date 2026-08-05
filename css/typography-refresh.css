@@ -1,0 +1,51 @@
+:root{
+  --font-ui:"Manrope",Inter,Arial,sans-serif;
+  --font-display:"Outfit","Manrope",Inter,Arial,sans-serif;
+}
+
+body,
+button,
+input,
+select,
+textarea{
+  font-family:var(--font-ui);
+}
+
+.brand,
+.hero h1,
+.page-intro h1,
+.section-head h2,
+.panel-head h3,
+.about-card h2,
+.metric strong,
+.lyrics-track-panel h2,
+.lyric-line{
+  font-family:var(--font-display);
+}
+
+.hero h1,
+.page-intro h1{
+  font-weight:700;
+  letter-spacing:-.045em;
+  line-height:.92;
+  text-wrap:balance;
+}
+
+.section-head h2,
+.panel-head h3,
+.about-card h2{
+  font-weight:700;
+  letter-spacing:-.025em;
+}
+
+.page-intro .eyebrow{
+  font-family:var(--font-ui);
+  font-weight:700;
+}
+
+@media(max-width:760px){
+  .hero h1,
+  .page-intro h1{
+    letter-spacing:-.035em;
+  }
+}
