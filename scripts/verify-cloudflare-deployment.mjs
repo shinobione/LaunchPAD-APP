@@ -33,13 +33,24 @@ const readJson = async (response, label) => {
   }
 };
 
+function assertAudioLabCors(response, label) {
+  assert(response.headers.get('access-control-allow-origin') === '*', `${label} is missing Access-Control-Allow-Origin: *`);
+  assert((response.headers.get('cross-origin-resource-policy') || '').toLowerCase() === 'cross-origin', `${label} is missing Cross-Origin-Resource-Policy: cross-origin`);
+  assert(response.headers.get('timing-allow-origin') === '*', `${label} is missing Timing-Allow-Origin: *`);
+  const exposed = response.headers.get('access-control-expose-headers') || '';
+  assert(/Content-Range/i.test(exposed), `${label} does not expose Content-Range`);
+  assert(/X-LaunchPAD-Media-Version/i.test(exposed), `${label} does not expose the Worker version header`);
+}
+
 async function verifyPublic() {
   const healthResponse = await fetchChecked(`${PUBLIC_URL}/health`);
   assert(healthResponse.status === 200, `Public /health returned ${healthResponse.status}`);
+  assertAudioLabCors(healthResponse, 'Public /health');
   const health = await readJson(healthResponse, 'Public /health');
   assert(health.ok === true, 'Public /health did not report ok=true');
   assert(health.service === 'launchpad-media', `Unexpected public service: ${health.service}`);
   assert(Number(health.canonicalTracks) > 0, 'Public /health reported no canonical tracks');
+  assert(health.audioLabCors === true, 'Public /health did not report audioLabCors=true');
 
   const expectedVersion = process.env.EXPECTED_PUBLIC_VERSION;
   if (expectedVersion) {
@@ -48,6 +59,7 @@ async function verifyPublic() {
 
   const tracksResponse = await fetchChecked(`${PUBLIC_URL}/tracks`);
   assert(tracksResponse.status === 200, `Public /tracks returned ${tracksResponse.status}`);
+  assertAudioLabCors(tracksResponse, 'Public /tracks');
   const catalog = await readJson(tracksResponse, 'Public /tracks');
   assert(catalog.ok === true, 'Public /tracks did not report ok=true');
   assert(Array.isArray(catalog.tracks), 'Public /tracks did not return a tracks array');
@@ -62,11 +74,14 @@ async function verifyPublic() {
     headers: { range: 'bytes=0-0' },
   });
   assert(rangeResponse.status === 206, `Audio range request returned ${rangeResponse.status}`);
+  assertAudioLabCors(rangeResponse, 'Audio range response');
   assert(/^bytes 0-0\/\d+$/.test(rangeResponse.headers.get('content-range') || ''), 'Audio range response is missing a valid Content-Range header');
+  assert(rangeResponse.headers.get('x-launchpad-media-version') === String(expectedVersion || health.version), 'Audio response Worker version header is missing or stale');
   await rangeResponse.arrayBuffer();
 
   const headResponse = await fetchChecked(audioUrl, { method: 'HEAD' });
   assert(headResponse.status === 200, `Full audio HEAD request returned ${headResponse.status}`);
+  assertAudioLabCors(headResponse, 'Audio HEAD response');
   assert((headResponse.headers.get('accept-ranges') || '').toLowerCase() === 'bytes', 'Audio response does not advertise byte ranges');
 
   console.log(JSON.stringify({
@@ -74,6 +89,7 @@ async function verifyPublic() {
     target: 'public',
     service: health.service,
     version: health.version,
+    audioLabCors: health.audioLabCors,
     canonicalTracks: health.canonicalTracks,
     publishedTracks: catalog.tracks.length,
     rangeTrack: rangedTrack.slug,
