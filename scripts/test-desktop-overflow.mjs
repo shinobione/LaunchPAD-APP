@@ -28,16 +28,18 @@ for (const required of [
 
 const build = read('js/build-config.js');
 for (const required of [
+  "id: '20260805-mobile-hero-order'",
+  "cache: 'shinobi-launchpad-v20'",
+  "revision: 'mobile-hero-order-1'",
+  "display: '2026.08.05.20'",
+  "release: 'mobile-hero-order-fix-20260805'",
   "id: '20260805-native-scrollbar-fix'",
-  "cache: 'shinobi-launchpad-v19'",
-  "revision: 'native-scrollbar-cache-bust-1'",
-  "display: '2026.08.05.19'",
-  "release: 'native-scrollbar-cache-bust-20260805'"
+  "cache: 'shinobi-launchpad-v19'"
 ]) {
-  assert.ok(build.includes(required), `Native scrollbar release metadata is missing ${required}.`);
+  assert.ok(build.includes(required), `PWA release metadata is missing ${required}.`);
 }
 
 const activeId = build.match(/const config = Object\.freeze\(\{[\s\S]*?id:\s*'([^']+)'/)?.[1];
-assert.equal(activeId, '20260805-native-scrollbar-fix', 'The active stylesheet cache key must change with the release.');
+assert.equal(activeId, '20260805-mobile-hero-order', 'The active stylesheet cache key must match the current release.');
 
-console.log('Installed-PWA native horizontal scrollbar suppression and stylesheet cache bust are present.');
+console.log('Installed-PWA native scrollbar suppression remains present under the mobile hero cache refresh.');
