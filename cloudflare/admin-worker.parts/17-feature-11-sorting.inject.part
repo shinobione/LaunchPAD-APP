@@ -1,0 +1,32 @@
+
+var TRACK_MANAGER_FEATURE_11_VERSION='5.2';
+
+function feature11DateValue(value){var parsed=Date.parse(value||'');return Number.isFinite(parsed)?parsed:null}
+function feature11TrackTimestamp(track){return feature11DateValue(track.releaseDate)||feature11DateValue(track.createdAt)||feature11DateValue(track.updatedAt)||null}
+function feature11TrackSequence(track,index){var values=[track.sequence,track.order,track.position];for(var i=0;i<values.length;i++){var value=Number(values[i]);if(Number.isFinite(value))return value}var match=String(track.slug||'').match(/(?:^|[-_])(\d+)$/);return match?Number(match[1]):index}
+function feature11CompareTracks(left,right){var leftTime=feature11TrackTimestamp(left.track||left),rightTime=feature11TrackTimestamp(right.track||right);if(leftTime!==null||rightTime!==null){if(leftTime===null)return 1;if(rightTime===null)return -1;if(leftTime!==rightTime)return rightTime-leftTime}var leftIndex=left.index||0,rightIndex=right.index||0;var sequence=feature11TrackSequence(right.track||right,rightIndex)-feature11TrackSequence(left.track||left,leftIndex);if(sequence)return sequence;return String((left.track||left).title||'').localeCompare(String((right.track||right).title||''),'fr',{numeric:true,sensitivity:'base'})}
+function feature11SortTracks(list){return list.map(function(track,index){return {track:track,index:index}}).sort(feature11CompareTracks).map(function(entry){return entry.track})}
+
+var feature11BuildCanonicalTrackSummaries=buildCanonicalTrackSummaries;
+buildCanonicalTrackSummaries=async function(objects,bucket){
+  var summaries=await feature11BuildCanonicalTrackSummaries(objects,bucket);
+  var enriched=await Promise.all(summaries.map(async function(summary,index){
+    var manifest=await readManifest(bucket,summary.slug);
+    if(!manifest)return summary;
+    return Object.assign({},summary,{
+      releaseDate:manifest.releaseDate||null,
+      createdAt:manifest.createdAt||manifest.migration&&manifest.migration.importedAt||null,
+      updatedAt:manifest.updatedAt||summary.updatedAt||null,
+      sequence:Number.isFinite(Number(manifest.sequence))?Number(manifest.sequence):index,
+      themes:Array.isArray(manifest.themes)?manifest.themes:[],
+      languages:Array.isArray(manifest.languages)?manifest.languages:[],
+      explicit:typeof manifest.explicit==='boolean'?manifest.explicit:null
+    });
+  }));
+  return feature11SortTracks(enriched);
+};
+
+var feature11RenderBeforeSorting=render;
+render=function(totals){state.tracks=feature11SortTracks(state.tracks||[]);return feature11RenderBeforeSorting(totals)};
+
+var feature11VersionPill=document.querySelector('.version-pill');if(feature11VersionPill)feature11VersionPill.textContent='v5.2';
