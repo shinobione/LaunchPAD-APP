@@ -90,9 +90,17 @@ export function normalizeEditorialTags(values, { max = 4 } = {}) {
 
 export function normalizeTrackEditorialTags(track, { max = 4 } = {}) {
   if (!track || typeof track !== 'object') return [];
-  const candidates = [track.genre, ...(Array.isArray(track.tags) ? track.tags : [])];
+  const remoteGenres = Array.isArray(track.remoteMetadata?.genres)
+    ? track.remoteMetadata.genres
+    : [];
+  const candidates = [
+    track.genre,
+    ...remoteGenres,
+    ...(Array.isArray(track.tags) ? track.tags : [])
+  ];
   const normalized = normalizeEditorialTags(candidates, { max });
   track.tags = normalized.length ? normalized : normalizeEditorialTags(track.genre || 'Other', { max: 1 });
+  if (track.remoteMetadata) track.remoteMetadata.genres = [...track.tags];
   return track.tags;
 }
 
