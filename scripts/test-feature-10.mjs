@@ -43,7 +43,7 @@ for (const required of [
   'function feature10ParseReleaseDate(text)',
   'RELEASE|RELEASE_DATE',
   "result.metadata.releaseDate=releaseDate",
-  'STYLE[ _-]?PROMPT',
+  "['STYLE PROMPT','SUNO STYLE','STYLE']",
   'function feature10InferSignals(payload)',
   'async function feature10ExtractCoverColors(blob)',
   'feature10ApplyCoverColors',
@@ -57,6 +57,11 @@ for (const required of [
 const scopeFix = read('cloudflare/admin-worker.parts/08b-feature-10-parser-scope-fix.inject.part');
 assert.ok(scopeFix.includes("TRACK_MANAGER_SMART_PARSING_SCOPE_VERSION='10.2.1'"));
 assert.ok(scopeFix.includes('feature10MergeCurrentFormSignals'));
+
+const batchColors = read('cloudflare/admin-worker.parts/09a-feature-10-batch-colors.inject.part');
+assert.ok(batchColors.includes("TRACK_MANAGER_BATCH_COLOR_VERSION='10.2'"));
+assert.ok(batchColors.includes('feature10ExtractCoverColors'));
+assert.ok(batchColors.includes("group.metadata.accent=colors[0]"));
 
 const managerUI = read('cloudflare/admin-worker.parts/16-feature-10-manager-ui.inject.part');
 for (const required of [
