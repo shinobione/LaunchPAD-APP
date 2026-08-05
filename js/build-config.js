@@ -53,9 +53,9 @@
 
   if (typeof document === 'undefined') return;
 
-  if (new URLSearchParams(location.search).has('visual-test')) {
-    document.documentElement.dataset.visualTest = 'true';
-  }
+  const visualTest = new URLSearchParams(location.search).has('visual-test');
+  const stylesheetVersion = visualTest ? '20260805-audiolab-core-modes' : config.id;
+  if (visualTest) document.documentElement.dataset.visualTest = 'true';
 
   function installAppIconLinks() {
     const iconUrl = new URL('assets/app-icon-neon.svg', document.baseURI);
@@ -113,8 +113,8 @@
       return existing;
     }
 
-    if (url.searchParams.get('v') === config.id) return link;
-    url.searchParams.set('v', config.id);
+    if (url.searchParams.get('v') === stylesheetVersion) return link;
+    url.searchParams.set('v', stylesheetVersion);
     link.href = url.href;
     return link;
   }
