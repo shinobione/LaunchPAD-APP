@@ -7,16 +7,21 @@ if (!['public', 'admin'].includes(target)) {
 const PUBLIC_URL = process.env.PUBLIC_WORKER_URL || 'https://launchpad-media.jerryquinet.workers.dev';
 const ADMIN_URL = process.env.ADMIN_WORKER_URL || 'https://launchpad-r2-api.jerryquinet.workers.dev';
 const TIMEOUT_MS = Number(process.env.CLOUDFLARE_SMOKE_TIMEOUT_MS || 20000);
+const PUBLIC_VERIFY_ATTEMPTS = Number(process.env.CLOUDFLARE_PUBLIC_VERIFY_ATTEMPTS || 10);
+const PUBLIC_VERIFY_DELAY_MS = Number(process.env.CLOUDFLARE_PUBLIC_VERIFY_DELAY_MS || 2000);
 
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
 };
+
+const sleep = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 
 const fetchChecked = async (url, init = {}) => {
   const response = await fetch(url, {
     ...init,
     headers: {
       'cache-control': 'no-cache',
+      pragma: 'no-cache',
       ...(init.headers || {}),
     },
     signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -33,30 +38,54 @@ const readJson = async (response, label) => {
   }
 };
 
+function cacheBustedUrl(base, path, attempt = 0) {
+  const url = new URL(path, base);
+  url.searchParams.set('_launchpad_verify', `${Date.now()}-${attempt}`);
+  return url.href;
+}
+
 function assertAudioLabCors(response, label) {
   assert(response.headers.get('access-control-allow-origin') === '*', `${label} is missing Access-Control-Allow-Origin: *`);
   assert(response.headers.get('timing-allow-origin') === '*', `${label} is missing Timing-Allow-Origin: *`);
+  assert(response.headers.get('cross-origin-resource-policy') === 'cross-origin', `${label} is missing Cross-Origin-Resource-Policy: cross-origin`);
   const exposed = response.headers.get('access-control-expose-headers') || '';
   assert(/Content-Range/i.test(exposed), `${label} does not expose Content-Range`);
   assert(/X-LaunchPAD-Media-Version/i.test(exposed), `${label} does not expose the Worker version header`);
 }
 
-async function verifyPublic() {
-  const healthResponse = await fetchChecked(`${PUBLIC_URL}/health`);
-  assert(healthResponse.status === 200, `Public /health returned ${healthResponse.status}`);
-  assertAudioLabCors(healthResponse, 'Public /health');
-  const health = await readJson(healthResponse, 'Public /health');
-  assert(health.ok === true, 'Public /health did not report ok=true');
-  assert(health.service === 'launchpad-media', `Unexpected public service: ${health.service}`);
-  assert(Number(health.canonicalTracks) > 0, 'Public /health reported no canonical tracks');
-  assert(health.audioLabCors === true, 'Public /health did not report audioLabCors=true');
-
+async function waitForPublicHealth() {
   const expectedVersion = process.env.EXPECTED_PUBLIC_VERSION;
-  if (expectedVersion) {
-    assert(String(health.version) === String(expectedVersion), `Public version ${health.version} does not match ${expectedVersion}`);
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= PUBLIC_VERIFY_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetchChecked(cacheBustedUrl(PUBLIC_URL, '/health', attempt));
+      assert(response.status === 200, `Public /health returned ${response.status}`);
+      assertAudioLabCors(response, 'Public /health');
+      const health = await readJson(response, 'Public /health');
+      assert(health.ok === true, 'Public /health did not report ok=true');
+      assert(health.service === 'launchpad-media', `Unexpected public service: ${health.service}`);
+      assert(Number(health.canonicalTracks) > 0, 'Public /health reported no canonical tracks');
+      assert(health.audioLabCors === true, 'Public /health did not report audioLabCors=true');
+      assert(health.crossOriginResourcePolicy === 'cross-origin', 'Public /health did not report crossOriginResourcePolicy=cross-origin');
+      if (expectedVersion) {
+        assert(String(health.version) === String(expectedVersion), `Public version ${health.version} does not match ${expectedVersion}`);
+      }
+      return health;
+    } catch (error) {
+      lastError = error;
+      if (attempt < PUBLIC_VERIFY_ATTEMPTS) await sleep(PUBLIC_VERIFY_DELAY_MS);
+    }
   }
 
-  const tracksResponse = await fetchChecked(`${PUBLIC_URL}/tracks`);
+  throw new Error(`Public Worker did not become ready after ${PUBLIC_VERIFY_ATTEMPTS} attempts: ${lastError?.message || lastError}`);
+}
+
+async function verifyPublic() {
+  const health = await waitForPublicHealth();
+  const expectedVersion = process.env.EXPECTED_PUBLIC_VERSION;
+
+  const tracksResponse = await fetchChecked(cacheBustedUrl(PUBLIC_URL, '/tracks'));
   assert(tracksResponse.status === 200, `Public /tracks returned ${tracksResponse.status}`);
   assertAudioLabCors(tracksResponse, 'Public /tracks');
   const catalog = await readJson(tracksResponse, 'Public /tracks');
@@ -89,6 +118,7 @@ async function verifyPublic() {
     service: health.service,
     version: health.version,
     audioLabCors: health.audioLabCors,
+    crossOriginResourcePolicy: health.crossOriginResourcePolicy,
     canonicalTracks: health.canonicalTracks,
     publishedTracks: catalog.tracks.length,
     rangeTrack: rangedTrack.slug,
