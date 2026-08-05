@@ -1,0 +1,21 @@
+
+var TRACK_MANAGER_BATCH_COLOR_VERSION='10.2';
+var feature10BatchAnalyzeGroupBeforeColors=batchAnalyzeGroup;
+batchAnalyzeGroup=async function(group,duplicateSlugs){
+  var result=await feature10BatchAnalyzeGroupBeforeColors(group,duplicateSlugs);
+  var coverFile=batchRoleFile(group,'cover');
+  if(coverFile){
+    try{
+      var colors=await feature10ExtractCoverColors(coverFile);
+      group.metadata=group.metadata||{};
+      group.metadata.accent=colors[0];
+      group.metadata.accent2=colors[1];
+      group.analysis=group.analysis||{};
+      group.analysis.themeColors=colors;
+      group.issues.push(batchIssue('pass','theme-colors','Couleurs du thème détectées : '+colors[0]+' + '+colors[1]+'.'));
+    }catch(error){
+      group.issues.push(batchIssue('warning','theme-colors-failed','Couleurs du thème non détectées : '+error.message));
+    }
+  }
+  return result;
+};
