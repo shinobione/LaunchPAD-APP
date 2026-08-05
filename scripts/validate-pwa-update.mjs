@@ -39,10 +39,10 @@ if (!worker.includes("globalThis.SHINOBIWAN_BUILD?.release")) {
 }
 
 const build = read('js/build-config.js');
-if (!build.includes("display: '2026.08.05.4'")) {
+if (!build.includes("display: '2026.08.05.5'")) {
   fail('Build display metadata is missing.');
 }
-if (!build.includes("release: 'track-manager-duration-format-fix-20260805'")) {
+if (!build.includes("release: 'track-manager-file-input-guard-20260805'")) {
   fail('Build release metadata is missing.');
 }
 for (const required of [
