@@ -48,7 +48,7 @@ const build = read('js/build-config.js');
 for (const required of [
   "id: '20260802-wave14'",
   "cache: 'shinobi-launchpad-v11'",
-  "revision: 'editorial-catalog-filters-1'",
+  "revision: 'hero-first-paint-1'",
   "display: '2026.08.05.8'",
   "release: 'feature-09-editorial-catalog-filters-20260805'"
 ]) {
