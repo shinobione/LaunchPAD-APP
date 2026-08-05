@@ -59,6 +59,6 @@ assert.ok(build.includes("cache: 'shinobi-launchpad-v16'"));
 
 const deployment = read('.github/workflows/deploy-cloudflare.yml');
 assert.ok(deployment.includes("EXPECTED_ADMIN_VERSION: '5.5'"));
-assert.ok(deployment.includes("EXPECTED_PUBLIC_VERSION: '2.5'"));
+assert.ok(deployment.includes("EXPECTED_PUBLIC_VERSION: '2.6'"));
 
 console.log('Phase 12 filtering, manual cover colors, Studio cleanup, local themes, metadata layout and Discography order remain valid.');
