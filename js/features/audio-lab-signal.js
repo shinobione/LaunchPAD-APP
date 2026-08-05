@@ -1,5 +1,6 @@
 const PATCH_MARK = Symbol.for('shinobi.audioLabSignalPatch');
 const ACTIVE_CONTEXTS = new Set();
+let ACTIVE_ANALYSER = null;
 
 function clampByte(value) {
   return Math.max(0, Math.min(255, Math.round(value)));
@@ -59,8 +60,28 @@ function markSignal(state) {
   if (typeof document !== 'undefined') document.documentElement.dataset.audioLabSignal = state;
 }
 
+export function readAudioLabSpectrum(target) {
+  if (!target?.length) return { available: false, peak: 0, state: 'invalid-target' };
+  if (!ACTIVE_ANALYSER) {
+    target.fill(0);
+    markSignal('awaiting-context');
+    return { available: false, peak: 0, state: 'awaiting-context' };
+  }
+
+  ACTIVE_ANALYSER.getByteFrequencyData(target);
+  const peak = signalPeak(target);
+  const state = typeof document !== 'undefined'
+    ? document.documentElement.dataset.audioLabSignal || (peak > 2 ? 'live' : 'idle')
+    : (peak > 2 ? 'live' : 'idle');
+  return { available: true, peak, state };
+}
+
 function patchAnalyser(analyser, audio) {
-  if (!analyser || analyser[PATCH_MARK]) return analyser;
+  if (!analyser) return analyser;
+  if (analyser[PATCH_MARK]) {
+    ACTIVE_ANALYSER = analyser;
+    return analyser;
+  }
 
   const nativeFrequency = analyser.getByteFrequencyData.bind(analyser);
   const nativeWaveform = analyser.getByteTimeDomainData.bind(analyser);
@@ -113,6 +134,7 @@ function patchAnalyser(analyser, audio) {
     analyser[PATCH_MARK] = true;
   }
 
+  ACTIVE_ANALYSER = analyser;
   return analyser;
 }
 
