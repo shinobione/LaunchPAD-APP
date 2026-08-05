@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260805-fixed-shell',
-    cache: 'shinobi-launchpad-v21',
-    revision: 'fixed-shell-scroll-boundary-1',
-    display: '2026.08.05.21',
-    release: 'fixed-shell-scroll-boundary-20260805'
+    id: '20260805-audiolab-core-modes',
+    cache: 'shinobi-launchpad-v22',
+    revision: 'audiolab-core-modes-1',
+    display: '2026.08.05.22',
+    release: 'audiolab-core-modes-fix-20260805'
   });
 
   // Legacy structural-validation markers retained until the workflow is modernized.
@@ -34,6 +34,11 @@
   // revision: 'mobile-hero-order-1'
   // display: '2026.08.05.20'
   // release: 'mobile-hero-order-fix-20260805'
+  // id: '20260805-fixed-shell'
+  // cache: 'shinobi-launchpad-v21'
+  // revision: 'fixed-shell-scroll-boundary-1'
+  // display: '2026.08.05.21'
+  // release: 'fixed-shell-scroll-boundary-20260805'
 
   globalThis.SHINOBIWAN_BUILD = config;
 

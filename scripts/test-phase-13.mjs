@@ -34,6 +34,15 @@ for (const required of [
 assert.ok(!visuals.includes("{ id: 'vortex', label: 'Vortex' }"));
 assert.ok(!visuals.includes("{ id: 'pulse', label: 'Pulse' }"));
 
+const coreVisuals = read('js/features/visual/visual-engine-core-modes.js');
+for (const required of [
+  "const CORE_MODES = new Set(['circle', 'bars', 'constellation'])",
+  'drawOrbitMode(',
+  'drawConstellationMode(',
+  "if (mode === 'circle')",
+  "mode !== 'bars'"
+]) assert.ok(coreVisuals.includes(required), `Audio Lab core renderer is missing ${required}.`);
+
 const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
   'initAudioLabSignalBridge',
@@ -45,7 +54,7 @@ for (const required of [
 ]) assert.ok(signal.includes(required), `AudioLab signal recovery is missing ${required}.`);
 
 const bridge = read('js/features/visual/visual-engine.js');
-assert.equal(bridge.trim(), "export { createVisualController } from './visual-engine-v2.js';");
+assert.equal(bridge.trim(), "export { createVisualController } from './visual-engine-core-modes.js';");
 
 const manager = read('cloudflare/admin-worker.parts/19-phase-13-visuals-palette-filters.inject.part');
 for (const required of [
@@ -69,6 +78,7 @@ const worker = read('sw.js');
 assert.ok(worker.includes("'./js/features/audio-lab-signal.js'"));
 assert.ok(worker.includes("'./js/features/feature-13.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-v2.js'"));
+assert.ok(worker.includes("'./js/features/visual/visual-engine-core-modes.js'"));
 
 const publicWorker = read('cloudflare/public-worker-v25.js');
 for (const required of [
@@ -83,5 +93,8 @@ const build = read('js/build-config.js');
 assert.ok(build.includes("display: '2026.08.05.16'"));
 assert.ok(build.includes("release: 'audiolab-signal-recovery-20260805'"));
 assert.ok(build.includes("cache: 'shinobi-launchpad-v16'"));
+assert.ok(build.includes("display: '2026.08.05.22'"));
+assert.ok(build.includes("release: 'audiolab-core-modes-fix-20260805'"));
+assert.ok(build.includes("cache: 'shinobi-launchpad-v22'"));
 
-console.log('Phase 13 local palette, visuals, AudioLab signal recovery, color extraction and filters are valid.');
+console.log('Phase 13 local palette, visuals, AudioLab signal recovery, core modes, color extraction and filters are valid.');
