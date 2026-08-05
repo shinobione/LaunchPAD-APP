@@ -11,6 +11,7 @@ function requirePattern(source, pattern, message) {
 const desktop = read('css/desktop-hero-wide.css');
 const mobile = read('css/mobile-top-cleanup.css');
 const finalArtwork = read('css/content-v4.css');
+const feature11 = read('css/feature-11.css');
 const buildConfig = read('js/build-config.js');
 
 for (const [label, source] of [['desktop', desktop], ['mobile', mobile]]) {
@@ -28,9 +29,15 @@ requirePattern(
 );
 
 requirePattern(
-  buildConfig,
-  /revision:\s*'hero-first-paint-1'/,
-  'The build config must refresh cached hero assets for this hotfix.'
+  feature11,
+  /@media\s*\(max-width:\s*760px\)[\s\S]*?\.launchpad-hero\s+\.hero-body\s*\{[\s\S]*?order:\s*1[\s\S]*?\.launchpad-hero\s+\.launchpad-banner-rail\s*\{[\s\S]*?order:\s*2/,
+  'Feature 11 must place the SHINOBIWAN identity before the LAUNCHPAD frame on mobile.'
 );
 
-console.log('Hero profile sizing and LAUNCHPAD artwork visibility are guarded.');
+requirePattern(
+  buildConfig,
+  /revision:\s*'routing-video-sorting-1'/,
+  'The build config must refresh cached routing, video and mobile hero assets for Feature 11.'
+);
+
+console.log('Hero profile sizing, artwork visibility and Feature 11 mobile ordering are guarded.');
