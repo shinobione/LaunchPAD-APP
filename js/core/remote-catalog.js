@@ -121,6 +121,8 @@ function mapRemoteTrack(item, activeApiUrl = DEFAULT_API_URL) {
     remoteMetadata: {
       type: item.type || null,
       year: Number.isInteger(item.year) ? item.year : null,
+      genres,
+      tags,
       moods,
       themes: Array.isArray(item.themes) ? item.themes.filter(Boolean) : [],
       era: item.era || null,
