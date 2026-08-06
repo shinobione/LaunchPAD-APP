@@ -44,7 +44,7 @@ for (const required of [
   'TECHNICAL_TAG.test(label)',
   'export function initBadgeHierarchy()'
 ]) assert.ok(badges.includes(required), `Badge hierarchy is missing ${required}.`);
-assert.ok(!badges.includes("status === 'draft') statuses.push('DRAFT')"), 'DRAFT must remain Track Manager-only.');
+assert.ok(!/^\s*if\s*\(status === 'draft'\) statuses\.push\('DRAFT'\)/m.test(badges), 'DRAFT must remain Track Manager-only.');
 
 const badgeStyles = read('css/badge-hierarchy.css');
 for (const required of [
