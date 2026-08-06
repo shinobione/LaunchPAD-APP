@@ -81,8 +81,12 @@ export function normalizeTrackSchema(input = {}, importIndex = 0) {
   };
 }
 
+// Canonical public name used by the consolidated master-spec guard.
+// Keep normalizeTrackSchema as the backwards-compatible implementation name.
+export const normalizeCatalogTrack = normalizeTrackSchema;
+
 export function normalizeTrackCollection(items = []) {
   return Array.isArray(items)
-    ? items.map((item, index) => normalizeTrackSchema(item, index))
+    ? items.map((item, index) => normalizeCatalogTrack(item, index))
     : [];
 }
