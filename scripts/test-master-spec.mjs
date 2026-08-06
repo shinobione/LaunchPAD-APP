@@ -126,8 +126,8 @@ const sanctuary = read('js/features/visual/audio-lab-sanctuary.js');
 includesAll(sanctuary, [
   'normalizePresetControls',
   "controls.dataset.audioLabRegistry = 'sanctioned-v1'",
-  "button.textContent = VIEW_LABELS.video",
-  "button.textContent = VIEW_LABELS.player",
+  'setTextIfChanged(button, VIEW_LABELS.video)',
+  'setTextIfChanged(button, VIEW_LABELS.player)',
   'video.loop = true',
   "video.setAttribute('webkit-playsinline', '')"
 ], 'Milestone 7 sanctuary');
