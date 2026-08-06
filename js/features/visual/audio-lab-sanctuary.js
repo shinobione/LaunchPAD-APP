@@ -9,6 +9,32 @@ import {
 const VIDEO_SELECTOR = 'video.track-video-player, video.lyrics-studio-canvas-video';
 const VIEW_LABELS = Object.freeze({ video: 'Video', player: 'Player' });
 
+function setTextIfChanged(element, value) {
+  const next = String(value ?? '');
+  if (element.textContent !== next) element.textContent = next;
+}
+
+function setAttributeIfChanged(element, name, value) {
+  const next = String(value ?? '');
+  if (element.getAttribute(name) !== next) element.setAttribute(name, next);
+}
+
+function orderPresetControls(controls) {
+  const ordered = AUDIO_LAB_PRESET_IDS
+    .map(mode => controls.querySelector(`[data-visual="${mode}"]`))
+    .filter(Boolean);
+  const current = [...controls.querySelectorAll('[data-visual]')];
+  const alreadyOrdered = current.length === ordered.length
+    && ordered.every((button, index) => current[index] === button);
+
+  if (alreadyOrdered) return false;
+
+  const fragment = document.createDocumentFragment();
+  ordered.forEach(button => fragment.appendChild(button));
+  controls.appendChild(fragment);
+  return true;
+}
+
 function normalizePresetControls(root = document) {
   const controls = root.querySelector?.('.lab-controls');
   if (!controls) return;
@@ -20,38 +46,43 @@ function normalizePresetControls(root = document) {
       button.remove();
       return;
     }
+
     seen.add(mode);
-    button.dataset.visual = mode;
-    button.textContent = AUDIO_LAB_PRESET_LABELS.get(mode) || mode;
-    button.setAttribute('aria-label', `Use ${button.textContent} visualizer`);
+    if (button.dataset.visual !== mode) button.dataset.visual = mode;
+    const label = AUDIO_LAB_PRESET_LABELS.get(mode) || mode;
+    setTextIfChanged(button, label);
+    setAttributeIfChanged(button, 'aria-label', `Use ${label} visualizer`);
   });
 
-  AUDIO_LAB_PRESET_IDS.forEach(mode => {
-    const button = controls.querySelector(`[data-visual="${mode}"]`);
-    if (button) controls.appendChild(button);
-  });
+  orderPresetControls(controls);
 
   const active = controls.querySelector('[data-visual].active');
   if (!active || !isSanctionedAudioLabMode(active.dataset.visual)) {
     controls.querySelector(`[data-visual="${AUDIO_LAB_DEFAULT_MODE}"]`)?.click();
   }
-  controls.dataset.audioLabRegistry = 'sanctioned-v1';
+  if (controls.dataset.audioLabRegistry !== 'sanctioned-v1') {
+    controls.dataset.audioLabRegistry = 'sanctioned-v1';
+  }
 }
 
 function normalizeStudioLabels(root = document) {
   root.querySelectorAll?.('[data-track-video-action]').forEach(button => {
     const expanded = button.getAttribute('aria-expanded') === 'true';
     const label = expanded ? VIEW_LABELS.player : VIEW_LABELS.video;
-    button.textContent = label;
-    button.setAttribute('aria-label', expanded ? 'Show audio player' : 'Show track video');
+    setTextIfChanged(button, label);
+    setAttributeIfChanged(button, 'aria-label', expanded ? 'Show audio player' : 'Show track video');
   });
 
   root.querySelectorAll?.('.track-detail-canvas-badge, .lyrics-studio-canvas-badge').forEach(badge => badge.remove());
 
   root.querySelectorAll?.('button').forEach(button => {
     const text = button.textContent.trim().toLowerCase();
-    if (text === 'cropped' || text === 'show canvas' || text === 'open canvas') button.textContent = VIEW_LABELS.video;
-    if (text === 'show track' || text === 'hide canvas') button.textContent = VIEW_LABELS.player;
+    if (text === 'cropped' || text === 'show canvas' || text === 'open canvas') {
+      setTextIfChanged(button, VIEW_LABELS.video);
+    }
+    if (text === 'show track' || text === 'hide canvas') {
+      setTextIfChanged(button, VIEW_LABELS.player);
+    }
   });
 }
 
@@ -130,10 +161,13 @@ export function initAudioLabSanctuary({ audio = document.querySelector('#audio')
 
   let scheduled = false;
   new MutationObserver(records => {
+    let hasRelevantAddition = false;
     records.forEach(record => record.addedNodes.forEach(node => {
-      if (node instanceof Element) hydrate(node, audio);
+      if (!(node instanceof Element)) return;
+      hasRelevantAddition = true;
+      hydrate(node, audio);
     }));
-    if (scheduled) return;
+    if (!hasRelevantAddition || scheduled) return;
     scheduled = true;
     requestAnimationFrame(() => {
       scheduled = false;
