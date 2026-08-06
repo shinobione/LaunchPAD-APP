@@ -1,19 +1,21 @@
-export function createVisualController({ audio, $, getAccent }) {
+import { createAudioReactivityTracker } from './audio-reactivity.js';
+
+export function createVisualController({ audio, $, getAccent, delegatedModes = [], externalHomeRenderer = false }) {
   let context;
   let analyser;
   let source;
   let frame;
   let mode = 'nebula';
 
-  const EXTRA_MODES = [
+  const BASE_MODES = [
     { id: 'singularity', label: 'Singularity' },
     { id: 'neon-shatter', label: 'Neon Shatter' },
-    { id: 'hyperdrive', label: 'Hyperdrive' },
-    { id: 'tesla-veins', label: 'Tesla Veins' },
     { id: 'liquid-chrome', label: 'Liquid Chrome' },
     { id: 'hex-reactor', label: 'Hex Reactor' },
     { id: 'nebula', label: 'Nebula' }
   ];
+  const delegatedModeSet = new Set(delegatedModes);
+  const reactivity = createAudioReactivityTracker();
 
   function setupAudio() {
     if (context) return;
@@ -81,38 +83,41 @@ export function createVisualController({ audio, $, getAccent }) {
     return value - Math.floor(value);
   }
 
-  function drawNebula(ctx, width, height, data, accent, accent2) {
-    const { energy, high } = bands(data);
+  function drawNebula(ctx, width, height, data, accent, accent2, features) {
+    const { bass, high, energy, kick, intensity } = features;
     const time = performance.now() / 1000;
     const minSide = Math.min(width, height);
+    const spreadX = width * (.32 + intensity * .08);
+    const spreadY = height * (.27 + energy * .08);
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    for (let cloud = 0; cloud < 8; cloud += 1) {
-      const value = data[Math.floor(cloud / 8 * data.length)] / 255;
-      const angle = time * (.03 + cloud * .004) * (cloud % 2 ? -1 : 1) + cloud * 1.7;
-      const orbit = minSide * (.12 + cloud * .045);
-      const x = width / 2 + Math.cos(angle) * orbit;
-      const y = height / 2 + Math.sin(angle * 1.22) * orbit * .65;
-      const radius = minSide * (.13 + value * .09);
+    for (let cloud = 0; cloud < 10; cloud += 1) {
+      const value = data[Math.floor(cloud / 10 * data.length)] / 255;
+      const angle = time * (.045 + cloud * .005 + kick * .035) * (cloud % 2 ? -1 : 1) + cloud * 1.57;
+      const depth = .52 + seeded(cloud, 21) * .7;
+      const x = width / 2 + Math.cos(angle) * spreadX * depth + Math.sin(time * 1.8 + cloud) * kick * width * .018;
+      const y = height / 2 + Math.sin(angle * 1.18) * spreadY * depth + Math.cos(time * 1.55 + cloud) * kick * height * .015;
+      const radius = minSide * (.16 + value * .12 + bass * .045 + kick * .055) * depth;
       const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-      gradient.addColorStop(0, colorWithAlpha(cloud % 2 ? accent2 : accent, .12 + value * .2));
-      gradient.addColorStop(.55, colorWithAlpha(cloud % 2 ? accent : accent2, .04 + energy * .08));
+      gradient.addColorStop(0, colorWithAlpha(cloud % 2 ? accent2 : accent, .14 + value * .25 + kick * .12));
+      gradient.addColorStop(.48, colorWithAlpha(cloud % 2 ? accent : accent2, .055 + energy * .12));
       gradient.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fill();
     }
-    const stars = width < 520 ? 38 : 58;
+    const stars = width < 520 ? 48 : 72;
     for (let index = 0; index < stars; index += 1) {
       const value = data[index % data.length] / 255;
-      const x = seeded(index, 1) * width;
-      const y = seeded(index, 2) * height;
-      const size = .55 + value * 2.4 + (index % 11 === 0 ? 1.4 : 0);
-      ctx.globalAlpha = .18 + value * .7 + high * .12;
+      const drift = Math.sin(time * (.18 + seeded(index, 23) * .25) + index) * (2 + kick * 8);
+      const x = seeded(index, 1) * width + drift;
+      const y = seeded(index, 2) * height + Math.cos(time * .2 + index) * (1 + kick * 5);
+      const size = .6 + value * 2.8 + high * 1.4 + (index % 11 === 0 ? 1.6 : 0);
+      ctx.globalAlpha = .2 + value * .72 + high * .16 + kick * .08;
       ctx.fillStyle = index % 3 ? accent2 : accent;
       ctx.shadowColor = ctx.fillStyle;
-      ctx.shadowBlur = 5 + value * 16;
+      ctx.shadowBlur = 6 + value * 18 + kick * 12;
       ctx.beginPath();
       ctx.arc(x, y, size, 0, Math.PI * 2);
       ctx.fill();
@@ -181,148 +186,70 @@ export function createVisualController({ audio, $, getAccent }) {
     ctx.globalAlpha = 1;
   }
 
-  function drawNeonShatter(ctx, width, height, data, accent, accent2) {
-    const { bass, mid, high } = bands(data);
+  function drawNeonShatter(ctx, width, height, data, accent, accent2, features) {
+    const { bass, mid, high, energy, kick, intensity } = features;
     const time = performance.now() / 1000;
     const cx = width / 2;
     const cy = height / 2;
     const minSide = Math.min(width, height);
-    const fragments = width < 520 ? 28 : 42;
-    const burst = .12 + bass * .72;
+    const fragments = width < 520 ? 36 : 54;
+    const burst = .34 + bass * .55 + kick * .55;
     ctx.save();
     ctx.translate(cx, cy);
     ctx.globalCompositeOperation = 'lighter';
     for (let index = 0; index < fragments; index += 1) {
-      const angle = seeded(index, 7) * Math.PI * 2 + Math.sin(time * .17 + index) * .08;
+      const depth = .35 + seeded(index, 31) * 1.05;
+      const angle = seeded(index, 7) * Math.PI * 2
+        + time * (seeded(index, 32) - .5) * (.12 + energy * .16)
+        + Math.sin(time * .42 + index) * .12;
       const value = data[index % data.length] / 255;
-      const distance = minSide * (.055 + seeded(index, 8) * .31 * (burst + .35));
-      const spin = time * (index % 2 ? -.2 : .24) + seeded(index, 9) * Math.PI;
-      const size = minSide * (.018 + seeded(index, 10) * .045) * (1 + value * .45);
-      const x = Math.cos(angle) * distance;
-      const y = Math.sin(angle) * distance;
+      const distance = minSide * (.07 + seeded(index, 8) * .46 * burst) * depth;
+      const spin = time * (index % 2 ? -.32 : .38) * (1.25 - depth * .25) + seeded(index, 9) * Math.PI;
+      const perspective = .62 + depth * .52;
+      const size = minSide * (.015 + seeded(index, 10) * .042) * (1 + value * .58 + kick * .18) * perspective;
+      const x = Math.cos(angle) * distance + Math.sin(time * .75 + index) * minSide * .018 * depth;
+      const y = Math.sin(angle) * distance * (.72 + depth * .22) + Math.cos(time * .62 + index * .7) * minSide * .016 * depth;
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(spin);
+      ctx.scale(perspective, perspective);
       ctx.beginPath();
       ctx.moveTo(-size * .7, size * .45);
       ctx.lineTo(size, 0);
       ctx.lineTo(-size * .25, -size);
       ctx.closePath();
-      ctx.fillStyle = colorWithAlpha(index % 2 ? accent2 : accent, .07 + value * .25);
-      ctx.strokeStyle = colorWithAlpha(index % 2 ? accent : accent2, .28 + value * .55);
-      ctx.lineWidth = .7 + value * 1.6;
+      ctx.fillStyle = colorWithAlpha(index % 2 ? accent2 : accent, .06 + value * .24 + intensity * .08);
+      ctx.strokeStyle = colorWithAlpha(index % 2 ? accent : accent2, .3 + value * .55 + kick * .12);
+      ctx.lineWidth = .65 + value * 1.7 + high * .45;
       ctx.shadowColor = index % 2 ? accent2 : accent;
-      ctx.shadowBlur = 8 + value * 18;
+      ctx.shadowBlur = 8 + value * 20 + kick * 10;
       ctx.fill();
       ctx.stroke();
       ctx.restore();
     }
     ctx.restore();
 
-    const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, minSide * (.16 + bass * .04));
-    core.addColorStop(0, colorWithAlpha('#ffffff', .72 + high * .2));
-    core.addColorStop(.12, colorWithAlpha(accent, .55));
-    core.addColorStop(.42, colorWithAlpha(accent2, .16 + mid * .18));
+    const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, minSide * (.17 + bass * .05 + kick * .03));
+    core.addColorStop(0, colorWithAlpha('#ffffff', .74 + high * .2));
+    core.addColorStop(.12, colorWithAlpha(accent, .58 + kick * .14));
+    core.addColorStop(.42, colorWithAlpha(accent2, .17 + mid * .2));
     core.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = core;
     ctx.beginPath();
-    ctx.arc(cx, cy, minSide * (.17 + bass * .04), 0, Math.PI * 2);
+    ctx.arc(cx, cy, minSide * (.18 + bass * .045 + kick * .025), 0, Math.PI * 2);
     ctx.fill();
 
-    const cracks = 14;
+    const cracks = 16;
     for (let index = 0; index < cracks; index += 1) {
-      const angle = index / cracks * Math.PI * 2 + time * .03;
-      const length = minSide * (.18 + seeded(index, 12) * .25 + bass * .06);
-      ctx.strokeStyle = colorWithAlpha(index % 2 ? accent2 : accent, .22 + high * .45);
-      ctx.lineWidth = .7 + high * 1.8;
+      const angle = index / cracks * Math.PI * 2 + time * (.04 + energy * .05);
+      const length = minSide * (.2 + seeded(index, 12) * .32 + bass * .07 + kick * .08);
+      ctx.strokeStyle = colorWithAlpha(index % 2 ? accent2 : accent, .23 + high * .48 + kick * .14);
+      ctx.lineWidth = .7 + high * 1.9 + kick * .7;
       ctx.beginPath();
       ctx.moveTo(cx + Math.cos(angle) * minSide * .07, cy + Math.sin(angle) * minSide * .07);
       ctx.lineTo(cx + Math.cos(angle + .08) * length, cy + Math.sin(angle + .08) * length);
       ctx.stroke();
     }
-  }
-
-  function drawHyperdrive(ctx, width, height, data, accent, accent2) {
-    const { bass, mid, high } = bands(data);
-    const time = performance.now() / 1000;
-    const cx = width / 2;
-    const cy = height / 2;
-    const minSide = Math.min(width, height);
-    const speed = .12 + bass * .9 + mid * .2;
-    const streaks = width < 520 ? 46 : 72;
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    for (let index = 0; index < streaks; index += 1) {
-      const phase = (seeded(index, 14) + time * speed * (.22 + seeded(index, 15) * .3)) % 1;
-      const angle = seeded(index, 16) * Math.PI * 2;
-      const inner = minSide * (.025 + phase * .2);
-      const outer = inner + minSide * (.04 + phase * .37 + bass * .12);
-      const x1 = cx + Math.cos(angle) * inner;
-      const y1 = cy + Math.sin(angle) * inner;
-      const x2 = cx + Math.cos(angle) * outer;
-      const y2 = cy + Math.sin(angle) * outer;
-      const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
-      gradient.addColorStop(0, 'rgba(0,0,0,0)');
-      gradient.addColorStop(1, colorWithAlpha(index % 2 ? accent2 : accent, .22 + phase * .65 + high * .1));
-      ctx.strokeStyle = gradient;
-      ctx.lineWidth = .7 + phase * 2.7;
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
-    }
-    for (let ring = 0; ring < 9; ring += 1) {
-      const phase = (time * speed * .28 + ring / 9) % 1;
-      const radius = minSide * (.04 + phase * .42);
-      ctx.strokeStyle = colorWithAlpha(ring % 2 ? accent2 : accent, (1 - phase) * (.1 + bass * .2));
-      ctx.lineWidth = .8 + (1 - phase) * 2;
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, radius, radius * .52, 0, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  function drawTeslaVeins(ctx, width, height, data, accent, accent2) {
-    const { bass, mid, high } = bands(data);
-    const time = performance.now() / 1000;
-    const cx = width / 2;
-    const cy = height / 2;
-    const minSide = Math.min(width, height);
-    const branches = width < 520 ? 11 : 16;
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    for (let branch = 0; branch < branches; branch += 1) {
-      const value = data[branch % data.length] / 255;
-      const angle = branch / branches * Math.PI * 2 + Math.sin(time * .7 + branch) * .06;
-      const segments = 8;
-      let x = cx;
-      let y = cy;
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      for (let segment = 1; segment <= segments; segment += 1) {
-        const progress = segment / segments;
-        const radius = minSide * progress * (.39 + bass * .08);
-        const jitter = (seeded(branch * 20 + segment, Math.floor(time * 5)) - .5) * minSide * (.025 + high * .035);
-        x = cx + Math.cos(angle) * radius + Math.cos(angle + Math.PI / 2) * jitter;
-        y = cy + Math.sin(angle) * radius + Math.sin(angle + Math.PI / 2) * jitter;
-        ctx.lineTo(x, y);
-      }
-      ctx.strokeStyle = colorWithAlpha(branch % 2 ? accent2 : accent, .28 + value * .52);
-      ctx.lineWidth = .7 + value * 1.8 + mid;
-      ctx.shadowColor = branch % 2 ? accent2 : accent;
-      ctx.shadowBlur = 9 + high * 24;
-      ctx.stroke();
-    }
-    ctx.restore();
-    const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, minSide * .17);
-    core.addColorStop(0, colorWithAlpha('#ffffff', .68));
-    core.addColorStop(.18, colorWithAlpha(accent, .62));
-    core.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = core;
-    ctx.beginPath();
-    ctx.arc(cx, cy, minSide * (.12 + bass * .035), 0, Math.PI * 2);
-    ctx.fill();
   }
 
   function drawLiquidChrome(ctx, width, height, data, accent, accent2) {
@@ -373,43 +300,56 @@ export function createVisualController({ audio, $, getAccent }) {
     ctx.closePath();
   }
 
-  function drawHexReactor(ctx, width, height, data, accent, accent2) {
-    const { bass, mid, high } = bands(data);
+  function drawHexReactor(ctx, width, height, data, accent, accent2, features) {
+    const { bass, mid, high, energy, kick } = features;
     const time = performance.now() / 1000;
-    const size = Math.max(18, Math.min(width, height) * .055);
-    const rowHeight = size * 1.5;
-    const columns = Math.ceil(width / (size * 1.72)) + 2;
+    const minSide = Math.min(width, height);
+    const size = Math.max(26, minSide * .078);
+    const horizontalStep = size * 1.95;
+    const rowHeight = size * 1.72;
+    const columns = Math.ceil(width / horizontalStep) + 2;
     const rows = Math.ceil(height / rowHeight) + 2;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     let cell = 0;
     for (let row = -1; row < rows; row += 1) {
       for (let column = -1; column < columns; column += 1) {
-        const x = column * size * 1.72 + (row % 2 ? size * .86 : 0);
+        const x = column * horizontalStep + (row % 2 ? horizontalStep * .5 : 0);
         const y = row * rowHeight;
         const value = data[cell % data.length] / 255;
         const distance = Math.hypot(x - width / 2, y - height / 2) / Math.max(width, height);
-        const wave = Math.max(0, 1 - Math.abs(((distance * 2.4 - time * (.25 + bass * .35)) % 1 + 1) % 1 - .5) * 5);
-        hexPath(ctx, x, y, size * .72);
-        ctx.strokeStyle = colorWithAlpha(cell % 2 ? accent2 : accent, .05 + value * .12 + wave * (.16 + bass * .28));
-        ctx.lineWidth = .6 + wave * 1.3 + high * .4;
+        const phase = ((distance * 1.85 - time * (.075 + bass * .07) + 2) % 1);
+        const wave = Math.max(0, 1 - Math.abs(phase - .5) * 4.2);
+        hexPath(ctx, x, y, size * .68);
+        const hierarchy = Math.max(0, 1 - distance * 2.1);
+        ctx.strokeStyle = colorWithAlpha(cell % 2 ? accent2 : accent, .035 + value * .075 + wave * (.11 + bass * .14) + hierarchy * .11);
+        ctx.lineWidth = .55 + wave * .75 + high * .25 + hierarchy * .45;
         ctx.stroke();
-        if (wave > .68) {
-          ctx.fillStyle = colorWithAlpha(cell % 2 ? accent : accent2, wave * .055 + mid * .025);
+        if (wave > .76 && hierarchy > .12) {
+          ctx.fillStyle = colorWithAlpha(cell % 2 ? accent : accent2, wave * .035 + mid * .018);
           ctx.fill();
         }
         cell += 1;
       }
     }
     ctx.restore();
+
     const cx = width / 2;
     const cy = height / 2;
-    for (let ring = 0; ring < 4; ring += 1) {
-      hexPath(ctx, cx, cy, size * (1.25 + ring * .68 + bass * .18));
-      ctx.strokeStyle = colorWithAlpha(ring % 2 ? accent2 : accent, .2 + bass * .32 - ring * .03);
-      ctx.lineWidth = 1 + bass * 2.2;
+    const coreRadius = size * (1.2 + bass * .18 + kick * .22);
+    const coreGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreRadius * 3.2);
+    coreGlow.addColorStop(0, colorWithAlpha('#ffffff', .16 + kick * .18));
+    coreGlow.addColorStop(.3, colorWithAlpha(accent, .12 + energy * .12));
+    coreGlow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = coreGlow;
+    ctx.fillRect(cx - coreRadius * 3.2, cy - coreRadius * 3.2, coreRadius * 6.4, coreRadius * 6.4);
+
+    for (let ring = 0; ring < 3; ring += 1) {
+      hexPath(ctx, cx, cy, size * (1.28 + ring * .86 + bass * .2 + kick * .16));
+      ctx.strokeStyle = colorWithAlpha(ring % 2 ? accent2 : accent, .24 + bass * .28 + kick * .16 - ring * .055);
+      ctx.lineWidth = 1.15 + bass * 1.7 + kick * 1.2 - ring * .12;
       ctx.shadowColor = ring % 2 ? accent2 : accent;
-      ctx.shadowBlur = 10 + bass * 20;
+      ctx.shadowBlur = 9 + bass * 15 + kick * 12;
       ctx.stroke();
     }
     ctx.shadowBlur = 0;
@@ -449,15 +389,14 @@ export function createVisualController({ audio, $, getAccent }) {
     ctx.globalCompositeOperation = 'source-over';
     ctx.shadowBlur = 0;
     const data = getData();
+    const features = reactivity.update(data);
     const [accent, accent2] = getAccent();
     switch (visualMode) {
       case 'singularity': drawSingularity(ctx, width, height, data, accent, accent2); break;
-      case 'neon-shatter': drawNeonShatter(ctx, width, height, data, accent, accent2); break;
-      case 'hyperdrive': drawHyperdrive(ctx, width, height, data, accent, accent2); break;
-      case 'tesla-veins': drawTeslaVeins(ctx, width, height, data, accent, accent2); break;
+      case 'neon-shatter': drawNeonShatter(ctx, width, height, data, accent, accent2, features); break;
       case 'liquid-chrome': drawLiquidChrome(ctx, width, height, data, accent, accent2); break;
-      case 'hex-reactor': drawHexReactor(ctx, width, height, data, accent, accent2); break;
-      case 'nebula': drawNebula(ctx, width, height, data, accent, accent2); break;
+      case 'hex-reactor': drawHexReactor(ctx, width, height, data, accent, accent2, features); break;
+      case 'nebula': drawNebula(ctx, width, height, data, accent, accent2, features); break;
       default: drawSpectrum(ctx, width, height, data, accent, accent2);
     }
   }
@@ -465,8 +404,8 @@ export function createVisualController({ audio, $, getAccent }) {
   function start() {
     cancelAnimationFrame(frame);
     const loop = () => {
-      draw($('#home-visualizer'), 'nebula');
-      draw($('#lab-visualizer'), mode);
+      if (!externalHomeRenderer) draw($('#home-visualizer'), 'nebula');
+      if (!delegatedModeSet.has(mode)) draw($('#lab-visualizer'), mode);
       frame = requestAnimationFrame(loop);
     };
     loop();
@@ -505,8 +444,11 @@ export function createVisualController({ audio, $, getAccent }) {
   function installModeButtons() {
     const controls = document.querySelector('.lab-controls');
     if (!controls) return;
-    controls.querySelectorAll('[data-visual="vortex"], [data-visual="pulse"]').forEach(button => button.remove());
-    EXTRA_MODES.forEach(({ id, label }) => {
+    const allowedModes = new Set(['bars', ...BASE_MODES.map(item => item.id), ...delegatedModeSet]);
+    controls.querySelectorAll('[data-visual]').forEach(button => {
+      if (!allowedModes.has(button.dataset.visual)) button.remove();
+    });
+    BASE_MODES.forEach(({ id, label }) => {
       let button = controls.querySelector(`[data-visual="${id}"]`);
       if (!button) {
         button = document.createElement('button');
@@ -518,17 +460,23 @@ export function createVisualController({ audio, $, getAccent }) {
     });
   }
 
+  function setMode(nextMode, button) {
+    mode = nextMode || 'nebula';
+    const controls = document.querySelector('.lab-controls');
+    if (button && controls) {
+      controls.querySelectorAll('[data-visual]').forEach(item => item.classList.toggle('active', item === button));
+    }
+  }
+
   installModeButtons();
-  document.querySelectorAll('[data-visual]').forEach(button => {
+  const controls = document.querySelector('.lab-controls');
+  controls?.querySelectorAll('[data-visual]').forEach(button => {
     button.classList.toggle('active', button.dataset.visual === mode);
-    button.addEventListener('click', () => {
-      mode = button.dataset.visual;
-      document.querySelectorAll('[data-visual]').forEach(item => item.classList.toggle('active', item === button));
-    });
+    button.addEventListener('click', () => setMode(button.dataset.visual, button));
   });
   const homeTitle = document.querySelector('.now-panel .panel-head h3');
-  if (homeTitle) homeTitle.textContent = 'Nebula spectrum';
+  if (homeTitle && !externalHomeRenderer) homeTitle.textContent = 'Nebula spectrum';
   start();
   startAmbient();
-  return { resume };
+  return { resume, setMode };
 }
