@@ -1,0 +1,67 @@
+var TRACK_MANAGER_MILESTONE_3_VERSION='5.6';
+
+function milestone3ApplyFilterControl(control){
+  if(!control)return;
+  var bindings={catalogIssueFilter:'catalogIssueFilter',catalogLyricsFilter:'catalogLyricsFilter',catalogContentFilter:'catalogContentFilter'};
+  var key=bindings[control.id];
+  if(!key)return;
+  state[key]=control.value||'all';
+  renderTracks();
+}
+
+function milestone3InstallReactiveFilters(){
+  var panel=$('#catalogAdvancedFilters');
+  if(!panel||panel.dataset.milestone3Reactive==='true')return;
+  panel.dataset.milestone3Reactive='true';
+  var handler=function(event){var control=event.target.closest&&event.target.closest('select');if(control&&panel.contains(control))milestone3ApplyFilterControl(control)};
+  panel.addEventListener('input',handler);
+  panel.addEventListener('change',handler);
+  ['catalogIssueFilter','catalogLyricsFilter','catalogContentFilter'].forEach(function(id){var control=$('#'+id);if(control&&state[id]!=null)control.value=state[id]});
+}
+
+function milestone3CoverInput(form){return form&&form.elements&&(form.elements.cover||form.elements.coverFile)||$('#coverFile')||$('#cover')}
+function milestone3AccentFields(form){return {accent:form&&form.elements&&form.elements.accent,accent2:form&&form.elements&&form.elements.accent2}}
+
+function milestone3ProtectManualPalette(form){
+  var cover=milestone3CoverInput(form);var fields=milestone3AccentFields(form);
+  if(!cover||cover.dataset.milestone3PaletteGuard==='true')return;
+  cover.dataset.milestone3PaletteGuard='true';
+  cover.addEventListener('change',function(){
+    if(state.milestone3ManualPalette===true)return;
+    var snapshot={accent:fields.accent&&fields.accent.value||'',accent2:fields.accent2&&fields.accent2.value||''};
+    var restore=function(){if(state.milestone3ManualPalette===true)return;if(fields.accent)fields.accent.value=snapshot.accent;if(fields.accent2)fields.accent2.value=snapshot.accent2};
+    queueMicrotask(restore);setTimeout(restore,40);setTimeout(restore,160);
+  },true);
+}
+
+async function milestone3PaletteBlob(form){
+  var cover=milestone3CoverInput(form);var selected=cover&&cover.files&&cover.files[0];
+  if(selected)return selected;
+  var slug=form&&form.elements&&form.elements.slug&&form.elements.slug.value||state.editing;
+  if(!slug)throw new Error('Sélectionne une cover ou ouvre un morceau existant.');
+  var response=await fetch('/api/media/'+encodeURIComponent(slug)+'/cover',{cache:'no-store'});
+  if(!response.ok)throw new Error('Cover existante inaccessible (HTTP '+response.status+').');
+  return response.blob();
+}
+
+function milestone3InstallManualPalette(){
+  var form=$('#trackForm');if(!form)return;
+  milestone3ProtectManualPalette(form);
+  var foot=form.querySelector('.dialogfoot');if(!foot||$('#manualPaletteExtract'))return;
+  var button=document.createElement('button');button.type='button';button.className='btn';button.id='manualPaletteExtract';button.textContent='Extraire les couleurs';button.title='Analyse manuelle de la cover. Les couleurs ne sont plus écrasées automatiquement à l’upload.';
+  var actions=foot.querySelector('.quality-actions');if(actions)actions.appendChild(button);else foot.prepend(button);
+  button.addEventListener('click',async function(){
+    if(button.disabled)return;button.disabled=true;state.milestone3ManualPalette=true;
+    try{
+      var blob=await milestone3PaletteBlob(form);var colors=await feature10ExtractCoverColors(blob);var fields=milestone3AccentFields(form);
+      if(!Array.isArray(colors)||colors.length<2)throw new Error('Palette invalide.');
+      if(fields.accent)fields.accent.value=colors[0];if(fields.accent2)fields.accent2.value=colors[1];
+      if(fields.accent)fields.accent.dispatchEvent(new Event('input',{bubbles:true}));if(fields.accent2)fields.accent2.dispatchEvent(new Event('input',{bubbles:true}));
+      showNotice('Palette extraite manuellement : '+colors[0]+' / '+colors[1]+'.');
+    }catch(error){showNotice('Extraction des couleurs impossible : '+error.message,true)}finally{state.milestone3ManualPalette=false;button.disabled=false}
+  });
+}
+
+milestone3InstallReactiveFilters();
+milestone3InstallManualPalette();
+var milestone3VersionPill=document.querySelector('.version-pill');if(milestone3VersionPill)milestone3VersionPill.textContent='v5.6';

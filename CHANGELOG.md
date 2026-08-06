@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Complete **Milestone 3 — Track Manager Controls**: make catalog filters react immediately without losing state, add an explicit manual **Extraire les couleurs** action in the track editor, prevent cover selection from silently overwriting curated palettes, publish Track Manager v5.6, and automatically deploy/verify changed Cloudflare Workers after merges to `main`.
 - Complete **Milestone 2 — Data Architecture & Catalog Ordering**: normalize legacy and Cloudflare R2 track schemas, sort globally by release date with deterministic fallbacks, exclude future/draft/archived/inactive tracks from Latest Releases, flag fallback dates, and add a separately ordered Recently Added section.
 - Complete **Milestone 1 — Routing, Navigation & Legal**: reset view-level browser/PWA launches to Home while preserving shareable track routes, add 240 ms opacity/transform page transitions with reduced-motion support, and place the dynamic ShinoBiWan proprietary notice inside the About build card.
 - Add **Feature 09 — Editorial catalog filters** with combinable R2-powered Era, Energy, Mood, Genre, Language, release type, Canvas, Lyrics, synchronized Lyrics, Explicit/Clean and Year filters, responsive mobile drawer, active chips, result counts, reset action and shareable URL state.
