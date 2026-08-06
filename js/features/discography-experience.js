@@ -50,7 +50,10 @@ function enrichCard(card) {
   if (!track || card.dataset.discographySignals === track.id) return;
   card.querySelector(':scope > .track-card-signals')?.remove();
   const signals = trackSignals(track);
-  if (!signals.moods.length && !signals.themes.length) return;
+  if (!signals.moods.length && !signals.themes.length) {
+    card.dataset.discographySignals = track.id;
+    return;
+  }
 
   const container = document.createElement('div');
   container.className = 'track-card-signals';
@@ -68,12 +71,12 @@ function enrichCards(root = document) {
 function orderFilterGroups() {
   const groupsRoot = document.querySelector('#view-library .catalog-filter-groups');
   if (!groupsRoot) return;
-  const groups = new Map([...groupsRoot.querySelectorAll(':scope > [data-filter-group]')]
-    .map(group => [group.dataset.filterGroup, group]));
-  FILTER_GROUP_ORDER.forEach(key => {
-    const group = groups.get(key);
-    if (group) groupsRoot.appendChild(group);
-  });
+  const children = [...groupsRoot.querySelectorAll(':scope > [data-filter-group]')];
+  const groups = new Map(children.map(group => [group.dataset.filterGroup, group]));
+  const desired = FILTER_GROUP_ORDER.map(key => groups.get(key)).filter(Boolean);
+  const current = children.map(group => group.dataset.filterGroup).join('|');
+  const next = desired.map(group => group.dataset.filterGroup).join('|');
+  if (current !== next) desired.forEach(group => groupsRoot.appendChild(group));
   groupsRoot.dataset.milestone5Order = FILTER_GROUP_ORDER.join(' ');
 }
 
@@ -161,7 +164,8 @@ function installEraTimeline() {
 }
 
 function setOverlayState(button, state, track) {
-  if (!button) return;
+  if (!button || button.dataset.cardAudioState === state) return;
+  button.dataset.cardAudioState = state;
   const index = button.closest('.album-card')?.dataset.index;
   button.disabled = state === 'loading';
   button.classList.toggle('is-loading', state === 'loading');
@@ -194,7 +198,8 @@ function synchronizeNowPlaying(audio, loading = false) {
     card.classList.toggle('is-audio-playing', current && playing);
     card.classList.toggle('is-audio-loading', current && loading);
     const button = card.querySelector('.play-overlay');
-    setOverlayState(button, current && loading ? 'loading' : current && playing ? 'playing' : current ? 'paused' : 'idle', track || { title: 'track' });
+    const state = current && loading ? 'loading' : current && playing ? 'playing' : current ? 'paused' : 'idle';
+    setOverlayState(button, state, track || { title: 'track' });
   });
 }
 
@@ -209,7 +214,7 @@ function installNowPlaying(audio) {
     loading = false;
     sync();
   }));
-  new MutationObserver(sync).observe(audio, { attributes: true, attributeFilter: ['data-track-id', 'src'] });
+  if (audio) new MutationObserver(sync).observe(audio, { attributes: true, attributeFilter: ['data-track-id', 'src'] });
   window.addEventListener('shinobi:theme-scope', sync);
   sync();
   return sync;
@@ -231,11 +236,18 @@ export function initDiscographyExperience({ audio = document.querySelector('#aud
   });
   window.addEventListener('popstate', () => timeline && synchronizeEraButtons(timeline));
 
-  new MutationObserver(records => {
+  let observerScheduled = false;
+  const observer = new MutationObserver(records => {
     records.forEach(record => record.addedNodes.forEach(node => {
       if (node instanceof Element) enrichCards(node);
     }));
-    orderFilterGroups();
-    syncPlaying();
-  }).observe(document.body, { childList: true, subtree: true });
+    if (observerScheduled) return;
+    observerScheduled = true;
+    requestAnimationFrame(() => {
+      observerScheduled = false;
+      orderFilterGroups();
+      syncPlaying();
+    });
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
 }
