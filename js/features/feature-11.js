@@ -1,5 +1,9 @@
 import { tracks } from '../core/catalog-store.js';
-import { harmonizeCatalogOrder, latestActiveTrackEntries } from '../core/catalog-ordering.js';
+import {
+  harmonizeCatalogOrder,
+  latestActiveTrackEntries,
+  recentlyAddedTrackEntries
+} from '../core/catalog-ordering.js';
 import { ensureStylesheet } from '../core/assets.js';
 
 const VIDEO_SELECTOR = 'video.track-video-player, video.lyrics-studio-canvas-video';
@@ -26,15 +30,11 @@ function launchRootPath(pathname = window.location.pathname) {
 
 export function normalizeLaunchRoute() {
   const hash = window.location.hash.trim();
-
-  // Track, album, lyrics and Studio URLs are intentional shareable deep links.
-  // All view-level launches (including a browser/PWA restored location) start on Home.
   if (SHAREABLE_ROUTE_PATTERN.test(hash)) return;
 
   const target = `${launchRootPath()}${window.location.search}#home`;
   const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
   if (current === target) return;
-
   window.history.replaceState(null, '', target);
 }
 
@@ -42,16 +42,25 @@ export function prepareFeature11Catalog() {
   harmonizeCatalogOrder(tracks);
 }
 
-function featuredCard(track, index) {
+function featuredCard(track, index, { fallback = false, recent = false } = {}) {
+  const dateLabel = fallback
+    ? '<small class="release-date-fallback">Release date unavailable</small>'
+    : '';
+  const recentLabel = recent
+    ? '<span class="catalog-card-context">Recently added</span>'
+    : '';
+
   return `
     <article class="album-card" data-index="${index}" data-genre="${escapeHtml(track.genre)}">
       <div class="cover-wrap">
         <img src="${escapeHtml(track.cover)}" alt="Cover art for ${escapeHtml(track.title)}" loading="lazy">
         ${track.lyrics ? '<span class="lyrics-card-badge">LYRICS</span>' : ''}
+        ${recentLabel}
         <button class="play-overlay" data-play-index="${index}" aria-label="Listen to ${escapeHtml(track.title)}">▶</button>
       </div>
       <h3>${escapeHtml(track.title)}</h3>
       <p>${escapeHtml(track.genre)} • ${escapeHtml(track.mood)}</p>
+      ${dateLabel}
     </article>`;
 }
 
@@ -59,8 +68,43 @@ function renderLatestReleases() {
   const grid = document.querySelector('#featured-grid');
   if (!grid) return;
   grid.innerHTML = latestActiveTrackEntries(tracks, 5)
-    .map(({ track, index }) => featuredCard(track, index))
+    .map(({ track, index, sort }) => featuredCard(track, index, { fallback: sort.fallback }))
     .join('');
+}
+
+function ensureRecentlyAddedSection() {
+  const featuredGrid = document.querySelector('#featured-grid');
+  if (!featuredGrid) return null;
+
+  let section = document.querySelector('#recently-added-section');
+  if (section) return section;
+
+  section = document.createElement('section');
+  section.id = 'recently-added-section';
+  section.className = 'recently-added-section';
+  section.innerHTML = `
+    <div class="section-head">
+      <div><span class="eyebrow">CATALOG ACTIVITY</span><h2>Recently added</h2></div>
+      <button class="text-button" data-view-target="library">View all →</button>
+    </div>
+    <p class="recently-added-description">Restored and newly imported catalog entries, ordered by technical import date.</p>
+    <div class="album-grid" id="recently-added-grid"></div>`;
+  featuredGrid.insertAdjacentElement('afterend', section);
+  return section;
+}
+
+function renderRecentlyAdded() {
+  const section = ensureRecentlyAddedSection();
+  const grid = section?.querySelector('#recently-added-grid');
+  if (!grid) return;
+  grid.innerHTML = recentlyAddedTrackEntries(tracks, 5)
+    .map(({ track, index }) => featuredCard(track, index, { recent: true }))
+    .join('');
+}
+
+function renderHomeCatalogSections() {
+  renderLatestReleases();
+  renderRecentlyAdded();
 }
 
 function replayRouteTransition() {
@@ -196,7 +240,7 @@ function installVideoStability(audio) {
   document.addEventListener('click', () => queueMicrotask(() => relabelVideoUI(document)), true);
   window.addEventListener('shinobi:route-change', () => queueMicrotask(() => {
     hydrate(document);
-    renderLatestReleases();
+    renderHomeCatalogSections();
   }));
 }
 
@@ -205,7 +249,7 @@ export function initFeature11({ audio = document.querySelector('#audio') } = {})
   window.__shinobiFeature11Ready = true;
   ensureStylesheet('css/feature-11.css');
   installRouteTransitions();
-  renderLatestReleases();
+  renderHomeCatalogSections();
   relabelVideoUI();
   installVideoStability(audio);
 }
