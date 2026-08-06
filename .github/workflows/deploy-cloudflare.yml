@@ -1,6 +1,17 @@
 name: Deploy Cloudflare Workers
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'cloudflare/**'
+      - 'scripts/build-admin-worker.mjs'
+      - 'scripts/report-wrangler-deploy.mjs'
+      - 'scripts/verify-cloudflare-deployment.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/deploy-cloudflare.yml'
   workflow_dispatch:
     inputs:
       target:
@@ -13,7 +24,7 @@ on:
           - public
           - admin
       confirm:
-        description: Type DEPLOY to confirm the production deployment
+        description: Type DEPLOY to confirm a manual production deployment
         required: true
         type: string
 
@@ -31,18 +42,22 @@ jobs:
     timeout-minutes: 20
     environment: cloudflare-production
     env:
+      DEPLOY_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || 'both' }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       PUBLIC_WORKER_URL: https://launchpad-media.jerryquinet.workers.dev
       ADMIN_WORKER_URL: https://launchpad-r2-api.jerryquinet.workers.dev
       EXPECTED_PUBLIC_VERSION: '2.6'
-      EXPECTED_ADMIN_VERSION: '5.5'
+      EXPECTED_ADMIN_VERSION: '5.6'
       CLOUDFLARE_ACCESS_CLIENT_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
       CLOUDFLARE_ACCESS_CLIENT_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
     steps:
-      - name: Confirm production deployment
+      - name: Confirm manual production deployment
+        if: github.event_name == 'workflow_dispatch'
+        run: test "${{ inputs.confirm }}" = 'DEPLOY'
+
+      - name: Validate deployment credentials
         run: |
-          test "${{ inputs.confirm }}" = 'DEPLOY'
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
 
@@ -66,7 +81,8 @@ jobs:
           {
             echo '## LaunchPAD Cloudflare deployment'
             echo
-            echo "- Requested target: \`${{ inputs.target }}\`"
+            echo "- Trigger: \`${{ github.event_name }}\`"
+            echo "- Requested target: \`$DEPLOY_TARGET\`"
             echo "- Source SHA: \`$GITHUB_SHA\`"
             echo "- Actor: \`$GITHUB_ACTOR\`"
             echo "- Workflow run: \`$GITHUB_RUN_ID\`"
@@ -74,31 +90,31 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Deploy private Track Manager Worker
-        if: inputs.target == 'both' || inputs.target == 'admin'
+        if: env.DEPLOY_TARGET == 'both' || env.DEPLOY_TARGET == 'admin'
         run: npm run deploy:cloudflare:admin
         env:
           WRANGLER_OUTPUT_FILE_PATH: ${{ runner.temp }}/wrangler-admin.ndjson
 
       - name: Record private Worker version
-        if: inputs.target == 'both' || inputs.target == 'admin'
+        if: env.DEPLOY_TARGET == 'both' || env.DEPLOY_TARGET == 'admin'
         run: node scripts/report-wrangler-deploy.mjs "$RUNNER_TEMP/wrangler-admin.ndjson" admin
 
       - name: Verify private Worker and Cloudflare Access
-        if: inputs.target == 'both' || inputs.target == 'admin'
+        if: env.DEPLOY_TARGET == 'both' || env.DEPLOY_TARGET == 'admin'
         run: node scripts/verify-cloudflare-deployment.mjs admin
 
       - name: Deploy public media Worker
-        if: inputs.target == 'both' || inputs.target == 'public'
+        if: env.DEPLOY_TARGET == 'both' || env.DEPLOY_TARGET == 'public'
         run: npm run deploy:cloudflare:public
         env:
           WRANGLER_OUTPUT_FILE_PATH: ${{ runner.temp }}/wrangler-public.ndjson
 
       - name: Record public Worker version
-        if: inputs.target == 'both' || inputs.target == 'public'
+        if: env.DEPLOY_TARGET == 'both' || env.DEPLOY_TARGET == 'public'
         run: node scripts/report-wrangler-deploy.mjs "$RUNNER_TEMP/wrangler-public.ndjson" public
 
       - name: Verify public catalog and media streaming
-        if: inputs.target == 'both' || inputs.target == 'public'
+        if: env.DEPLOY_TARGET == 'both' || env.DEPLOY_TARGET == 'public'
         run: node scripts/verify-cloudflare-deployment.mjs public
 
       - name: Complete deployment summary
