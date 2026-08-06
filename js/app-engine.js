@@ -7,7 +7,8 @@ const CRITICAL_STYLES = [
   'css/feature-10.css',
   'css/feature-11.css',
   'css/feature-12.css',
-  'css/theme-scope.css'
+  'css/theme-scope.css',
+  'css/discography-experience.css'
 ];
 
 const LAYOUT_STYLES = [
@@ -103,7 +104,8 @@ async function boot() {
     { initAdminAccess },
     { initPhase12 },
     { initPhase13 },
-    { initThemeScoping }
+    { initThemeScoping },
+    { initDiscographyExperience }
   ] = await Promise.all([
     import(versioned('./features/content/content-controller.js')),
     import(versioned('./features/catalog-filters.js')),
@@ -124,7 +126,8 @@ async function boot() {
     import(versioned('./features/admin-access.js')),
     import(versioned('./features/feature-12.js')),
     import(versioned('./features/feature-13.js')),
-    import(versioned('./features/theme-scope.js'))
+    import(versioned('./features/theme-scope.js')),
+    import(versioned('./features/discography-experience.js'))
   ]);
 
   installContentV4();
@@ -148,6 +151,7 @@ async function boot() {
   initPhase12();
   initPhase13({ audio });
   initThemeScoping({ audio });
+  initDiscographyExperience({ audio });
   pwa.initPWA();
   initAudioFocus({ audio });
   initLyricsWakeLock({ audio });
