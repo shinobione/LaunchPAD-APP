@@ -136,7 +136,7 @@ async function boot() {
     import(versioned('./features/theme-scope.js')),
     import(versioned('./features/discography-experience.js')),
     import(versioned('./features/home-editorial.js')),
-    import(versioned('./features/visual/audio-lab-sanctuary.js'))
+    import(versioned('./features/visual/audio-lab-sanctuary-v2.js'))
   ]);
 
   installContentV4();
