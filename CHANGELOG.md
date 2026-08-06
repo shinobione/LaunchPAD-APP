@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Complete **Milestone 1 — Routing, Navigation & Legal**: reset view-level browser/PWA launches to Home while preserving shareable track routes, add 240 ms opacity/transform page transitions with reduced-motion support, and place the dynamic ShinoBiWan proprietary notice inside the About build card.
 - Add **Feature 09 — Editorial catalog filters** with combinable R2-powered Era, Energy, Mood, Genre, Language, release type, Canvas, Lyrics, synchronized Lyrics, Explicit/Clean and Year filters, responsive mobile drawer, active chips, result counts, reset action and shareable URL state.
 - Fix Track Manager v4.9 Lyrics badges by carrying the authoritative R2 quality result into every catalogue card, correctly distinguishing absent, invalid, unsynced and timestamped Lyrics.
 - Upgrade Track Manager to v4.8 with explicit Lyrics badges on every track card: red when lyrics are absent or invalid, yellow when lyrics are present without timestamps, and green when timestamped lyrics are available.
