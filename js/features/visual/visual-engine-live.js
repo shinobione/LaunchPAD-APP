@@ -1,28 +1,20 @@
 import { readAudioLabSpectrum, synthesizePlaybackSpectrum } from '../audio-lab-signal.js';
+import { createAudioReactivityTracker, shapeReactiveSpectrum } from './audio-reactivity.js';
 import { createVisualController as createBaseVisualController } from './visual-engine-v2.js';
 import {
   drawOrbitMode,
-  drawPrismTunnelMode,
   drawAuroraGlassMode,
-  drawCyberRainMode,
-  drawWaveCathedralMode,
-  drawQuantumGridMode
+  drawWaveCathedralMode
 } from './visual-engine-core-modes.js';
 
 const DEFAULT_MODE = 'wave-cathedral';
 const CUSTOM_MODES = [
   { id: 'wave-cathedral', label: 'Wave Cathedral', renderer: drawWaveCathedralMode },
   { id: 'circle', label: 'Orbit', renderer: drawOrbitMode },
-  { id: 'prism-tunnel', label: 'Prism Tunnel', renderer: drawPrismTunnelMode },
-  { id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode },
-  { id: 'cyber-rain', label: 'Cyber Rain', renderer: drawCyberRainMode },
-  { id: 'quantum-grid', label: 'Quantum Grid', renderer: drawQuantumGridMode }
+  { id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }
 ];
 const CUSTOM_RENDERERS = new Map(CUSTOM_MODES.map(mode => [mode.id, mode.renderer]));
-
-function clampByte(value) {
-  return Math.max(0, Math.min(255, Math.round(value)));
-}
+const CUSTOM_MODE_IDS = CUSTOM_MODES.map(mode => mode.id);
 
 function prepareCanvas(canvas) {
   const rect = canvas?.getBoundingClientRect();
@@ -45,7 +37,18 @@ function prepareCanvas(canvas) {
 
 function installControls(controls) {
   if (!controls) return null;
-  controls.querySelector('[data-visual="constellation"]')?.remove();
+  const supported = new Set([
+    'bars',
+    'singularity',
+    'neon-shatter',
+    'liquid-chrome',
+    'hex-reactor',
+    'nebula',
+    ...CUSTOM_MODE_IDS
+  ]);
+  controls.querySelectorAll('[data-visual]').forEach(button => {
+    if (!supported.has(button.dataset.visual)) button.remove();
+  });
 
   for (const { id, label } of CUSTOM_MODES) {
     let button = controls.querySelector(`[data-visual="${id}"]`);
@@ -74,38 +77,27 @@ function installControls(controls) {
   return defaultButton;
 }
 
-function readReactiveData(audio, raw, smoothed) {
-  const reading = readAudioLabSpectrum(raw);
-
-  if (!reading.available) {
-    if (!audio.paused && !audio.ended) synthesizePlaybackSpectrum(raw, Number(audio.currentTime) || 0);
-    else raw.fill(0);
-  }
-
-  for (let index = 0; index < raw.length; index += 1) {
-    const boosted = Math.pow(raw[index] / 255, .72) * 255;
-    const attack = boosted > smoothed[index] ? .58 : .2;
-    smoothed[index] = clampByte(smoothed[index] + (boosted - smoothed[index]) * attack);
-  }
-
-  return reading;
-}
-
-function renderMode(canvas, renderer, data, getAccent, time) {
+function renderMode(canvas, renderer, data, getAccent, time, features) {
   const prepared = prepareCanvas(canvas);
   if (!prepared || typeof renderer !== 'function') return;
   const [accent, accent2] = getAccent();
-  renderer(prepared.context, prepared.width, prepared.height, data, accent, accent2, time);
+  renderer(prepared.context, prepared.width, prepared.height, data, accent, accent2, time, features);
 }
 
 export function createVisualController(options) {
-  const base = createBaseVisualController(options);
+  const base = createBaseVisualController({
+    ...options,
+    delegatedModes: CUSTOM_MODE_IDS,
+    externalHomeRenderer: true
+  });
   const { audio, $, getAccent } = options;
   const labCanvas = $('#lab-visualizer');
   const homeCanvas = $('#home-visualizer');
   const controls = document.querySelector('.lab-controls');
   const raw = new Uint8Array(128);
+  const shaped = new Uint8Array(128);
   const reactive = new Uint8Array(128);
+  const tracker = createAudioReactivityTracker({ attack: .74, release: .13, transientDecay: .79 });
   let mode = DEFAULT_MODE;
   let frame = 0;
 
@@ -114,10 +106,12 @@ export function createVisualController(options) {
     button.classList.toggle('active', button === defaultButton);
     button.addEventListener('click', () => {
       mode = button.dataset.visual || DEFAULT_MODE;
+      base.setMode(mode);
       controls.querySelectorAll('[data-visual]').forEach(item => item.classList.toggle('active', item === button));
       button.scrollIntoView?.({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     });
   });
+  base.setMode(DEFAULT_MODE);
 
   if (labCanvas) labCanvas.dataset.visualMode = DEFAULT_MODE;
   if (homeCanvas) {
@@ -126,19 +120,38 @@ export function createVisualController(options) {
   }
   const homeTitle = document.querySelector('.now-panel .panel-head h3');
   if (homeTitle) homeTitle.textContent = 'Wave Cathedral';
-  document.documentElement.dataset.audioLabRenderer = 'live-analyser';
+  document.documentElement.dataset.audioLabRenderer = 'fft-transient-v2';
+
+  function readReactiveFrame() {
+    const reading = readAudioLabSpectrum(raw);
+    if (!reading.available) {
+      if (!audio.paused && !audio.ended) synthesizePlaybackSpectrum(raw, Number(audio.currentTime) || 0);
+      else raw.fill(0);
+    }
+
+    const features = tracker.update(raw);
+    shapeReactiveSpectrum(raw, shaped, features);
+    for (let index = 0; index < reactive.length; index += 1) {
+      const attack = shaped[index] > reactive[index] ? .72 : .18;
+      reactive[index] = Math.max(0, Math.min(255, Math.round(
+        reactive[index] + (shaped[index] - reactive[index]) * attack
+      )));
+    }
+    return { reading, features };
+  }
 
   function render() {
     const time = performance.now() / 1000;
-    const reading = readReactiveData(audio, raw, reactive);
+    const { reading, features } = readReactiveFrame();
     document.documentElement.dataset.audioLabFeed = reading.state || (reading.available ? 'live' : 'warming');
+    document.documentElement.dataset.audioLabKick = features.kick.toFixed(3);
 
-    renderMode(homeCanvas, drawWaveCathedralMode, reactive, getAccent, time);
+    renderMode(homeCanvas, drawWaveCathedralMode, reactive, getAccent, time, features);
 
     const customRenderer = CUSTOM_RENDERERS.get(mode);
     if (customRenderer) {
       if (labCanvas) labCanvas.dataset.visualMode = mode;
-      renderMode(labCanvas, customRenderer, reactive, getAccent, time);
+      renderMode(labCanvas, customRenderer, reactive, getAccent, time, features);
     }
 
     frame = requestAnimationFrame(render);
