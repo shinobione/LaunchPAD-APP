@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260806-m2-catalog-ordering',
-    cache: 'shinobi-launchpad-v30',
-    revision: 'catalog-ordering-1',
-    display: '2026.08.06.30',
-    release: 'catalog-ordering-20260806'
+    id: '20260806-m4-theme-scoping',
+    cache: 'shinobi-launchpad-v31',
+    revision: 'theme-scoping-1',
+    display: '2026.08.06.31',
+    release: 'theme-scoping-20260806'
   });
 
   // Legacy structural-validation markers retained until the workflow is modernized.
@@ -78,6 +78,11 @@
   // revision: 'routing-navigation-legal-1'
   // display: '2026.08.06.29'
   // release: 'routing-navigation-legal-20260806'
+  // id: '20260806-m2-catalog-ordering'
+  // cache: 'shinobi-launchpad-v30'
+  // revision: 'catalog-ordering-1'
+  // display: '2026.08.06.30'
+  // release: 'catalog-ordering-20260806'
 
   globalThis.SHINOBIWAN_BUILD = config;
 
