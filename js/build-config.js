@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260806-pwa-single-update',
-    cache: 'shinobi-launchpad-v28',
-    revision: 'pwa-single-update-1',
-    display: '2026.08.06.28',
-    release: 'pwa-single-update-20260806'
+    id: '20260806-m1-routing-legal',
+    cache: 'shinobi-launchpad-v29',
+    revision: 'routing-navigation-legal-1',
+    display: '2026.08.06.29',
+    release: 'routing-navigation-legal-20260806'
   });
 
   // Legacy structural-validation markers retained until the workflow is modernized.
@@ -68,6 +68,11 @@
   // revision: 'audiolab-rms-clarity-1'
   // display: '2026.08.06.27'
   // release: 'audiolab-rms-clarity-20260806'
+  // id: '20260806-pwa-single-update'
+  // cache: 'shinobi-launchpad-v28'
+  // revision: 'pwa-single-update-1'
+  // display: '2026.08.06.28'
+  // release: 'pwa-single-update-20260806'
 
   globalThis.SHINOBIWAN_BUILD = config;
 
