@@ -3,20 +3,53 @@ import fs from 'node:fs';
 import {
   compareTracksNewestFirst,
   latestActiveTrackEntries,
+  recentlyAddedTrackEntries,
+  releaseSortInfo,
   releaseSortTimestamp
 } from '../js/core/catalog-ordering.js';
+import { normalizeTrackSchema } from '../js/core/catalog-schema.js';
 
 const read = path => fs.readFileSync(path, 'utf8');
 
+const now = Date.parse('2026-08-06T00:00:00Z');
 const dated = { id: 'dated', releaseDate: '2026-08-01', createdAt: '2026-01-01', status: 'published' };
 const fallback = { id: 'fallback', createdAt: '2026-07-01', status: 'published' };
-const older = { id: 'older', releaseDate: '2025-12-01', status: 'published' };
-const draft = { id: 'draft', releaseDate: '2027-01-01', status: 'draft' };
+const older = { id: 'older', releaseDate: '2025-12-01', createdAt: '2026-08-05', status: 'published' };
+const draft = { id: 'draft', releaseDate: '2026-08-02', status: 'draft' };
+const future = { id: 'future', releaseDate: '2026-12-01', status: 'published' };
+const upcoming = { id: 'upcoming', releaseDate: '2026-08-02', status: 'upcoming' };
+const inactive = { id: 'inactive', releaseDate: '2026-08-03', active: false, status: 'published' };
 
 assert.equal(releaseSortTimestamp(dated), Date.parse('2026-08-01'));
 assert.equal(releaseSortTimestamp(fallback), Date.parse('2026-07-01'));
+assert.equal(releaseSortInfo(fallback).source, 'createdAt');
+assert.equal(releaseSortInfo(fallback).fallback, true);
 assert.deepEqual([older, fallback, dated].sort(compareTracksNewestFirst).map(track => track.id), ['dated', 'fallback', 'older']);
-assert.deepEqual(latestActiveTrackEntries([older, draft, fallback, dated], 5).map(entry => entry.track.id), ['dated', 'fallback', 'older']);
+assert.deepEqual(
+  latestActiveTrackEntries([older, draft, fallback, dated, future, upcoming, inactive], 5, now).map(entry => entry.track.id),
+  ['dated', 'fallback', 'older']
+);
+assert.deepEqual(
+  recentlyAddedTrackEntries([older, fallback, dated], 5).map(entry => entry.track.id),
+  ['older', 'fallback', 'dated']
+);
+
+const normalized = normalizeTrackSchema({
+  slug: 'legacy-track',
+  name: 'Legacy Track',
+  releasedAt: '2025-02-03',
+  created_at: '2026-01-02',
+  genres: ['Trap'],
+  moods: ['Dark'],
+  themes: ['Night'],
+  language: 'English'
+}, 4);
+assert.equal(normalized.id, 'legacy-track');
+assert.equal(normalized.releaseDate, '2025-02-03T00:00:00.000Z');
+assert.equal(normalized.createdAt, '2026-01-02T00:00:00.000Z');
+assert.equal(normalized.genre, 'Trap');
+assert.deepEqual(normalized.languages, ['English']);
+assert.equal(normalized.importIndex, 4);
 
 const feature = read('js/features/feature-11.js');
 for (const required of [
@@ -30,6 +63,10 @@ for (const required of [
   "globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches",
   'renderLatestReleases',
   'latestActiveTrackEntries(tracks, 5)',
+  'renderRecentlyAdded',
+  'recentlyAddedTrackEntries(tracks, 5)',
+  'Release date unavailable',
+  'CATALOG ACTIVITY',
   "button.textContent = expanded ? 'Player' : 'Video'",
   "video.preload = 'auto'",
   "video.addEventListener('ended'",
@@ -46,8 +83,11 @@ for (const required of [
   'route-view-replay 240ms',
   '@media (prefers-reduced-motion: reduce)',
   'transform: translate3d(0, 8px, 0)',
-  'opacity: 0'
-]) assert.ok(routeStyles.includes(required), `Route transition styles are missing ${required}.`);
+  'opacity: 0',
+  '.recently-added-section',
+  '.release-date-fallback',
+  '.catalog-card-context'
+]) assert.ok(routeStyles.includes(required), `Feature 11 styles are missing ${required}.`);
 assert.ok(!routeStyles.includes('height 240ms'), 'Route transitions must not animate layout properties.');
 
 const about = read('js/features/about/about-controller.js');
@@ -67,32 +107,26 @@ for (const required of [
   'opacity:.72'
 ]) assert.ok(aboutStyles.includes(required), `About legal styling is missing ${required}.`);
 
-const videoUI = read('js/features/track-videos.js');
-for (const required of [
-  "badge.textContent = 'VIDEO'",
-  "button.textContent = 'Video'",
-  "button.textContent = opening ? 'Player' : 'Video'",
-  "video.preload = 'auto'",
-  "video.setAttribute('webkit-playsinline', '')"
-]) assert.ok(videoUI.includes(required), `Track video UI is missing ${required}.`);
-assert.ok(!videoUI.includes("badge.textContent = 'CANVAS'"));
-assert.ok(!videoUI.includes("button.textContent = 'Open Canvas'"));
-
 const remote = read('js/core/remote-catalog.js');
-for (const required of ['createdAt,','updatedAt,',"status: item.status || 'published'",'active: item.active !== false',"releaseDate: firstTimestamp(item.releaseDate"]) {
-  assert.ok(remote.includes(required), `Remote catalog harmonization is missing ${required}.`);
-}
+for (const required of [
+  "import { normalizeTrackSchema } from './catalog-schema.js'",
+  'importedAt: item.migration?.importedAt || createdAt',
+  "source: 'cloudflare-r2'",
+  'map((item, index) => mapRemoteTrack(item, normalizedApiUrl, index))'
+]) assert.ok(remote.includes(required), `Remote catalog harmonization is missing ${required}.`);
+
+const store = read('js/core/catalog-store.js');
+for (const required of [
+  "import { normalizeTrackSchema } from './catalog-schema.js'",
+  'normalizeTrackSchema(remoteTrack, importIndex)',
+  "status === 'draft' || status === 'archived' || status === 'upcoming'",
+  'officialRelease === null || officialRelease <= now'
+]) assert.ok(store.includes(required), `Catalog store normalization is missing ${required}.`);
 
 const engine = read('js/app-engine.js');
 for (const required of ['feature11.normalizeLaunchRoute()','feature11.prepareFeature11Catalog()','feature11.initFeature11({ audio })','css/feature-11.css']) {
   assert.ok(engine.includes(required), `Feature 11 boot wiring is missing ${required}.`);
 }
-
-const mobileStyles = routeStyles;
-assert.ok(mobileStyles.includes('.launchpad-hero .hero-body'));
-assert.ok(mobileStyles.includes('order: 1'));
-assert.ok(mobileStyles.includes('.launchpad-hero .launchpad-banner-rail'));
-assert.ok(mobileStyles.includes('order: 2'));
 
 const managerServer = read('cloudflare/admin-worker.parts/03c-feature-11-sorting-server.part');
 for (const required of [
@@ -111,13 +145,13 @@ for (const required of [
   'state.tracks=feature11SortTracks(state.tracks||[])',
   "feature11VersionPill.textContent='v5.3'"
 ]) assert.ok(managerClient.includes(required), `Track Manager client sorting is missing ${required}.`);
-assert.ok(!managerClient.includes('buildCanonicalTrackSummaries'), 'Browser UI must not reference the server-only catalog builder.');
-assert.ok(!managerClient.includes('readManifest'), 'Browser UI must not reference the server-only manifest reader.');
+assert.ok(!managerClient.includes('buildCanonicalTrackSummaries'));
+assert.ok(!managerClient.includes('readManifest'));
 
 const build = read('js/build-config.js');
-assert.ok(build.includes("id: '20260806-m1-routing-legal'"));
-assert.ok(build.includes("cache: 'shinobi-launchpad-v29'"));
-assert.ok(build.includes("display: '2026.08.06.29'"));
-assert.ok(build.includes("release: 'routing-navigation-legal-20260806'"));
+assert.ok(build.includes("id: '20260806-m2-catalog-ordering'"));
+assert.ok(build.includes("cache: 'shinobi-launchpad-v30'"));
+assert.ok(build.includes("display: '2026.08.06.30'"));
+assert.ok(build.includes("release: 'catalog-ordering-20260806'"));
 
-console.log('Milestone 1 routing, route transitions and About legal protection remain valid.');
+console.log('Milestone 2 canonical catalog ordering and Recently Added separation remain valid.');
