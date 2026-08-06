@@ -9,30 +9,66 @@ on:
       - 'feature/**'
   pull_request:
 
+concurrency:
+  group: validate-horizontal-overflow-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
   validate-overflow:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Test installed-PWA width in Chrome
         shell: bash
+        timeout-minutes: 3
         run: |
+          set -euo pipefail
           python3 -m http.server 4173 >/tmp/launchpad-overflow-server.log 2>&1 &
           SERVER_PID=$!
-          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+          cleanup() {
+            kill "$SERVER_PID" 2>/dev/null || true
+            pkill -TERM -f 'google-chrome.*127.0.0.1:4173' 2>/dev/null || true
+          }
+          trap cleanup EXIT
           sleep 2
 
-          google-chrome --headless=new --no-sandbox --disable-gpu \
-            --virtual-time-budget=18000 --dump-dom \
-            'http://127.0.0.1:4173/tests/horizontal-overflow-smoke.html' \
+          timeout --signal=TERM --kill-after=5s 60s \
+            google-chrome \
+              --headless=new \
+              --no-sandbox \
+              --disable-gpu \
+              --disable-dev-shm-usage \
+              --disable-background-networking \
+              --disable-component-update \
+              --disable-default-apps \
+              --disable-extensions \
+              --no-first-run \
+              --mute-audio \
+              --hide-scrollbars \
+              --js-flags=--max-old-space-size=768 \
+              --virtual-time-budget=18000 \
+              --dump-dom \
+              'http://127.0.0.1:4173/tests/horizontal-overflow-smoke.html' \
             > /tmp/horizontal-overflow.html
 
           grep -o 'HORIZONTAL OVERFLOW [^<]*' /tmp/horizontal-overflow.html || true
           grep -q 'HORIZONTAL OVERFLOW READY' /tmp/horizontal-overflow.html
           ! grep -q 'HORIZONTAL OVERFLOW ERROR' /tmp/horizontal-overflow.html
           grep -q '"locked":true' /tmp/horizontal-overflow.html
+
+      - name: Upload overflow diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: horizontal-overflow-diagnostics
+          path: |
+            /tmp/launchpad-overflow-server.log
+            /tmp/horizontal-overflow.html
+          if-no-files-found: ignore
+          retention-days: 7
