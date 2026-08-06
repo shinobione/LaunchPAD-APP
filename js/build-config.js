@@ -199,7 +199,7 @@
   if (document.querySelector('script[data-shinobi-engine]')) return;
 
   const script = document.createElement('script');
-  script.src = `js/app-engine.js?v=${encodeURIComponent(config.id)}`;
+  script.src = `js/app-engine-recovery.js?v=${encodeURIComponent(config.id)}`;
   script.async = false;
   script.dataset.shinobiEngine = 'true';
   document.head.appendChild(script);
