@@ -1,0 +1,78 @@
+.ui-icon{
+  display:block;
+  width:1.15em;
+  height:1.15em;
+  flex:0 0 auto;
+  color:currentColor;
+  overflow:visible;
+  pointer-events:none;
+}
+
+.main-nav .nav-item>span:first-child,
+.mobile-nav [data-view]>span:first-child{
+  display:grid;
+  place-items:center;
+  width:22px;
+  min-width:22px;
+  color:currentColor;
+}
+
+.main-nav .nav-item .ui-icon,
+.mobile-nav [data-view] .ui-icon{
+  width:18px;
+  height:18px;
+  stroke-width:1.9;
+}
+
+button[data-svg-icon],
+a[data-svg-icon],
+#menu-button,
+.mini-controls button,
+.home-visual-arrow,
+.play-overlay{
+  min-width:40px;
+  min-height:40px;
+}
+
+button[data-svg-icon],
+a[data-svg-icon]{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+}
+
+.mini-controls button,
+.play-overlay,
+.home-visual-arrow,
+#menu-button{
+  display:grid;
+  place-items:center;
+}
+
+.mini-controls .ui-icon,
+.play-overlay .ui-icon,
+.home-visual-arrow .ui-icon,
+#menu-button .ui-icon{
+  width:19px;
+  height:19px;
+}
+
+button:focus-visible .ui-icon,
+a:focus-visible .ui-icon{
+  filter:drop-shadow(0 0 7px color-mix(in srgb,var(--accent) 62%,transparent));
+}
+
+@media(max-width:760px){
+  .main-nav .nav-item,
+  .mobile-nav [data-view],
+  button[data-svg-icon],
+  a[data-svg-icon],
+  #menu-button,
+  .mini-controls button,
+  .home-visual-arrow,
+  .play-overlay{
+    min-width:44px;
+    min-height:44px;
+  }
+}

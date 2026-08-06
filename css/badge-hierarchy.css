@@ -1,0 +1,121 @@
+.catalog-badge-hierarchy{
+  display:grid;
+  gap:6px;
+  margin-top:9px;
+  min-width:0;
+}
+
+.catalog-badge-level{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:5px;
+  min-width:0;
+}
+
+.catalog-badge{
+  display:inline-flex;
+  align-items:center;
+  min-height:20px;
+  max-width:100%;
+  padding:4px 7px;
+  border:1px solid transparent;
+  border-radius:999px;
+  font-size:8px;
+  font-weight:800;
+  line-height:1;
+  letter-spacing:.075em;
+  text-transform:uppercase;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.catalog-badge.level-1{
+  color:#fff;
+  background:rgba(255,255,255,.08);
+  border-color:rgba(255,255,255,.13);
+}
+
+.catalog-badge.status-explicit{
+  color:#ffd8df;
+  background:rgba(221,61,93,.18);
+  border-color:rgba(255,100,128,.34);
+}
+
+.catalog-badge.status-clean{
+  color:#c8ffe2;
+  background:rgba(47,181,112,.16);
+  border-color:rgba(82,224,151,.3);
+}
+
+.catalog-badge.status-lyrics,
+.catalog-badge.status-lyrics-synced{
+  color:#e9dcff;
+  background:color-mix(in srgb,var(--accent) 18%,rgba(255,255,255,.04));
+  border-color:color-mix(in srgb,var(--accent) 45%,transparent);
+}
+
+.catalog-badge.status-video{
+  color:#d7eeff;
+  background:rgba(49,138,222,.17);
+  border-color:rgba(95,174,255,.32);
+}
+
+.catalog-badge.status-upcoming{
+  color:#fff0ba;
+  background:rgba(213,161,44,.17);
+  border-color:rgba(255,208,94,.32);
+}
+
+.catalog-badge.level-2{
+  color:#fff;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 78%,#111),color-mix(in srgb,var(--accent2) 70%,#111));
+  border-color:color-mix(in srgb,var(--accent) 62%,#fff 12%);
+  box-shadow:0 0 12px color-mix(in srgb,var(--accent) 13%,transparent);
+}
+
+.catalog-badge.level-3{
+  color:#cfc6da;
+  background:rgba(255,255,255,.035);
+  border-color:rgba(255,255,255,.075);
+  font-weight:700;
+  letter-spacing:.035em;
+  text-transform:none;
+}
+
+.catalog-badge.secondary-overflow{
+  color:color-mix(in srgb,var(--accent) 68%,#fff);
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent);
+}
+
+.album-card .catalog-badge-hierarchy{
+  margin-top:10px;
+  padding-top:8px;
+  border-top:1px solid rgba(255,255,255,.055);
+}
+
+.album-detail-track .catalog-badge-hierarchy,
+.project-track .catalog-badge-hierarchy{
+  margin:7px 0 0;
+}
+
+.track-detail-hero .catalog-badge-hierarchy{
+  max-width:720px;
+  margin-top:12px;
+}
+
+[hidden][data-badge-superseded="true"]{
+  display:none!important;
+}
+
+@media(max-width:760px){
+  .catalog-badge{
+    min-height:22px;
+    padding:5px 7px;
+  }
+
+  .catalog-badge.level-3:nth-child(n+4):not(.secondary-overflow){
+    display:none;
+  }
+}
