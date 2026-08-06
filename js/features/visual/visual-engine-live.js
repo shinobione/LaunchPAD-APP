@@ -6,12 +6,14 @@ import {
   drawAuroraGlassMode,
   drawWaveCathedralMode
 } from './visual-engine-core-modes.js';
+import { drawHexReactorMode } from './visual-engine-hex-reactor.js';
 
 const DEFAULT_MODE = 'wave-cathedral';
 const CUSTOM_MODES = [
   { id: 'wave-cathedral', label: 'Wave Cathedral', renderer: drawWaveCathedralMode },
   { id: 'circle', label: 'Orbit', renderer: drawOrbitMode },
-  { id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }
+  { id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode },
+  { id: 'hex-reactor', label: 'Hex Reactor', renderer: drawHexReactorMode }
 ];
 const CUSTOM_RENDERERS = new Map(CUSTOM_MODES.map(mode => [mode.id, mode.renderer]));
 const CUSTOM_MODE_IDS = CUSTOM_MODES.map(mode => mode.id);
@@ -120,7 +122,7 @@ export function createVisualController(options) {
   }
   const homeTitle = document.querySelector('.now-panel .panel-head h3');
   if (homeTitle) homeTitle.textContent = 'Wave Cathedral';
-  document.documentElement.dataset.audioLabRenderer = 'fft-transient-v2';
+  document.documentElement.dataset.audioLabRenderer = 'fft-mechanical-v3';
 
   function readReactiveFrame() {
     const reading = readAudioLabSpectrum(raw);
