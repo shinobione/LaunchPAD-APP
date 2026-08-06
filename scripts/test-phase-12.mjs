@@ -61,4 +61,6 @@ const deployment = read('.github/workflows/deploy-cloudflare.yml');
 assert.ok(deployment.includes("EXPECTED_ADMIN_VERSION: '5.6'"));
 assert.ok(deployment.includes("EXPECTED_PUBLIC_VERSION: '2.6'"));
 
-console.log('Phase 12 filtering, manual cover colors, Studio cleanup, local themes, metadata layout and Discography order remain valid under Track Manager v5.6.');
+await import('./test-milestone-5.mjs');
+
+console.log('Phase 12 filtering, manual cover colors, Studio cleanup, local themes, metadata layout and Discography order remain valid under Track Manager v5.6 and Build 32.');
