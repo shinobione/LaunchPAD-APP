@@ -52,7 +52,7 @@ function installBuildInfo() {
   const build = globalThis.SHINOBIWAN_BUILD || {};
   const info = document.createElement('div');
   info.className = 'about-build-info';
-  info.setAttribute('aria-label', 'LaunchPAD application version');
+  info.setAttribute('aria-label', 'LaunchPAD application version and legal notice');
 
   const heading = document.createElement('strong');
   heading.textContent = 'LaunchPAD';
@@ -63,7 +63,11 @@ function installBuildInfo() {
   const cacheLine = document.createElement('span');
   cacheLine.textContent = `Release ${build.release || build.cache || 'development'}`;
 
-  info.append(heading, buildLine, cacheLine);
+  const legalLine = document.createElement('small');
+  legalLine.className = 'about-legal-notice';
+  legalLine.textContent = `© ${new Date().getFullYear()} ShinoBiWan. All Rights Reserved. Proprietary code & design. Unauthorized copying, reproduction, or reverse engineering is strictly prohibited.`;
+
+  info.append(heading, buildLine, cacheLine, legalLine);
   copy.appendChild(info);
   placeBuildInfo();
 }
