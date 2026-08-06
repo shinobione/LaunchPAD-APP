@@ -82,6 +82,11 @@ function renderMode(canvas, renderer, data, getAccent, time, features) {
 }
 
 export function createVisualController(options) {
+  if (document.documentElement.dataset.visualTest === 'true') {
+    document.documentElement.dataset.audioLabRenderer = 'disabled-for-visual-test';
+    return { resume() {}, setMode() {} };
+  }
+
   const base = createBaseVisualController({
     ...options,
     delegatedModes: CUSTOM_MODE_IDS,
