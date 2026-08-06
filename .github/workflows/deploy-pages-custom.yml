@@ -9,7 +9,7 @@ on:
       - .github/workflows/deploy-pages-custom.yml
 
 concurrency:
-  group: pages
+  group: pages-recovery-20260806-2103
   cancel-in-progress: true
 
 permissions:
