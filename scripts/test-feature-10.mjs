@@ -76,11 +76,11 @@ for (const required of ['./css/feature-10.css','./js/core/editorial-normalizatio
 }
 
 const deployWorkflow = read('.github/workflows/deploy-cloudflare.yml');
-assert.ok(deployWorkflow.includes("EXPECTED_ADMIN_VERSION: '5.5'"));
+assert.ok(deployWorkflow.includes("EXPECTED_ADMIN_VERSION: '5.6'"));
 assert.ok(deployWorkflow.includes("EXPECTED_PUBLIC_VERSION: '2.6'"));
 
 const build = read('js/build-config.js');
 assert.ok(build.includes("display: '2026.08.05.16'"));
 assert.ok(build.includes("release: 'audiolab-signal-recovery-20260805'"));
 
-console.log('Feature 10 remains valid under the AudioLab live-reactivity release, public Worker v2.6 and Track Manager v5.5.');
+console.log('Feature 10 remains valid under public Worker v2.6 and Track Manager v5.6.');
