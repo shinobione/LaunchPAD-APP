@@ -20,60 +20,63 @@ for (const required of [
   "{ id: 'singularity', label: 'Singularity' }",
   "{ id: 'neon-shatter', label: 'Neon Shatter' }",
   "{ id: 'liquid-chrome', label: 'Liquid Chrome' }",
-  "{ id: 'hex-reactor', label: 'Hex Reactor' }",
   "{ id: 'nebula', label: 'Nebula' }",
   'function drawSingularity(',
   'function drawNeonShatter(',
   'function drawLiquidChrome(',
-  'function drawHexReactor(',
   'function drawNebula(',
   'const allowedModes = new Set(',
-  'if (!delegatedModeSet.has(mode))'
+  'if (!delegatedModeSet.has(mode))',
+  'const spreadX = width * (.27 + intensity * .045)',
+  'const rings = width < 520 ? 32 : 46'
 ]) assert.ok(visuals.includes(required), `Phase 13 Audio Lab is missing ${required}.`);
+for (const forbidden of ['hex-reactor', 'drawHexReactor', 'hexPath']) {
+  assert.ok(!visuals.includes(forbidden), `Retired Hex Reactor code leaked into Phase 13: ${forbidden}.`);
+}
 
 const coreVisuals = read('js/features/visual/visual-engine-core-modes.js');
 for (const required of [
-  'drawOrbitMode(',
   'drawAuroraGlassMode(',
-  'drawWaveCathedralMode(',
-  'const bandSpeeds = [.105, .155, .225]',
-  'const arches = width < 600 ? 7 : 10',
-  'const apexGap = width * (.003 + localDrive * (.025 + (1 - progress) * .024))'
-]) assert.ok(coreVisuals.includes(required), `Audio Lab calibrated renderer is missing ${required}.`);
-
-const hexVisuals = read('js/features/visual/visual-engine-hex-reactor.js');
-for (const required of [
-  'drawHexReactorMode(',
-  'const beatDrive = Math.pow(',
-  'const counterFront = Math.max(',
-  'for (let ring = 0; ring < 4; ring += 1)'
-]) assert.ok(hexVisuals.includes(required), `Audio Lab Hex Reactor renderer is missing ${required}.`);
+  'rms: features.rms ?? features.energy ?? 0',
+  'const expansion = .42 + dynamics * .94 + peak * .2',
+  'const motionRate = .14 + dynamics * .72 + peak * .16'
+]) assert.ok(coreVisuals.includes(required), `Audio Lab Aurora dynamics renderer is missing ${required}.`);
+for (const forbidden of ['drawOrbitMode', 'drawWaveCathedralMode', 'Wave Cathedral', 'Orbit']) {
+  assert.ok(!coreVisuals.includes(forbidden), `Retired custom renderer leaked into Phase 13: ${forbidden}.`);
+}
+assert.ok(!fs.existsSync('js/features/visual/visual-engine-hex-reactor.js'));
 
 const liveVisuals = read('js/features/visual/visual-engine-live.js');
 for (const required of [
-  "const DEFAULT_MODE = 'wave-cathedral'",
-  "import { drawHexReactorMode } from './visual-engine-hex-reactor.js'",
-  "{ id: 'hex-reactor', label: 'Hex Reactor', renderer: drawHexReactorMode }",
+  "const DEFAULT_MODE = 'aurora-glass'",
+  "{ id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }",
   'readAudioLabSpectrum(raw)',
-  'createAudioReactivityTracker',
+  'readAudioLabAmplitude(waveform)',
+  'createAmplitudeDynamicsTracker',
   'shapeReactiveSpectrum(raw, shaped, features)',
-  'renderMode(homeCanvas, drawWaveCathedralMode',
-  "homeTitle.textContent = 'Wave Cathedral'",
-  "dataset.audioLabRenderer = 'fft-mechanical-v3'"
+  'renderMode(homeCanvas, drawAuroraGlassMode',
+  "homeTitle.textContent = 'Aurora Glass'",
+  "dataset.audioLabRenderer = 'rms-dynamics-v4'"
 ]) assert.ok(liveVisuals.includes(required), `Live Audio Lab renderer is missing ${required}.`);
+for (const forbidden of ['wave-cathedral', "id: 'circle'", 'hex-reactor', 'drawHexReactorMode']) {
+  assert.ok(!liveVisuals.includes(forbidden), `Retired Audio Lab route leaked into Phase 13: ${forbidden}.`);
+}
 
 const reactivity = read('js/features/visual/audio-reactivity.js');
 for (const required of [
   'createAudioReactivityTracker',
+  'createAmplitudeDynamicsTracker',
   'readFrequencyBands',
   'shapeReactiveSpectrum',
-  'const kickTarget = clamp('
+  'const kickTarget = clamp(',
+  'const normalizedRms = clamp('
 ]) assert.ok(reactivity.includes(required), `Audio Lab reusable reactivity layer is missing ${required}.`);
 
 const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
   'initAudioLabSignalBridge',
   'readAudioLabSpectrum',
+  'readAudioLabAmplitude',
   'synthesizePlaybackSpectrum',
   'waveformToSpectrum',
   "audio.addEventListener('playing', recover)",
@@ -108,8 +111,8 @@ assert.ok(worker.includes("'./js/features/feature-13.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-reactivity.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-v2.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-core-modes.js'"));
-assert.ok(worker.includes("'./js/features/visual/visual-engine-hex-reactor.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-live.js'"));
+assert.ok(!worker.includes('visual-engine-hex-reactor.js'));
 
 const publicWorker = read('cloudflare/public-worker-v26.js');
 for (const required of [
@@ -141,7 +144,10 @@ for (const required of [
   "cache: 'shinobi-launchpad-v25'",
   "display: '2026.08.06.26'",
   "release: 'audiolab-animation-calibration-20260806'",
-  "cache: 'shinobi-launchpad-v26'"
+  "cache: 'shinobi-launchpad-v26'",
+  "display: '2026.08.06.27'",
+  "release: 'audiolab-rms-clarity-20260806'",
+  "cache: 'shinobi-launchpad-v27'"
 ]) assert.ok(build.includes(required), `Build history is missing ${required}.`);
 
-console.log('Phase 13 palette, Audio Lab mechanical calibration and renderer sanctuary are valid.');
+console.log('Phase 13 palette, Audio Lab preset purge, RMS dynamics and visual clarity remain valid.');
