@@ -50,6 +50,35 @@ export function createAudioReactivityTracker({ attack = .68, release = .16, tran
   };
 }
 
+export function createAmplitudeDynamicsTracker({
+  attack = .52,
+  release = .065,
+  peakDecay = .9,
+  noiseFloor = .012,
+  loudCeiling = .24
+} = {}) {
+  let loudness = 0;
+  let peakHold = 0;
+
+  return {
+    update({ rms = 0, peak = 0 } = {}) {
+      const normalizedRms = clamp((rms - noiseFloor) / Math.max(.001, loudCeiling - noiseFloor));
+      const normalizedPeak = clamp((peak - noiseFloor * 1.5) / Math.max(.001, .82 - noiseFloor * 1.5));
+      const coefficient = normalizedRms > loudness ? attack : release;
+      loudness += (normalizedRms - loudness) * coefficient;
+      peakHold = Math.max(normalizedPeak, peakHold * peakDecay);
+      const dynamics = clamp(Math.pow(loudness, .78) * .76 + peakHold * .24);
+      return {
+        rms: clamp(loudness),
+        peak: clamp(peakHold),
+        dynamics,
+        rawRms: clamp(rms),
+        rawPeak: clamp(peak)
+      };
+    }
+  };
+}
+
 export function shapeReactiveSpectrum(raw, target, features) {
   const length = Math.min(raw.length, target.length);
   for (let index = 0; index < length; index += 1) {
