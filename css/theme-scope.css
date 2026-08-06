@@ -1,0 +1,41 @@
+:root{
+  --page-accent:var(--accent);
+  --page-accent2:var(--accent2);
+}
+
+html[data-theme-scope="split"] .app-shell{
+  --accent:var(--page-accent);
+  --accent2:var(--page-accent2);
+}
+
+.side-player[data-player-track-theme],
+.player-bar[data-player-track-theme],
+.current-track[data-player-track-theme],
+.mini-player[data-player-track-theme],
+.lyrics-player[data-player-track-theme],
+[data-player-scope][data-player-track-theme]{
+  --accent:var(--player-accent)!important;
+  --accent2:var(--player-accent2)!important;
+  isolation:isolate;
+}
+
+.side-player[data-player-track-theme] *,
+.player-bar[data-player-track-theme] *,
+.current-track[data-player-track-theme] *,
+.mini-player[data-player-track-theme] *,
+.lyrics-player[data-player-track-theme] *,
+[data-player-scope][data-player-track-theme] *{
+  --accent:var(--player-accent)!important;
+  --accent2:var(--player-accent2)!important;
+}
+
+body[data-viewed-track-theme] #view-track{
+  background:
+    radial-gradient(circle at 8% 2%,color-mix(in srgb,var(--accent) 20%,transparent),transparent 34%),
+    radial-gradient(circle at 92% 12%,color-mix(in srgb,var(--accent2) 17%,transparent),transparent 36%);
+}
+
+#view-track[data-local-track-theme] .track-detail-hero,
+#view-track[data-local-track-theme] .track-detail-section{
+  border-color:color-mix(in srgb,var(--accent) 22%,rgba(255,255,255,.08));
+}

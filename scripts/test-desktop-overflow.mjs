@@ -59,6 +59,11 @@ assert.ok(!/font-family:\s*serif(?:[;,}])/i.test(typography));
 
 const build = read('js/build-config.js');
 for (const required of [
+  "id: '20260806-m4-theme-scoping'",
+  "cache: 'shinobi-launchpad-v31'",
+  "revision: 'theme-scoping-1'",
+  "display: '2026.08.06.31'",
+  "release: 'theme-scoping-20260806'",
   "id: '20260806-m2-catalog-ordering'",
   "cache: 'shinobi-launchpad-v30'",
   "revision: 'catalog-ordering-1'",
@@ -111,7 +116,7 @@ for (const required of [
 ]) assert.ok(build.includes(required), `PWA release metadata is missing ${required}.`);
 
 const activeId = build.match(/const config = Object\.freeze\(\{[\s\S]*?id:\s*'([^']+)'/)?.[1];
-assert.equal(activeId, '20260806-m2-catalog-ordering', 'The active runtime cache key must match Build 30.');
+assert.equal(activeId, '20260806-m4-theme-scoping', 'The active runtime cache key must match Build 31.');
 assert.ok(build.includes("const stylesheetVersion = visualTest ? '20260805-audiolab-core-modes' : config.id"));
 
-console.log('Desktop fixed shell and typography remain valid under Build 30.');
+console.log('Desktop fixed shell and typography remain valid under Build 31.');
