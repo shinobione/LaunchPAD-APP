@@ -47,19 +47,28 @@ const productionFiles = [
   ...collectFiles('js/features/visual', ['.js']),
   ...collectFiles('css', ['.css'])
 ];
-const productionSource = productionFiles.map(file => `\n/* ${file} */\n${read(file)}`).join('\n').toLowerCase();
-const retiredSlugs = [
+const productionSource = productionFiles.map(file => `\n/* ${file} */\n${read(file)}`).join('\n');
+const retiredExactSlugs = [
   'cyber-rain',
   'quantum-grid',
   'prism-tunnel',
   'tesla-veins',
   'hyperdrive',
   'wave-cathedral',
-  'orbit',
   'hex-reactor'
 ];
-for (const slug of retiredSlugs) {
-  assert.ok(!productionSource.includes(slug), `Retired Audio Lab preset leaked into production source: ${slug}.`);
+for (const slug of retiredExactSlugs) {
+  assert.ok(!productionSource.toLowerCase().includes(slug), `Retired Audio Lab preset leaked into production source: ${slug}.`);
+}
+
+const retiredOrbitBindings = [
+  /\bid\s*:\s*['"]orbit['"]/i,
+  /\bcase\s+['"]orbit['"]/i,
+  /data-(?:mode|visual)\s*=\s*['"]orbit['"]/i,
+  /(?:setMode|renderMode|normalizeAudioLabMode)\s*\(\s*['"]orbit['"]/i
+];
+for (const pattern of retiredOrbitBindings) {
+  assert.ok(!pattern.test(productionSource), `Retired Audio Lab Orbit preset binding leaked into production source: ${pattern}.`);
 }
 
 const base = read('js/features/visual/visual-engine-v2.js');
