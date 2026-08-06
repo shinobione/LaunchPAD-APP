@@ -1,0 +1,48 @@
+name: Diagnose M6 Smoke
+
+on:
+  push:
+    branches:
+      - feature/m6-home-editorial-switcher
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dump application states
+        shell: bash
+        run: |
+          set +e
+          mkdir -p artifacts/m6-diagnostics
+          python3 -m http.server 4173 >artifacts/m6-diagnostics/server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+          sleep 2
+          chrome_dump() {
+            google-chrome --headless=new --no-sandbox --disable-gpu --virtual-time-budget="$1" --dump-dom "$2"
+          }
+          chrome_dump 15000 'http://127.0.0.1:4173/#home' > artifacts/m6-diagnostics/home.html 2>artifacts/m6-diagnostics/home.stderr
+          chrome_dump 15000 'http://127.0.0.1:4173/#albums' > artifacts/m6-diagnostics/albums.html 2>artifacts/m6-diagnostics/albums.stderr
+          chrome_dump 15000 'http://127.0.0.1:4173/#track=thick' > artifacts/m6-diagnostics/track.html 2>artifacts/m6-diagnostics/track.stderr
+          {
+            echo "HOME_READY=$(grep -c 'data-app-ready=\"true\"' artifacts/m6-diagnostics/home.html)"
+            echo "HOME_ERROR=$(grep -c 'An error is preventing the application from loading' artifacts/m6-diagnostics/home.html)"
+            echo "HOME_TRACKS=$(grep -c '4 TRACKS' artifacts/m6-diagnostics/home.html)"
+            echo "HOME_DNA=$(grep -c '<h3>Track DNA</h3>' artifacts/m6-diagnostics/home.html)"
+            echo "HOME_BPM=$(grep -c '<strong id=\"track-dna-bpm\">152</strong>' artifacts/m6-diagnostics/home.html)"
+            echo "HOME_RELEASE=$(grep -c 'home-official-release' artifacts/m6-diagnostics/home.html)"
+            echo "ALBUM_COLLECTION=$(grep -c 'class=\"album-collection\"' artifacts/m6-diagnostics/albums.html)"
+            echo "TRACK_ACTIVE=$(grep -c 'id=\"view-track\" class=\"view track-detail-view active\"' artifacts/m6-diagnostics/track.html)"
+            echo "TRACK_THICK=$(grep -c '<h1>THICK</h1>' artifacts/m6-diagnostics/track.html)"
+          } | tee artifacts/m6-diagnostics/results.txt
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m6-diagnostics
+          path: artifacts/m6-diagnostics
+          retention-days: 2
