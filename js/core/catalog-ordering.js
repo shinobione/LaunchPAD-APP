@@ -42,18 +42,40 @@ export function updatedTimestamp(track) {
 
 export function releaseSortInfo(track, index = 0) {
   const release = releaseDateTimestamp(track);
-  if (release !== null) return { timestamp: release, source: 'releaseDate', fallback: false };
+  if (release !== null) {
+    return {
+      timestamp: release,
+      source: 'releaseDate',
+      fallback: false,
+      releaseDateUnavailable: false
+    };
+  }
 
   const created = createdTimestamp(track);
-  if (created !== null) return { timestamp: created, source: 'createdAt', fallback: true };
+  if (created !== null) {
+    return {
+      timestamp: created,
+      source: 'createdAt',
+      fallback: true,
+      releaseDateUnavailable: true
+    };
+  }
 
   const updated = updatedTimestamp(track);
-  if (updated !== null) return { timestamp: updated, source: 'updatedAt', fallback: true };
+  if (updated !== null) {
+    return {
+      timestamp: updated,
+      source: 'updatedAt',
+      fallback: true,
+      releaseDateUnavailable: true
+    };
+  }
 
   return {
     timestamp: numericSequence(track, index),
     source: 'sequence',
-    fallback: true
+    fallback: true,
+    releaseDateUnavailable: true
   };
 }
 

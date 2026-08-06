@@ -32,11 +32,11 @@ if (injections.length) {
   source = source.replace(marker, `\n${injected}${marker}`);
 }
 
-const staleVersions = ['4.5','4.6','4.7','4.8','4.9','5.0','5.1','5.2','5.3','5.4','5.5'];
+const staleVersions = ['4.5','4.6','4.7','4.8','4.9','5.0','5.1','5.2','5.3','5.4','5.5','5.6'];
 for (const stale of staleVersions) {
-  source = source.replaceAll(`version: "${stale}"`, 'version: "5.6"');
-  source = source.replaceAll(`<span class="version-pill">v${stale}</span>`, '<span class="version-pill">v5.6</span>');
-  source = source.replaceAll(`version.textContent='v${stale}'`, "version.textContent='v5.6'");
+  source = source.replaceAll(`version: "${stale}"`, 'version: "5.7"');
+  source = source.replaceAll(`<span class="version-pill">v${stale}</span>`, '<span class="version-pill">v5.7</span>');
+  source = source.replaceAll(`version.textContent='v${stale}'`, "version.textContent='v5.7'");
 }
 source = source.replace(":' sans timestamps.'))}catch(error)", ":' sans timestamps.')))}catch(error)");
 
@@ -60,8 +60,8 @@ for (const serverOnlySymbol of ['buildCanonicalTrackSummaries', 'readManifest', 
 }
 
 for (const required of [
-  'version: "5.6"',
-  '<span class="version-pill">v5.6</span>',
+  'version: "5.7"',
+  '<span class="version-pill">v5.7</span>',
   'const ADMIN_HTML = String.raw`',
   'function parseLyricsTxtMetadata(text)',
   'async function inspectTrackQuality(',
@@ -71,9 +71,12 @@ for (const required of [
   'Extraire les couleurs',
   "TRACK_MANAGER_PHASE_13_VERSION='5.5'",
   "TRACK_MANAGER_MILESTONE_3_VERSION='5.6'",
+  "TRACK_MANAGER_MILESTONE_8_VERSION='5.7'",
   'function milestone3InstallReactiveFilters()',
   'function milestone3InstallManualPalette()',
   "milestone3VersionPill.textContent='v5.6'",
+  'function milestone8Hydrate()',
+  'function milestone8RenderBadges(card)',
   'function phase13ChooseThemeColors(candidates)',
   'Sans lyrics',
   'Lyrics non timestampées',
@@ -88,8 +91,8 @@ for (const forbidden of [
   'id="migrateLegacy"',
   'id="migrationModal"',
   'id="legacyPanel"',
-  '<span class="version-pill">v5.5</span>',
-  'version: "5.5"'
+  '<span class="version-pill">v5.6</span>',
+  'version: "5.6"'
 ]) {
   if (source.includes(forbidden)) throw new Error(`Built Track Manager Worker still exposes obsolete content: ${forbidden}.`);
 }
