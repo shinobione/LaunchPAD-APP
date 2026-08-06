@@ -2,14 +2,14 @@
 <meta charset="utf-8">
 <title>Horizontal overflow smoke test</title>
 <div id="result">HORIZONTAL OVERFLOW PENDING</div>
-<iframe id="app" data-src="../?visual-test=1#about" style="width:1919px;height:1039px;border:0"></iframe>
+<iframe id="app" data-src="../?visual-test=1&ci=1#about" style="width:1366px;height:768px;border:0"></iframe>
 <script>
 const result=document.querySelector('#result');
 const frame=document.querySelector('#app');
 const sleep=delay=>new Promise(resolve=>setTimeout(resolve,delay));
 
 async function waitForApp(){
-  for(let attempt=0;attempt<160;attempt+=1){
+  for(let attempt=0;attempt<100;attempt+=1){
     if(frame.contentDocument?.documentElement?.dataset?.appReady==='true') return;
     await sleep(100);
   }
@@ -48,16 +48,16 @@ frame.addEventListener('load',async()=>{
     const accepted=value=>value==='hidden'||value==='clip';
 
     view.scrollTo(0,scrolling.scrollHeight);
-    await sleep(300);
+    await sleep(200);
 
     const candidates=[...document.querySelectorAll('*')]
       .filter(element=>element.clientWidth>0&&element.scrollWidth>element.clientWidth+1)
       .map(element=>describeElement(view,element))
       .sort((a,b)=>(b.scrollWidth-b.clientWidth)-(a.scrollWidth-a.clientWidth))
-      .slice(0,25);
+      .slice(0,10);
 
     view.scrollTo(100000,scrolling.scrollHeight);
-    await sleep(120);
+    await sleep(80);
     const locked=Math.abs(view.scrollX)<1;
 
     const snapshot={
