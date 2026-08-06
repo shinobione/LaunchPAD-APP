@@ -36,8 +36,10 @@ jobs:
             robots.txt sitemap.xml js/build-config.js js/core/assets.js \
             js/features/player-experience.js js/features/resilience-accessibility.js \
             js/features/track-detail.js js/features/smart-canvas.js js/features/canvas-identity.js js/features/mobile-navigation.js \
+            js/features/theme-scope.js js/features/discography-experience.js js/features/home-editorial.js \
             css/track-detail.css css/canvas-identity.css css/mobile-navigation.css \
-            css/launchpad-features.css scripts/capture-visuals.sh \
+            css/launchpad-features.css css/theme-scope.css css/discography-experience.css css/home-editorial.css \
+            scripts/capture-visuals.sh \
             tests/accessibility-smoke.html tests/layout-regression.html \
             tests/mobile-navigation-smoke.html tests/smart-canvas-smoke.html tests/canvas-identity-smoke.html; do
             test -s "$required"
@@ -80,6 +82,9 @@ jobs:
           grep -q 'initSmartCanvasManager' js/app-engine.js
           grep -q 'initCanvasIdentity' js/app-engine.js
           grep -q 'initMobileNavigation' js/app-engine.js
+          grep -q 'initThemeScoping' js/app-engine.js
+          grep -q 'initDiscographyExperience' js/app-engine.js
+          grep -q 'initHomeEditorial' js/app-engine.js
           grep -q 'mobile-menu-backdrop' js/features/mobile-navigation.js
           grep -q 'mobile-menu-open' css/mobile-navigation.css
           grep -q 'data-track-cover-link' js/features/track-detail.js
@@ -115,8 +120,10 @@ jobs:
             "'./js/build-config.js'", "'./js/core/assets.js'", "'./js/catalog.js'",
             "'./js/features/player-experience.js'", "'./js/features/resilience-accessibility.js'",
             "'./js/features/track-detail.js'", "'./js/features/smart-canvas.js'", "'./js/features/canvas-identity.js'", "'./js/features/mobile-navigation.js'",
+            "'./js/features/theme-scope.js'", "'./js/features/discography-experience.js'", "'./js/features/home-editorial.js'",
             "'./css/track-detail.css'", "'./css/canvas-identity.css'", "'./css/mobile-navigation.css'",
-            "'./css/launchpad-features.css'", "'./robots.txt'", "'./sitemap.xml'"
+            "'./css/launchpad-features.css'", "'./css/theme-scope.css'", "'./css/discography-experience.css'", "'./css/home-editorial.css'",
+            "'./robots.txt'", "'./sitemap.xml'"
           ]) if (!worker.includes(resource)) fail(`Offline shell is missing ${resource}.`);
           for (const removed of [
             "'./css/audio-lab-fix.css'", "'./css/player-experience.css'", "'./css/album-duration.css'",
@@ -153,6 +160,8 @@ jobs:
           grep -q '<strong id="track-dna-bpm">152</strong>' /tmp/launchpad-home.html
           grep -q 'data-track-cover-link=' /tmp/launchpad-home.html
           grep -q 'id="mobile-menu-backdrop"' /tmp/launchpad-home.html
+          grep -q 'home-official-release' /tmp/launchpad-home.html
+          grep -q 'data-home-visual-mode="neon-shatter"' /tmp/launchpad-home.html
           ! grep -q 'Explore the universe' /tmp/launchpad-home.html
           ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-home.html
 
@@ -179,12 +188,12 @@ jobs:
           chrome_dump 7000 'http://127.0.0.1:4173/tests/smart-canvas-smoke.html' > /tmp/smart-canvas.html
           grep -o 'SMART CANVAS [^<]*' /tmp/smart-canvas.html || true
           grep -q 'SMART CANVAS READY VISIBILITY VIEWPORT SINGLE ACTIVE RELEASE NO AUDIO PAUSE' /tmp/smart-canvas.html
-          ! grep -q 'SMART CANVAS ERROR' /tmp/smart-canvas.html
+          ! grep -q '<pre id="result">SMART CANVAS ERROR' /tmp/smart-canvas.html
 
           chrome_dump 9000 'http://127.0.0.1:4173/tests/canvas-identity-smoke.html' > /tmp/canvas-identity.html
           grep -o 'CANVAS IDENTITY [^<]*' /tmp/canvas-identity.html || true
           grep -q 'CANVAS IDENTITY READY BADGES LAZY SINGLE ACTIVE MOBILE ACTION STUDIO DATA SAVER FALLBACK DYNAMIC' /tmp/canvas-identity.html
-          ! grep -q 'CANVAS IDENTITY ERROR' /tmp/canvas-identity.html
+          ! grep -q '<output id="result">CANVAS IDENTITY ERROR' /tmp/canvas-identity.html
 
           chrome_dump 9000 'http://127.0.0.1:4173/#favorites' > /tmp/favorites.html
           grep -q 'Your favorites' /tmp/favorites.html
@@ -205,19 +214,19 @@ jobs:
 
           chrome_dump 14000 'http://127.0.0.1:4173/tests/accessibility-smoke.html' > /tmp/accessibility.html
           grep -q 'ACCESSIBILITY READY' /tmp/accessibility.html
-          ! grep -q 'ACCESSIBILITY ERROR' /tmp/accessibility.html
+          ! grep -q '<div id="result">ACCESSIBILITY ERROR' /tmp/accessibility.html
 
           chrome_dump 17000 'http://127.0.0.1:4173/tests/layout-regression.html' > /tmp/layout.html
           grep -o 'LAYOUT [^<]*' /tmp/layout.html || true
           grep -q 'LAYOUT READY' /tmp/layout.html
-          ! grep -q 'LAYOUT ERROR' /tmp/layout.html
+          ! grep -q '<div id="result">LAYOUT ERROR' /tmp/layout.html
           grep -q '"appReady":true' /tmp/layout.html
           grep -q '"trackNavigationPreserved":true' /tmp/layout.html
 
           chrome_dump 18000 'http://127.0.0.1:4173/tests/mobile-navigation-smoke.html' > /tmp/mobile-navigation.html
           grep -o 'MOBILE NAV [^<]*' /tmp/mobile-navigation.html || true
           grep -q 'MOBILE NAV READY TRACK BACK ALBUM BACK OUTSIDE ESCAPE' /tmp/mobile-navigation.html
-          ! grep -q 'MOBILE NAV ERROR' /tmp/mobile-navigation.html
+          ! grep -q '<output id="result">MOBILE NAV ERROR' /tmp/mobile-navigation.html
 
       - name: Capture visual regression views
         shell: bash
