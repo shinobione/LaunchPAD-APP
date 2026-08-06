@@ -2,10 +2,15 @@ name: Deploy LaunchPAD to GitHub Pages
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/deploy-pages-custom.yml
 
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -17,32 +22,30 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout repository
+      - name: Checkout recovery site
         uses: actions/checkout@v4
+        with:
+          ref: gh-pages
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Assemble minimal static site
+      - name: Assemble recovery site
         shell: bash
         run: |
           set -euo pipefail
           rm -rf _site
           mkdir -p _site
 
-          cp index.html _site/
-          cp -R assets css js _site/
-
-          for file in manifest.webmanifest sw.js robots.txt sitemap.xml; do
-            if [[ -f "$file" ]]; then
-              cp "$file" _site/
-            fi
-          done
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name .git \
+            ! -name _site \
+            -exec cp -a {} _site/ \;
 
           touch _site/.nojekyll
           test -s _site/index.html
 
-      - name: Upload static site artifact
+      - name: Upload recovery artifact
         uses: actions/upload-pages-artifact@v4
         with:
           path: _site
@@ -56,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Deploy to GitHub Pages
+      - name: Deploy recovery site to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
         with:
