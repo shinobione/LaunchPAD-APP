@@ -9,7 +9,9 @@ const CRITICAL_STYLES = [
   'css/feature-12.css',
   'css/theme-scope.css',
   'css/discography-experience.css',
-  'css/home-editorial.css'
+  'css/home-editorial.css',
+  'css/svg-icon-system.css',
+  'css/badge-hierarchy.css'
 ];
 
 const LAYOUT_STYLES = [
@@ -112,7 +114,9 @@ async function boot() {
     { initThemeScoping },
     { initDiscographyExperience },
     { initHomeEditorial },
-    { initAudioLabSanctuary }
+    { initAudioLabSanctuary },
+    { initSvgIconSystem },
+    { initBadgeHierarchy }
   ] = await Promise.all([
     import(versioned('./features/content/content-controller.js')),
     import(versioned('./features/catalog-filters.js')),
@@ -136,7 +140,9 @@ async function boot() {
     import(versioned('./features/theme-scope.js')),
     import(versioned('./features/discography-experience.js')),
     import(versioned('./features/home-editorial.js')),
-    import(versioned('./features/visual/audio-lab-sanctuary.js'))
+    import(versioned('./features/visual/audio-lab-sanctuary.js')),
+    import(versioned('./features/svg-icon-system.js')),
+    import(versioned('./features/badge-hierarchy.js'))
   ]);
 
   installContentV4();
@@ -163,6 +169,8 @@ async function boot() {
   initDiscographyExperience({ audio });
   initHomeEditorial();
   initAudioLabSanctuary({ audio });
+  initSvgIconSystem();
+  initBadgeHierarchy();
   pwa.initPWA();
   initAudioFocus({ audio });
   initLyricsWakeLock({ audio });
