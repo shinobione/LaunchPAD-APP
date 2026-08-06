@@ -5,8 +5,9 @@ const read = path => fs.readFileSync(path, 'utf8');
 const live = read('js/features/visual/visual-engine-live.js');
 
 for (const required of [
-  "const DEFAULT_MODE = 'aurora-glass'",
+  "const DEFAULT_MODE = 'neon-shatter'",
   "{ id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }",
+  'externalHomeRenderer: false',
   'const reading = readAudioLabSpectrum(raw)',
   'synthesizePlaybackSpectrum(raw, Number(audio.currentTime) || 0)',
   'const features = tracker.update(raw)',
@@ -15,14 +16,15 @@ for (const required of [
   'Object.assign(features, amplitude)',
   'shapeReactiveSpectrum(raw, shaped, features)',
   'const attack = shaped[index] > reactive[index] ? .72 : .18',
-  'renderMode(homeCanvas, drawAuroraGlassMode, reactive, getAccent, time, features)',
+  'renderMode(homeCanvas, customRenderer, reactive, getAccent, time, features)',
   'const customRenderer = CUSTOM_RENDERERS.get(mode)',
   'base.setMode(mode)',
-  "homeTitle.textContent = 'Aurora Glass'",
-  "document.documentElement.dataset.audioLabRenderer = 'rms-dynamics-v4'",
+  "homeTitle.textContent = 'Neon Shatter'",
+  "document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v5'",
   'document.documentElement.dataset.audioLabRms = features.rms.toFixed(3)',
   'document.documentElement.dataset.audioLabPeak = features.peak.toFixed(3)',
-  'document.documentElement.dataset.audioLabDynamics = features.dynamics.toFixed(3)'
+  'document.documentElement.dataset.audioLabDynamics = features.dynamics.toFixed(3)',
+  "new CustomEvent('shinobi:visual-mode'"
 ]) assert.ok(live.includes(required), `Live Audio Lab integration is missing ${required}.`);
 
 for (const forbidden of [
@@ -43,4 +45,4 @@ assert.ok(worker.includes('PUBLIC_WORKER_VERSION = 2.6'));
 assert.ok(worker.includes("payload.crossOriginResourcePolicy = 'cross-origin'"));
 assert.ok(worker.includes("headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')"));
 
-console.log('Audio Lab uses live RMS/peak dynamics with Aurora Glass as the default and no retired renderer routes.');
+console.log('Audio Lab uses live RMS/peak dynamics, Neon Shatter as Home default, Aurora as a custom mode and no retired renderer routes.');
