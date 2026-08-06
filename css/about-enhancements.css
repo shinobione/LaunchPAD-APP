@@ -53,6 +53,17 @@
   color:color-mix(in srgb,var(--accent) 70%,#fff);
 }
 
+.about-legal-notice{
+  flex:0 0 100%;
+  max-width:520px;
+  padding-top:7px;
+  border-top:1px solid rgba(255,255,255,.06);
+  color:rgba(184,174,196,.68);
+  font-size:8px;
+  font-weight:500;
+  line-height:1.55;
+}
+
 .about-golden-logo-wrap{
   min-width:0;
   width:100%;
@@ -131,6 +142,11 @@
 
   #view-about .about-card>.about-build-info{
     margin-top:4px;
+  }
+
+  .about-legal-notice{
+    max-width:none;
+    text-align:center;
   }
 
   .about-golden-logo-wrap{
