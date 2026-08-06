@@ -69,6 +69,11 @@ assert.ok(!/font-family:\s*serif(?:[;,}])/i.test(typography), 'The typography re
 
 const build = read('js/build-config.js');
 for (const required of [
+  "id: '20260806-audiolab-catalog-reactivity'",
+  "cache: 'shinobi-launchpad-v25'",
+  "revision: 'audiolab-catalog-reactivity-1'",
+  "display: '2026.08.06.25'",
+  "release: 'audiolab-catalog-reactivity-20260806'",
   "id: '20260805-audiolab-live-reactivity'",
   "cache: 'shinobi-launchpad-v24'",
   "revision: 'audiolab-live-reactivity-1'",
@@ -93,7 +98,7 @@ for (const required of [
 }
 
 const activeId = build.match(/const config = Object\.freeze\(\{[\s\S]*?id:\s*'([^']+)'/)?.[1];
-assert.equal(activeId, '20260805-audiolab-live-reactivity', 'The active runtime cache key must match Build 24.');
-assert.ok(build.includes("const stylesheetVersion = visualTest ? '20260805-audiolab-core-modes' : config.id"));
+assert.equal(activeId, '20260806-audiolab-catalog-reactivity', 'The active runtime cache key must match Build 25.');
+assert.ok(build.includes("const stylesheetVersion = visualTest ? '20260806-audiolab-catalog-reactivity' : config.id"));
 
-console.log('Desktop fixed shell and the Outfit/Manrope LaunchPAD typography override remain valid under Build 24.');
+console.log('Desktop fixed shell and the Outfit/Manrope LaunchPAD typography override remain valid under Build 25.');
