@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Complete **Milestone 6 — Home Editorial & Visual Switcher**: feature the latest official release with dynamic cover colours and direct Play/Track/Lyrics/Studio actions, place the golden wordmark before the LaunchPAD frame on mobile, make Neon Shatter the Home default, and add themed desktop arrows plus horizontal mobile swipe navigation.
 - Complete **Milestone 5 — Discography, Eras & Track Cards**: enforce the Genre → Language → Content → Energy → Era → secondary filters → Mood hierarchy, generate an R2-driven Era timeline with shareable URL filtering, embed Moods/Themes inside cards, and add animated now-playing, pause/equalizer and network-loading states.
 - Complete **Milestone 4 — Theme Scoping**: let the viewed Track Detail page own the application palette while the global player independently preserves the currently playing track colours, including split-theme route/audio synchronization and PWA offline resources.
 - Complete **Milestone 3 — Track Manager Controls**: make catalog filters react immediately without losing state, add an explicit manual **Extraire les couleurs** action in the track editor, prevent cover selection from silently overwriting curated palettes, publish Track Manager v5.6, and automatically deploy/verify changed Cloudflare Workers after merges to `main`.

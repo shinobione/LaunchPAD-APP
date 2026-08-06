@@ -48,15 +48,16 @@ assert.ok(!fs.existsSync('js/features/visual/visual-engine-hex-reactor.js'));
 
 const liveVisuals = read('js/features/visual/visual-engine-live.js');
 for (const required of [
-  "const DEFAULT_MODE = 'aurora-glass'",
+  "const DEFAULT_MODE = 'neon-shatter'",
   "{ id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }",
+  'externalHomeRenderer: false',
   'readAudioLabSpectrum(raw)',
   'readAudioLabAmplitude(waveform)',
   'createAmplitudeDynamicsTracker',
   'shapeReactiveSpectrum(raw, shaped, features)',
-  'renderMode(homeCanvas, drawAuroraGlassMode',
-  "homeTitle.textContent = 'Aurora Glass'",
-  "dataset.audioLabRenderer = 'rms-dynamics-v4'"
+  "homeTitle.textContent = 'Neon Shatter'",
+  "new CustomEvent('shinobi:visual-mode'",
+  "dataset.audioLabRenderer = 'hybrid-reactive-v5'"
 ]) assert.ok(liveVisuals.includes(required), `Live Audio Lab renderer is missing ${required}.`);
 for (const forbidden of ['wave-cathedral', "id: 'circle'", 'hex-reactor', 'drawHexReactorMode']) {
   assert.ok(!liveVisuals.includes(forbidden), `Retired Audio Lab route leaked into Phase 13: ${forbidden}.`);
@@ -151,9 +152,13 @@ for (const required of [
   "cache: 'shinobi-launchpad-v27'",
   "display: '2026.08.06.28'",
   "release: 'pwa-single-update-20260806'",
-  "cache: 'shinobi-launchpad-v28'"
+  "cache: 'shinobi-launchpad-v28'",
+  "display: '2026.08.06.33'",
+  "release: 'home-editorial-switcher-20260806'",
+  "cache: 'shinobi-launchpad-v33'"
 ]) assert.ok(build.includes(required), `Build history is missing ${required}.`);
 
 await import('./test-milestone-4.mjs');
+await import('./test-milestone-6.mjs');
 
-console.log('Phase 13 palette, Audio Lab preset purge, RMS dynamics and visual clarity remain valid under Build 31.');
+console.log('Phase 13 palette, Audio Lab reactivity and Neon Shatter Home default remain valid under Build 33.');

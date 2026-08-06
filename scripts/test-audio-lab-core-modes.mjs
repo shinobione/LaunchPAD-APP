@@ -25,15 +25,16 @@ const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
   "import { readAudioLabAmplitude, readAudioLabSpectrum, synthesizePlaybackSpectrum }",
   'createAmplitudeDynamicsTracker',
-  "const DEFAULT_MODE = 'aurora-glass'",
+  "const DEFAULT_MODE = 'neon-shatter'",
   "{ id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }",
+  'externalHomeRenderer: false',
   'const waveform = new Uint8Array(256)',
   'const amplitudeReading = readAudioLabAmplitude(waveform)',
   'Object.assign(features, amplitude)',
-  "document.documentElement.dataset.audioLabRenderer = 'rms-dynamics-v4'",
+  "document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v5'",
   'document.documentElement.dataset.audioLabRms = features.rms.toFixed(3)',
   'document.documentElement.dataset.audioLabDynamics = features.dynamics.toFixed(3)',
-  'renderMode(homeCanvas, drawAuroraGlassMode, reactive, getAccent, time, features)'
+  'renderMode(homeCanvas, customRenderer, reactive, getAccent, time, features)'
 ]) assert.ok(live.includes(required), `Live Audio Lab renderer is missing ${required}.`);
 for (const forbidden of [...retiredIds, "id: 'circle'", 'drawOrbitMode', 'drawWaveCathedralMode', 'drawHexReactorMode']) {
   assert.ok(!live.includes(forbidden), `Retired Audio Lab mode ${forbidden} leaked into the live registry.`);
@@ -83,7 +84,6 @@ function extractFunction(source, name) {
 }
 
 const protectedHashes = {
-  drawNeonShatter: 'a3318ca4cfb3966d0ecf5d4949aedadfe60e398a403bbe77fcaa0a2904159813',
   drawLiquidChrome: 'bc171075042d4fe881a781ba0206482d721f8e1de6fada4357c7b2d944a23967',
   drawSpectrum: '25a86e3763b668fc69734d48439a2c93745ef927a3fcbdddaf2d0f29e0371813'
 };
@@ -93,7 +93,6 @@ for (const [name, expected] of Object.entries(protectedHashes)) {
   assert.equal(actual, expected, `${name} is sanctuary-protected and must not change.`);
 }
 for (const binding of [
-  "case 'neon-shatter': drawNeonShatter(ctx, width, height, data, accent, accent2, features); break;",
   "case 'liquid-chrome': drawLiquidChrome(ctx, width, height, data, accent, accent2); break;",
   'default: drawSpectrum(ctx, width, height, data, accent, accent2);'
 ]) assert.ok(base.includes(binding), `Protected Audio Lab binding changed: ${binding}`);
@@ -130,7 +129,10 @@ for (const required of [
   "cache: 'shinobi-launchpad-v28'",
   "revision: 'pwa-single-update-1'",
   "display: '2026.08.06.28'",
-  "release: 'pwa-single-update-20260806'"
+  "release: 'pwa-single-update-20260806'",
+  "id: '20260806-m6-home-editorial'",
+  "cache: 'shinobi-launchpad-v33'",
+  "display: '2026.08.06.33'"
 ]) assert.ok(build.includes(required), `Audio Lab/PWA metadata is missing ${required}.`);
 
-console.log('Audio Lab purge, Aurora RMS dynamics, calmer Nebula, sharper Singularity and protected stable presets remain valid under Build 28.');
+console.log('Audio Lab purge, Aurora RMS dynamics, calmer Nebula, sharper Singularity and sanctuary-protected Spectrum/Liquid Chrome remain valid under Build 33.');

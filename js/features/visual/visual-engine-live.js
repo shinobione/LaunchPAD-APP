@@ -7,7 +7,7 @@ import {
 import { createVisualController as createBaseVisualController } from './visual-engine-v2.js';
 import { drawAuroraGlassMode } from './visual-engine-core-modes.js';
 
-const DEFAULT_MODE = 'aurora-glass';
+const DEFAULT_MODE = 'neon-shatter';
 const CUSTOM_MODES = [
   { id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }
 ];
@@ -85,7 +85,7 @@ export function createVisualController(options) {
   const base = createBaseVisualController({
     ...options,
     delegatedModes: CUSTOM_MODE_IDS,
-    externalHomeRenderer: true
+    externalHomeRenderer: false
   });
   const { audio, $, getAccent } = options;
   const labCanvas = $('#lab-visualizer');
@@ -108,6 +108,11 @@ export function createVisualController(options) {
       base.setMode(mode);
       controls.querySelectorAll('[data-visual]').forEach(item => item.classList.toggle('active', item === button));
       button.scrollIntoView?.({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      if (labCanvas) labCanvas.dataset.visualMode = mode;
+      if (homeCanvas) homeCanvas.dataset.visualMode = mode;
+      window.dispatchEvent(new CustomEvent('shinobi:visual-mode', {
+        detail: { mode, label: button.textContent.trim() }
+      }));
     });
   });
   base.setMode(DEFAULT_MODE);
@@ -115,11 +120,11 @@ export function createVisualController(options) {
   if (labCanvas) labCanvas.dataset.visualMode = DEFAULT_MODE;
   if (homeCanvas) {
     homeCanvas.dataset.visualMode = DEFAULT_MODE;
-    homeCanvas.setAttribute('aria-label', 'Live RMS and peak-reactive Aurora Glass visualization');
+    homeCanvas.setAttribute('aria-label', 'Live audio-reactive Neon Shatter visualization');
   }
   const homeTitle = document.querySelector('.now-panel .panel-head h3');
-  if (homeTitle) homeTitle.textContent = 'Aurora Glass';
-  document.documentElement.dataset.audioLabRenderer = 'rms-dynamics-v4';
+  if (homeTitle) homeTitle.textContent = 'Neon Shatter';
+  document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v5';
 
   function readReactiveFrame() {
     const reading = readAudioLabSpectrum(raw);
@@ -157,12 +162,10 @@ export function createVisualController(options) {
     document.documentElement.dataset.audioLabPeak = features.peak.toFixed(3);
     document.documentElement.dataset.audioLabDynamics = features.dynamics.toFixed(3);
 
-    renderMode(homeCanvas, drawAuroraGlassMode, reactive, getAccent, time, features);
-
     const customRenderer = CUSTOM_RENDERERS.get(mode);
     if (customRenderer) {
-      if (labCanvas) labCanvas.dataset.visualMode = mode;
       renderMode(labCanvas, customRenderer, reactive, getAccent, time, features);
+      renderMode(homeCanvas, customRenderer, reactive, getAccent, time, features);
     }
 
     frame = requestAnimationFrame(render);

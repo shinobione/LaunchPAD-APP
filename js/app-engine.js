@@ -8,7 +8,8 @@ const CRITICAL_STYLES = [
   'css/feature-11.css',
   'css/feature-12.css',
   'css/theme-scope.css',
-  'css/discography-experience.css'
+  'css/discography-experience.css',
+  'css/home-editorial.css'
 ];
 
 const LAYOUT_STYLES = [
@@ -105,7 +106,8 @@ async function boot() {
     { initPhase12 },
     { initPhase13 },
     { initThemeScoping },
-    { initDiscographyExperience }
+    { initDiscographyExperience },
+    { initHomeEditorial }
   ] = await Promise.all([
     import(versioned('./features/content/content-controller.js')),
     import(versioned('./features/catalog-filters.js')),
@@ -127,7 +129,8 @@ async function boot() {
     import(versioned('./features/feature-12.js')),
     import(versioned('./features/feature-13.js')),
     import(versioned('./features/theme-scope.js')),
-    import(versioned('./features/discography-experience.js'))
+    import(versioned('./features/discography-experience.js')),
+    import(versioned('./features/home-editorial.js'))
   ]);
 
   installContentV4();
@@ -152,6 +155,7 @@ async function boot() {
   initPhase13({ audio });
   initThemeScoping({ audio });
   initDiscographyExperience({ audio });
+  initHomeEditorial();
   pwa.initPWA();
   initAudioFocus({ audio });
   initLyricsWakeLock({ audio });
