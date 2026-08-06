@@ -29,7 +29,7 @@ loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   await sleep(1800);
   const dd=desktop.contentDocument,md=mobile.contentDocument,td=trackFrame.contentDocument,ad=mobileAlbum.contentDocument;
   const failures=[];
-  const expectedStyles=['style.css','header.css','refinements.css','lyrics.css','fixes-v2.css','content-v4.css','desktop-hero-wide.css','mobile-top-cleanup.css','mobile-navigation.css','launchpad-features.css','about-enhancements.css','library-memory.css','pwa.css','visual-card.css','track-detail.css','feature-11.css','feature-12.css'];
+  const expectedStyles=['style.css','header.css','refinements.css','lyrics.css','fixes-v2.css','content-v4.css','desktop-hero-wide.css','mobile-top-cleanup.css','mobile-navigation.css','launchpad-features.css','about-enhancements.css','library-memory.css','pwa.css','visual-card.css','track-detail.css','feature-11.css','feature-12.css','theme-scope.css','discography-experience.css','home-editorial.css'];
 
   for(const document of [dd,md]){
     const styles=localStyles(document);
@@ -61,7 +61,7 @@ loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
   const mobileHero=md.querySelector('.launchpad-hero');
   const mobileBodyRect=rect(md.querySelector('.launchpad-hero .hero-body'));
   const mobileRailRect=rect(md.querySelector('.launchpad-hero .launchpad-banner-rail'));
-  if(!mobileHero||!mobileBodyRect||!mobileRailRect||mobileRailRect.top>=mobileBodyRect.top) failures.push('mobile-launchpad-banner-order');
+  if(!mobileHero||!mobileBodyRect||!mobileRailRect||mobileBodyRect.top>=mobileRailRect.top) failures.push('mobile-wordmark-build-order');
 
   const shell=rect(dd.querySelector('.app-shell'));
   const sidebarNode=dd.querySelector('.sidebar');
@@ -154,7 +154,7 @@ loadFrames().then(async([desktop,mobile,trackFrame,mobileAlbum])=>{
 
   const trackNavigationPreserved=navigationLoadCalls===0&&homeAudio?.dataset.trackId==='thick';
   const fixedDesktopShell=Math.abs(desktop.contentWindow.scrollY)<=1&&mainScroller?.scrollHeight>mainScroller?.clientHeight&&Math.abs((sidebar?.right||0)-(player?.left||0))<=2;
-  const snapshot={sidebarWidth:Math.round(sidebar?.width||0),playerHeight:Math.round(player?.height||0),homePanelsWidth:Math.round(homePanels?.width||0),mobileNavHeight:Math.round(mobileNav?.height||0),mobilePlayerHeight:Math.round(mobilePlayer?.height||0),featured:desktopGrid,trackMetadata:metadataLabels.length,trackTags:directTags,mobileAlbumRows:albumRows.length,mobileAboutPortrait:mobileAboutPortrait?`${Math.round(mobileAboutPortrait.width)}x${Math.round(mobileAboutPortrait.height)}`:'missing',mobileLaunchpadFirst:Boolean(mobileRailRect&&mobileBodyRect&&mobileRailRect.top<mobileBodyRect.top),fixedDesktopShell,initialStyles:localStyles(dd).length,appReadyTimeouts:frames.filter(frame=>frame.dataset.appReadyTimeout==='true').length,appReady,trackNavigationPreserved};
+  const snapshot={sidebarWidth:Math.round(sidebar?.width||0),playerHeight:Math.round(player?.height||0),homePanelsWidth:Math.round(homePanels?.width||0),mobileNavHeight:Math.round(mobileNav?.height||0),mobilePlayerHeight:Math.round(mobilePlayer?.height||0),featured:desktopGrid,trackMetadata:metadataLabels.length,trackTags:directTags,mobileAlbumRows:albumRows.length,mobileAboutPortrait:mobileAboutPortrait?`${Math.round(mobileAboutPortrait.width)}x${Math.round(mobileAboutPortrait.height)}`:'missing',mobileWordmarkFirst:Boolean(mobileBodyRect&&mobileRailRect&&mobileBodyRect.top<mobileRailRect.top),fixedDesktopShell,initialStyles:localStyles(dd).length,appReadyTimeouts:frames.filter(frame=>frame.dataset.appReadyTimeout==='true').length,appReady,trackNavigationPreserved};
   result.textContent=failures.length?`${ERROR} ${failures.join(' ')}`:`${READY} ${JSON.stringify(snapshot)}`;
 }).catch(error=>{result.textContent=`${ERROR} harness-${String(error?.message||error).replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()}`;});
 </script>
