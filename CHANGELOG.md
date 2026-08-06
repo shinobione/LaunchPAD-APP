@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Complete **Milestone 5 — Discography, Eras & Track Cards**: enforce the Genre → Language → Content → Energy → Era → secondary filters → Mood hierarchy, generate an R2-driven Era timeline with shareable URL filtering, embed Moods/Themes inside cards, and add animated now-playing, pause/equalizer and network-loading states.
 - Complete **Milestone 4 — Theme Scoping**: let the viewed Track Detail page own the application palette while the global player independently preserves the currently playing track colours, including split-theme route/audio synchronization and PWA offline resources.
 - Complete **Milestone 3 — Track Manager Controls**: make catalog filters react immediately without losing state, add an explicit manual **Extraire les couleurs** action in the track editor, prevent cover selection from silently overwriting curated palettes, publish Track Manager v5.6, and automatically deploy/verify changed Cloudflare Workers after merges to `main`.
 - Complete **Milestone 2 — Data Architecture & Catalog Ordering**: normalize legacy and Cloudflare R2 track schemas, sort globally by release date with deterministic fallbacks, exclude future/draft/archived/inactive tracks from Latest Releases, flag fallback dates, and add a separately ordered Recently Added section.

@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260806-m4-theme-scoping',
-    cache: 'shinobi-launchpad-v31',
-    revision: 'theme-scoping-1',
-    display: '2026.08.06.31',
-    release: 'theme-scoping-20260806'
+    id: '20260806-m5-discography-eras',
+    cache: 'shinobi-launchpad-v32',
+    revision: 'discography-eras-cards-1',
+    display: '2026.08.06.32',
+    release: 'discography-eras-cards-20260806'
   });
 
   // Legacy structural-validation markers retained until the workflow is modernized.
@@ -83,6 +83,11 @@
   // revision: 'catalog-ordering-1'
   // display: '2026.08.06.30'
   // release: 'catalog-ordering-20260806'
+  // id: '20260806-m4-theme-scoping'
+  // cache: 'shinobi-launchpad-v31'
+  // revision: 'theme-scoping-1'
+  // display: '2026.08.06.31'
+  // release: 'theme-scoping-20260806'
 
   globalThis.SHINOBIWAN_BUILD = config;
 
