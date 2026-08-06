@@ -11,7 +11,6 @@ export function createVisualController({ audio, $, getAccent, delegatedModes = [
     { id: 'singularity', label: 'Singularity' },
     { id: 'neon-shatter', label: 'Neon Shatter' },
     { id: 'liquid-chrome', label: 'Liquid Chrome' },
-    { id: 'hex-reactor', label: 'Hex Reactor' },
     { id: 'nebula', label: 'Nebula' }
   ];
   const delegatedModeSet = new Set(delegatedModes);
@@ -87,37 +86,55 @@ export function createVisualController({ audio, $, getAccent, delegatedModes = [
     const { bass, high, energy, kick, intensity } = features;
     const time = performance.now() / 1000;
     const minSide = Math.min(width, height);
-    const spreadX = width * (.32 + intensity * .08);
-    const spreadY = height * (.27 + energy * .08);
+    const spreadX = width * (.27 + intensity * .045);
+    const spreadY = height * (.23 + energy * .045);
+
+    const vignette = ctx.createRadialGradient(width / 2, height / 2, minSide * .08, width / 2, height / 2, minSide * .72);
+    vignette.addColorStop(0, colorWithAlpha(accent, .018 + energy * .028));
+    vignette.addColorStop(.56, 'rgba(3,2,12,.05)');
+    vignette.addColorStop(1, 'rgba(0,0,0,.26)');
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, width, height);
+
     ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    for (let cloud = 0; cloud < 10; cloud += 1) {
-      const value = data[Math.floor(cloud / 10 * data.length)] / 255;
-      const angle = time * (.045 + cloud * .005 + kick * .035) * (cloud % 2 ? -1 : 1) + cloud * 1.57;
-      const depth = .52 + seeded(cloud, 21) * .7;
-      const x = width / 2 + Math.cos(angle) * spreadX * depth + Math.sin(time * 1.8 + cloud) * kick * width * .018;
-      const y = height / 2 + Math.sin(angle * 1.18) * spreadY * depth + Math.cos(time * 1.55 + cloud) * kick * height * .015;
-      const radius = minSide * (.16 + value * .12 + bass * .045 + kick * .055) * depth;
-      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-      gradient.addColorStop(0, colorWithAlpha(cloud % 2 ? accent2 : accent, .14 + value * .25 + kick * .12));
-      gradient.addColorStop(.48, colorWithAlpha(cloud % 2 ? accent : accent2, .055 + energy * .12));
+    ctx.globalCompositeOperation = 'source-over';
+    for (let cloud = 0; cloud < 8; cloud += 1) {
+      const value = data[Math.floor(cloud / 8 * data.length)] / 255;
+      const direction = cloud % 2 ? -1 : 1;
+      const angle = time * (.016 + cloud * .0018 + energy * .006) * direction + cloud * 1.63;
+      const depth = .58 + seeded(cloud, 21) * .54;
+      const x = width / 2
+        + Math.cos(angle) * spreadX * depth
+        + Math.sin(time * .28 + cloud) * width * (.003 + kick * .004);
+      const y = height / 2
+        + Math.sin(angle * 1.16) * spreadY * depth
+        + Math.cos(time * .24 + cloud) * height * (.003 + kick * .003);
+      const radius = minSide * (.12 + value * .08 + bass * .025 + kick * .018) * depth;
+      const gradient = ctx.createRadialGradient(x, y, radius * .08, x, y, radius);
+      gradient.addColorStop(0, colorWithAlpha(cloud % 2 ? accent2 : accent, .18 + value * .18 + kick * .035));
+      gradient.addColorStop(.38, colorWithAlpha(cloud % 2 ? accent : accent2, .085 + energy * .07));
+      gradient.addColorStop(.72, colorWithAlpha(cloud % 2 ? accent2 : accent, .022 + high * .025));
       gradient.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = gradient;
       ctx.beginPath();
-      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.ellipse(x, y, radius * (1.18 + seeded(cloud, 8) * .28), radius * (.72 + seeded(cloud, 9) * .2), angle * .18, 0, Math.PI * 2);
       ctx.fill();
     }
-    const stars = width < 520 ? 48 : 72;
+    ctx.restore();
+
+    const stars = width < 520 ? 38 : 58;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
     for (let index = 0; index < stars; index += 1) {
       const value = data[index % data.length] / 255;
-      const drift = Math.sin(time * (.18 + seeded(index, 23) * .25) + index) * (2 + kick * 8);
+      const drift = Math.sin(time * (.055 + seeded(index, 23) * .08) + index) * (1 + kick * 1.8);
       const x = seeded(index, 1) * width + drift;
-      const y = seeded(index, 2) * height + Math.cos(time * .2 + index) * (1 + kick * 5);
-      const size = .6 + value * 2.8 + high * 1.4 + (index % 11 === 0 ? 1.6 : 0);
-      ctx.globalAlpha = .2 + value * .72 + high * .16 + kick * .08;
+      const y = seeded(index, 2) * height + Math.cos(time * .05 + index) * (.6 + kick * 1.3);
+      const size = .45 + value * 1.55 + high * .65 + (index % 13 === 0 ? .8 : 0);
+      ctx.globalAlpha = .16 + value * .52 + high * .09;
       ctx.fillStyle = index % 3 ? accent2 : accent;
       ctx.shadowColor = ctx.fillStyle;
-      ctx.shadowBlur = 6 + value * 18 + kick * 12;
+      ctx.shadowBlur = 1.5 + value * 5;
       ctx.beginPath();
       ctx.arc(x, y, size, 0, Math.PI * 2);
       ctx.fill();
@@ -131,59 +148,80 @@ export function createVisualController({ audio, $, getAccent, delegatedModes = [
     const cx = width / 2;
     const cy = height / 2;
     const minSide = Math.min(width, height);
-    const horizon = minSide * (.105 + bass * .035);
-    const glow = ctx.createRadialGradient(cx, cy, horizon * .6, cx, cy, minSide * .48);
-    glow.addColorStop(0, 'rgba(0,0,0,.98)');
-    glow.addColorStop(.24, colorWithAlpha(accent, .15 + bass * .18));
-    glow.addColorStop(.55, colorWithAlpha(accent2, .08 + mid * .12));
+    const horizon = minSide * (.105 + bass * .03);
+    const glow = ctx.createRadialGradient(cx, cy, horizon * .75, cx, cy, minSide * .43);
+    glow.addColorStop(0, 'rgba(0,0,0,.99)');
+    glow.addColorStop(.23, colorWithAlpha(accent, .085 + bass * .11));
+    glow.addColorStop(.5, colorWithAlpha(accent2, .035 + mid * .07));
     glow.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, width, height);
 
     ctx.save();
     ctx.translate(cx, cy);
-    ctx.rotate(-.16 + Math.sin(time * .12) * .03);
+    ctx.rotate(-.16 + Math.sin(time * .1) * .018);
     ctx.scale(1, .34);
-    ctx.globalCompositeOperation = 'lighter';
-    const rings = width < 520 ? 42 : 64;
+    ctx.globalCompositeOperation = 'source-over';
+    const rings = width < 520 ? 32 : 46;
     for (let index = 0; index < rings; index += 1) {
       const progress = index / rings;
       const value = data[index % data.length] / 255;
-      const radius = horizon * 1.3 + progress * minSide * .34;
-      const start = time * (.18 + bass * .22) + index * .22;
+      const radius = horizon * 1.34 + progress * minSide * .335;
+      const start = time * (.13 + bass * .16) + index * .245;
+      const length = Math.PI * (1.02 + value * .58);
       ctx.beginPath();
-      ctx.arc(0, 0, radius, start, start + Math.PI * (1.15 + value * .72));
-      ctx.strokeStyle = colorWithAlpha(index % 3 ? accent : accent2, .04 + value * .32);
-      ctx.lineWidth = .7 + value * 3.2;
+      ctx.arc(0, 0, radius, start, start + length);
+      ctx.strokeStyle = colorWithAlpha(index % 3 ? accent : accent2, .075 + value * .32);
+      ctx.lineWidth = .52 + value * 1.55;
       ctx.shadowColor = index % 3 ? accent : accent2;
-      ctx.shadowBlur = 8 + value * 18;
+      ctx.shadowBlur = 1 + value * 3.8;
       ctx.stroke();
+
+      if (index % 4 === 0) {
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, start + .025, start + length * .72);
+        ctx.strokeStyle = colorWithAlpha('#ffffff', .025 + high * .08 + value * .06);
+        ctx.lineWidth = .35 + high * .45;
+        ctx.shadowBlur = 0;
+        ctx.stroke();
+      }
     }
     ctx.restore();
 
+    ctx.save();
     ctx.fillStyle = '#010103';
-    ctx.shadowColor = colorWithAlpha(accent, .8);
-    ctx.shadowBlur = 20 + bass * 28;
+    ctx.shadowColor = colorWithAlpha(accent, .42);
+    ctx.shadowBlur = 5 + bass * 8;
     ctx.beginPath();
     ctx.arc(cx, cy, horizon, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
+    ctx.strokeStyle = colorWithAlpha('#ffffff', .12 + high * .14);
+    ctx.lineWidth = .75 + high * .65;
+    ctx.beginPath();
+    ctx.arc(cx, cy, horizon * 1.015, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
 
-    const dust = width < 520 ? 48 : 74;
+    const dust = width < 520 ? 42 : 62;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
     for (let index = 0; index < dust; index += 1) {
       const value = data[index % data.length] / 255;
-      const progress = (seeded(index, 4) + time * (.018 + value * .035)) % 1;
-      const radius = horizon * 1.4 + progress * minSide * .4;
-      const angle = seeded(index, 5) * Math.PI * 2 - time * (.2 + bass * .4) - progress * 5;
+      const progress = (seeded(index, 4) + time * (.013 + value * .022)) % 1;
+      const radius = horizon * 1.45 + progress * minSide * .385;
+      const angle = seeded(index, 5) * Math.PI * 2 - time * (.14 + bass * .28) - progress * 4.8;
       const x = cx + Math.cos(angle) * radius;
       const y = cy + Math.sin(angle) * radius * .42;
-      ctx.globalAlpha = .12 + value * .62 + high * .08;
+      ctx.globalAlpha = .16 + value * .52 + high * .065;
       ctx.fillStyle = index % 2 ? accent2 : accent;
+      ctx.shadowColor = ctx.fillStyle;
+      ctx.shadowBlur = index % 7 === 0 ? 2.5 : 0;
       ctx.beginPath();
-      ctx.arc(x, y, .6 + value * 2.1, 0, Math.PI * 2);
+      ctx.arc(x, y, .45 + value * 1.35, 0, Math.PI * 2);
       ctx.fill();
     }
-    ctx.globalAlpha = 1;
+    ctx.restore();
   }
 
   function drawNeonShatter(ctx, width, height, data, accent, accent2, features) {
@@ -289,72 +327,6 @@ export function createVisualController({ audio, $, getAccent, delegatedModes = [
     ctx.restore();
   }
 
-  function hexPath(ctx, x, y, radius) {
-    ctx.beginPath();
-    for (let side = 0; side < 6; side += 1) {
-      const angle = Math.PI / 3 * side - Math.PI / 6;
-      const px = x + Math.cos(angle) * radius;
-      const py = y + Math.sin(angle) * radius;
-      if (!side) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-    }
-    ctx.closePath();
-  }
-
-  function drawHexReactor(ctx, width, height, data, accent, accent2, features) {
-    const { bass, mid, high, energy, kick } = features;
-    const time = performance.now() / 1000;
-    const minSide = Math.min(width, height);
-    const size = Math.max(26, minSide * .078);
-    const horizontalStep = size * 1.95;
-    const rowHeight = size * 1.72;
-    const columns = Math.ceil(width / horizontalStep) + 2;
-    const rows = Math.ceil(height / rowHeight) + 2;
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    let cell = 0;
-    for (let row = -1; row < rows; row += 1) {
-      for (let column = -1; column < columns; column += 1) {
-        const x = column * horizontalStep + (row % 2 ? horizontalStep * .5 : 0);
-        const y = row * rowHeight;
-        const value = data[cell % data.length] / 255;
-        const distance = Math.hypot(x - width / 2, y - height / 2) / Math.max(width, height);
-        const phase = ((distance * 1.85 - time * (.075 + bass * .07) + 2) % 1);
-        const wave = Math.max(0, 1 - Math.abs(phase - .5) * 4.2);
-        hexPath(ctx, x, y, size * .68);
-        const hierarchy = Math.max(0, 1 - distance * 2.1);
-        ctx.strokeStyle = colorWithAlpha(cell % 2 ? accent2 : accent, .035 + value * .075 + wave * (.11 + bass * .14) + hierarchy * .11);
-        ctx.lineWidth = .55 + wave * .75 + high * .25 + hierarchy * .45;
-        ctx.stroke();
-        if (wave > .76 && hierarchy > .12) {
-          ctx.fillStyle = colorWithAlpha(cell % 2 ? accent : accent2, wave * .035 + mid * .018);
-          ctx.fill();
-        }
-        cell += 1;
-      }
-    }
-    ctx.restore();
-
-    const cx = width / 2;
-    const cy = height / 2;
-    const coreRadius = size * (1.2 + bass * .18 + kick * .22);
-    const coreGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreRadius * 3.2);
-    coreGlow.addColorStop(0, colorWithAlpha('#ffffff', .16 + kick * .18));
-    coreGlow.addColorStop(.3, colorWithAlpha(accent, .12 + energy * .12));
-    coreGlow.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = coreGlow;
-    ctx.fillRect(cx - coreRadius * 3.2, cy - coreRadius * 3.2, coreRadius * 6.4, coreRadius * 6.4);
-
-    for (let ring = 0; ring < 3; ring += 1) {
-      hexPath(ctx, cx, cy, size * (1.28 + ring * .86 + bass * .2 + kick * .16));
-      ctx.strokeStyle = colorWithAlpha(ring % 2 ? accent2 : accent, .24 + bass * .28 + kick * .16 - ring * .055);
-      ctx.lineWidth = 1.15 + bass * 1.7 + kick * 1.2 - ring * .12;
-      ctx.shadowColor = ring % 2 ? accent2 : accent;
-      ctx.shadowBlur = 9 + bass * 15 + kick * 12;
-      ctx.stroke();
-    }
-    ctx.shadowBlur = 0;
-  }
-
   function drawSpectrum(ctx, width, height, data, accent, accent2) {
     const gradient = ctx.createLinearGradient(0, height, width, 0);
     gradient.addColorStop(0, accent);
@@ -395,7 +367,6 @@ export function createVisualController({ audio, $, getAccent, delegatedModes = [
       case 'singularity': drawSingularity(ctx, width, height, data, accent, accent2); break;
       case 'neon-shatter': drawNeonShatter(ctx, width, height, data, accent, accent2, features); break;
       case 'liquid-chrome': drawLiquidChrome(ctx, width, height, data, accent, accent2); break;
-      case 'hex-reactor': drawHexReactor(ctx, width, height, data, accent, accent2, features); break;
       case 'nebula': drawNebula(ctx, width, height, data, accent, accent2, features); break;
       default: drawSpectrum(ctx, width, height, data, accent, accent2);
     }

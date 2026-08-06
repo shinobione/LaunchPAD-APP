@@ -76,6 +76,31 @@ export function readAudioLabSpectrum(target) {
   return { available: true, peak, state };
 }
 
+export function readAudioLabAmplitude(target) {
+  if (!target?.length) return { available: false, rms: 0, peak: 0, state: 'invalid-target' };
+  if (!ACTIVE_ANALYSER) {
+    target.fill(128);
+    return { available: false, rms: 0, peak: 0, state: 'awaiting-context' };
+  }
+
+  ACTIVE_ANALYSER.getByteTimeDomainData(target);
+  let energy = 0;
+  let peak = 0;
+  for (let index = 0; index < target.length; index += 1) {
+    const centered = (target[index] - 128) / 128;
+    const magnitude = Math.abs(centered);
+    energy += centered * centered;
+    if (magnitude > peak) peak = magnitude;
+  }
+  const rms = Math.sqrt(energy / target.length);
+  return {
+    available: true,
+    rms,
+    peak,
+    state: rms > .0035 || peak > .01 ? 'live' : 'idle'
+  };
+}
+
 function patchAnalyser(analyser, audio) {
   if (!analyser) return analyser;
   if (analyser[PATCH_MARK]) {

@@ -1,19 +1,15 @@
-import { readAudioLabSpectrum, synthesizePlaybackSpectrum } from '../audio-lab-signal.js';
-import { createAudioReactivityTracker, shapeReactiveSpectrum } from './audio-reactivity.js';
-import { createVisualController as createBaseVisualController } from './visual-engine-v2.js';
+import { readAudioLabAmplitude, readAudioLabSpectrum, synthesizePlaybackSpectrum } from '../audio-lab-signal.js';
 import {
-  drawOrbitMode,
-  drawAuroraGlassMode,
-  drawWaveCathedralMode
-} from './visual-engine-core-modes.js';
-import { drawHexReactorMode } from './visual-engine-hex-reactor.js';
+  createAmplitudeDynamicsTracker,
+  createAudioReactivityTracker,
+  shapeReactiveSpectrum
+} from './audio-reactivity.js';
+import { createVisualController as createBaseVisualController } from './visual-engine-v2.js';
+import { drawAuroraGlassMode } from './visual-engine-core-modes.js';
 
-const DEFAULT_MODE = 'wave-cathedral';
+const DEFAULT_MODE = 'aurora-glass';
 const CUSTOM_MODES = [
-  { id: 'wave-cathedral', label: 'Wave Cathedral', renderer: drawWaveCathedralMode },
-  { id: 'circle', label: 'Orbit', renderer: drawOrbitMode },
-  { id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode },
-  { id: 'hex-reactor', label: 'Hex Reactor', renderer: drawHexReactorMode }
+  { id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }
 ];
 const CUSTOM_RENDERERS = new Map(CUSTOM_MODES.map(mode => [mode.id, mode.renderer]));
 const CUSTOM_MODE_IDS = CUSTOM_MODES.map(mode => mode.id);
@@ -44,7 +40,6 @@ function installControls(controls) {
     'singularity',
     'neon-shatter',
     'liquid-chrome',
-    'hex-reactor',
     'nebula',
     ...CUSTOM_MODE_IDS
   ]);
@@ -99,7 +94,9 @@ export function createVisualController(options) {
   const raw = new Uint8Array(128);
   const shaped = new Uint8Array(128);
   const reactive = new Uint8Array(128);
+  const waveform = new Uint8Array(256);
   const tracker = createAudioReactivityTracker({ attack: .74, release: .13, transientDecay: .79 });
+  const amplitudeTracker = createAmplitudeDynamicsTracker({ attack: .58, release: .055, peakDecay: .9 });
   let mode = DEFAULT_MODE;
   let frame = 0;
 
@@ -118,11 +115,11 @@ export function createVisualController(options) {
   if (labCanvas) labCanvas.dataset.visualMode = DEFAULT_MODE;
   if (homeCanvas) {
     homeCanvas.dataset.visualMode = DEFAULT_MODE;
-    homeCanvas.setAttribute('aria-label', 'Live sound-reactive Wave Cathedral visualization');
+    homeCanvas.setAttribute('aria-label', 'Live RMS and peak-reactive Aurora Glass visualization');
   }
   const homeTitle = document.querySelector('.now-panel .panel-head h3');
-  if (homeTitle) homeTitle.textContent = 'Wave Cathedral';
-  document.documentElement.dataset.audioLabRenderer = 'fft-mechanical-v3';
+  if (homeTitle) homeTitle.textContent = 'Aurora Glass';
+  document.documentElement.dataset.audioLabRenderer = 'rms-dynamics-v4';
 
   function readReactiveFrame() {
     const reading = readAudioLabSpectrum(raw);
@@ -132,6 +129,15 @@ export function createVisualController(options) {
     }
 
     const features = tracker.update(raw);
+    const amplitudeReading = readAudioLabAmplitude(waveform);
+    const amplitude = amplitudeTracker.update(amplitudeReading.available
+      ? amplitudeReading
+      : {
+          rms: features.energy * .2,
+          peak: Math.max(features.kick * .72, reading.peak / 255)
+        });
+    Object.assign(features, amplitude);
+
     shapeReactiveSpectrum(raw, shaped, features);
     for (let index = 0; index < reactive.length; index += 1) {
       const attack = shaped[index] > reactive[index] ? .72 : .18;
@@ -147,8 +153,11 @@ export function createVisualController(options) {
     const { reading, features } = readReactiveFrame();
     document.documentElement.dataset.audioLabFeed = reading.state || (reading.available ? 'live' : 'warming');
     document.documentElement.dataset.audioLabKick = features.kick.toFixed(3);
+    document.documentElement.dataset.audioLabRms = features.rms.toFixed(3);
+    document.documentElement.dataset.audioLabPeak = features.peak.toFixed(3);
+    document.documentElement.dataset.audioLabDynamics = features.dynamics.toFixed(3);
 
-    renderMode(homeCanvas, drawWaveCathedralMode, reactive, getAccent, time, features);
+    renderMode(homeCanvas, drawAuroraGlassMode, reactive, getAccent, time, features);
 
     const customRenderer = CUSTOM_RENDERERS.get(mode);
     if (customRenderer) {
