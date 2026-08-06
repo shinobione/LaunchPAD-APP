@@ -21,7 +21,13 @@ assert.deepEqual(latestActiveTrackEntries([older, draft, fallback, dated], 5).ma
 const feature = read('js/features/feature-11.js');
 for (const required of [
   'normalizeLaunchRoute',
-  "window.history.replaceState(window.history.state, '', '#home')",
+  'SHAREABLE_ROUTE_PATTERN',
+  'LEGACY_DISCOGRAPHY_PATH',
+  'launchRootPath',
+  "window.history.replaceState(null, '', target)",
+  'installRouteTransitions',
+  "window.addEventListener('shinobi:route-change', replayRouteTransition)",
+  "globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches",
   'renderLatestReleases',
   'latestActiveTrackEntries(tracks, 5)',
   "button.textContent = expanded ? 'Player' : 'Video'",
@@ -31,6 +37,35 @@ for (const required of [
   "audio?.addEventListener('play'",
   "audio?.addEventListener('pause'"
 ]) assert.ok(feature.includes(required), `Feature 11 app module is missing ${required}.`);
+
+const routeStyles = read('css/feature-11.css');
+for (const required of [
+  '.view.active',
+  '.view.active.route-entering',
+  'route-view-enter 240ms',
+  'route-view-replay 240ms',
+  '@media (prefers-reduced-motion: reduce)',
+  'transform: translate3d(0, 8px, 0)',
+  'opacity: 0'
+]) assert.ok(routeStyles.includes(required), `Route transition styles are missing ${required}.`);
+assert.ok(!routeStyles.includes('height 240ms'), 'Route transitions must not animate layout properties.');
+
+const about = read('js/features/about/about-controller.js');
+for (const required of [
+  "legalNotice.className = 'about-legal-notice'",
+  'new Date().getFullYear()',
+  '© ${new Date().getFullYear()} ShinoBiWan. All Rights Reserved.',
+  'Unauthorized copying, reproduction, or reverse engineering is strictly prohibited.',
+  'info.append(heading, buildLine, cacheLine, legalNotice)'
+]) assert.ok(about.includes(required), `About legal notice is missing ${required}.`);
+
+const aboutStyles = read('css/about-enhancements.css');
+for (const required of [
+  '.about-legal-notice',
+  'flex:1 0 100%',
+  'font-size:8px',
+  'opacity:.72'
+]) assert.ok(aboutStyles.includes(required), `About legal styling is missing ${required}.`);
 
 const videoUI = read('js/features/track-videos.js');
 for (const required of [
@@ -53,7 +88,7 @@ for (const required of ['feature11.normalizeLaunchRoute()','feature11.prepareFea
   assert.ok(engine.includes(required), `Feature 11 boot wiring is missing ${required}.`);
 }
 
-const mobileStyles = read('css/feature-11.css');
+const mobileStyles = routeStyles;
 assert.ok(mobileStyles.includes('.launchpad-hero .hero-body'));
 assert.ok(mobileStyles.includes('order: 1'));
 assert.ok(mobileStyles.includes('.launchpad-hero .launchpad-banner-rail'));
@@ -80,7 +115,9 @@ assert.ok(!managerClient.includes('buildCanonicalTrackSummaries'), 'Browser UI m
 assert.ok(!managerClient.includes('readManifest'), 'Browser UI must not reference the server-only manifest reader.');
 
 const build = read('js/build-config.js');
-assert.ok(build.includes("display: '2026.08.05.16'"));
-assert.ok(build.includes("release: 'audiolab-signal-recovery-20260805'"));
+assert.ok(build.includes("id: '20260806-m1-routing-legal'"));
+assert.ok(build.includes("cache: 'shinobi-launchpad-v29'"));
+assert.ok(build.includes("display: '2026.08.06.29'"));
+assert.ok(build.includes("release: 'routing-navigation-legal-20260806'"));
 
-console.log('Super Extra Feature 11 remains valid under the AudioLab signal recovery release.');
+console.log('Milestone 1 routing, route transitions and About legal protection remain valid.');
