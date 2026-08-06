@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260806-m6-home-editorial',
-    cache: 'shinobi-launchpad-v33',
-    revision: 'home-editorial-switcher-1',
-    display: '2026.08.06.33',
-    release: 'home-editorial-switcher-20260806'
+    id: '20260806-m7-audiolab-sanctuary',
+    cache: 'shinobi-launchpad-v34',
+    revision: 'audiolab-sanctuary-1',
+    display: '2026.08.06.34',
+    release: 'audiolab-sanctuary-20260806'
   });
 
   // Legacy structural-validation markers retained until the workflow is modernized.
@@ -93,6 +93,11 @@
   // revision: 'discography-eras-cards-1'
   // display: '2026.08.06.32'
   // release: 'discography-eras-cards-20260806'
+  // id: '20260806-m6-home-editorial'
+  // cache: 'shinobi-launchpad-v33'
+  // revision: 'home-editorial-switcher-1'
+  // display: '2026.08.06.33'
+  // release: 'home-editorial-switcher-20260806'
 
   globalThis.SHINOBIWAN_BUILD = config;
 

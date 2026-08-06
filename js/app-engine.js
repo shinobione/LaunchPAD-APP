@@ -107,7 +107,8 @@ async function boot() {
     { initPhase13 },
     { initThemeScoping },
     { initDiscographyExperience },
-    { initHomeEditorial }
+    { initHomeEditorial },
+    { initAudioLabSanctuary }
   ] = await Promise.all([
     import(versioned('./features/content/content-controller.js')),
     import(versioned('./features/catalog-filters.js')),
@@ -130,7 +131,8 @@ async function boot() {
     import(versioned('./features/feature-13.js')),
     import(versioned('./features/theme-scope.js')),
     import(versioned('./features/discography-experience.js')),
-    import(versioned('./features/home-editorial.js'))
+    import(versioned('./features/home-editorial.js')),
+    import(versioned('./features/visual/audio-lab-sanctuary.js'))
   ]);
 
   installContentV4();
@@ -156,6 +158,7 @@ async function boot() {
   initThemeScoping({ audio });
   initDiscographyExperience({ audio });
   initHomeEditorial();
+  initAudioLabSanctuary({ audio });
   pwa.initPWA();
   initAudioFocus({ audio });
   initLyricsWakeLock({ audio });
