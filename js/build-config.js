@@ -64,7 +64,7 @@
   if (typeof document === 'undefined') return;
 
   const visualTest = new URLSearchParams(location.search).has('visual-test');
-  const stylesheetVersion = visualTest ? '20260806-audiolab-animation-calibration' : config.id;
+  const stylesheetVersion = visualTest ? '20260805-audiolab-core-modes' : config.id;
   if (visualTest) document.documentElement.dataset.visualTest = 'true';
 
   function installAppIconLinks() {
