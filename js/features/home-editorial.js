@@ -69,7 +69,7 @@ function renderOfficialRelease() {
 
 function visualButtons() {
   return [...document.querySelectorAll('.lab-controls [data-visual]')]
-    .filter(button => !button.hidden && button.offsetParent !== null || button.isConnected);
+    .filter(button => (!button.hidden && button.offsetParent !== null) || button.isConnected);
 }
 
 function installVisualSwitcher() {
@@ -128,8 +128,15 @@ function installVisualSwitcher() {
   window.addEventListener('shinobi:visual-mode', update);
 
   const defaultButton = document.querySelector(`.lab-controls [data-visual="${DEFAULT_VISUAL_MODE}"]`);
-  if (defaultButton && !defaultButton.classList.contains('active')) defaultButton.click();
-  update();
+  if (defaultButton) {
+    document.querySelectorAll('.lab-controls [data-visual]').forEach(button => {
+      button.classList.toggle('active', button === defaultButton);
+    });
+    defaultButton.click();
+    update({ detail: { mode: DEFAULT_VISUAL_MODE, label: defaultButton.textContent?.trim() || 'Neon Shatter' } });
+  } else {
+    update({ detail: { mode: DEFAULT_VISUAL_MODE, label: 'Neon Shatter' } });
+  }
 }
 
 function installMobileHeroOrder() {
