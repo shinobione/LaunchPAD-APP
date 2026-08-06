@@ -12,9 +12,18 @@ for (const required of [
   "registration.addEventListener('updatefound'",'await registration.update()','A new version of LaunchPAD is available.',
   'The update will be applied without abruptly interrupting the music.','Update now','Later','beforeinstallprompt',
   'pwa-install-banner','data-pwa-install-now','data-pwa-install-later','Install LaunchPAD','Add to Home Screen',
-  "window.addEventListener('appinstalled'"
+  "window.addEventListener('appinstalled'",'UPDATE_ACCEPTED_KEY','readWorkerRelease','WORKER_RELEASE_TIMEOUT_MS',
+  "worker.postMessage({ type: 'GET_RELEASE' }, [channel.port2])",'let updateCheckPromise = null',
+  'if (updateCheckPromise) return updateCheckPromise','offerWaitingWorker','reportedRelease !== release',
+  "const workerUrl = new URL('./sw.js', document.baseURI)","announce: false"
 ]) {
   if (!pwa.includes(required)) fail(`PWA controller is missing ${required}.`);
+}
+if (pwa.includes("workerUrl.searchParams.set('release'")) {
+  fail('Service worker registration URL must remain stable across releases.');
+}
+if (pwa.includes('forceReload') || pwa.includes('reloadOnly')) {
+  fail('The legacy metadata-only reload prompt must not coexist with worker updates.');
 }
 
 const worker = read('sw.js');
@@ -22,6 +31,8 @@ const installBlock = worker.match(/self\.addEventListener\('install',[\s\S]*?\n\
 if (!installBlock) fail('Service worker install lifecycle is missing.');
 if (installBlock.includes('skipWaiting')) fail('A new service worker must wait for explicit user approval.');
 if (!worker.includes("event.data?.type === 'SKIP_WAITING'")) fail('Service worker does not accept explicit update activation.');
+if (!worker.includes("event.data?.type === 'GET_RELEASE'")) fail('Service worker cannot identify its release to the page.');
+if (!worker.includes('postMessage({ release: RELEASE, version: VERSION })')) fail('Service worker release response is missing.');
 if (!worker.includes("globalThis.SHINOBIWAN_BUILD?.release")) fail('Service worker cache version is not connected to central release metadata.');
 if (!worker.includes("url.pathname.endsWith('/js/build-config.js')")) fail('Build metadata is not fetched network-first.');
 for (const required of [
@@ -39,7 +50,12 @@ for (const required of [
   "cache: 'shinobi-launchpad-v16'",
   "revision: 'audiolab-signal-recovery-1'",
   "display: '2026.08.05.16'",
-  "release: 'audiolab-signal-recovery-20260805'"
+  "release: 'audiolab-signal-recovery-20260805'",
+  "id: '20260806-pwa-single-update'",
+  "cache: 'shinobi-launchpad-v28'",
+  "revision: 'pwa-single-update-1'",
+  "display: '2026.08.06.28'",
+  "release: 'pwa-single-update-20260806'"
 ]) {
   if (!build.includes(required)) fail(`Build metadata is missing ${required}.`);
 }
@@ -76,8 +92,8 @@ for (const required of ['.pwa-update-banner','.pwa-install-banner','.pwa-install
 }
 
 const visualRunner = read('scripts/capture-visuals.sh');
-if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RELOAD')) {
-  fail('Browser regression coverage for the PWA update prompt is not wired into CI.');
+if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RELOAD DEDUPED VERIFIED')) {
+  fail('Browser regression coverage for the deduped PWA update prompt is not wired into CI.');
 }
 
-console.log('AudioLab signal recovery PWA shell, update flow, mobile About ordering and visual assets are valid.');
+console.log('PWA updates use one verified waiting worker, one prompt and one reload while the offline shell remains valid.');
