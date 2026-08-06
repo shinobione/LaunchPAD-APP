@@ -19,40 +19,45 @@ const visuals = read('js/features/visual/visual-engine-v2.js');
 for (const required of [
   "{ id: 'singularity', label: 'Singularity' }",
   "{ id: 'neon-shatter', label: 'Neon Shatter' }",
-  "{ id: 'hyperdrive', label: 'Hyperdrive' }",
-  "{ id: 'tesla-veins', label: 'Tesla Veins' }",
   "{ id: 'liquid-chrome', label: 'Liquid Chrome' }",
   "{ id: 'hex-reactor', label: 'Hex Reactor' }",
+  "{ id: 'nebula', label: 'Nebula' }",
   'function drawSingularity(',
   'function drawNeonShatter(',
-  'function drawHyperdrive(',
-  'function drawTeslaVeins(',
   'function drawLiquidChrome(',
   'function drawHexReactor(',
-  "controls.querySelectorAll('[data-visual=\"vortex\"], [data-visual=\"pulse\"]')"
-]) assert.ok(visuals.includes(required), `Phase 13 AudioLab is missing ${required}.`);
-assert.ok(!visuals.includes("{ id: 'vortex', label: 'Vortex' }"));
-assert.ok(!visuals.includes("{ id: 'pulse', label: 'Pulse' }"));
+  'function drawNebula(',
+  'const allowedModes = new Set(',
+  'if (!delegatedModeSet.has(mode))'
+]) assert.ok(visuals.includes(required), `Phase 13 Audio Lab is missing ${required}.`);
 
 const coreVisuals = read('js/features/visual/visual-engine-core-modes.js');
 for (const required of [
   'drawOrbitMode(',
-  'drawPrismTunnelMode(',
   'drawAuroraGlassMode(',
-  'drawCyberRainMode(',
   'drawWaveCathedralMode(',
-  'drawQuantumGridMode('
-]) assert.ok(coreVisuals.includes(required), `Audio Lab showcase renderer is missing ${required}.`);
-assert.ok(!coreVisuals.includes('drawConstellationMode'));
+  'kick * .34',
+  'kick * .085'
+]) assert.ok(coreVisuals.includes(required), `Audio Lab FFT/transient renderer is missing ${required}.`);
 
 const liveVisuals = read('js/features/visual/visual-engine-live.js');
 for (const required of [
   "const DEFAULT_MODE = 'wave-cathedral'",
   'readAudioLabSpectrum(raw)',
+  'createAudioReactivityTracker',
+  'shapeReactiveSpectrum(raw, shaped, features)',
   'renderMode(homeCanvas, drawWaveCathedralMode',
   "homeTitle.textContent = 'Wave Cathedral'",
-  "dataset.audioLabRenderer = 'live-analyser'"
+  "dataset.audioLabRenderer = 'fft-transient-v2'"
 ]) assert.ok(liveVisuals.includes(required), `Live Audio Lab renderer is missing ${required}.`);
+
+const reactivity = read('js/features/visual/audio-reactivity.js');
+for (const required of [
+  'createAudioReactivityTracker',
+  'readFrequencyBands',
+  'shapeReactiveSpectrum',
+  'const kickTarget = clamp('
+]) assert.ok(reactivity.includes(required), `Audio Lab reusable reactivity layer is missing ${required}.`);
 
 const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
@@ -63,7 +68,7 @@ for (const required of [
   "audio.addEventListener('playing', recover)",
   "markSignal('fallback')",
   "document.documentElement.dataset.audioLabSignal"
-]) assert.ok(signal.includes(required), `AudioLab signal recovery is missing ${required}.`);
+]) assert.ok(signal.includes(required), `Audio Lab signal recovery is missing ${required}.`);
 
 const bridge = read('js/features/visual/visual-engine.js');
 assert.equal(bridge.trim(), "export { createVisualController } from './visual-engine-live.js';");
@@ -89,6 +94,7 @@ assert.ok(engine.includes('initPhase13({ audio });'));
 const worker = read('sw.js');
 assert.ok(worker.includes("'./js/features/audio-lab-signal.js'"));
 assert.ok(worker.includes("'./js/features/feature-13.js'"));
+assert.ok(worker.includes("'./js/features/visual/audio-reactivity.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-v2.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-core-modes.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-live.js'"));
@@ -117,7 +123,10 @@ for (const required of [
   "cache: 'shinobi-launchpad-v23'",
   "display: '2026.08.05.24'",
   "release: 'audiolab-live-reactivity-20260805'",
-  "cache: 'shinobi-launchpad-v24'"
+  "cache: 'shinobi-launchpad-v24'",
+  "display: '2026.08.06.25'",
+  "release: 'audiolab-catalog-reactivity-20260806'",
+  "cache: 'shinobi-launchpad-v25'"
 ]) assert.ok(build.includes(required), `Build history is missing ${required}.`);
 
-console.log('Phase 13 palette, premium visuals, public Worker v2.6 and live sound-reactive Wave Cathedral defaults are valid.');
+console.log('Phase 13 palette, Audio Lab catalog purge, reusable FFT transients and renderer sanctuary are valid.');
