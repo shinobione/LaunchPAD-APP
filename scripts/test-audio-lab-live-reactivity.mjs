@@ -6,6 +6,8 @@ const live = read('js/features/visual/visual-engine-live.js');
 
 for (const required of [
   "const DEFAULT_MODE = 'wave-cathedral'",
+  "import { drawHexReactorMode } from './visual-engine-hex-reactor.js'",
+  "{ id: 'hex-reactor', label: 'Hex Reactor', renderer: drawHexReactorMode }",
   'const reading = readAudioLabSpectrum(raw)',
   'synthesizePlaybackSpectrum(raw, Number(audio.currentTime) || 0)',
   'const features = tracker.update(raw)',
@@ -15,13 +17,17 @@ for (const required of [
   'const customRenderer = CUSTOM_RENDERERS.get(mode)',
   'base.setMode(mode)',
   "homeTitle.textContent = 'Wave Cathedral'",
-  "document.documentElement.dataset.audioLabRenderer = 'fft-transient-v2'"
+  "document.documentElement.dataset.audioLabRenderer = 'fft-mechanical-v3'"
 ]) assert.ok(live.includes(required), `Live Audio Lab integration is missing ${required}.`);
 
 const waveIndex = live.indexOf("{ id: 'wave-cathedral'");
 const orbitIndex = live.indexOf("{ id: 'circle'");
 const auroraIndex = live.indexOf("{ id: 'aurora-glass'");
-assert.ok(waveIndex >= 0 && waveIndex < orbitIndex && orbitIndex < auroraIndex, 'Wave Cathedral, Orbit and Aurora Glass must be registered in the intended order.');
+const hexIndex = live.indexOf("{ id: 'hex-reactor'");
+assert.ok(
+  waveIndex >= 0 && waveIndex < orbitIndex && orbitIndex < auroraIndex && auroraIndex < hexIndex,
+  'Wave Cathedral, Orbit, Aurora Glass and Hex Reactor must be registered in the intended order.'
+);
 
 const bridge = read('js/features/visual/visual-engine.js').trim();
 assert.equal(bridge, "export { createVisualController } from './visual-engine-live.js';");
@@ -31,4 +37,4 @@ assert.ok(worker.includes('PUBLIC_WORKER_VERSION = 2.6'));
 assert.ok(worker.includes("payload.crossOriginResourcePolicy = 'cross-origin'"));
 assert.ok(worker.includes("headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')"));
 
-console.log('Audio Lab uses reusable FFT envelopes and kick transients while Wave Cathedral remains the default.');
+console.log('Audio Lab uses mechanical FFT motion, a delegated Hex Reactor and Wave Cathedral as the default.');
