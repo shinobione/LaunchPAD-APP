@@ -32,6 +32,7 @@ assert.ok(!/font-family:\s*serif(?:[;,}])/i.test(typography));
 
 const build = read('js/build-config.js');
 for (const required of [
+  "id: '20260806-navigation-recovery'","cache: 'shinobi-launchpad-v37'","revision: 'navigation-local-fallback-1'","display: '2026.08.06.37'","release: 'navigation-recovery-20260806'",
   "id: '20260806-m7-audiolab-sanctuary'","cache: 'shinobi-launchpad-v34'","revision: 'audiolab-sanctuary-1'","display: '2026.08.06.34'","release: 'audiolab-sanctuary-20260806'",
   "id: '20260806-m6-home-editorial'","cache: 'shinobi-launchpad-v33'","revision: 'home-editorial-switcher-1'","display: '2026.08.06.33'","release: 'home-editorial-switcher-20260806'",
   "id: '20260806-m5-discography-eras'","cache: 'shinobi-launchpad-v32'","revision: 'discography-eras-cards-1'","display: '2026.08.06.32'","release: 'discography-eras-cards-20260806'",
@@ -50,7 +51,7 @@ for (const required of [
 ]) assert.ok(build.includes(required), `PWA release metadata is missing ${required}.`);
 
 const activeId = build.match(/const config = Object\.freeze\(\{[\s\S]*?id:\s*'([^']+)'/)?.[1];
-assert.equal(activeId, '20260806-m7-audiolab-sanctuary', 'The active runtime cache key must match Build 34.');
+assert.equal(activeId, '20260806-navigation-recovery', 'The active runtime cache key must match Build 37.');
 assert.ok(build.includes("const stylesheetVersion = visualTest ? '20260805-audiolab-core-modes' : config.id"));
 
-console.log('Desktop fixed shell and typography remain valid under Build 34.');
+console.log('Desktop fixed shell and typography remain valid under navigation recovery Build 37.');
