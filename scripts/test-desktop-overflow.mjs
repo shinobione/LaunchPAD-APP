@@ -69,6 +69,11 @@ assert.ok(!/font-family:\s*serif(?:[;,}])/i.test(typography), 'The typography re
 
 const build = read('js/build-config.js');
 for (const required of [
+  "id: '20260806-m1-routing-legal'",
+  "cache: 'shinobi-launchpad-v29'",
+  "revision: 'routing-navigation-legal-1'",
+  "display: '2026.08.06.29'",
+  "release: 'routing-navigation-legal-20260806'",
   "id: '20260806-pwa-single-update'",
   "cache: 'shinobi-launchpad-v28'",
   "revision: 'pwa-single-update-1'",
@@ -113,7 +118,7 @@ for (const required of [
 }
 
 const activeId = build.match(/const config = Object\.freeze\(\{[\s\S]*?id:\s*'([^']+)'/)?.[1];
-assert.equal(activeId, '20260806-pwa-single-update', 'The active runtime cache key must match Build 28.');
+assert.equal(activeId, '20260806-m1-routing-legal', 'The active runtime cache key must match Build 29.');
 assert.ok(build.includes("const stylesheetVersion = visualTest ? '20260805-audiolab-core-modes' : config.id"));
 
-console.log('Desktop fixed shell and the Outfit/Manrope LaunchPAD typography override remain valid under Build 28.');
+console.log('Desktop fixed shell and the Outfit/Manrope LaunchPAD typography override remain valid under Build 29.');

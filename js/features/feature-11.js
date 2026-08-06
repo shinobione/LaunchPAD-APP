@@ -3,6 +3,11 @@ import { harmonizeCatalogOrder, latestActiveTrackEntries } from '../core/catalog
 import { ensureStylesheet } from '../core/assets.js';
 
 const VIDEO_SELECTOR = 'video.track-video-player, video.lyrics-studio-canvas-video';
+const SHAREABLE_ROUTE_PATTERN = /^#(?:track|album|lyrics|studio)=.+/i;
+const LEGACY_DISCOGRAPHY_PATH = /\/discography\/?$/i;
+const ROUTE_TRANSITION_CLASS = 'route-entering';
+const ROUTE_TRANSITION_DURATION = 260;
+let routeTransitionTimer = 0;
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -13,11 +18,24 @@ function escapeHtml(value) {
     .replaceAll("'", '&#039;');
 }
 
+function launchRootPath(pathname = window.location.pathname) {
+  if (!LEGACY_DISCOGRAPHY_PATH.test(pathname)) return pathname;
+  const parent = pathname.replace(LEGACY_DISCOGRAPHY_PATH, '');
+  return `${parent || ''}/`;
+}
+
 export function normalizeLaunchRoute() {
-  const hash = window.location.hash;
-  const rootLaunch = !hash || hash === '#' || hash === '#/' || hash === '#discography';
-  if (!rootLaunch) return;
-  window.history.replaceState(window.history.state, '', '#home');
+  const hash = window.location.hash.trim();
+
+  // Track, album, lyrics and Studio URLs are intentional shareable deep links.
+  // All view-level launches (including a browser/PWA restored location) start on Home.
+  if (SHAREABLE_ROUTE_PATTERN.test(hash)) return;
+
+  const target = `${launchRootPath()}${window.location.search}#home`;
+  const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  if (current === target) return;
+
+  window.history.replaceState(null, '', target);
 }
 
 export function prepareFeature11Catalog() {
@@ -43,6 +61,32 @@ function renderLatestReleases() {
   grid.innerHTML = latestActiveTrackEntries(tracks, 5)
     .map(({ track, index }) => featuredCard(track, index))
     .join('');
+}
+
+function replayRouteTransition() {
+  const activeView = document.querySelector('.view.active');
+  if (!activeView) return;
+
+  if (globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    activeView.classList.remove(ROUTE_TRANSITION_CLASS);
+    return;
+  }
+
+  activeView.classList.remove(ROUTE_TRANSITION_CLASS);
+  void activeView.offsetWidth;
+  activeView.classList.add(ROUTE_TRANSITION_CLASS);
+
+  window.clearTimeout(routeTransitionTimer);
+  routeTransitionTimer = window.setTimeout(() => {
+    activeView.classList.remove(ROUTE_TRANSITION_CLASS);
+  }, ROUTE_TRANSITION_DURATION + 40);
+}
+
+function installRouteTransitions() {
+  if (window.__shinobiRouteTransitionsReady) return;
+  window.__shinobiRouteTransitionsReady = true;
+  window.addEventListener('shinobi:route-change', replayRouteTransition);
+  window.requestAnimationFrame(replayRouteTransition);
 }
 
 function relabelVideoUI(root = document) {
@@ -160,6 +204,7 @@ export function initFeature11({ audio = document.querySelector('#audio') } = {})
   if (window.__shinobiFeature11Ready) return;
   window.__shinobiFeature11Ready = true;
   ensureStylesheet('css/feature-11.css');
+  installRouteTransitions();
   renderLatestReleases();
   relabelVideoUI();
   installVideoStability(audio);

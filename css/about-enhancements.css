@@ -53,6 +53,18 @@
   color:color-mix(in srgb,var(--accent) 70%,#fff);
 }
 
+.about-legal-notice{
+  flex:1 0 100%;
+  display:block;
+  margin-top:2px;
+  color:inherit;
+  font-size:8px;
+  font-weight:500;
+  line-height:1.55;
+  letter-spacing:.01em;
+  opacity:.72;
+}
+
 .about-golden-logo-wrap{
   min-width:0;
   width:100%;
@@ -153,5 +165,9 @@
 
   .about-build-info span+span::before{
     content:none;
+  }
+
+  .about-legal-notice{
+    margin-top:5px;
   }
 }
