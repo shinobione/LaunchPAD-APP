@@ -115,6 +115,8 @@ for (const required of [
 
 const worker = read('sw.js');
 assert.ok(worker.includes("'./js/features/visual/audio-reactivity.js'"));
+assert.ok(worker.includes("'./js/features/visual/audio-lab-registry.js'"));
+assert.ok(worker.includes("'./js/features/visual/audio-lab-sanctuary.js'"));
 assert.ok(worker.includes("event.data?.type === 'GET_RELEASE'"));
 assert.ok(!worker.includes('visual-engine-hex-reactor.js'), 'PWA shell must not cache the retired Hex Reactor module.');
 
@@ -132,7 +134,12 @@ for (const required of [
   "release: 'pwa-single-update-20260806'",
   "id: '20260806-m6-home-editorial'",
   "cache: 'shinobi-launchpad-v33'",
-  "display: '2026.08.06.33'"
+  "display: '2026.08.06.33'",
+  "id: '20260806-m7-audiolab-sanctuary'",
+  "cache: 'shinobi-launchpad-v34'",
+  "revision: 'audiolab-sanctuary-1'",
+  "display: '2026.08.06.34'",
+  "release: 'audiolab-sanctuary-20260806'"
 ]) assert.ok(build.includes(required), `Audio Lab/PWA metadata is missing ${required}.`);
 
-console.log('Audio Lab purge, Aurora RMS dynamics, calmer Nebula, sharper Singularity and sanctuary-protected Spectrum/Liquid Chrome remain valid under Build 33.');
+console.log('Audio Lab purge, calibration and sanctuary-protected Spectrum/Liquid Chrome remain valid under Build 34.');
