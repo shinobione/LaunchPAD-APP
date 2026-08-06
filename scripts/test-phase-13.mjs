@@ -154,4 +154,6 @@ for (const required of [
   "cache: 'shinobi-launchpad-v28'"
 ]) assert.ok(build.includes(required), `Build history is missing ${required}.`);
 
-console.log('Phase 13 palette, Audio Lab preset purge, RMS dynamics and visual clarity remain valid under Build 28.');
+await import('./test-milestone-4.mjs');
+
+console.log('Phase 13 palette, Audio Lab preset purge, RMS dynamics and visual clarity remain valid under Build 31.');
