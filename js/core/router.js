@@ -6,6 +6,7 @@ const VIEW_ALIASES = {
 const TRACK_DETAIL_HISTORY_KEY = 'shinobiTrackDetail';
 const TRACK_ROUTES = new Set(['track', 'album', 'lyrics', 'studio']);
 const ROUTE_CHANGE_EVENT = 'shinobi:route-change';
+const ROUTE_TRANSITION_STYLESHEET = 'css/route-transitions.css';
 
 export function parseRoute(hash = window.location.hash) {
   const value = hash.replace(/^#/, '').trim();
@@ -28,6 +29,20 @@ export function routeToHash(route) {
     return `#${VIEW_ALIASES[view] || view}`;
   }
   return `#${route.type}=${encodeURIComponent(route.id)}`;
+}
+
+function ensureRouteTransitionStylesheet() {
+  if (document.querySelector(`link[href^="${ROUTE_TRANSITION_STYLESHEET}"]`)) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = ROUTE_TRANSITION_STYLESHEET;
+  document.head.appendChild(link);
+}
+
+function normalizeInitialViewRoute() {
+  const initialRoute = parseRoute();
+  if (initialRoute.type !== 'view' || initialRoute.value === 'home') return;
+  window.history.replaceState(null, '', routeToHash({ type: 'view', value: 'home' }));
 }
 
 function announceRoute(route) {
@@ -88,6 +103,8 @@ export function createRouter({ onRoute }) {
   }
 
   function start() {
+    ensureRouteTransitionStylesheet();
+    normalizeInitialViewRoute();
     window.addEventListener('hashchange', dispatch);
     dispatch();
   }
