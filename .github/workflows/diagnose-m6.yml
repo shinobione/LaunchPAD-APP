@@ -25,19 +25,85 @@ jobs:
           chrome_dump() {
             google-chrome --headless=new --no-sandbox --disable-gpu --virtual-time-budget="$1" --dump-dom "$2"
           }
-          chrome_dump 15000 'http://127.0.0.1:4173/#home' > artifacts/m6-diagnostics/home.html 2>artifacts/m6-diagnostics/home.stderr
-          chrome_dump 15000 'http://127.0.0.1:4173/#albums' > artifacts/m6-diagnostics/albums.html 2>artifacts/m6-diagnostics/albums.stderr
-          chrome_dump 15000 'http://127.0.0.1:4173/#track=thick' > artifacts/m6-diagnostics/track.html 2>artifacts/m6-diagnostics/track.stderr
+          dump() {
+            local name="$1" budget="$2" url="$3"
+            chrome_dump "$budget" "$url" > "artifacts/m6-diagnostics/${name}.html" 2>"artifacts/m6-diagnostics/${name}.stderr"
+          }
+          check() {
+            local label="$1" file="$2" pattern="$3"
+            if grep -q -- "$pattern" "$file"; then echo "PASS $label"; else echo "FAIL $label"; fi
+          }
+          reject() {
+            local label="$1" file="$2" pattern="$3"
+            if grep -q -- "$pattern" "$file"; then echo "FAIL $label"; else echo "PASS $label"; fi
+          }
+
+          dump home 15000 'http://127.0.0.1:4173/#home'
+          dump albums 15000 'http://127.0.0.1:4173/#albums'
+          dump track 15000 'http://127.0.0.1:4173/#track=thick'
+          dump player 9000 'http://127.0.0.1:4173/tests/player-experience-smoke.html'
+          dump studio 9000 'http://127.0.0.1:4173/tests/lyrics-studio-smoke.html'
+          dump smart 9000 'http://127.0.0.1:4173/tests/smart-canvas-smoke.html'
+          dump identity 11000 'http://127.0.0.1:4173/tests/canvas-identity-smoke.html'
+          dump favorites 12000 'http://127.0.0.1:4173/#favorites'
+          dump visual 22000 'http://127.0.0.1:4173/tests/visual-card-smoke.html'
+          dump album 15000 'http://127.0.0.1:4173/#album=coal-to-diamond'
+          dump lyrics 12000 'http://127.0.0.1:4173/#lyrics=before-the-noise'
+          dump accessibility 17000 'http://127.0.0.1:4173/tests/accessibility-smoke.html'
+          dump layout 20000 'http://127.0.0.1:4173/tests/layout-regression.html'
+          dump mobile 21000 'http://127.0.0.1:4173/tests/mobile-navigation-smoke.html'
+
           {
-            echo "HOME_READY=$(grep -c 'data-app-ready=\"true\"' artifacts/m6-diagnostics/home.html)"
-            echo "HOME_ERROR=$(grep -c 'An error is preventing the application from loading' artifacts/m6-diagnostics/home.html)"
-            echo "HOME_TRACKS=$(grep -c '4 TRACKS' artifacts/m6-diagnostics/home.html)"
-            echo "HOME_DNA=$(grep -c '<h3>Track DNA</h3>' artifacts/m6-diagnostics/home.html)"
-            echo "HOME_BPM=$(grep -c '<strong id=\"track-dna-bpm\">152</strong>' artifacts/m6-diagnostics/home.html)"
-            echo "HOME_RELEASE=$(grep -c 'home-official-release' artifacts/m6-diagnostics/home.html)"
-            echo "ALBUM_COLLECTION=$(grep -c 'class=\"album-collection\"' artifacts/m6-diagnostics/albums.html)"
-            echo "TRACK_ACTIVE=$(grep -c 'id=\"view-track\" class=\"view track-detail-view active\"' artifacts/m6-diagnostics/track.html)"
-            echo "TRACK_THICK=$(grep -c '<h1>THICK</h1>' artifacts/m6-diagnostics/track.html)"
+            check HOME_QUEUE artifacts/m6-diagnostics/home.html 'id="queue-panel"'
+            check HOME_FAVORITES artifacts/m6-diagnostics/home.html 'id="view-favorites"'
+            check HOME_VISUAL_MODAL artifacts/m6-diagnostics/home.html 'id="visual-card-modal"'
+            check HOME_PWA artifacts/m6-diagnostics/home.html 'id="pwa-install-control"'
+            check HOME_READY artifacts/m6-diagnostics/home.html 'data-app-ready="true"'
+            check HOME_TRACKS artifacts/m6-diagnostics/home.html '4 TRACKS'
+            check HOME_DNA artifacts/m6-diagnostics/home.html '<h3>Track DNA</h3>'
+            check HOME_BPM artifacts/m6-diagnostics/home.html '<strong id="track-dna-bpm">152</strong>'
+            check HOME_COVER_LINK artifacts/m6-diagnostics/home.html 'data-track-cover-link='
+            check HOME_MOBILE_BACKDROP artifacts/m6-diagnostics/home.html 'id="mobile-menu-backdrop"'
+            reject HOME_OLD_COPY artifacts/m6-diagnostics/home.html 'Explore the universe'
+            reject HOME_APP_ERROR artifacts/m6-diagnostics/home.html 'An error is preventing the application from loading'
+            check HOME_OFFICIAL_RELEASE artifacts/m6-diagnostics/home.html 'home-official-release'
+            check HOME_NEON_DEFAULT artifacts/m6-diagnostics/home.html 'data-home-visual-mode="neon-shatter"'
+
+            check ALBUMS_COLLECTION artifacts/m6-diagnostics/albums.html 'class="album-collection"'
+            reject ALBUMS_OLD_FEATURE artifacts/m6-diagnostics/albums.html 'project-featured-covers'
+            check ALBUMS_MARGIN artifacts/m6-diagnostics/albums.html 'margin-top:16px;column-gap:10px;row-gap:8px'
+
+            check TRACK_ACTIVE artifacts/m6-diagnostics/track.html 'id="view-track" class="view track-detail-view active"'
+            check TRACK_TITLE artifacts/m6-diagnostics/track.html '<h1>THICK</h1>'
+            check TRACK_BPM artifacts/m6-diagnostics/track.html '>BPM<'
+            check TRACK_KEY artifacts/m6-diagnostics/track.html '>Key<'
+            check TRACK_LANGUAGE artifacts/m6-diagnostics/track.html '>Language<'
+            check TRACK_CONTENT artifacts/m6-diagnostics/track.html '>Content rating<'
+            check TRACK_TAGS artifacts/m6-diagnostics/track.html 'track-detail-tags'
+
+            check PLAYER_READY artifacts/m6-diagnostics/player.html 'PLAYER EXPERIENCE READY PLAY PAUSE DYNAMIC TRACK DNA'
+            check STUDIO_READY artifacts/m6-diagnostics/studio.html 'LYRICS STUDIO READY SINGLE MODE AUTO CLOSE'
+            check SMART_READY artifacts/m6-diagnostics/smart.html 'SMART CANVAS READY VISIBILITY VIEWPORT SINGLE ACTIVE RELEASE NO AUDIO PAUSE'
+            reject SMART_ERROR artifacts/m6-diagnostics/smart.html 'SMART CANVAS ERROR'
+            check IDENTITY_READY artifacts/m6-diagnostics/identity.html 'CANVAS IDENTITY READY BADGES LAZY SINGLE ACTIVE MOBILE ACTION STUDIO DATA SAVER FALLBACK DYNAMIC'
+            reject IDENTITY_ERROR artifacts/m6-diagnostics/identity.html 'CANVAS IDENTITY ERROR'
+            check FAVORITES_TITLE artifacts/m6-diagnostics/favorites.html 'Your favorites'
+            check FAVORITES_RECENT artifacts/m6-diagnostics/favorites.html 'Recently played'
+            check VISUAL_READY artifacts/m6-diagnostics/visual.html 'VISUAL CARD READY 1080x1080 GHOST SIGNAL'
+            check ALBUM_DETAIL artifacts/m6-diagnostics/album.html 'album-detail-hero'
+            check ALBUM_PLAY artifacts/m6-diagnostics/album.html 'Play album'
+            if grep -Eq '[0-9]+:[0-9]{2} total' artifacts/m6-diagnostics/album.html; then echo 'PASS ALBUM_DURATION'; else echo 'FAIL ALBUM_DURATION'; fi
+            check LYRICS_STUDIO_MODE artifacts/m6-diagnostics/lyrics.html 'data-lyrics-studio="mode"'
+            reject LYRICS_FULLSCREEN artifacts/m6-diagnostics/lyrics.html '>Fullscreen<'
+            check LYRICS_LIVE artifacts/m6-diagnostics/lyrics.html 'aria-live="off"'
+            check ACCESS_READY artifacts/m6-diagnostics/accessibility.html 'ACCESSIBILITY READY'
+            reject ACCESS_ERROR artifacts/m6-diagnostics/accessibility.html 'ACCESSIBILITY ERROR'
+            check LAYOUT_READY artifacts/m6-diagnostics/layout.html 'LAYOUT READY'
+            reject LAYOUT_ERROR artifacts/m6-diagnostics/layout.html 'LAYOUT ERROR'
+            check LAYOUT_APP_READY artifacts/m6-diagnostics/layout.html '"appReady":true'
+            check LAYOUT_TRACK_NAV artifacts/m6-diagnostics/layout.html '"trackNavigationPreserved":true'
+            check MOBILE_READY artifacts/m6-diagnostics/mobile.html 'MOBILE NAV READY TRACK BACK ALBUM BACK OUTSIDE ESCAPE'
+            reject MOBILE_ERROR artifacts/m6-diagnostics/mobile.html 'MOBILE NAV ERROR'
           } | tee artifacts/m6-diagnostics/results.txt
       - name: Upload diagnostics
         if: always()
