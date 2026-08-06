@@ -33,21 +33,13 @@ for (const required of [
   'grid-row:2',
   'position:relative',
   'padding-bottom:32px'
-]) {
-  assert.ok(styles.includes(required), `Desktop fixed-shell guard is missing ${required}.`);
-}
+]) assert.ok(styles.includes(required), `Desktop fixed-shell guard is missing ${required}.`);
 
 const desktopStart = styles.indexOf('@media(min-width:761px)');
 const mobileStart = styles.indexOf('@media(max-width:760px)');
 assert.ok(desktopStart >= 0 && mobileStart > desktopStart, 'Desktop shell media block must precede the mobile block.');
 const desktopShellBlock = styles.slice(desktopStart, mobileStart);
-for (const required of [
-  'overflow:hidden!important',
-  '.app-shell{',
-  '.sidebar{',
-  '.main-content{',
-  '.player-bar{'
-]) {
+for (const required of ['overflow:hidden!important','.app-shell{','.sidebar{','.main-content{','.player-bar{']) {
   assert.ok(desktopShellBlock.includes(required), `Desktop shell block is missing ${required}.`);
 }
 
@@ -62,13 +54,16 @@ for (const required of [
   '.lyric-line',
   'font-family:var(--font-display)',
   'letter-spacing:-.045em'
-]) {
-  assert.ok(typography.includes(required), `LaunchPAD typography refresh is missing ${required}.`);
-}
-assert.ok(!/font-family:\s*serif(?:[;,}])/i.test(typography), 'The typography refresh must not use a serif display face.');
+]) assert.ok(typography.includes(required), `LaunchPAD typography refresh is missing ${required}.`);
+assert.ok(!/font-family:\s*serif(?:[;,}])/i.test(typography));
 
 const build = read('js/build-config.js');
 for (const required of [
+  "id: '20260806-m2-catalog-ordering'",
+  "cache: 'shinobi-launchpad-v30'",
+  "revision: 'catalog-ordering-1'",
+  "display: '2026.08.06.30'",
+  "release: 'catalog-ordering-20260806'",
   "id: '20260806-m1-routing-legal'",
   "cache: 'shinobi-launchpad-v29'",
   "revision: 'routing-navigation-legal-1'",
@@ -113,12 +108,10 @@ for (const required of [
   'function installTypographyStylesheet()',
   "new URL('css/typography-refresh.css', document.baseURI)",
   'installTypographyStylesheet();'
-]) {
-  assert.ok(build.includes(required), `PWA release metadata is missing ${required}.`);
-}
+]) assert.ok(build.includes(required), `PWA release metadata is missing ${required}.`);
 
 const activeId = build.match(/const config = Object\.freeze\(\{[\s\S]*?id:\s*'([^']+)'/)?.[1];
-assert.equal(activeId, '20260806-m1-routing-legal', 'The active runtime cache key must match Build 29.');
+assert.equal(activeId, '20260806-m2-catalog-ordering', 'The active runtime cache key must match Build 30.');
 assert.ok(build.includes("const stylesheetVersion = visualTest ? '20260805-audiolab-core-modes' : config.id"));
 
-console.log('Desktop fixed shell and the Outfit/Manrope LaunchPAD typography override remain valid under Build 29.');
+console.log('Desktop fixed shell and typography remain valid under Build 30.');

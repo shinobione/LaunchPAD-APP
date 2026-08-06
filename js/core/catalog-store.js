@@ -1,4 +1,5 @@
 import { albums as sourceAlbums, journeyEras as sourceJourneyEras } from '../catalog.js';
+import { normalizeTrackSchema } from './catalog-schema.js';
 
 const ALLOWED_LANGUAGES = ['French', 'English', 'Vietnamese'];
 
@@ -25,39 +26,59 @@ export function reindexCatalog() {
 }
 
 function mergeSearchText(track) {
-  return [track.searchText, track.title, track.genre,
-    Array.isArray(track.tags) ? track.tags.join(' ') : '', track.mood, track.album,
-    Array.isArray(track.languages) ? track.languages.join(' ') : '']
-    .filter(Boolean).join(' ').toLowerCase();
+  return [
+    track.searchText,
+    track.title,
+    track.genre,
+    Array.isArray(track.genres) ? track.genres.join(' ') : '',
+    Array.isArray(track.tags) ? track.tags.join(' ') : '',
+    track.mood,
+    Array.isArray(track.moods) ? track.moods.join(' ') : '',
+    Array.isArray(track.themes) ? track.themes.join(' ') : '',
+    track.album,
+    Array.isArray(track.languages) ? track.languages.join(' ') : ''
+  ].filter(Boolean).join(' ').toLowerCase();
 }
 
 rebuildTrackIndexes();
 
 export function mergeRemoteTracks(remoteTracks = []) {
-  if (!Array.isArray(remoteTracks) || remoteTracks.length === 0) return { added: 0, updated: 0, total: tracks.length };
+  if (!Array.isArray(remoteTracks) || remoteTracks.length === 0) {
+    return { added: 0, updated: 0, total: tracks.length };
+  }
+
   let added = 0;
   let updated = 0;
 
-  remoteTracks.forEach(remoteTrack => {
-    if (!remoteTrack?.id) return;
-    const existingIndex = trackIndexById.has(remoteTrack.id) ? trackIndexById.get(remoteTrack.id) : -1;
+  remoteTracks.forEach((remoteTrack, importIndex) => {
+    if (!remoteTrack?.id && !remoteTrack?.slug) return;
+    const normalizedRemote = normalizeTrackSchema(remoteTrack, importIndex);
+    const existingIndex = trackIndexById.has(normalizedRemote.id) ? trackIndexById.get(normalizedRemote.id) : -1;
+
     if (existingIndex >= 0) {
-      const existing = tracks[existingIndex];
-      const merged = {
-        ...existing, ...remoteTrack,
-        file: remoteTrack.file || existing.file,
-        cover: remoteTrack.cover || existing.cover,
-        lyrics: remoteTrack.lyrics || existing.lyrics,
-        tags: [...new Set([...(Array.isArray(existing.tags) ? existing.tags : []), ...(Array.isArray(remoteTrack.tags) ? remoteTrack.tags : [])].filter(Boolean))],
+      const existing = normalizeTrackSchema(tracks[existingIndex], existingIndex);
+      const merged = normalizeTrackSchema({
+        ...existing,
+        ...normalizedRemote,
+        file: normalizedRemote.file || existing.file,
+        cover: normalizedRemote.cover || existing.cover,
+        lyrics: normalizedRemote.lyrics || existing.lyrics,
+        tags: [...new Set([
+          ...(Array.isArray(existing.tags) ? existing.tags : []),
+          ...(Array.isArray(normalizedRemote.tags) ? normalizedRemote.tags : [])
+        ].filter(Boolean))],
         remoteAvailable: true,
-        remoteMetadata: remoteTrack.remoteMetadata || existing.remoteMetadata || null
-      };
+        remoteMetadata: normalizedRemote.remoteMetadata || existing.remoteMetadata || null
+      }, existingIndex);
       merged.searchText = mergeSearchText(merged);
       tracks[existingIndex] = merged;
       updated += 1;
       return;
     }
-    tracks.push({ ...remoteTrack, searchText: mergeSearchText(remoteTrack) });
+
+    const addedTrack = normalizeTrackSchema(normalizedRemote, tracks.length);
+    addedTrack.searchText = mergeSearchText(addedTrack);
+    tracks.push(addedTrack);
     added += 1;
   });
 
@@ -73,25 +94,33 @@ export function getAlbumTrackIndexes(albumId) { return getAlbumTracks(albumId).m
 export function getCatalogTags() { return [...new Set(tracks.flatMap(track => Array.isArray(track.tags) ? track.tags : [track.genre]).filter(Boolean))]; }
 export function getGenreCounts() { return tracks.reduce((counts, track) => { counts[track.genre] = (counts[track.genre] || 0) + 1; return counts; }, {}); }
 
-function releaseTimestamp(track) {
-  const value = track.releaseDate || track.releasedAt || track.date || track.createdAt || track.created_at || track.updatedAt || track.updated_at;
+function parseTimestamp(value) {
   if (!value) return null;
   const timestamp = Date.parse(value);
   return Number.isFinite(timestamp) ? timestamp : null;
 }
 
-export function getLatestTrackEntries(limit = 5) {
+function releaseSortInfo(track, index) {
+  const release = parseTimestamp(track.releaseDate || track.releasedAt || track.date);
+  if (release !== null) return { timestamp: release, source: 'releaseDate', fallback: false };
+  const created = parseTimestamp(track.createdAt || track.created_at || track.importedAt || track.migration?.importedAt);
+  if (created !== null) return { timestamp: created, source: 'createdAt', fallback: true };
+  const updated = parseTimestamp(track.updatedAt || track.updated_at);
+  if (updated !== null) return { timestamp: updated, source: 'updatedAt', fallback: true };
+  const sequence = Number(track.sequence ?? track.order ?? track.position ?? track.importIndex ?? index);
+  return { timestamp: Number.isFinite(sequence) ? sequence : index, source: 'sequence', fallback: true };
+}
+
+export function getLatestTrackEntries(limit = 5, now = Date.now()) {
   return tracks
-    .map((track, index) => ({ track, index, timestamp: releaseTimestamp(track) }))
-    .filter(({ track }) => track.status !== 'draft' && track.status !== 'archived' && track.active !== false)
-    .sort((a, b) => {
-      if (a.timestamp !== null || b.timestamp !== null) {
-        if (a.timestamp === null) return 1;
-        if (b.timestamp === null) return -1;
-        if (a.timestamp !== b.timestamp) return b.timestamp - a.timestamp;
-      }
-      return b.index - a.index;
+    .map((track, index) => ({ track, index, sort: releaseSortInfo(track, index) }))
+    .filter(({ track }) => {
+      const status = String(track.status || 'published').toLowerCase();
+      if (status === 'draft' || status === 'archived' || status === 'upcoming' || track.active === false) return false;
+      const officialRelease = parseTimestamp(track.releaseDate || track.releasedAt || track.date);
+      return officialRelease === null || officialRelease <= now;
     })
+    .sort((a, b) => b.sort.timestamp - a.sort.timestamp || b.index - a.index)
     .slice(0, limit);
 }
 
