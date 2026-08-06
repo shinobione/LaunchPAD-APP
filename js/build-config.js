@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260806-audiolab-catalog-reactivity',
-    cache: 'shinobi-launchpad-v25',
-    revision: 'audiolab-catalog-reactivity-1',
-    display: '2026.08.06.25',
-    release: 'audiolab-catalog-reactivity-20260806'
+    id: '20260806-audiolab-animation-calibration',
+    cache: 'shinobi-launchpad-v26',
+    revision: 'audiolab-animation-calibration-1',
+    display: '2026.08.06.26',
+    release: 'audiolab-animation-calibration-20260806'
   });
 
   // Legacy structural-validation markers retained until the workflow is modernized.
@@ -53,6 +53,11 @@
   // revision: 'audiolab-live-reactivity-1'
   // display: '2026.08.05.24'
   // release: 'audiolab-live-reactivity-20260805'
+  // id: '20260806-audiolab-catalog-reactivity'
+  // cache: 'shinobi-launchpad-v25'
+  // revision: 'audiolab-catalog-reactivity-1'
+  // display: '2026.08.06.25'
+  // release: 'audiolab-catalog-reactivity-20260806'
 
   globalThis.SHINOBIWAN_BUILD = config;
 

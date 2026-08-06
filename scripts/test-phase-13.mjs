@@ -36,19 +36,30 @@ for (const required of [
   'drawOrbitMode(',
   'drawAuroraGlassMode(',
   'drawWaveCathedralMode(',
-  'kick * .34',
-  'kick * .085'
-]) assert.ok(coreVisuals.includes(required), `Audio Lab FFT/transient renderer is missing ${required}.`);
+  'const bandSpeeds = [.105, .155, .225]',
+  'const arches = width < 600 ? 7 : 10',
+  'const apexGap = width * (.003 + localDrive * (.025 + (1 - progress) * .024))'
+]) assert.ok(coreVisuals.includes(required), `Audio Lab calibrated renderer is missing ${required}.`);
+
+const hexVisuals = read('js/features/visual/visual-engine-hex-reactor.js');
+for (const required of [
+  'drawHexReactorMode(',
+  'const beatDrive = Math.pow(',
+  'const counterFront = Math.max(',
+  'for (let ring = 0; ring < 4; ring += 1)'
+]) assert.ok(hexVisuals.includes(required), `Audio Lab Hex Reactor renderer is missing ${required}.`);
 
 const liveVisuals = read('js/features/visual/visual-engine-live.js');
 for (const required of [
   "const DEFAULT_MODE = 'wave-cathedral'",
+  "import { drawHexReactorMode } from './visual-engine-hex-reactor.js'",
+  "{ id: 'hex-reactor', label: 'Hex Reactor', renderer: drawHexReactorMode }",
   'readAudioLabSpectrum(raw)',
   'createAudioReactivityTracker',
   'shapeReactiveSpectrum(raw, shaped, features)',
   'renderMode(homeCanvas, drawWaveCathedralMode',
   "homeTitle.textContent = 'Wave Cathedral'",
-  "dataset.audioLabRenderer = 'fft-transient-v2'"
+  "dataset.audioLabRenderer = 'fft-mechanical-v3'"
 ]) assert.ok(liveVisuals.includes(required), `Live Audio Lab renderer is missing ${required}.`);
 
 const reactivity = read('js/features/visual/audio-reactivity.js');
@@ -97,6 +108,7 @@ assert.ok(worker.includes("'./js/features/feature-13.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-reactivity.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-v2.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-core-modes.js'"));
+assert.ok(worker.includes("'./js/features/visual/visual-engine-hex-reactor.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-live.js'"));
 
 const publicWorker = read('cloudflare/public-worker-v26.js');
@@ -126,7 +138,10 @@ for (const required of [
   "cache: 'shinobi-launchpad-v24'",
   "display: '2026.08.06.25'",
   "release: 'audiolab-catalog-reactivity-20260806'",
-  "cache: 'shinobi-launchpad-v25'"
+  "cache: 'shinobi-launchpad-v25'",
+  "display: '2026.08.06.26'",
+  "release: 'audiolab-animation-calibration-20260806'",
+  "cache: 'shinobi-launchpad-v26'"
 ]) assert.ok(build.includes(required), `Build history is missing ${required}.`);
 
-console.log('Phase 13 palette, Audio Lab catalog purge, reusable FFT transients and renderer sanctuary are valid.');
+console.log('Phase 13 palette, Audio Lab mechanical calibration and renderer sanctuary are valid.');
