@@ -1,4 +1,5 @@
 import { mergeRemoteTracks } from './catalog-store.js';
+import { normalizeTrackSchema } from './catalog-schema.js';
 
 const DEFAULT_API_URL = 'https://launchpad-media.jerryquinet.workers.dev';
 const FETCH_TIMEOUT_MS = 4500;
@@ -62,11 +63,12 @@ function buildSearchText(track) {
     .filter(Boolean).join(' ').toLowerCase();
 }
 
-function mapRemoteTrack(item, activeApiUrl = DEFAULT_API_URL) {
+function mapRemoteTrack(item, activeApiUrl = DEFAULT_API_URL, importIndex = 0) {
   if (!item?.slug || !item?.assets?.audio?.url) return null;
   const genres = Array.isArray(item.genres) && item.genres.length ? item.genres.filter(Boolean) : ['Other'];
   const tags = Array.isArray(item.tags) && item.tags.length ? item.tags.filter(Boolean) : genres;
   const moods = Array.isArray(item.moods) ? item.moods.filter(Boolean) : [];
+  const themes = Array.isArray(item.themes) ? item.themes.filter(Boolean) : [];
   const fallbackPalette = paletteFor(item.slug);
   const languages = normalizeLanguages(item.languages);
   const albumId = item.album?.id || 'singles';
@@ -75,7 +77,7 @@ function mapRemoteTrack(item, activeApiUrl = DEFAULT_API_URL) {
   const createdAt = firstTimestamp(item.createdAt, item.created_at, item.migration?.importedAt, item.updatedAt, item.updated_at);
   const updatedAt = firstTimestamp(item.updatedAt, item.updated_at, createdAt);
 
-  const track = {
+  const track = normalizeTrackSchema({
     id: item.slug,
     title: item.title || item.slug,
     file: item.assets.audio.url,
@@ -88,8 +90,11 @@ function mapRemoteTrack(item, activeApiUrl = DEFAULT_API_URL) {
     videoContentType: item.assets.video?.contentType || null,
     videoFilename: item.assets.video?.filename || null,
     genre: genres[0],
-    tags: [...new Set([...tags, ...genres])],
+    genres,
+    tags: [...new Set([...tags, ...genres, ...themes])],
     mood: moods.join(', ') || item.energy || 'Independent release',
+    moods,
+    themes,
     albumId,
     album,
     lyrics: item.assets.lyrics?.url || null,
@@ -97,10 +102,12 @@ function mapRemoteTrack(item, activeApiUrl = DEFAULT_API_URL) {
     accent2: /^#[0-9a-f]{6}$/i.test(item.accent2 || '') ? item.accent2 : fallbackPalette[1],
     releaseDate: firstTimestamp(item.releaseDate, item.releasedAt, item.date),
     createdAt,
+    importedAt: item.migration?.importedAt || createdAt,
     updatedAt,
     status: item.status || 'published',
     active: item.active !== false && item.status !== 'archived',
     sequence: finiteOrNull(item.sequence ?? item.order ?? item.position),
+    importIndex,
     languages: languages.length ? languages : ['English'],
     bpm: Number.isInteger(item.bpm) ? item.bpm : null,
     key: typeof item.key === 'string' && item.key ? item.key : null,
@@ -112,15 +119,15 @@ function mapRemoteTrack(item, activeApiUrl = DEFAULT_API_URL) {
     remoteMetadata: {
       type: item.type || null,
       year: Number.isInteger(item.year) ? item.year : null,
-      genres, tags, moods,
-      themes: Array.isArray(item.themes) ? item.themes.filter(Boolean) : [],
+      genres, tags, moods, themes,
       era: item.era || null,
       energy: item.energy || null,
       sequence: finiteOrNull(item.sequence ?? item.order ?? item.position),
       timestampsAvailable: timestampState(item.timestampsAvailable),
+      importedAt: item.migration?.importedAt || createdAt,
       apiUrl: item.urls?.self || `${activeApiUrl}/tracks/${encodeURIComponent(item.slug)}`
     }
-  };
+  }, importIndex);
 
   track.searchText = buildSearchText(track);
   return track;
@@ -129,7 +136,7 @@ function mapRemoteTrack(item, activeApiUrl = DEFAULT_API_URL) {
 export async function fetchRemoteTracks({ apiUrl = globalThis.SHINOBIWAN_MEDIA_API || DEFAULT_API_URL, timeoutMs = FETCH_TIMEOUT_MS } = {}) {
   if (shouldUseCatalogFixture()) {
     const { catalogFixture } = await import('../catalog-fixture.js');
-    return catalogFixture.map(track => ({ ...track }));
+    return catalogFixture.map((track, index) => normalizeTrackSchema({ ...track }, index));
   }
   const normalizedApiUrl = normalizeApiUrl(apiUrl);
   const controller = new AbortController();
@@ -141,7 +148,7 @@ export async function fetchRemoteTracks({ apiUrl = globalThis.SHINOBIWAN_MEDIA_A
     if (!response.ok) throw new Error(`Remote catalog request failed with HTTP ${response.status}.`);
     const payload = await response.json();
     if (!payload?.ok || !Array.isArray(payload.tracks)) throw new Error('Remote catalog response is invalid.');
-    return payload.tracks.map(item => mapRemoteTrack(item, normalizedApiUrl)).filter(Boolean);
+    return payload.tracks.map((item, index) => mapRemoteTrack(item, normalizedApiUrl, index)).filter(Boolean);
   } finally {
     clearTimeout(timeout);
   }
