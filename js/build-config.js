@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260805-audiolab-live-reactivity',
-    cache: 'shinobi-launchpad-v24',
-    revision: 'audiolab-live-reactivity-1',
-    display: '2026.08.05.24',
-    release: 'audiolab-live-reactivity-20260805'
+    id: '20260806-audiolab-catalog-reactivity',
+    cache: 'shinobi-launchpad-v25',
+    revision: 'audiolab-catalog-reactivity-1',
+    display: '2026.08.06.25',
+    release: 'audiolab-catalog-reactivity-20260806'
   });
 
   // Legacy structural-validation markers retained until the workflow is modernized.
@@ -48,13 +48,18 @@
   // revision: 'audiolab-showcase-five-1'
   // display: '2026.08.05.23'
   // release: 'audiolab-showcase-five-20260805'
+  // id: '20260805-audiolab-live-reactivity'
+  // cache: 'shinobi-launchpad-v24'
+  // revision: 'audiolab-live-reactivity-1'
+  // display: '2026.08.05.24'
+  // release: 'audiolab-live-reactivity-20260805'
 
   globalThis.SHINOBIWAN_BUILD = config;
 
   if (typeof document === 'undefined') return;
 
   const visualTest = new URLSearchParams(location.search).has('visual-test');
-  const stylesheetVersion = visualTest ? '20260805-audiolab-core-modes' : config.id;
+  const stylesheetVersion = visualTest ? '20260806-audiolab-catalog-reactivity' : config.id;
   if (visualTest) document.documentElement.dataset.visualTest = 'true';
 
   function installAppIconLinks() {
