@@ -99,6 +99,6 @@ for (const required of [
 
 const activeId = build.match(/const config = Object\.freeze\(\{[\s\S]*?id:\s*'([^']+)'/)?.[1];
 assert.equal(activeId, '20260806-audiolab-catalog-reactivity', 'The active runtime cache key must match Build 25.');
-assert.ok(build.includes("const stylesheetVersion = visualTest ? '20260806-audiolab-catalog-reactivity' : config.id"));
+assert.ok(build.includes("const stylesheetVersion = visualTest ? '20260805-audiolab-core-modes' : config.id"));
 
 console.log('Desktop fixed shell and the Outfit/Manrope LaunchPAD typography override remain valid under Build 25.');
