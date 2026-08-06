@@ -69,6 +69,11 @@ assert.ok(!/font-family:\s*serif(?:[;,}])/i.test(typography), 'The typography re
 
 const build = read('js/build-config.js');
 for (const required of [
+  "id: '20260806-audiolab-rms-clarity'",
+  "cache: 'shinobi-launchpad-v27'",
+  "revision: 'audiolab-rms-clarity-1'",
+  "display: '2026.08.06.27'",
+  "release: 'audiolab-rms-clarity-20260806'",
   "id: '20260806-audiolab-animation-calibration'",
   "cache: 'shinobi-launchpad-v26'",
   "revision: 'audiolab-animation-calibration-1'",
@@ -103,7 +108,7 @@ for (const required of [
 }
 
 const activeId = build.match(/const config = Object\.freeze\(\{[\s\S]*?id:\s*'([^']+)'/)?.[1];
-assert.equal(activeId, '20260806-audiolab-animation-calibration', 'The active runtime cache key must match Build 26.');
+assert.equal(activeId, '20260806-audiolab-rms-clarity', 'The active runtime cache key must match Build 27.');
 assert.ok(build.includes("const stylesheetVersion = visualTest ? '20260805-audiolab-core-modes' : config.id"));
 
-console.log('Desktop fixed shell and the Outfit/Manrope LaunchPAD typography override remain valid under Build 26.');
+console.log('Desktop fixed shell and the Outfit/Manrope LaunchPAD typography override remain valid under Build 27.');
