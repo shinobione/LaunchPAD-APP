@@ -1,11 +1,13 @@
 import { ensureStylesheet, versionedAsset } from '../core/assets.js';
 
 const UPDATE_DISMISS_KEY = 'shinobi-pwa-update-dismissed-release';
+const UPDATE_ACCEPTED_KEY = 'shinobi-pwa-update-accepted-release';
 const RELOAD_REQUEST_KEY = 'shinobi-pwa-update-reload-requested';
 const INSTALL_DISMISS_KEY = 'shinobi-pwa-install-dismissed-at';
 const UPDATE_CHECK_INTERVAL = 2 * 60 * 1000;
 const INSTALL_DISMISS_MS = 3 * 24 * 60 * 60 * 1000;
 const ACTIVATION_TIMEOUT_MS = 9000;
+const WORKER_RELEASE_TIMEOUT_MS = 1800;
 const RELEASE_CHANNEL = 'shinobi-pwa-release';
 
 let capturedInstallPrompt = null;
@@ -170,6 +172,35 @@ function bannerHide(banner, { immediate = false } = {}) {
   }, 220);
 }
 
+export function readWorkerRelease(worker, {
+  MessageChannelClass = globalThis.MessageChannel,
+  timeout = WORKER_RELEASE_TIMEOUT_MS
+} = {}) {
+  if (!worker?.postMessage || typeof MessageChannelClass !== 'function') return Promise.resolve(null);
+
+  return new Promise(resolve => {
+    const channel = new MessageChannelClass();
+    let settled = false;
+    const finish = release => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      channel.port1.close?.();
+      channel.port2.close?.();
+      resolve(typeof release === 'string' && release ? release : null);
+    };
+    const timer = window.setTimeout(() => finish(null), timeout);
+    channel.port1.onmessage = event => finish(event.data?.release || null);
+    channel.port1.start?.();
+
+    try {
+      worker.postMessage({ type: 'GET_RELEASE' }, [channel.port2]);
+    } catch {
+      finish(null);
+    }
+  });
+}
+
 export function createPWAUpdateController({
   audio = document.querySelector('#audio'),
   serviceWorker = navigator.serviceWorker,
@@ -186,20 +217,25 @@ export function createPWAUpdateController({
 
   let waitingWorker = null;
   let pendingRelease = null;
-  let reloadOnly = false;
   let deferredUntilPlaybackStops = false;
   let activationRequested = false;
   let refreshing = false;
   let activationTimer = 0;
   let dismissedRelease = safeStorageGet(storage, UPDATE_DISMISS_KEY);
+  let acceptedRelease = safeStorageGet(storage, UPDATE_ACCEPTED_KEY);
   const reloadWasRequested = safeStorageGet(storage, RELOAD_REQUEST_KEY) === '1';
-  safeStorageRemove(storage, RELOAD_REQUEST_KEY);
+
+  if (acceptedRelease === currentRelease) {
+    acceptedRelease = null;
+    safeStorageRemove(storage, UPDATE_ACCEPTED_KEY);
+    safeStorageRemove(storage, RELOAD_REQUEST_KEY);
+  }
 
   function resetCopy() {
     banner.dataset.state = 'ready';
     title.textContent = 'A new version of LaunchPAD is available.';
     subtitle.textContent = 'The update will be applied without abruptly interrupting the music.';
-    updateButton.textContent = reloadOnly ? 'Reload latest' : 'Update now';
+    updateButton.textContent = 'Update now';
     updateButton.disabled = false;
     laterButton.disabled = false;
   }
@@ -208,12 +244,16 @@ export function createPWAUpdateController({
     bannerHide(banner, options);
   }
 
-  function show(worker, { release = null, forceReload = false } = {}) {
-    waitingWorker = worker || waitingWorker;
-    pendingRelease = release || pendingRelease || 'next';
-    reloadOnly = Boolean(forceReload && !waitingWorker);
-    if ((!waitingWorker && !reloadOnly) || activationRequested) return false;
-    if (dismissedRelease === pendingRelease) return false;
+  function show(worker, { release = null } = {}) {
+    const targetRelease = release || 'next';
+    if (!worker || activationRequested || targetRelease === currentRelease) return false;
+    if (dismissedRelease === targetRelease || acceptedRelease === targetRelease) return false;
+
+    waitingWorker = worker;
+    if (!banner.hidden && pendingRelease === targetRelease) return false;
+
+    pendingRelease = targetRelease;
+    banner.dataset.release = targetRelease;
     resetCopy();
     bannerShow(banner);
     return true;
@@ -228,35 +268,18 @@ export function createPWAUpdateController({
     reload();
   }
 
-  function reloadLatest() {
-    activationRequested = true;
-    safeStorageSet(storage, RELOAD_REQUEST_KEY, '1');
-    banner.dataset.state = 'applying';
-    title.textContent = 'Loading the latest LaunchPAD…';
-    subtitle.textContent = 'The app will reload once.';
-    updateButton.textContent = 'Reloading…';
-    updateButton.disabled = true;
-    laterButton.disabled = true;
-    window.setTimeout(() => {
-      hide({ immediate: true });
-      completeWithReload();
-    }, 180);
-  }
-
   function requestActivation() {
-    if (activationRequested) return false;
-    if (!waitingWorker) {
-      if (reloadOnly) reloadLatest();
-      return reloadOnly;
-    }
+    if (activationRequested || !waitingWorker) return false;
 
     deferredUntilPlaybackStops = false;
     activationRequested = true;
+    acceptedRelease = pendingRelease || 'next';
+    safeStorageSet(storage, UPDATE_ACCEPTED_KEY, acceptedRelease);
     safeStorageSet(storage, RELOAD_REQUEST_KEY, '1');
     safeStorageRemove(storage, UPDATE_DISMISS_KEY);
     banner.dataset.state = 'applying';
     title.textContent = 'Updating LaunchPAD…';
-    subtitle.textContent = 'The app will reload once when the new version takes control.';
+    subtitle.textContent = 'The app will reload once when the latest version takes control.';
     updateButton.textContent = 'Installing…';
     updateButton.disabled = true;
     laterButton.disabled = true;
@@ -316,6 +339,7 @@ export function createPWAUpdateController({
     requestActivation,
     isVisible: () => !banner.hidden,
     isDeferred: () => deferredUntilPlaybackStops,
+    pendingRelease: () => pendingRelease,
     destroy() {
       window.clearTimeout(activationTimer);
       updateButton.removeEventListener('click', handleUpdateClick);
@@ -348,9 +372,11 @@ export function initPWA() {
   const currentRelease = globalThis.SHINOBIWAN_BUILD?.release || 'development';
   let registration = null;
   let lastUpdateCheck = 0;
+  let updateCheckPromise = null;
   let updateController = null;
   let remoteRelease = currentRelease;
   let releaseChannel = null;
+  let lastAnnouncedRelease = currentRelease;
 
   function installDismissed() {
     const dismissedAt = Number(safeStorageGet(window.localStorage, INSTALL_DISMISS_KEY));
@@ -423,19 +449,22 @@ export function initPWA() {
     return shown;
   }
 
+  async function offerWaitingWorker(worker, release = remoteRelease) {
+    if (!worker || !navigator.serviceWorker.controller || release === currentRelease) return false;
+    const reportedRelease = await readWorkerRelease(worker);
+    if (!reportedRelease || reportedRelease !== release) return false;
+    return showUpdate(worker, { release: reportedRelease });
+  }
+
   function watchRegistration(nextRegistration) {
     registration = nextRegistration;
     updateController ||= createPWAUpdateController({ audio, notify, currentRelease });
-
-    if (registration.waiting && navigator.serviceWorker.controller) {
-      showUpdate(registration.waiting, { release: remoteRelease });
-    }
 
     registration.addEventListener('updatefound', () => {
       const worker = registration.installing;
       worker?.addEventListener('statechange', () => {
         if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-          showUpdate(registration.waiting || worker, { release: remoteRelease });
+          void offerWaitingWorker(registration.waiting || worker, remoteRelease);
         }
       });
     });
@@ -453,37 +482,47 @@ export function initPWA() {
     return parseRemoteRelease(await response.text()) || currentRelease;
   }
 
-  async function checkForUpdate({ force = false } = {}) {
-    if (!registration || !navigator.onLine) return;
+  async function checkForUpdate({ force = false, announce = true } = {}) {
+    if (!registration || !navigator.onLine) return null;
+    if (updateCheckPromise) return updateCheckPromise;
+
     const now = Date.now();
-    if (!force && now - lastUpdateCheck < UPDATE_CHECK_INTERVAL) return;
+    if (!force && now - lastUpdateCheck < UPDATE_CHECK_INTERVAL) return null;
     lastUpdateCheck = now;
 
-    try {
-      remoteRelease = await fetchRemoteRelease();
-      await registration.update();
-      if (registration.waiting && navigator.serviceWorker.controller) {
-        showUpdate(registration.waiting, { release: remoteRelease });
-      } else if (remoteRelease !== currentRelease) {
-        showUpdate(null, { release: remoteRelease, forceReload: true });
+    updateCheckPromise = (async () => {
+      try {
+        remoteRelease = await fetchRemoteRelease();
+        await registration.update();
+        if (registration.waiting && navigator.serviceWorker.controller) {
+          await offerWaitingWorker(registration.waiting, remoteRelease);
+        }
+        if (announce && remoteRelease !== currentRelease && remoteRelease !== lastAnnouncedRelease) {
+          lastAnnouncedRelease = remoteRelease;
+          releaseChannel?.postMessage({ release: remoteRelease });
+        }
+        return remoteRelease;
+      } catch (error) {
+        console.info('PWA update check postponed.', error);
+        return null;
+      } finally {
+        updateCheckPromise = null;
       }
-      releaseChannel?.postMessage({ release: remoteRelease });
-    } catch (error) {
-      console.info('PWA update check postponed.', error);
-    }
+    })();
+
+    return updateCheckPromise;
   }
 
   async function registerServiceWorker() {
     try {
       const workerUrl = new URL('./sw.js', document.baseURI);
-      workerUrl.searchParams.set('release', currentRelease);
       const nextRegistration = await navigator.serviceWorker.register(workerUrl, {
         scope: './',
         updateViaCache: 'none'
       });
       watchRegistration(nextRegistration);
       await navigator.serviceWorker.ready;
-      checkForUpdate({ force: true });
+      await checkForUpdate({ force: true });
     } catch (error) {
       console.warn('PWA service worker registration failed', error);
     }
@@ -493,7 +532,9 @@ export function initPWA() {
     releaseChannel = new BroadcastChannel(RELEASE_CHANNEL);
     releaseChannel.addEventListener('message', event => {
       const release = event.data?.release;
-      if (release && release !== currentRelease) checkForUpdate({ force: true });
+      if (release && release !== currentRelease) {
+        void checkForUpdate({ force: true, announce: false });
+      }
     });
   }
 
@@ -502,10 +543,10 @@ export function initPWA() {
     else window.addEventListener('load', registerServiceWorker, { once: true });
 
     window.addEventListener('online', () => checkForUpdate({ force: true }));
-    window.addEventListener('focus', () => checkForUpdate({ force: true }));
+    window.addEventListener('focus', () => checkForUpdate());
     window.addEventListener('pageshow', event => checkForUpdate({ force: event.persisted }));
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') checkForUpdate({ force: true });
+      if (document.visibilityState === 'visible') checkForUpdate();
     });
     window.setInterval(() => {
       if (document.visibilityState === 'visible') checkForUpdate();
