@@ -116,6 +116,7 @@ for (const required of [
 
 const worker = read('sw.js');
 assert.ok(worker.includes("'./js/features/visual/audio-reactivity.js'"));
+assert.ok(worker.includes("event.data?.type === 'GET_RELEASE'"));
 assert.ok(!worker.includes('visual-engine-hex-reactor.js'), 'PWA shell must not cache the retired Hex Reactor module.');
 
 const build = read('js/build-config.js');
@@ -124,7 +125,12 @@ for (const required of [
   "cache: 'shinobi-launchpad-v27'",
   "revision: 'audiolab-rms-clarity-1'",
   "display: '2026.08.06.27'",
-  "release: 'audiolab-rms-clarity-20260806'"
-]) assert.ok(build.includes(required), `Audio Lab RMS clarity metadata is missing ${required}.`);
+  "release: 'audiolab-rms-clarity-20260806'",
+  "id: '20260806-pwa-single-update'",
+  "cache: 'shinobi-launchpad-v28'",
+  "revision: 'pwa-single-update-1'",
+  "display: '2026.08.06.28'",
+  "release: 'pwa-single-update-20260806'"
+]) assert.ok(build.includes(required), `Audio Lab/PWA metadata is missing ${required}.`);
 
-console.log('Audio Lab purge, Aurora RMS dynamics, calmer Nebula, sharper Singularity and protected stable presets are valid.');
+console.log('Audio Lab purge, Aurora RMS dynamics, calmer Nebula, sharper Singularity and protected stable presets remain valid under Build 28.');

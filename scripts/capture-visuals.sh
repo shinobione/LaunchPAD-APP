@@ -22,7 +22,7 @@ run_pwa_update_smoke() {
     --user-data-dir="$profile" --dump-dom \
     "${BASE_URL}tests/pwa-update-smoke.html" > "$output"
 
-  grep -q 'PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RELOAD' "$output"
+  grep -q 'PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RELOAD DEDUPED VERIFIED' "$output"
   ! grep -q 'PWA UPDATE ERROR' "$output"
   rm -rf "$profile" "$output"
   echo "PWA update prompt smoke test passed"

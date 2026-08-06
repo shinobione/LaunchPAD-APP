@@ -9,7 +9,7 @@
   <output id="result">PWA UPDATE PENDING</output>
 
   <script type="module">
-    import { createPWAUpdateController } from '../js/features/pwa.js';
+    import { createPWAUpdateController, readWorkerRelease } from '../js/features/pwa.js';
 
     class MemoryStorage {
       constructor() {
@@ -53,11 +53,18 @@
         audio,
         serviceWorker,
         storage,
+        currentRelease: 'release-27',
         reload: () => { reloads += 1; }
       });
 
-      if (!controller.show(worker) || !controller.isVisible()) {
+      if (!controller.show(worker, { release: 'release-28' }) || !controller.isVisible()) {
         throw new Error('Waiting worker did not reveal the update prompt.');
+      }
+      if (controller.show(worker, { release: 'release-28' })) {
+        throw new Error('The same release created a duplicate update prompt.');
+      }
+      if (document.querySelectorAll('#pwa-update-banner').length !== 1) {
+        throw new Error('More than one update banner exists in the DOM.');
       }
 
       document.querySelector('[data-pwa-update-now]').click();
@@ -82,18 +89,45 @@
       controller.destroy();
 
       document.querySelector('#pwa-update-banner')?.remove();
+      const acceptedController = createPWAUpdateController({
+        audio,
+        serviceWorker: new FakeServiceWorker(),
+        storage,
+        currentRelease: 'release-27',
+        reload: () => {}
+      });
+      if (acceptedController.show({ postMessage() {} }, { release: 'release-28' })) {
+        throw new Error('An accepted release was offered again after reload.');
+      }
+      acceptedController.destroy();
+
+      document.querySelector('#pwa-update-banner')?.remove();
+      const currentController = createPWAUpdateController({
+        audio,
+        serviceWorker: new FakeServiceWorker(),
+        storage,
+        currentRelease: 'release-28',
+        reload: () => {}
+      });
+      if (!currentController.show({ postMessage() {} }, { release: 'release-29' })) {
+        throw new Error('A genuinely newer release was blocked after the accepted release became current.');
+      }
+      currentController.destroy();
+
+      document.querySelector('#pwa-update-banner')?.remove();
       const laterStorage = new MemoryStorage();
       const laterController = createPWAUpdateController({
         audio,
         serviceWorker: new FakeServiceWorker(),
         storage: laterStorage,
+        currentRelease: 'release-27',
         reload: () => {}
       });
-      laterController.show({ postMessage() {} });
+      laterController.show({ postMessage() {} }, { release: 'release-28' });
       document.querySelector('[data-pwa-update-later]').click();
       await wait(260);
       if (laterController.isVisible()) {
-        throw new Error('Plus tard did not close the prompt for the session.');
+        throw new Error('Later did not close the prompt for the session.');
       }
       laterController.destroy();
 
@@ -102,9 +136,10 @@
         audio,
         serviceWorker: new FakeServiceWorker(),
         storage: laterStorage,
+        currentRelease: 'release-27',
         reload: () => {}
       });
-      if (dismissedController.show({ postMessage() {} })) {
+      if (dismissedController.show({ postMessage() {} }, { release: 'release-28' })) {
         throw new Error('Dismissed update prompt returned during the same session.');
       }
       dismissedController.destroy();
@@ -115,6 +150,7 @@
         audio,
         serviceWorker: new FakeServiceWorker(),
         storage: new MemoryStorage(),
+        currentRelease: 'release-27',
         reload: () => {}
       });
       ended = true;
@@ -122,7 +158,7 @@
         postMessage(message) {
           immediateMessages.push(message);
         }
-      });
+      }, { release: 'release-28' });
       document.querySelector('[data-pwa-update-now]').click();
       await frame();
       if (immediateMessages[0]?.type !== 'SKIP_WAITING') {
@@ -130,7 +166,16 @@
       }
       immediateController.destroy();
 
-      result.textContent = 'PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RELOAD';
+      const verifiedRelease = await readWorkerRelease({
+        postMessage(message, ports) {
+          if (message?.type === 'GET_RELEASE') ports[0]?.postMessage({ release: 'release-28' });
+        }
+      });
+      if (verifiedRelease !== 'release-28') {
+        throw new Error('The waiting worker release could not be verified.');
+      }
+
+      result.textContent = 'PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RELOAD DEDUPED VERIFIED';
     } catch (error) {
       result.textContent = `PWA UPDATE ERROR ${error.message}`;
     }

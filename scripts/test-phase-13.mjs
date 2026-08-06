@@ -112,6 +112,7 @@ assert.ok(worker.includes("'./js/features/visual/audio-reactivity.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-v2.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-core-modes.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-live.js'"));
+assert.ok(worker.includes("event.data?.type === 'GET_RELEASE'"));
 assert.ok(!worker.includes('visual-engine-hex-reactor.js'));
 
 const publicWorker = read('cloudflare/public-worker-v26.js');
@@ -147,7 +148,10 @@ for (const required of [
   "cache: 'shinobi-launchpad-v26'",
   "display: '2026.08.06.27'",
   "release: 'audiolab-rms-clarity-20260806'",
-  "cache: 'shinobi-launchpad-v27'"
+  "cache: 'shinobi-launchpad-v27'",
+  "display: '2026.08.06.28'",
+  "release: 'pwa-single-update-20260806'",
+  "cache: 'shinobi-launchpad-v28'"
 ]) assert.ok(build.includes(required), `Build history is missing ${required}.`);
 
-console.log('Phase 13 palette, Audio Lab preset purge, RMS dynamics and visual clarity remain valid.');
+console.log('Phase 13 palette, Audio Lab preset purge, RMS dynamics and visual clarity remain valid under Build 28.');
