@@ -1,9 +1,6 @@
 name: Deploy LaunchPAD to GitHub Pages
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 concurrency:
@@ -45,10 +42,6 @@ jobs:
           touch _site/.nojekyll
           test -s _site/index.html
 
-          echo "Static Pages artifact:"
-          du -sh _site
-          find _site -type f | wc -l
-
       - name: Upload static site artifact
         uses: actions/upload-pages-artifact@v4
         with:
@@ -61,12 +54,10 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 15
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
         with:
           artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
-          timeout: 1800000
-          reporting_interval: 10000
