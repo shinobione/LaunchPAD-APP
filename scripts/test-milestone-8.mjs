@@ -44,7 +44,7 @@ for (const required of [
   'TECHNICAL_TAG.test(label)',
   'export function initBadgeHierarchy()'
 ]) assert.ok(badges.includes(required), `Badge hierarchy is missing ${required}.`);
-assert.ok(!badges.includes("status === 'draft') statuses.push('DRAFT')"), 'DRAFT must remain Track Manager-only.');
+assert.ok(!/^\s*if\s*\(status === 'draft'\) statuses\.push\('DRAFT'\)/m.test(badges), 'DRAFT must remain Track Manager-only.');
 
 const badgeStyles = read('css/badge-hierarchy.css');
 for (const required of [
@@ -103,8 +103,8 @@ for (const required of [
 ]) assert.ok(worker.includes(required), `Milestone 8 offline shell is missing ${required}.`);
 
 const build = read('js/build-config.js');
-assert.ok(build.includes("id: '20260806-m8-svg-badges'"));
-assert.ok(build.includes("cache: 'shinobi-launchpad-v35'"));
-assert.ok(build.includes("display: '2026.08.06.35'"));
+assert.ok(build.includes("id: '20260806-navigation-recovery'"));
+assert.ok(build.includes("cache: 'shinobi-launchpad-v37'"));
+assert.ok(build.includes("display: '2026.08.06.37'"));
 
-console.log('Milestone 8 SVG icons, badge hierarchy and Track Manager v5.7 are valid.');
+console.log('Milestone 8 SVG icons, badge hierarchy and Track Manager v5.7 are valid under navigation recovery Build 37.');

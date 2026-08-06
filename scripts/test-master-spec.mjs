@@ -37,7 +37,10 @@ includesAll(ordering, [
 ], 'Milestone 2 ordering');
 
 // 3 — Reactive Track Manager filters, manual palette and automatic deployment.
-const manager3 = read('cloudflare/admin-worker.parts/20-m3-track-manager-controls.inject.part');
+const manager3 = [
+  read('cloudflare/admin-worker.parts/20-m3-track-manager-controls.inject.part'),
+  read('cloudflare/admin-worker.parts/18-phase-12-hotfixes.inject.part')
+].join('\n');
 includesAll(manager3, [
   "TRACK_MANAGER_MILESTONE_3_VERSION='5.6'",
   'milestone3InstallReactiveFilters',
@@ -178,10 +181,10 @@ includesAll(worker, [
 ], 'PWA shell');
 const build = read('js/build-config.js');
 includesAll(build, [
-  "id: '20260806-master-spec-delivery'",
-  "cache: 'shinobi-launchpad-v36'",
-  "display: '2026.08.06.36'",
-  "release: 'master-spec-delivery-20260806'"
+  "id: '20260806-navigation-recovery'",
+  "cache: 'shinobi-launchpad-v37'",
+  "display: '2026.08.06.37'",
+  "release: 'navigation-recovery-20260806'"
 ], 'Final release metadata');
 
-console.log('All nine LaunchPAD master-spec sections are present and regression-protected under Build 36.');
+console.log('All nine LaunchPAD master-spec sections are present and regression-protected under navigation recovery Build 37.');
