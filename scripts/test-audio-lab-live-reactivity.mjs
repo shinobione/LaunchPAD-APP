@@ -5,29 +5,35 @@ const read = path => fs.readFileSync(path, 'utf8');
 const live = read('js/features/visual/visual-engine-live.js');
 
 for (const required of [
-  "const DEFAULT_MODE = 'wave-cathedral'",
-  "import { drawHexReactorMode } from './visual-engine-hex-reactor.js'",
-  "{ id: 'hex-reactor', label: 'Hex Reactor', renderer: drawHexReactorMode }",
+  "const DEFAULT_MODE = 'aurora-glass'",
+  "{ id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }",
   'const reading = readAudioLabSpectrum(raw)',
   'synthesizePlaybackSpectrum(raw, Number(audio.currentTime) || 0)',
   'const features = tracker.update(raw)',
+  'const amplitudeReading = readAudioLabAmplitude(waveform)',
+  'const amplitude = amplitudeTracker.update(',
+  'Object.assign(features, amplitude)',
   'shapeReactiveSpectrum(raw, shaped, features)',
   'const attack = shaped[index] > reactive[index] ? .72 : .18',
-  'renderMode(homeCanvas, drawWaveCathedralMode, reactive, getAccent, time, features)',
+  'renderMode(homeCanvas, drawAuroraGlassMode, reactive, getAccent, time, features)',
   'const customRenderer = CUSTOM_RENDERERS.get(mode)',
   'base.setMode(mode)',
-  "homeTitle.textContent = 'Wave Cathedral'",
-  "document.documentElement.dataset.audioLabRenderer = 'fft-mechanical-v3'"
+  "homeTitle.textContent = 'Aurora Glass'",
+  "document.documentElement.dataset.audioLabRenderer = 'rms-dynamics-v4'",
+  'document.documentElement.dataset.audioLabRms = features.rms.toFixed(3)',
+  'document.documentElement.dataset.audioLabPeak = features.peak.toFixed(3)',
+  'document.documentElement.dataset.audioLabDynamics = features.dynamics.toFixed(3)'
 ]) assert.ok(live.includes(required), `Live Audio Lab integration is missing ${required}.`);
 
-const waveIndex = live.indexOf("{ id: 'wave-cathedral'");
-const orbitIndex = live.indexOf("{ id: 'circle'");
-const auroraIndex = live.indexOf("{ id: 'aurora-glass'");
-const hexIndex = live.indexOf("{ id: 'hex-reactor'");
-assert.ok(
-  waveIndex >= 0 && waveIndex < orbitIndex && orbitIndex < auroraIndex && auroraIndex < hexIndex,
-  'Wave Cathedral, Orbit, Aurora Glass and Hex Reactor must be registered in the intended order.'
-);
+for (const forbidden of [
+  'wave-cathedral',
+  "id: 'circle'",
+  'hex-reactor',
+  'drawWaveCathedralMode',
+  'drawOrbitMode',
+  'drawHexReactorMode',
+  'visual-engine-hex-reactor.js'
+]) assert.ok(!live.includes(forbidden), `Retired Audio Lab mode leaked into live integration: ${forbidden}.`);
 
 const bridge = read('js/features/visual/visual-engine.js').trim();
 assert.equal(bridge, "export { createVisualController } from './visual-engine-live.js';");
@@ -37,4 +43,4 @@ assert.ok(worker.includes('PUBLIC_WORKER_VERSION = 2.6'));
 assert.ok(worker.includes("payload.crossOriginResourcePolicy = 'cross-origin'"));
 assert.ok(worker.includes("headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')"));
 
-console.log('Audio Lab uses mechanical FFT motion, a delegated Hex Reactor and Wave Cathedral as the default.');
+console.log('Audio Lab uses live RMS/peak dynamics with Aurora Glass as the default and no retired renderer routes.');
