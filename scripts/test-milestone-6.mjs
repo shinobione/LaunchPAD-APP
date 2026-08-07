@@ -53,7 +53,7 @@ for (const required of [
   'externalHomeRenderer: false',
   "homeTitle.textContent = 'Neon Shatter'",
   "new CustomEvent('shinobi:visual-mode'",
-  "dataset.audioLabRenderer = 'hybrid-reactive-v6'"
+  "dataset.audioLabRenderer = 'hybrid-reactive-v7'"
 ]) assert.ok(live.includes(required), `Milestone 6 visual engine is missing ${required}.`);
 
 const engine = read('js/app-engine.js');
