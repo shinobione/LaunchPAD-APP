@@ -36,7 +36,7 @@ includesAll(ordering, [
   'releaseDateUnavailable'
 ], 'Milestone 2 ordering');
 
-// 3 — Reactive Track Manager filters, manual palette and automatic deployment.
+// 3 — Reactive Track Manager controls and explicit production deployment.
 const manager3 = [
   read('cloudflare/admin-worker.parts/20-m3-track-manager-controls.inject.part'),
   read('cloudflare/admin-worker.parts/18-phase-12-hotfixes.inject.part')
@@ -50,12 +50,15 @@ includesAll(manager3, [
 ], 'Milestone 3 Track Manager');
 const deploy = read('.github/workflows/deploy-cloudflare.yml');
 includesAll(deploy, [
-  "branches:\n      - main",
+  'workflow_dispatch:',
+  "if: github.ref == 'refs/heads/main'",
+  "test \"${{ inputs.confirm }}\" = 'DEPLOY'",
   "EXPECTED_PUBLIC_VERSION: '2.6'",
   "EXPECTED_ADMIN_VERSION: '5.7'",
   'Verify private Worker and Cloudflare Access',
   'Verify public catalog and media streaming'
 ], 'Cloudflare deployment workflow');
+assert.ok(!deploy.includes('\n  push:'), 'Production Cloudflare Worker deployment must remain manual-only.');
 
 // 4 — Split page/player theme scoping.
 const theme = read('js/features/theme-scope.js');
