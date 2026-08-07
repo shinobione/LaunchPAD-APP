@@ -22,22 +22,27 @@ assert.ok(Math.max(...waveformSpectrum) > 20);
 
 const signal = fs.readFileSync('js/features/audio-lab-signal.js', 'utf8');
 for (const required of [
-  'function createMirrorSourceProxy(context, audio, nativeCreateMediaElementSource)',
-  "mirror.dataset.audioLabMirror = 'true'",
-  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-mirror-metering'",
+  'function createDecodedSourceProxy(context, audio)',
+  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-decoded-buffer-metering'",
   "audio.dataset.audioPlaybackPath = 'html5-direct'",
-  'nativeCreateMediaElementSource.call(context, mirror)',
+  "audio.dataset.audioAnalysisPath = 'decoded-buffer'",
+  'fetch(source, {',
+  "mode: 'cors'",
+  'context.decodeAudioData(bytes.slice(0))',
+  'context.createBufferSource()',
+  'node.start(0, offset)',
   "audio.addEventListener('loadstart'",
   "attributeFilter: ['src', 'data-track-id']",
   "audio.addEventListener('timeupdate'",
   "audio.addEventListener('seeking'",
   "window.addEventListener('shinobi:route-change'",
   "document.addEventListener('pointerdown'",
-  'MIRROR_PROXIES.forEach(proxy => proxy.suspend?.())',
+  'DECODED_PROXIES.forEach(proxy => proxy.suspend?.())',
   "markMeter('running')"
-]) assert.ok(signal.includes(required), `Mirror metering is missing ${required}.`);
+]) assert.ok(signal.includes(required), `Decoded-buffer metering is missing ${required}.`);
 assert.ok(!signal.includes('captureStream('), 'Audio Lab must not depend on captureStream for production metering.');
-assert.ok(!signal.includes('createMediaStreamSource('), 'Audio Lab mirror metering must not reuse the retired MediaStream graph.');
+assert.ok(!signal.includes('createMediaStreamSource('), 'Audio Lab decoded metering must not reuse the retired MediaStream graph.');
+assert.ok(!signal.includes('createMirrorSourceProxy'), 'The failed hidden HTMLAudio mirror path must stay retired.');
 
 const engine = fs.readFileSync('js/app-engine.js', 'utf8');
 assert.ok(engine.includes("import(versioned('./features/audio-lab-signal.js'))"));
@@ -51,4 +56,4 @@ for (const required of [
   'PUBLIC_WORKER_VERSION = 2.6'
 ]) assert.ok(worker.includes(required), `Public media Worker v2.6 is missing ${required}.`);
 
-console.log('Audio Lab uses a source-switch-safe mirror meter while audible playback stays on native HTML5 audio.');
+console.log('Audio Lab uses source-switch-safe decoded-buffer metering while audible playback stays on native HTML5 audio.');
