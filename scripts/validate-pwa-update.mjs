@@ -44,8 +44,8 @@ if (!worker.includes("request.destination === 'video'")) fail('Service worker do
 if (!worker.includes("request.destination === 'audio'")) fail('Service worker does not keep audio network-oriented.');
 
 const build = assertCurrentBuild('PWA update');
-if (build.number !== 48) fail(`Expected Build 48, received ${build.display}.`);
-if (build.release !== 'audiolab-decoded-buffer-20260807') fail(`Unexpected Build 48 release ${build.release}.`);
+if (build.number !== 49) fail(`Expected Build 49, received ${build.display}.`);
+if (build.release !== 'mobile-studio-reactivity-20260807') fail(`Unexpected Build 49 release ${build.release}.`);
 const buildSource = build.source;
 for (const required of [
   'const initialStylesheets = new WeakSet',
@@ -57,7 +57,7 @@ for (const required of [
   'link[rel="alternate icon"]',
   'link[rel="manifest"]'
 ]) {
-  if (!buildSource.includes(required)) fail(`Build 48 metadata/bootstrap is missing ${required}.`);
+  if (!buildSource.includes(required)) fail(`Build 49 metadata/bootstrap is missing ${required}.`);
 }
 
 const signal = read('js/features/audio-lab-signal.js');
@@ -74,6 +74,18 @@ for (const required of [
 }
 if (signal.includes('captureStream(') || signal.includes('createMediaStreamSource(') || signal.includes('createMirrorSourceProxy')) {
   fail('A retired Audio Lab metering path returned.');
+}
+
+const lyricsStudio = read('js/features/lyrics-studio.js');
+for (const required of [
+  "video.preload = 'auto'",
+  "video.setAttribute('autoplay', '')",
+  "video.setAttribute('webkit-playsinline', '')",
+  "canvasVideo.addEventListener('canplay'",
+  "canvasVideo.addEventListener('ended'",
+  "document.addEventListener('visibilitychange'"
+]) {
+  if (!lyricsStudio.includes(required)) fail(`Build 49 mobile Canvas resilience is missing ${required}.`);
 }
 
 const about = read('js/features/about/about-controller.js');
@@ -100,4 +112,4 @@ if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RE
   fail('Browser regression coverage for the deduped PWA update prompt is not wired into CI.');
 }
 
-console.log('PWA updates remain single-shot while isolated decoded-buffer FFT metering is active under Build 48.');
+console.log('PWA updates remain single-shot while decoded-buffer FFT and mobile Studio Canvas resilience are active under Build 49.');
