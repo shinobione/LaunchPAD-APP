@@ -39,7 +39,8 @@ for (const required of [
   "titleObserver.observe(titleElement",
   "window.addEventListener('shinobi:route-change', scheduleSync)",
   "audio.dataset.playbackRequestState === 'starting'",
-  "button.dataset.playbackState = 'loading'",
+  'function setPlaybackDatasetIfChanged(button, state)',
+  "setPlaybackDatasetIfChanged(button, 'loading')",
   '#view-lyrics.lyrics-studio-mode .lyrics-track-select'
 ]) {
   if (!player.includes(required)) fail(`Studio player reliability is missing ${required}.`);
