@@ -32,6 +32,9 @@ jobs:
       - name: Validate deployment topology
         run: npm run check:deployment-topology
 
+      - name: Validate build documentation coherence
+        run: npm run check:build-docs
+
       - name: Validate catalog core contracts
         run: |
           node scripts/validate-catalog.mjs
