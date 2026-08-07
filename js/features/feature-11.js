@@ -98,7 +98,16 @@ function renderRecentlyAdded() {
   const section = ensureRecentlyAddedSection();
   const grid = section?.querySelector('#recently-added-grid');
   if (!grid) return;
-  grid.innerHTML = recentlyAddedTrackEntries(tracks, 5)
+
+  const latestIds = new Set(
+    latestActiveTrackEntries(tracks, 5).map(({ track }) => track.id)
+  );
+  const entries = recentlyAddedTrackEntries(tracks, tracks.length)
+    .filter(({ track }) => !latestIds.has(track.id))
+    .slice(0, 5);
+
+  section.hidden = entries.length === 0;
+  grid.innerHTML = entries
     .map(({ track, index }) => featuredCard(track, index, { recent: true }))
     .join('');
 }
@@ -117,10 +126,7 @@ function replayRouteTransition() {
     return;
   }
 
-  activeView.classList.remove(ROUTE_TRANSITION_CLASS);
-  void activeView.offsetWidth;
   activeView.classList.add(ROUTE_TRANSITION_CLASS);
-
   window.clearTimeout(routeTransitionTimer);
   routeTransitionTimer = window.setTimeout(() => {
     activeView.classList.remove(ROUTE_TRANSITION_CLASS);
@@ -131,7 +137,6 @@ function installRouteTransitions() {
   if (window.__shinobiRouteTransitionsReady) return;
   window.__shinobiRouteTransitionsReady = true;
   window.addEventListener('shinobi:route-change', replayRouteTransition);
-  window.requestAnimationFrame(replayRouteTransition);
 }
 
 function relabelVideoUI(root = document) {
