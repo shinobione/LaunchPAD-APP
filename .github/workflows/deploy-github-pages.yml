@@ -1,0 +1,68 @@
+name: Deploy LaunchPAD to GitHub Pages
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: github-pages-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout canonical LaunchPAD source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build canonical static runtime
+        run: node scripts/build-cloudflare-pages.mjs
+
+      - name: Validate canonical static runtime
+        run: node scripts/validate-cloudflare-pages-build.mjs
+
+      - name: Verify Build 40 metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "display: '2026.08.07.40'" dist/cloudflare-pages/js/build-config.js
+          grep -q "release: 'unified-v40-20260807'" dist/cloudflare-pages/js/build-config.js
+          test -s dist/cloudflare-pages/index.html
+          test -s dist/cloudflare-pages/sw.js
+          touch dist/cloudflare-pages/.nojekyll
+
+      - name: Upload canonical Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist/cloudflare-pages
+          name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
+
+  deploy:
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Deploy canonical LaunchPAD to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
