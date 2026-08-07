@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { assertCurrentBuild } from './lib/build-metadata.mjs';
 
 const read = path => fs.readFileSync(path, 'utf8');
 
@@ -30,22 +31,14 @@ for (const required of [
 ]) assert.ok(typography.includes(required), `LaunchPAD typography refresh is missing ${required}.`);
 assert.ok(!/font-family:\s*serif(?:[;,}])/i.test(typography));
 
-const build = read('js/build-config.js');
+const build = assertCurrentBuild('Desktop runtime');
 for (const required of [
-  "id: '20260807-unified-v40'",
-  "cache: 'shinobi-launchpad-v40'",
-  "revision: 'cloudflare-main-reconciliation-1'",
-  "display: '2026.08.07.40'",
-  "release: 'unified-v40-20260807'",
   'const initialStylesheets = new WeakSet',
   'if (initialStylesheets.has(link)) return link;',
   'function installTypographyStylesheet()',
   "ensureBuildStylesheet('link[data-launchpad-typography]', 'css/typography-refresh.css'",
   "ensureBuildStylesheet('link[data-ui-stability-v39]', 'css/ui-stability-v39.css'",
   'installNavigationStability();'
-]) assert.ok(build.includes(required), `Build 40 runtime metadata/stability is missing ${required}.`);
+]) assert.ok(build.source.includes(required), `Desktop runtime stability is missing ${required}.`);
 
-const activeId = build.match(/const config = Object\.freeze\(\{[\s\S]*?id:\s*'([^']+)'/)?.[1];
-assert.equal(activeId, '20260807-unified-v40', 'The active runtime cache key must match Build 40.');
-
-console.log('Desktop fixed shell, typography and single-paint Build 40 runtime are valid.');
+console.log(`Desktop fixed shell, typography and single-paint runtime are valid under Build ${build.number}.`);
