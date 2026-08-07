@@ -16,53 +16,41 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: validate-catalog
+      - name: npm catalog-filters
         continue-on-error: true
-        run: node scripts/validate-catalog.mjs
-      - name: hero-layout
+        run: npm run check:catalog-filters
+      - name: npm feature-10
         continue-on-error: true
-        run: node scripts/validate-hero-layout.mjs
-      - name: legacy-catalog
+        run: npm run check:feature-10
+      - name: npm feature-11
         continue-on-error: true
-        run: node scripts/validate-legacy-catalog-merge.mjs
-      - name: favorites-queue
+        run: npm run check:feature-11
+      - name: npm phase-12
         continue-on-error: true
-        run: node scripts/validate-favorites-queue.mjs
-      - name: catalog-filters
+        run: npm run check:phase-12
+      - name: npm phase-13
         continue-on-error: true
-        run: node scripts/test-catalog-filters.mjs
-      - name: feature-10
+        run: npm run check:phase-13
+      - name: npm milestone-7
         continue-on-error: true
-        run: node scripts/test-feature-10.mjs
-      - name: feature-11
+        run: npm run check:milestone-7
+      - name: npm navigation-recovery
         continue-on-error: true
-        run: node scripts/test-feature-11.mjs
-      - name: phase-12
+        run: npm run check:navigation-recovery
+      - name: npm sanctuary-idempotence
         continue-on-error: true
-        run: node scripts/test-phase-12.mjs
-      - name: phase-13
+        run: npm run check:sanctuary-idempotence
+      - name: npm audio-signal
         continue-on-error: true
-        run: node scripts/test-phase-13.mjs
-      - name: milestone-7
+        run: npm run check:audiolab-signal
+      - name: npm core-modes
         continue-on-error: true
-        run: node scripts/test-milestone-7.mjs
-      - name: navigation-recovery
+        run: npm run check:audiolab-core-modes
+      - name: npm live-reactivity
         continue-on-error: true
-        run: node scripts/test-navigation-recovery.mjs
-      - name: sanctuary-idempotence
+        run: npm run check:audiolab-live
+      - name: npm desktop-overflow
         continue-on-error: true
-        run: node scripts/test-audio-lab-sanctuary-idempotence.mjs
-      - name: audio-signal
-        continue-on-error: true
-        run: node scripts/test-audio-lab-signal.mjs
-      - name: core-modes
-        continue-on-error: true
-        run: node scripts/test-audio-lab-core-modes.mjs
-      - name: live-reactivity
-        continue-on-error: true
-        run: node scripts/test-audio-lab-live-reactivity.mjs
-      - name: desktop-overflow
-        continue-on-error: true
-        run: node scripts/test-desktop-overflow.mjs
+        run: npm run check:desktop-overflow
       - name: exact npm validate catalog
         run: npm run validate:catalog
