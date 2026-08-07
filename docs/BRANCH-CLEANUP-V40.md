@@ -23,7 +23,7 @@ The audit found, among other groups:
 - one `release/cloudflare-catalog-cutover` branch;
 - historical `gh-pages` and `gh-pages-reset-probe` refs.
 
-Most implementation branches correspond to merged pull requests. Their commits remain permanently recoverable through Git history and the PR timeline after branch deletion.
+Most implementation branches correspond to merged pull requests. Their changes remain traceable through Git history and the PR timeline after branch deletion.
 
 ## Keep
 
@@ -37,7 +37,7 @@ main
 
 ## High-confidence deletion candidates
 
-These refs are obsolete deployment/recovery or already-merged work and should not remain as active architecture:
+These refs are obsolete recovery/deployment refs, already-merged PR branches, or branches whose head is wholly behind `main`:
 
 ```text
 gh-pages
@@ -49,11 +49,32 @@ backup/gh-pages-broken-20260806
 hotfix/navigation-recovery
 repair/pages-ci-final
 tmp/noop
+```
+
+Specific checks performed during this audit:
+
+- `gh-pages-reset-probe`: 0 commits ahead of `main`, 11 behind;
+- `tmp/noop`: 0 commits ahead of `main`, 36 behind;
+- `gh-pages`: old generated Pages/recovery tree, no longer referenced by the Actions deployment workflow;
+- the listed `fix/`, `backup/`, `hotfix/` and `repair/` branches correspond to merged Build 37–40 recovery/reconciliation PRs.
+
+The same deletion rule applies to merged milestone/feature/fix/agent branches represented by closed merged PRs.
+
+## Review-required legacy branches
+
+Do not delete these merely from their names; they contain commits not directly ancestral to current `main` and should be reviewed after merged-PR branches are removed:
+
+```text
 migration/cloudflare-pages
 release/cloudflare-catalog-cutover
 ```
 
-The same rule applies to the merged milestone/feature/fix/agent branches represented by closed merged PRs.
+Audit comparison at the time of writing:
+
+- `migration/cloudflare-pages`: diverged, 21 commits ahead / 3 behind. Much of its v39-era runtime was subsequently reconciled through the Build 40 line, but the branch has no simple merged-PR ancestry and therefore deserves a final content/history check before deletion.
+- `release/cloudflare-catalog-cutover`: diverged, 1 commit ahead / 457 behind, with the remaining diff centered on historical service-worker cutover work. Review the unique commit before deleting the ref.
+
+Any other branch with no merged PR should follow the same review-required rule.
 
 ## Safe deletion rule
 
@@ -71,8 +92,8 @@ Do **not** mass-delete a branch with no PR/history check merely because its pref
 1. Merge the Build 40 repository-consolidation PR.
 2. Open **Repository → Branches**.
 3. Delete branches GitHub marks as merged.
-4. Delete the explicit obsolete recovery refs listed above after confirming no workflow references them.
-5. Review the small remainder of branches with no merged PR one by one.
+4. Delete the high-confidence recovery refs listed above.
+5. Review `migration/cloudflare-pages`, `release/cloudflare-catalog-cutover`, and any other no-PR remainder one by one.
 6. Delete `chore/repo-consolidation-v40` last.
 7. Leave only `main` unless a genuinely active branch is still being worked on.
 
@@ -94,7 +115,7 @@ Deleting the historical `gh-pages` ref therefore removes a misleading second cod
 - Keep temporary work under clear `feature/`, `fix/` or `chore/` branches.
 - Never use a recovery branch as a permanent deployment source.
 - Never keep a special host branch containing runtime changes absent from `main`.
-- Treat a branch as disposable after its PR is merged; Git history already preserves the work.
+- Treat a branch as disposable after its PR is merged; Git/PR history already records the delivered work.
 
 ## Connector limitation during this cleanup
 
