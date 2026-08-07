@@ -23,23 +23,26 @@ for (const required of [
 
 const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
-  'function createMirrorSourceProxy(context, audio, nativeCreateMediaElementSource)',
-  "mirror.dataset.audioLabMirror = 'true'",
-  'nativeCreateMediaElementSource.call(context, mirror)',
-  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-mirror-metering'",
+  'function createDecodedSourceProxy(context, audio)',
+  'fetch(source, {',
+  'context.decodeAudioData(bytes.slice(0))',
+  'context.createBufferSource()',
+  'node.start(0, offset)',
+  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-decoded-buffer-metering'",
   "audio.dataset.audioPlaybackPath = 'html5-direct'",
+  "audio.dataset.audioAnalysisPath = 'decoded-buffer'",
   'async function suspendContexts()',
   "window.addEventListener('shinobi:route-change'",
   "window.addEventListener('pagehide'",
   'patchAudioContextClass(globalThis.AudioContext, audio)'
 ]) {
-  if (!signal.includes(required)) fail(`Background-safe Audio Lab mirror metering is missing ${required}.`);
+  if (!signal.includes(required)) fail(`Background-safe decoded Audio Lab metering is missing ${required}.`);
 }
-if (!signal.includes("if (element === audio) {\n      ACTIVE_CONTEXTS.add(this);\n      return createMirrorSourceProxy(this, audio, nativeCreateMediaElementSource);")) {
-  fail('The primary audio element must stay outside MediaElementAudioSourceNode while its mirror feeds the analyser.');
+if (!signal.includes("if (element === audio) {\n      ACTIVE_CONTEXTS.add(this);\n      return createDecodedSourceProxy(this, audio);")) {
+  fail('The primary audio element must stay outside MediaElementAudioSourceNode while a decoded copy feeds the analyser.');
 }
-if (signal.includes('captureStream(') || signal.includes('createMediaStreamSource(')) {
-  fail('The retired MediaStream metering graph returned.');
+if (signal.includes('captureStream(') || signal.includes('createMediaStreamSource(') || signal.includes('createMirrorSourceProxy')) {
+  fail('A retired Audio Lab metering graph returned.');
 }
 
 const publicWorker = read('cloudflare/public-worker.js');
@@ -106,4 +109,4 @@ if (!visualRunner.includes('run_audio_startup_smoke')) {
   fail('Studio audio startup browser regression is not wired into CI.');
 }
 
-console.log('Buffered native playback, isolated mirror Audio Lab metering, Range streaming and playback recovery are covered.');
+console.log('Buffered native playback, isolated decoded-buffer Audio Lab metering, Range streaming and playback recovery are covered.');
