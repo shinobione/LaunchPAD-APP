@@ -32,8 +32,32 @@ jobs:
       - name: Validate deployment topology
         run: npm run check:deployment-topology
 
-      - name: Validate catalog and referenced files
-        run: npm run validate:catalog
+      - name: Validate catalog core contracts
+        run: |
+          node scripts/validate-catalog.mjs
+          node scripts/validate-hero-layout.mjs
+          node scripts/validate-legacy-catalog-merge.mjs
+          node scripts/validate-favorites-queue.mjs
+
+      - name: Validate catalog feature contracts
+        run: |
+          npm run check:catalog-filters
+          npm run check:feature-10
+          npm run check:feature-11
+          npm run check:phase-12
+
+      - name: Validate Audio Lab and phase contracts
+        run: |
+          npm run check:phase-13
+          npm run check:milestone-7
+          npm run check:navigation-recovery
+          npm run check:sanctuary-idempotence
+          npm run check:audiolab-signal
+          npm run check:audiolab-core-modes
+          npm run check:audiolab-live
+
+      - name: Validate catalog desktop overflow contract
+        run: npm run check:desktop-overflow
 
       - name: Validate master specification guards
         run: node scripts/test-master-spec.mjs
