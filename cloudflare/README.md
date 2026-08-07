@@ -1,14 +1,82 @@
+# LaunchPAD Cloudflare services
 
-# LaunchPAD Cloudflare architecture
+_Current repository contracts: public media Worker v2.6, private Track Manager v5.7, application Build 40._
 
-The media catalog uses one private administration Worker and one public read-only Worker, both bound to the `shinobiwan-media` R2 bucket as `MEDIA_BUCKET`.
+Cloudflare provides three separate LaunchPAD concerns:
 
-## Verified deployment status
+1. **Cloudflare Pages** — staging host for the static PWA built from GitHub `main`.
+2. **Workers** — public media/catalog API and private Track Manager.
+3. **R2** — canonical production track/media storage.
 
-- Public `launchpad-media`: repository source and production are both v2.4. Sixteen canonical tracks and 87,849,601 bytes across 16 complete audio transfers are confirmed.
-- Private `launchpad-r2-api`: repository source v4.5; the matching protected production UI is confirmed live after a manual dashboard deployment.
-- Wrangler validation: merged and green for both bundles.
-- Repository deployment workflow: available, but not yet recorded as a successful production deployment; the current v4.5 confirmation is manual.
+Cloudflare is not an alternate application source repository. See [`../docs/DEPLOYMENT-TOPOLOGY.md`](../docs/DEPLOYMENT-TOPOLOGY.md).
+
+## Services
+
+### Cloudflare Pages staging
+
+```text
+https://shinobiwan-launchpad-staging.pages.dev/
+```
+
+The Pages project tracks GitHub `main` and uses the compatibility build command:
+
+```bash
+node scripts/build-cloudflare-pages.mjs && node scripts/validate-cloudflare-pages-build.mjs
+```
+
+The output directory is:
+
+```text
+dist/cloudflare-pages
+```
+
+The builder copies the runtime verbatim. A Pages deployment must never contain a host-only patch that is missing from `main`.
+
+The filenames/output directory still contain `cloudflare-pages` for dashboard compatibility. They can be renamed only after updating the external Pages build settings in the same maintenance window.
+
+### Public media Worker
+
+- service: `launchpad-media`
+- repository contract: v2.6
+- public read-only access
+- binding: `MEDIA_BUCKET` → `shinobiwan-media`
+- exposes catalog/track/media resources
+- supports HTTP Range streaming
+- must not be placed behind the private Track Manager Access policy
+
+Public source/config lives under:
+
+```text
+cloudflare/public-worker*.js
+cloudflare/wrangler.public.jsonc
+```
+
+### Private Track Manager Worker
+
+- service: `launchpad-r2-api`
+- repository Track Manager contract: v5.7
+- protected by Cloudflare Access
+- binding: `MEDIA_BUCKET` → `shinobiwan-media`
+- required external variables/settings include the Access policy values used by the Worker
+- creates/edits manifests, uploads media, derives metadata and rebuilds `catalog/index.json`
+
+Private source is stored as ordered parts:
+
+```text
+cloudflare/admin-worker.parts/*.part
+```
+
+Build the dashboard-compatible bundle with:
+
+```bash
+npm run build:admin-worker
+```
+
+Output:
+
+```text
+dist/launchpad-r2-admin-worker.js
+```
 
 ## Canonical R2 layout
 
@@ -17,117 +85,55 @@ catalog/index.json
 tracks/<slug>/manifest.json
 tracks/<slug>/audio.<ext>
 tracks/<slug>/cover.<ext>
-tracks/<slug>/thumbnail.webp # generated 512 px UI artwork
-tracks/<slug>/lyrics.txt     # optional
-tracks/<slug>/video.<ext>    # optional
+tracks/<slug>/thumbnail.webp
+tracks/<slug>/lyrics.txt      # optional
+tracks/<slug>/video.<ext>     # optional
 ```
 
-The public API exposes only manifests whose `status` is `published`.
+`manifest.json` is canonical per-track metadata. `catalog/index.json` is the optimized public listing generated from publishable manifests and derived metadata.
 
-## Versioned Worker sources
+## Validation
 
-The public Worker is stored directly in:
-
-```text
-cloudflare/public-worker.js
-```
-
-The larger private Track Manager is stored as ordered source parts:
-
-```text
-cloudflare/admin-worker.parts/*.part
-```
-
-Build a single dashboard-compatible Worker file with:
-
-```bash
-npm run build:admin-worker
-```
-
-The output is written to:
-
-```text
-dist/launchpad-r2-admin-worker.js
-```
-
-`npm run validate` also concatenates the parts into a temporary file and runs `node --check`, so a broken private Worker cannot pass CI.
-
-Wrangler 4.118.0 is pinned in `package-lock.json`. The production service names, entry points and R2 binding are versioned in:
-
-```text
-cloudflare/wrangler.public.jsonc
-cloudflare/wrangler.admin.jsonc
-```
-
-Validate the exact deployable bundles without contacting the production account:
+Wrangler is pinned through the repository package lock/configuration.
 
 ```bash
 npm ci
+npm run validate
 npm run check:wrangler
 ```
 
-## Workers
+`npm run validate` checks application, catalog, Worker assembly and regression contracts. `npm run check:wrangler` builds the exact public/private Wrangler bundles without deploying them.
 
-### Private Track Manager
+## Worker deployment
 
-- Service: `launchpad-r2-api`.
-- Protected by Cloudflare Access.
-- Required bindings and variables:
-  - `MEDIA_BUCKET` → `shinobiwan-media`
-  - `POLICY_AUD`
-  - `TEAM_DOMAIN`
-- Creates and edits canonical manifests.
-- Generates WebP thumbnails.
-- Rebuilds `catalog/index.json`.
-- During a rebuild, reads each lyrics file and derives `lyricsAvailable` and `timestampsAvailable`.
+Workers are deployed separately from the PWA/web hosts.
 
-### Public media API
+From `main`, use the protected **Deploy Cloudflare Workers** workflow and select the intended target (`public`, `admin` or `both`). The workflow uses the `cloudflare-production` GitHub environment.
 
-- Source: `public-worker.js`.
-- Service: `launchpad-media`.
-- Public read-only access; do not add Cloudflare Access.
-- Binding: `MEDIA_BUCKET` → `shinobiwan-media`.
-- Reads `catalog/index.json` for the fast `/tracks` response.
-- Streams media with HTTP Range support.
-- Returns HTTP 206 only when the client supplied a Range header; full GET/HEAD requests return HTTP 200.
-- Serves `thumbnail.webp` for catalog cards while preserving original-cover URLs.
-- Accepts bracketed LRC timestamps and standalone `mm:ss.xx` lines.
-
-## Timestamp metadata
-
-`/tracks` does not download full lyrics during normal operation. It relies on the derived timestamp flag stored in `catalog/index.json`.
-
-After adding or replacing lyrics, rebuild the index through the private Track Manager. The public Worker can still inspect a full lyrics file for `/tracks/<slug>`, but the index is the authoritative fast-path metadata source.
-
-## Deployment order for parser or index changes
-
-1. Merge the reviewed repository changes after CI passes.
-2. Run `npm run build:admin-worker` and deploy the generated private Worker.
-3. Rebuild `catalog/index.json` once.
-4. Deploy the matching `cloudflare/public-worker.js`.
-5. Verify `/health`, `/tracks` and `/tracks/<slug>`.
-6. Refresh the installed PWA after its service-worker namespace changes.
-
-## Reproducible GitHub deployment
-
-The `Deploy Cloudflare Workers` workflow is manual and accepts `public`, `admin` or `both`. It only runs from `main`, validates both bundles before deployment, and uses the protected `cloudflare-production` GitHub environment.
-
-Configure these GitHub environment secrets before the first run:
+Required environment secrets:
 
 - `CLOUDFLARE_ACCOUNT_ID`
 - `CLOUDFLARE_API_TOKEN`
 
-The token should be scoped to the LaunchPAD Cloudflare account and only the permissions required to deploy Workers and use the existing R2 binding. Never commit either value.
+The token must be scoped to the LaunchPAD account and minimum required deployment permissions. Never commit it.
 
-Both Wrangler configurations set `keep_vars` so the existing dashboard variables are preserved. The private Worker still requires `POLICY_AUD` and `TEAM_DOMAIN` to exist in Cloudflare. Cloudflare Access protection remains an external service setting and must be checked after every private Worker deployment.
+Worker deployment changes code only. It does **not** automatically rebuild `catalog/index.json` or modify track/media objects. Data publication remains an explicit Track Manager/R2 operation.
 
-The workflow deploys code only. It does not rebuild `catalog/index.json`; perform that explicit Track Manager action only when a manifest or lyrics change requires it.
+## Recommended order for catalog/parser changes
 
-After every run, record the selected `main` SHA and verify `/health`. For the private Worker, complete the Cloudflare Access login and confirm Track Manager version 4.5. Record whether the deployment came from GitHub Actions or the Cloudflare dashboard; the current live v4.5 was pasted and deployed manually. For the public Worker, confirm version 2.4, the catalog count, a byte-range request and a full request returning HTTP 200.
+1. Merge reviewed source changes into `main` after CI passes.
+2. Deploy the private Worker if catalog-generation/Track Manager behavior changed.
+3. Rebuild `catalog/index.json` if derived catalog data changed.
+4. Deploy the public Worker if public API/media behavior changed.
+5. Verify Access/private UI and public `/health`, `/tracks`, a full track resource and Range media behavior.
+6. Independently verify GitHub Pages and Cloudflare Pages application builds.
 
-## Migration cleanup
+## Operational rules
 
-Legacy GitHub audio, per-track covers and lyrics were removed after R2 playback, thumbnails, synchronized lyrics and Android Media Session behavior were validated. Production track metadata is now R2-only.
-
-Future tracks are created through the Track Manager form. Metadata is stored in `manifest.json`; no hand-written metadata TXT file is required.
-
+1. Do not paste a unique production application fix into Cloudflare Pages.
+2. Avoid dashboard Worker source editing after repository-driven Worker deployment is proven reproducible.
+3. Keep Cloudflare Access only on the private admin service.
+4. Keep R2 media/catalog state separate from Git history.
+5. Record source SHA, Worker deployment version and catalog rebuild as separate facts.
+6. A failed Cloudflare Pages build does not roll back GitHub `main`; it simply leaves the previous successful Pages deployment active.
+7. The staging Pages URL should use a clean root URL when linked externally; application hash routes are for navigation, not required for the profile homepage link.
