@@ -32,10 +32,10 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Build canonical static runtime
-        run: node scripts/build-cloudflare-pages.mjs
+        run: npm run build:web
 
       - name: Validate canonical static runtime
-        run: node scripts/validate-cloudflare-pages-build.mjs
+        run: npm run check:web-build
 
       - name: Verify canonical release artifact
         shell: bash
