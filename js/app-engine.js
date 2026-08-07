@@ -11,7 +11,8 @@ const CRITICAL_STYLES = [
   'css/discography-experience.css',
   'css/home-editorial.css',
   'css/svg-icon-system.css',
-  'css/badge-hierarchy.css'
+  'css/badge-hierarchy.css',
+  'css/admin-tools.css'
 ];
 
 const LAYOUT_STYLES = [
