@@ -28,6 +28,25 @@ const silentSpectrum = new Uint8Array(64);
 assert.equal(waveformToSpectrum(silentSpectrum, silentWaveform), 0);
 assert.equal(Math.max(...silentSpectrum), 0);
 
+const signal = fs.readFileSync('js/features/audio-lab-signal.js', 'utf8');
+for (const required of [
+  'function mediaIdentity()',
+  'function invalidateCapture(reason',
+  "audio.addEventListener('emptied', () => invalidateCapture('emptied'))",
+  "audio.addEventListener('loadstart', () => invalidateCapture('loadstart'))",
+  "attributeFilter: ['src', 'data-track-id']",
+  'if (stream && captureIdentity && identity && captureIdentity !== identity)',
+  "invalidateCapture('source-attribute')",
+  "if (CAPTURE_STATE !== 'synthetic')",
+  "markCapture('connected')",
+  "markSignal('warming-capture')"
+]) assert.ok(signal.includes(required), `Track-switch capture recovery is missing ${required}.`);
+assert.ok(
+  signal.indexOf("audio.addEventListener('loadstart', () => invalidateCapture('loadstart'))")
+    < signal.indexOf("audio.addEventListener(type, connectCurrentTrack)"),
+  'The old capture stream must be invalidated before new-media readiness reconnects it.'
+);
+
 const engine = fs.readFileSync('js/app-engine.js', 'utf8');
 assert.ok(engine.includes("import(versioned('./features/audio-lab-signal.js'))"));
 assert.ok(engine.indexOf('initAudioLabSignalBridge({ audio });') < engine.indexOf("await import(versioned('./app-main.js'))"), 'AudioLab signal bridge must be installed before the player module creates its analyser.');
@@ -42,4 +61,4 @@ for (const required of [
   "payload.crossOriginResourcePolicy = 'cross-origin'"
 ]) assert.ok(worker.includes(required), `Public media Worker v2.6 is missing ${required}.`);
 
-console.log('AudioLab live signal, waveform recovery, playback fallback and public media v2.6 CORS are guarded.');
+console.log('AudioLab live signal, track-switch capture renewal, honest fallback and public media v2.6 CORS are guarded.');
