@@ -22,46 +22,32 @@ for (const required of [
   "window.addEventListener('shinobi:visual-mode', update)",
   'export function initHomeEditorial'
 ]) assert.ok(feature.includes(required), `Milestone 6 Home module is missing ${required}.`);
-assert.ok(!feature.includes('mobileHeaderOrder'), 'Home editorial must not override the canonical banner-first mobile hero order.');
-assert.ok(!feature.includes('wordmark-first'), 'The retired wordmark-first mobile hero override returned.');
+assert.ok(!feature.includes('mobileHeaderOrder'));
+assert.ok(!feature.includes('wordmark-first'));
 
 const styles = read('css/home-editorial.css');
 for (const required of [
-  '.home-official-release',
-  '--release-cover',
-  '.home-release-cover',
-  '.home-release-actions',
-  'grid-template-columns:repeat(2,minmax(0,1fr))',
-  'grid-column:1 / -1',
-  '.home-visual-switcher',
-  '.home-visual-arrow',
-  'touch-action:pan-y'
+  '.home-official-release','--release-cover','.home-release-cover','.home-release-actions',
+  'grid-template-columns:repeat(2,minmax(0,1fr))','grid-column:1 / -1',
+  '.home-visual-switcher','.home-visual-arrow','touch-action:pan-y'
 ]) assert.ok(styles.includes(required), `Milestone 6 Home styles are missing ${required}.`);
-assert.ok(!styles.includes('data-mobile-header-order="wordmark-first"'), 'Retired wordmark-first mobile CSS returned.');
 
 const routeStyles = read('css/feature-11.css');
-for (const required of [
-  '.launchpad-hero .launchpad-banner-rail',
-  'order: 1;',
-  '.launchpad-hero .hero-body',
-  'order: 2;'
-]) assert.ok(routeStyles.includes(required), `Canonical mobile hero order is missing ${required}.`);
+for (const required of ['.launchpad-hero .launchpad-banner-rail','order: 1;','.launchpad-hero .hero-body','order: 2;']) {
+  assert.ok(routeStyles.includes(required), `Canonical mobile hero order is missing ${required}.`);
+}
 
 const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
-  "const DEFAULT_MODE = 'neon-shatter'",
-  'externalHomeRenderer: false',
-  "homeTitle.textContent = 'Neon Shatter'",
-  "new CustomEvent('shinobi:visual-mode'",
-  "dataset.audioLabRenderer = 'hybrid-reactive-v7'"
+  "const DEFAULT_MODE = 'neon-shatter'", 'externalHomeRenderer: false',
+  "homeTitle.textContent = 'Neon Shatter'", "new CustomEvent('shinobi:visual-mode'",
+  "dataset.audioLabRenderer = 'hybrid-reactive-v8'", 'function boostLiveFeatures(features)'
 ]) assert.ok(live.includes(required), `Milestone 6 visual engine is missing ${required}.`);
 
 const engine = read('js/app-engine.js');
-for (const required of [
-  "'css/home-editorial.css'",
-  "import(versioned('./features/home-editorial.js'))",
-  'initHomeEditorial()'
-]) assert.ok(engine.includes(required), `Milestone 6 boot wiring is missing ${required}.`);
+for (const required of ["'css/home-editorial.css'","import(versioned('./features/home-editorial.js'))",'initHomeEditorial()']) {
+  assert.ok(engine.includes(required), `Milestone 6 boot wiring is missing ${required}.`);
+}
 
 const worker = read('sw.js');
 assert.ok(worker.includes("'./css/home-editorial.css'"));

@@ -31,8 +31,6 @@ function prepareCanvas(canvas, mode) {
   const rect = canvas?.getBoundingClientRect();
   if (!canvas || !rect?.width || !rect?.height) return null;
   const mobile = mobileVisualDevice(rect.width);
-  // Preserve the 60 Hz animation target while lowering pixel fill-rate on
-  // phones. Audio playback gets priority over supersampling in Audio Lab.
   const dprCap = mode === 'neon-shatter' && mobile ? 1 : mobile ? 1.35 : 2;
   const dpr = Math.min(window.devicePixelRatio || 1, dprCap);
   const widthPx = Math.round(rect.width * dpr);
@@ -98,6 +96,22 @@ function renderMode(canvas, renderer, data, getAccent, time, features, mode) {
   renderer(prepared.context, prepared.width, prepared.height, data, accent, accent2, time, features);
 }
 
+function boostLiveFeatures(features) {
+  const clamp = value => Math.max(0, Math.min(1, value));
+  features.bass = clamp(features.bass * 1.72);
+  features.mid = clamp(features.mid * 1.48);
+  features.high = clamp(features.high * 1.58);
+  features.energy = clamp(features.energy * 1.5);
+  features.rms = clamp(features.rms * 1.55);
+  features.peak = clamp(features.peak * 1.4);
+  features.dynamics = clamp(features.dynamics * 1.62);
+  features.kick = clamp(features.kick * 2.25 + features.peak * .18);
+  features.presence = clamp(features.mid * .72 + features.high * .42);
+  features.sparkle = clamp(features.high * 1.22);
+  features.intensity = clamp(features.energy * .62 + features.bass * .42 + features.kick * .48 + features.dynamics * .32);
+  return features;
+}
+
 export function createVisualController(options) {
   if (document.documentElement.dataset.visualTest === 'true') {
     document.documentElement.dataset.audioLabRenderer = 'disabled-for-visual-test';
@@ -117,8 +131,8 @@ export function createVisualController(options) {
   const shaped = new Uint8Array(128);
   const reactive = new Uint8Array(128);
   const waveform = new Uint8Array(256);
-  const tracker = createAudioReactivityTracker({ attack: .8, release: .14, transientDecay: .8 });
-  const amplitudeTracker = createAmplitudeDynamicsTracker({ attack: .66, release: .06, peakDecay: .9 });
+  const tracker = createAudioReactivityTracker({ attack: .82, release: .1, transientDecay: .76 });
+  const amplitudeTracker = createAmplitudeDynamicsTracker({ attack: .72, release: .055, peakDecay: .86 });
   let mode = DEFAULT_MODE;
   let frame = 0;
   let lastFrameAt = 0;
@@ -149,7 +163,7 @@ export function createVisualController(options) {
   }
   const homeTitle = document.querySelector('.now-panel .panel-head h3');
   if (homeTitle) homeTitle.textContent = 'Neon Shatter';
-  document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v7';
+  document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v8';
   document.documentElement.dataset.audioLabSpectrum = controls?.querySelector('[data-visual="spectrum"]') ? 'restored' : 'missing';
 
   function readReactiveFrame() {
@@ -168,10 +182,11 @@ export function createVisualController(options) {
           peak: Math.max(features.kick * .72, reading.peak / 255)
         });
     Object.assign(features, amplitude);
+    boostLiveFeatures(features);
 
     shapeReactiveSpectrum(raw, shaped, features);
     for (let index = 0; index < reactive.length; index += 1) {
-      const attack = shaped[index] > reactive[index] ? .78 : .2;
+      const attack = shaped[index] > reactive[index] ? .86 : .16;
       reactive[index] = Math.max(0, Math.min(255, Math.round(
         reactive[index] + (shaped[index] - reactive[index]) * attack
       )));

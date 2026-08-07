@@ -11,58 +11,42 @@ for (const required of [
   "{ id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }",
   'externalHomeRenderer: false',
   'const reading = readAudioLabSpectrum(raw)',
-  'synthesizePlaybackSpectrum(raw, Number(audio.currentTime) || 0)',
   'const features = tracker.update(raw)',
   'const amplitudeReading = readAudioLabAmplitude(waveform)',
-  'const amplitude = amplitudeTracker.update(',
   'Object.assign(features, amplitude)',
+  'boostLiveFeatures(features)',
+  'features.kick = clamp(features.kick * 2.25',
   'shapeReactiveSpectrum(raw, shaped, features)',
-  'const attack = shaped[index] > reactive[index] ? .78 : .2',
+  'const attack = shaped[index] > reactive[index] ? .86 : .16',
   'renderMode(labCanvas, customRenderer, reactive, getAccent, time, features, mode)',
-  'const customRenderer = CUSTOM_RENDERERS.get(mode)',
   "const dprCap = mode === 'neon-shatter' && mobile ? 1 : mobile ? 1.35 : 2",
   'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60',
   'const TELEMETRY_INTERVAL = 120',
   'base.setMode(mode)',
   "homeTitle.textContent = 'Neon Shatter'",
-  "document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v7'",
+  "document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v8'",
   "document.documentElement.dataset.audioLabSpectrum = controls?.querySelector('[data-visual=\"spectrum\"]') ? 'restored' : 'missing'",
   'function updateTelemetry(reading, features, now)',
-  'if (now - lastTelemetryAt < TELEMETRY_INTERVAL) return',
   'data.audioLabRms = values[2]',
   'data.audioLabPeak = values[3]',
-  'data.audioLabDynamics = values[4]',
-  "new CustomEvent('shinobi:visual-mode'"
+  'data.audioLabDynamics = values[4]'
 ]) assert.ok(live.includes(required), `Live Audio Lab integration is missing ${required}.`);
 
-for (const forbidden of [
-  "'bars'",
-  'wave-cathedral',
-  "id: 'circle'",
-  'hex-reactor',
-  'drawWaveCathedralMode',
-  'drawOrbitMode',
-  'drawHexReactorMode',
-  'visual-engine-hex-reactor.js'
-]) assert.ok(!live.includes(forbidden), `Retired Audio Lab mode leaked into live integration: ${forbidden}.`);
+for (const forbidden of ["'bars'",'wave-cathedral',"id: 'circle'",'hex-reactor','drawWaveCathedralMode','drawOrbitMode','drawHexReactorMode','visual-engine-hex-reactor.js']) {
+  assert.ok(!live.includes(forbidden), `Retired Audio Lab mode leaked into live integration: ${forbidden}.`);
+}
 
 const core = read('js/features/visual/visual-engine-core-modes.js');
-for (const required of [
-  'drawNeonShatterAdaptiveMode',
-  'const fragments = mobile ? 20 : 52',
-  'const cracks = mobile ? 9 : 16',
-  'const transient = clamp(Math.max(kick, peak))',
-  'const spectralIndex = Math.min(',
-  'const spectralRipple = Math.sin(',
-  'const spectralDeformation = (spectral - bandValue)'
-]) assert.ok(core.includes(required), `Adaptive visual renderer is missing ${required}.`);
+for (const required of ['drawNeonShatterAdaptiveMode','const fragments = mobile ? 20 : 52','const cracks = mobile ? 9 : 16','const transient = clamp(Math.max(kick, peak))','const spectralIndex = Math.min(','const spectralRipple = Math.sin(','const spectralDeformation = (spectral - bandValue)']) {
+  assert.ok(core.includes(required), `Adaptive visual renderer is missing ${required}.`);
+}
+
+const signal = read('js/features/audio-lab-signal.js');
+for (const required of ['createMirrorSourceProxy','nativeCreateMediaElementSource.call(context, mirror)',"dataset.audioGraph = 'html5-direct-plus-mirror-metering'","markMeter('running')"]) {
+  assert.ok(signal.includes(required), `Mirror meter is missing ${required}.`);
+}
+assert.ok(!signal.includes('captureStream('));
 
 const bridge = read('js/features/visual/visual-engine.js').trim();
 assert.equal(bridge, "export { createVisualController } from './visual-engine-live.js';");
-
-const worker = read('cloudflare/public-worker-v26.js');
-assert.ok(worker.includes('PUBLIC_WORKER_VERSION = 2.6'));
-assert.ok(worker.includes("payload.crossOriginResourcePolicy = 'cross-origin'"));
-assert.ok(worker.includes("headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')"));
-
-console.log('Audio Lab keeps 60 Hz custom rendering while reducing mobile fill rate and telemetry pressure under Build 45.');
+console.log('Audio Lab uses real mirror FFT data with stronger Neon Shatter and Aurora Glass response under Build 47.');

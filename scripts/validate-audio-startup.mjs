@@ -23,20 +23,23 @@ for (const required of [
 
 const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
-  'function captureMethod(audio)',
-  'function createCaptureSourceProxy(context, audio)',
-  'context.createMediaStreamSource(scopedStream)',
-  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-capture-metering'",
-  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-synthetic-metering'",
+  'function createMirrorSourceProxy(context, audio, nativeCreateMediaElementSource)',
+  "mirror.dataset.audioLabMirror = 'true'",
+  'nativeCreateMediaElementSource.call(context, mirror)',
+  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-mirror-metering'",
   "audio.dataset.audioPlaybackPath = 'html5-direct'",
   'async function suspendContexts()',
+  "window.addEventListener('shinobi:route-change'",
   "window.addEventListener('pagehide'",
   'patchAudioContextClass(globalThis.AudioContext, audio)'
 ]) {
-  if (!signal.includes(required)) fail(`Background-safe Audio Lab metering is missing ${required}.`);
+  if (!signal.includes(required)) fail(`Background-safe Audio Lab mirror metering is missing ${required}.`);
 }
-if (!signal.includes("if (element === audio) {\n        ACTIVE_CONTEXTS.add(this);\n        return createCaptureSourceProxy(this, audio);")) {
-  fail('The primary audio element must never be routed through MediaElementAudioSourceNode.');
+if (!signal.includes("if (element === audio) {\n      ACTIVE_CONTEXTS.add(this);\n      return createMirrorSourceProxy(this, audio, nativeCreateMediaElementSource);")) {
+  fail('The primary audio element must stay outside MediaElementAudioSourceNode while its mirror feeds the analyser.');
+}
+if (signal.includes('captureStream(') || signal.includes('createMediaStreamSource(')) {
+  fail('The retired MediaStream metering graph returned.');
 }
 
 const publicWorker = read('cloudflare/public-worker.js');
@@ -103,4 +106,4 @@ if (!visualRunner.includes('run_audio_startup_smoke')) {
   fail('Studio audio startup browser regression is not wired into CI.');
 }
 
-console.log('Buffered native playback, capture-only Audio Lab metering, Range streaming and playback recovery are covered.');
+console.log('Buffered native playback, isolated mirror Audio Lab metering, Range streaming and playback recovery are covered.');

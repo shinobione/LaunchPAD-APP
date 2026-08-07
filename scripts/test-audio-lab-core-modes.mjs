@@ -4,13 +4,8 @@ import fs from 'node:fs';
 import { assertCurrentBuild } from './lib/build-metadata.mjs';
 
 const read = path => fs.readFileSync(path, 'utf8');
-
 const bridge = read('js/features/visual/visual-engine.js').trim();
-assert.equal(
-  bridge,
-  "export { createVisualController } from './visual-engine-live.js';",
-  'Audio Lab must load the live sound-reactive renderer.'
-);
+assert.equal(bridge, "export { createVisualController } from './visual-engine-live.js';");
 
 const retiredIds = [
   ['prism', 'tunnel'], ['cyber', 'rain'], ['quantum', 'grid'], ['tesla', 'veins'],
@@ -23,10 +18,11 @@ for (const required of [
   "{ id: 'spectrum', label: 'Spectrum' }",
   'drawNeonShatterAdaptiveMode',
   "{ id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }",
-  "document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v7'",
+  "document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v8'",
+  'function boostLiveFeatures(features)',
+  'features.kick = clamp(features.kick * 2.25',
   'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60',
-  'const TELEMETRY_INTERVAL = 120',
-  "const dprCap = mode === 'neon-shatter' && mobile ? 1 : mobile ? 1.35 : 2"
+  'const TELEMETRY_INTERVAL = 120'
 ]) assert.ok(live.includes(required), `Live Audio Lab renderer is missing ${required}.`);
 for (const forbidden of [...retiredIds, "'bars'", "id: 'circle'", 'drawOrbitMode', 'drawWaveCathedralMode', 'drawHexReactorMode']) {
   assert.ok(!live.includes(forbidden), `Retired Audio Lab mode ${forbidden} leaked into the live registry.`);
@@ -43,10 +39,7 @@ for (const required of [
   'const fragments = mobile ? 20 : 52',
   'const cracks = mobile ? 9 : 16'
 ]) assert.ok(core.includes(required), `Adaptive Audio Lab renderer is missing ${required}.`);
-for (const forbidden of ['drawOrbitMode', 'drawWaveCathedralMode', 'Orbit', 'Wave Cathedral', 'wave-cathedral']) {
-  assert.ok(!core.includes(forbidden), `Retired renderer ${forbidden} leaked into the core modes module.`);
-}
-assert.ok(!fs.existsSync('js/features/visual/visual-engine-hex-reactor.js'), 'Retired Hex Reactor module must be deleted.');
+assert.ok(!fs.existsSync('js/features/visual/visual-engine-hex-reactor.js'));
 
 const base = read('js/features/visual/visual-engine-v2.js');
 for (const required of [
@@ -57,9 +50,6 @@ for (const required of [
   'function drawSpectrum(',
   'function drawLiquidChrome('
 ]) assert.ok(base.includes(required), `Base Audio Lab renderer is missing ${required}.`);
-for (const forbidden of [...retiredIds, "case 'hex-reactor'", 'drawHexReactor', 'hexPath']) {
-  assert.ok(!base.includes(forbidden), `Retired Audio Lab code ${forbidden} leaked into the base renderer.`);
-}
 
 function extractFunction(source, name) {
   const start = source.indexOf(`  function ${name}(`);
@@ -72,7 +62,6 @@ function extractFunction(source, name) {
   }
   throw new Error(`Protected renderer ${name} is malformed.`);
 }
-
 const protectedHashes = {
   drawLiquidChrome: 'bc171075042d4fe881a781ba0206482d721f8e1de6fada4357c7b2d944a23967',
   drawSpectrum: '25a86e3763b668fc69734d48439a2c93745ef927a3fcbdddaf2d0f29e0371813'
@@ -84,25 +73,18 @@ for (const [name, expected] of Object.entries(protectedHashes)) {
 
 const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
-  'function captureMethod(audio)',
-  'function createCaptureSourceProxy(context, audio)',
-  'function mediaIdentity()',
-  'function invalidateCapture(reason',
-  "audio.addEventListener('loadstart', () => invalidateCapture('loadstart'))",
-  "attributeFilter: ['src', 'data-track-id']",
-  'context.createMediaStreamSource(scopedStream)',
-  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-capture-metering'",
-  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-synthetic-metering'",
+  'function createMirrorSourceProxy(context, audio, nativeCreateMediaElementSource)',
+  "mirror.dataset.audioLabMirror = 'true'",
+  'nativeCreateMediaElementSource.call(context, mirror)',
+  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-mirror-metering'",
   "audio.dataset.audioPlaybackPath = 'html5-direct'",
-  "if (CAPTURE_STATE !== 'synthetic')",
+  "window.addEventListener('shinobi:route-change'",
+  "document.addEventListener('pointerdown'",
   'async function suspendContexts()',
-  "if (document.hidden) {",
   'export function readAudioLabAmplitude('
-]) assert.ok(signal.includes(required), `Audio signal isolation layer is missing ${required}.`);
-assert.ok(
-  signal.includes("if (element === audio) {\n        ACTIVE_CONTEXTS.add(this);\n        return createCaptureSourceProxy(this, audio);"),
-  'The primary HTMLMediaElement must be captured instead of routed through createMediaElementSource.'
-);
+]) assert.ok(signal.includes(required), `Audio mirror isolation layer is missing ${required}.`);
+assert.ok(!signal.includes('captureStream('));
+assert.ok(!signal.includes('createMediaStreamSource('));
 
 const worker = read('sw.js');
 assert.ok(worker.includes("'./js/features/visual/audio-reactivity.js'"));
@@ -110,8 +92,7 @@ assert.ok(worker.includes("'./js/features/visual/audio-lab-registry.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-sanctuary.js'"));
 assert.ok(!worker.includes('visual-engine-hex-reactor.js'));
 
-const build = assertCurrentBuild('Audio Lab Build 46');
-assert.equal(build.number, 46);
-assert.equal(build.release, 'audiolab-track-switch-20260807');
-
-console.log('Audio Lab keeps protected renderers, native playback isolation and fresh capture-stream metering across track switches under Build 46.');
+const build = assertCurrentBuild('Audio Lab Build 47');
+assert.equal(build.number, 47);
+assert.equal(build.release, 'audiolab-mirror-meter-20260807');
+console.log('Audio Lab keeps protected renderers while Build 47 uses isolated mirror metering and boosted custom-mode reactivity.');

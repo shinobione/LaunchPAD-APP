@@ -50,7 +50,7 @@ assert.ok(homeStyles.includes('grid-template-columns:repeat(2,minmax(0,1fr))'), 
 const feature11Styles = read('css/feature-11.css');
 includesAll(feature11Styles, ['.launchpad-hero .launchpad-banner-rail', 'order: 1;', '.launchpad-hero .hero-body', 'order: 2;'], 'Canonical banner-first mobile Home');
 
-// 7 — Audio Lab registry, protected renderers and source-renewing metering.
+// 7 — Audio Lab registry, protected renderers and isolated mirror metering.
 const registry = read('js/features/visual/audio-lab-registry.js');
 includesAll(registry, ["AUDIO_LAB_DEFAULT_MODE = 'neon-shatter'", "id: 'spectrum'", "id: 'liquid-chrome'", "id: 'aurora-glass'", "id: 'nebula'", "id: 'singularity'", "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum', 'liquid-chrome'])"], 'Milestone 7 registry');
 const visualBase = read('js/features/visual/visual-engine-v2.js');
@@ -74,24 +74,33 @@ for (const [name, expected] of Object.entries(protectedHashes)) {
   assert.equal(actual, expected, `${name} sanctuary hash changed.`);
 }
 const live = read('js/features/visual/visual-engine-live.js');
-includesAll(live, ["{ id: 'spectrum', label: 'Spectrum' }", 'drawNeonShatterAdaptiveMode', "dataset.audioLabRenderer = 'hybrid-reactive-v7'", 'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60', 'const TELEMETRY_INTERVAL = 120'], 'Build 46 live visuals');
+includesAll(live, [
+  "{ id: 'spectrum', label: 'Spectrum' }",
+  'drawNeonShatterAdaptiveMode',
+  "dataset.audioLabRenderer = 'hybrid-reactive-v8'",
+  'function boostLiveFeatures(features)',
+  'features.kick = clamp(features.kick * 2.25',
+  'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60',
+  'const TELEMETRY_INTERVAL = 120'
+], 'Build 47 live visuals');
 assert.ok(!live.includes("'bars'"), 'Legacy bars alias must not replace Spectrum.');
 const coreModes = read('js/features/visual/visual-engine-core-modes.js');
-includesAll(coreModes, ['drawAuroraGlassMode', 'drawNeonShatterAdaptiveMode', 'const spectralIndex = Math.min(', 'const spectralRipple = Math.sin(', 'const fragments = mobile ? 20 : 52'], 'Build 42 adaptive modes');
+includesAll(coreModes, ['drawAuroraGlassMode', 'drawNeonShatterAdaptiveMode', 'const spectralIndex = Math.min(', 'const spectralRipple = Math.sin(', 'const fragments = mobile ? 20 : 52'], 'Adaptive modes');
 const signal = read('js/features/audio-lab-signal.js');
 includesAll(signal, [
-  'createCaptureSourceProxy',
-  'function mediaIdentity()',
-  'function invalidateCapture(reason',
-  "audio.addEventListener('loadstart', () => invalidateCapture('loadstart'))",
-  "attributeFilter: ['src', 'data-track-id']",
-  'context.createMediaStreamSource(scopedStream)',
-  "dataset.audioGraph = 'html5-direct-plus-capture-metering'",
+  'createMirrorSourceProxy',
+  "mirror.dataset.audioLabMirror = 'true'",
+  'nativeCreateMediaElementSource.call(context, mirror)',
+  "dataset.audioGraph = 'html5-direct-plus-mirror-metering'",
   "audio.dataset.audioPlaybackPath = 'html5-direct'",
-  "if (CAPTURE_STATE !== 'synthetic')",
-  'async function suspendContexts()',
-  "if (document.hidden) {"
-], 'Build 46 isolated audio graph');
+  "audio.addEventListener('loadstart'",
+  "attributeFilter: ['src', 'data-track-id']",
+  "window.addEventListener('shinobi:route-change'",
+  "document.addEventListener('pointerdown'",
+  'async function suspendContexts()'
+], 'Build 47 isolated audio graph');
+assert.ok(!signal.includes('captureStream('), 'captureStream must stay retired from Audio Lab metering.');
+assert.ok(!signal.includes('createMediaStreamSource('), 'MediaStream metering must stay retired.');
 const sanctuary = read('js/features/visual/audio-lab-sanctuary.js');
 includesAll(sanctuary, ['normalizePresetControls', "controls.dataset.audioLabRegistry = 'sanctioned-v1'", 'video.loop = true', "video.setAttribute('webkit-playsinline', '')"], 'Milestone 7 sanctuary');
 
@@ -114,11 +123,11 @@ const worker = read('sw.js');
 includesAll(worker, ["'./js/features/theme-scope.js'", "'./js/features/visual/audio-lab-registry.js'", "'./js/features/visual/audio-lab-sanctuary.js'", "'./js/visual-card-export-guard.js'", "'./css/admin-tools.css'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification');
-assert.equal(build.number, 46);
-assert.equal(build.id, '20260807-audiolab-track-switch-v46');
-assert.equal(build.cache, 'shinobi-launchpad-v46');
-assert.equal(build.revision, 'audiolab-track-switch-1');
-assert.equal(build.display, '2026.08.07.46');
-assert.equal(build.release, 'audiolab-track-switch-20260807');
+assert.equal(build.number, 47);
+assert.equal(build.id, '20260807-audiolab-mirror-meter-v47');
+assert.equal(build.cache, 'shinobi-launchpad-v47');
+assert.equal(build.revision, 'audiolab-mirror-meter-1');
+assert.equal(build.display, '2026.08.07.47');
+assert.equal(build.release, 'audiolab-mirror-meter-20260807');
 
-console.log('All nine LaunchPAD master-spec sections are regression-protected under Build 46.');
+console.log('All nine LaunchPAD master-spec sections are regression-protected under Build 47.');
