@@ -10,7 +10,7 @@ const SHELL_RESOURCES = [
   './','./index.html','./manifest.webmanifest','./robots.txt','./sitemap.xml',
   './css/style.css','./css/header.css','./css/refinements.css','./css/lyrics.css','./css/fixes-v2.css','./css/content-v4.css',
   './css/desktop-hero-wide.css','./css/mobile-top-cleanup.css','./css/mobile-navigation.css','./css/launchpad-features.css',
-  './css/catalog-filters.css','./css/feature-10.css','./css/feature-11.css','./css/feature-12.css','./css/theme-scope.css','./css/discography-experience.css','./css/home-editorial.css','./css/svg-icon-system.css','./css/badge-hierarchy.css','./css/about-enhancements.css','./css/library-memory.css',
+  './css/catalog-filters.css','./css/feature-10.css','./css/feature-11.css','./css/feature-12.css','./css/theme-scope.css','./css/discography-experience.css','./css/home-editorial.css','./css/svg-icon-system.css','./css/badge-hierarchy.css','./css/admin-tools.css','./css/about-enhancements.css','./css/library-memory.css',
   './css/pwa.css','./css/visual-card.css','./css/track-detail.css','./css/track-videos.css','./css/mobile-studio.css','./css/canvas-identity.css','./css/r2-track-details.css',
   './js/build-config.js','./js/visual-card-export-guard.js','./js/app-engine.js','./js/app-engine-recovery.js','./js/app-main.js','./js/catalog.js',
   './js/core/assets.js','./js/core/catalog-store.js','./js/core/catalog-schema.js','./js/core/catalog-ordering.js','./js/core/editorial-normalization.js','./js/core/remote-catalog.js',
