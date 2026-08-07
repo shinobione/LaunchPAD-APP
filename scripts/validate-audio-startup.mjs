@@ -23,13 +23,20 @@ for (const required of [
 
 const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
-  'patchMediaElementSource',
-  'nativeConnect(context.destination)',
-  "document.documentElement.dataset.audioGraph = 'direct-plus-metering'",
-  "if (destination === analyser.context?.destination) return destination",
+  'function captureMethod(audio)',
+  'function createCaptureSourceProxy(context, audio)',
+  'context.createMediaStreamSource(scopedStream)',
+  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-capture-metering'",
+  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-synthetic-metering'",
+  "audio.dataset.audioPlaybackPath = 'html5-direct'",
+  'async function suspendContexts()',
+  "window.addEventListener('pagehide'",
   'patchAudioContextClass(globalThis.AudioContext, audio)'
 ]) {
-  if (!signal.includes(required)) fail(`Parallel Audio Lab metering is missing ${required}.`);
+  if (!signal.includes(required)) fail(`Background-safe Audio Lab metering is missing ${required}.`);
+}
+if (!signal.includes("if (element === audio) {\n        ACTIVE_CONTEXTS.add(this);\n        return createCaptureSourceProxy(this, audio);")) {
+  fail('The primary audio element must never be routed through MediaElementAudioSourceNode.');
 }
 
 const publicWorker = read('cloudflare/public-worker.js');
@@ -96,4 +103,4 @@ if (!visualRunner.includes('run_audio_startup_smoke')) {
   fail('Studio audio startup browser regression is not wired into CI.');
 }
 
-console.log('Buffered playback, parallel Audio Lab metering, Range streaming and playback recovery are covered.');
+console.log('Buffered native playback, capture-only Audio Lab metering, Range streaming and playback recovery are covered.');

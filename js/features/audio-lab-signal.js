@@ -1,6 +1,7 @@
 const PATCH_MARK = Symbol.for('shinobi.audioLabSignalPatch');
-const SOURCE_PATCH_MARK = Symbol.for('shinobi.audioLabSourcePatch');
+const CAPTURE_PROXY_MARK = Symbol.for('shinobi.audioLabCaptureProxy');
 const ACTIVE_CONTEXTS = new Set();
+const CAPTURE_PROXIES = new Set();
 let ACTIVE_ANALYSER = null;
 
 function clampByte(value) {
@@ -115,6 +116,7 @@ function patchAnalyser(analyser, audio) {
   let silentFrames = 0;
   let previousTime = Number(audio.currentTime) || 0;
   let waveform = new Uint8Array(Math.max(32, analyser.fftSize || 256));
+  let silentSink = null;
 
   const resilientFrequencyData = target => {
     nativeFrequency(target);
@@ -150,13 +152,19 @@ function patchAnalyser(analyser, audio) {
     markSignal('fallback');
   };
 
-  // Audio Lab is a metering tap, never an audible insert. The application used
-  // to route MediaElement -> Analyser -> destination, making playback share the
-  // visualisation graph. A patched media source now owns the direct audible
-  // route, so an analyser connection to the context destination is intentionally
-  // ignored to avoid a duplicated/doubled signal.
+  // Keep the analyser graph alive through a zero-gain sink. The audible media
+  // element is never routed through this AudioContext, so suspending metering
+  // cannot interrupt or crackle the HTML5 playback path.
   const meteringOnlyConnect = (destination, ...args) => {
-    if (destination === analyser.context?.destination) return destination;
+    if (destination === analyser.context?.destination) {
+      if (!silentSink) {
+        silentSink = analyser.context.createGain();
+        silentSink.gain.value = 0;
+        nativeConnect(silentSink);
+        silentSink.connect(analyser.context.destination);
+      }
+      return destination;
+    }
     return nativeConnect(destination, ...args);
   };
 
@@ -180,29 +188,85 @@ function patchAnalyser(analyser, audio) {
   return analyser;
 }
 
-function patchMediaElementSource(source, context) {
-  if (!source || source[SOURCE_PATCH_MARK]) return source;
-  const nativeConnect = source.connect.bind(source);
-  let directPlaybackConnected = false;
+function captureMethod(audio) {
+  if (typeof audio?.captureStream === 'function') return audio.captureStream.bind(audio);
+  if (typeof audio?.mozCaptureStream === 'function') return audio.mozCaptureStream.bind(audio);
+  return null;
+}
 
-  const parallelConnect = (destination, ...args) => {
-    const result = nativeConnect(destination, ...args);
-    if (destination?.[PATCH_MARK] === true && destination.context === context && !directPlaybackConnected) {
-      nativeConnect(context.destination);
-      directPlaybackConnected = true;
-      if (typeof document !== 'undefined') document.documentElement.dataset.audioGraph = 'direct-plus-metering';
-    }
-    return result;
+function createCaptureSourceProxy(context, audio) {
+  const capture = captureMethod(audio);
+  const connections = [];
+  let stream = null;
+  let mediaSource = null;
+  let activeTrack = null;
+
+  const disconnectSource = () => {
+    try { mediaSource?.disconnect(); } catch {}
+    mediaSource = null;
+    activeTrack = null;
   };
 
-  try {
-    Object.defineProperty(source, 'connect', { configurable: true, value: parallelConnect });
-    Object.defineProperty(source, SOURCE_PATCH_MARK, { value: true });
-  } catch {
-    source.connect = parallelConnect;
-    source[SOURCE_PATCH_MARK] = true;
-  }
-  return source;
+  const connectCurrentTrack = () => {
+    if (document.hidden || !capture) return false;
+
+    if (!stream) {
+      try {
+        stream = capture();
+        stream?.addEventListener?.('addtrack', () => queueMicrotask(connectCurrentTrack));
+        stream?.addEventListener?.('removetrack', () => queueMicrotask(connectCurrentTrack));
+      } catch (error) {
+        console.info('Audio Lab captureStream unavailable; using synthetic metering.', error);
+        return false;
+      }
+    }
+
+    const tracks = stream?.getAudioTracks?.() || [];
+    const nextTrack = tracks.find(track => track.readyState === 'live') || tracks.at(-1) || null;
+    if (!nextTrack) return false;
+    if (mediaSource && activeTrack === nextTrack) return true;
+
+    disconnectSource();
+    try {
+      const scopedStream = typeof MediaStream === 'function' ? new MediaStream([nextTrack]) : stream;
+      mediaSource = context.createMediaStreamSource(scopedStream);
+      activeTrack = nextTrack;
+      nextTrack.addEventListener?.('ended', () => queueMicrotask(connectCurrentTrack), { once: true });
+      connections.forEach(({ destination, args }) => mediaSource.connect(destination, ...args));
+      if (typeof document !== 'undefined') {
+        document.documentElement.dataset.audioGraph = 'html5-direct-plus-capture-metering';
+      }
+      return true;
+    } catch (error) {
+      disconnectSource();
+      console.info('Audio Lab capture source could not be attached; using synthetic metering.', error);
+      return false;
+    }
+  };
+
+  const proxy = {
+    [CAPTURE_PROXY_MARK]: true,
+    context,
+    connect(destination, ...args) {
+      connections.push({ destination, args });
+      if (!capture && typeof document !== 'undefined') {
+        document.documentElement.dataset.audioGraph = 'html5-direct-plus-synthetic-metering';
+      }
+      connectCurrentTrack();
+      return destination;
+    },
+    disconnect() {
+      connections.length = 0;
+      disconnectSource();
+    },
+    ensure: connectCurrentTrack
+  };
+
+  CAPTURE_PROXIES.add(proxy);
+  ['loadedmetadata', 'loadeddata', 'canplay', 'playing'].forEach(type => {
+    audio.addEventListener(type, connectCurrentTrack);
+  });
+  return proxy;
 }
 
 function patchAudioContextClass(AudioContextClass, audio) {
@@ -219,10 +283,12 @@ function patchAudioContextClass(AudioContextClass, audio) {
   };
 
   if (typeof nativeCreateMediaElementSource === 'function') {
-    prototype.createMediaElementSource = function createSafeMediaElementSource(element, ...args) {
-      const source = nativeCreateMediaElementSource.call(this, element, ...args);
-      if (element === audio) patchMediaElementSource(source, this);
-      return source;
+    prototype.createMediaElementSource = function createPlaybackSafeMediaElementSource(element, ...args) {
+      if (element === audio) {
+        ACTIVE_CONTEXTS.add(this);
+        return createCaptureSourceProxy(this, audio);
+      }
+      return nativeCreateMediaElementSource.call(this, element, ...args);
     };
   }
 
@@ -234,10 +300,20 @@ function patchAudioContextClass(AudioContextClass, audio) {
 }
 
 async function resumeContexts() {
+  if (typeof document !== 'undefined' && document.hidden) return;
+  CAPTURE_PROXIES.forEach(proxy => proxy.ensure?.());
   await Promise.allSettled([...ACTIVE_CONTEXTS].map(context => {
     if (context.state === 'suspended' || context.state === 'interrupted') return context.resume();
     return Promise.resolve();
   }));
+}
+
+async function suspendContexts() {
+  await Promise.allSettled([...ACTIVE_CONTEXTS].map(context => {
+    if (context.state === 'running') return context.suspend();
+    return Promise.resolve();
+  }));
+  markSignal('background-suspended');
 }
 
 export function initAudioLabSignalBridge({ audio }) {
@@ -245,6 +321,7 @@ export function initAudioLabSignalBridge({ audio }) {
   globalThis.__shinobiAudioLabSignalReady = true;
 
   audio.crossOrigin = 'anonymous';
+  audio.dataset.audioPlaybackPath = 'html5-direct';
   patchAudioContextClass(globalThis.AudioContext, audio);
   if (globalThis.webkitAudioContext && globalThis.webkitAudioContext !== globalThis.AudioContext) {
     patchAudioContextClass(globalThis.webkitAudioContext, audio);
@@ -255,8 +332,13 @@ export function initAudioLabSignalBridge({ audio }) {
   audio.addEventListener('playing', recover);
   audio.addEventListener('loadeddata', recover);
   window.addEventListener('pageshow', recover);
+  window.addEventListener('pagehide', () => { suspendContexts(); });
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && !audio.paused) recover();
+    if (document.hidden) {
+      suspendContexts();
+      return;
+    }
+    if (!audio.paused) recover();
   });
   document.querySelector('#view-lab')?.addEventListener('pointerdown', recover, { passive: true });
 

@@ -23,9 +23,10 @@ for (const required of [
   "{ id: 'spectrum', label: 'Spectrum' }",
   'drawNeonShatterAdaptiveMode',
   "{ id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }",
-  "document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v6'",
+  "document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v7'",
   'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60',
-  "const dprCap = mode === 'neon-shatter' && mobile ? 1.2 : mobile ? 1.5 : 2"
+  'const TELEMETRY_INTERVAL = 120',
+  "const dprCap = mode === 'neon-shatter' && mobile ? 1 : mobile ? 1.35 : 2"
 ]) assert.ok(live.includes(required), `Live Audio Lab renderer is missing ${required}.`);
 for (const forbidden of [...retiredIds, "'bars'", "id: 'circle'", 'drawOrbitMode', 'drawWaveCathedralMode', 'drawHexReactorMode']) {
   assert.ok(!live.includes(forbidden), `Retired Audio Lab mode ${forbidden} leaked into the live registry.`);
@@ -83,11 +84,20 @@ for (const [name, expected] of Object.entries(protectedHashes)) {
 
 const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
-  'patchMediaElementSource',
-  'nativeConnect(context.destination)',
-  "if (destination === analyser.context?.destination) return destination",
+  'function captureMethod(audio)',
+  'function createCaptureSourceProxy(context, audio)',
+  'context.createMediaStreamSource(scopedStream)',
+  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-capture-metering'",
+  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-synthetic-metering'",
+  "audio.dataset.audioPlaybackPath = 'html5-direct'",
+  'async function suspendContexts()',
+  "if (document.hidden) {",
   'export function readAudioLabAmplitude('
-]) assert.ok(signal.includes(required), `Audio signal safety layer is missing ${required}.`);
+]) assert.ok(signal.includes(required), `Audio signal isolation layer is missing ${required}.`);
+assert.ok(
+  signal.includes("if (element === audio) {\n        ACTIVE_CONTEXTS.add(this);\n        return createCaptureSourceProxy(this, audio);"),
+  'The primary HTMLMediaElement must be captured instead of routed through createMediaElementSource.'
+);
 
 const worker = read('sw.js');
 assert.ok(worker.includes("'./js/features/visual/audio-reactivity.js'"));
@@ -95,8 +105,8 @@ assert.ok(worker.includes("'./js/features/visual/audio-lab-registry.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-sanctuary.js'"));
 assert.ok(!worker.includes('visual-engine-hex-reactor.js'));
 
-const build = assertCurrentBuild('Audio Lab Build 44');
-assert.equal(build.number, 44);
-assert.equal(build.release, 'now-playing-alignment-20260807');
+const build = assertCurrentBuild('Audio Lab Build 45');
+assert.equal(build.number, 45);
+assert.equal(build.release, 'audio-background-stability-20260807');
 
-console.log('Audio Lab Spectrum/Liquid Chrome sanctuary, adaptive Neon, reactive Aurora and parallel metering remain valid under Build 44.');
+console.log('Audio Lab keeps protected renderers while HTML5 playback remains isolated from capture-stream metering under Build 45.');

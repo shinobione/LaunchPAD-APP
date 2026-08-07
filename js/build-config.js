@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260807-now-playing-alignment-v44',
-    cache: 'shinobi-launchpad-v44',
-    revision: 'now-playing-alignment-1',
-    display: '2026.08.07.44',
-    release: 'now-playing-alignment-20260807'
+    id: '20260807-audio-background-stability-v45',
+    cache: 'shinobi-launchpad-v45',
+    revision: 'audio-background-stability-1',
+    display: '2026.08.07.45',
+    release: 'audio-background-stability-20260807'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;

@@ -50,7 +50,7 @@ assert.ok(homeStyles.includes('grid-template-columns:repeat(2,minmax(0,1fr))'), 
 const feature11Styles = read('css/feature-11.css');
 includesAll(feature11Styles, ['.launchpad-hero .launchpad-banner-rail', 'order: 1;', '.launchpad-hero .hero-body', 'order: 2;'], 'Canonical banner-first mobile Home');
 
-// 7 — Audio Lab registry, restored Spectrum, adaptive rendering and sanctuary hashes.
+// 7 — Audio Lab registry, protected renderers and background-safe metering.
 const registry = read('js/features/visual/audio-lab-registry.js');
 includesAll(registry, ["AUDIO_LAB_DEFAULT_MODE = 'neon-shatter'", "id: 'spectrum'", "id: 'liquid-chrome'", "id: 'aurora-glass'", "id: 'nebula'", "id: 'singularity'", "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum', 'liquid-chrome'])"], 'Milestone 7 registry');
 const visualBase = read('js/features/visual/visual-engine-v2.js');
@@ -74,12 +74,19 @@ for (const [name, expected] of Object.entries(protectedHashes)) {
   assert.equal(actual, expected, `${name} sanctuary hash changed.`);
 }
 const live = read('js/features/visual/visual-engine-live.js');
-includesAll(live, ["{ id: 'spectrum', label: 'Spectrum' }", 'drawNeonShatterAdaptiveMode', "dataset.audioLabRenderer = 'hybrid-reactive-v6'", 'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60'], 'Build 42 live visuals');
+includesAll(live, ["{ id: 'spectrum', label: 'Spectrum' }", 'drawNeonShatterAdaptiveMode', "dataset.audioLabRenderer = 'hybrid-reactive-v7'", 'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60', 'const TELEMETRY_INTERVAL = 120'], 'Build 45 live visuals');
 assert.ok(!live.includes("'bars'"), 'Legacy bars alias must not replace Spectrum.');
 const coreModes = read('js/features/visual/visual-engine-core-modes.js');
 includesAll(coreModes, ['drawAuroraGlassMode', 'drawNeonShatterAdaptiveMode', 'const spectralIndex = Math.min(', 'const spectralRipple = Math.sin(', 'const fragments = mobile ? 20 : 52'], 'Build 42 adaptive modes');
 const signal = read('js/features/audio-lab-signal.js');
-includesAll(signal, ['patchMediaElementSource', 'nativeConnect(context.destination)', "if (destination === analyser.context?.destination) return destination", "dataset.audioGraph = 'direct-plus-metering'"], 'Build 42 audio graph');
+includesAll(signal, [
+  'createCaptureSourceProxy',
+  'context.createMediaStreamSource(scopedStream)',
+  "dataset.audioGraph = 'html5-direct-plus-capture-metering'",
+  "audio.dataset.audioPlaybackPath = 'html5-direct'",
+  'async function suspendContexts()',
+  "if (document.hidden) {"
+], 'Build 45 isolated audio graph');
 const sanctuary = read('js/features/visual/audio-lab-sanctuary.js');
 includesAll(sanctuary, ['normalizePresetControls', "controls.dataset.audioLabRegistry = 'sanctioned-v1'", 'video.loop = true', "video.setAttribute('webkit-playsinline', '')"], 'Milestone 7 sanctuary');
 
@@ -102,11 +109,11 @@ const worker = read('sw.js');
 includesAll(worker, ["'./js/features/theme-scope.js'", "'./js/features/visual/audio-lab-registry.js'", "'./js/features/visual/audio-lab-sanctuary.js'", "'./js/visual-card-export-guard.js'", "'./css/admin-tools.css'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification');
-assert.equal(build.number, 44);
-assert.equal(build.id, '20260807-now-playing-alignment-v44');
-assert.equal(build.cache, 'shinobi-launchpad-v44');
-assert.equal(build.revision, 'now-playing-alignment-1');
-assert.equal(build.display, '2026.08.07.44');
-assert.equal(build.release, 'now-playing-alignment-20260807');
+assert.equal(build.number, 45);
+assert.equal(build.id, '20260807-audio-background-stability-v45');
+assert.equal(build.cache, 'shinobi-launchpad-v45');
+assert.equal(build.revision, 'audio-background-stability-1');
+assert.equal(build.display, '2026.08.07.45');
+assert.equal(build.release, 'audio-background-stability-20260807');
 
-console.log('All nine LaunchPAD master-spec sections are regression-protected under Build 44.');
+console.log('All nine LaunchPAD master-spec sections are regression-protected under Build 45.');
