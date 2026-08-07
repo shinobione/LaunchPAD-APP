@@ -28,6 +28,7 @@
     "check:audiolab-signal": "node scripts/test-audio-lab-signal.mjs",
     "check:audiolab-core-modes": "node scripts/test-audio-lab-core-modes.mjs",
     "check:audiolab-live": "node scripts/test-audio-lab-live-reactivity.mjs",
+    "check:visual-card-export": "node scripts/test-visual-card-export.mjs",
     "check:desktop-overflow": "node scripts/test-desktop-overflow.mjs",
     "check:duration-format": "node scripts/test-duration-format.mjs",
     "check:quality-file-guard": "node scripts/test-quality-file-guard.mjs",
@@ -43,7 +44,7 @@
     "deploy:cloudflare:admin": "npm run build:admin-worker && wrangler deploy --strict --config cloudflare/wrangler.admin.jsonc",
     "verify:cloudflare:public": "node scripts/verify-cloudflare-deployment.mjs public",
     "verify:cloudflare:admin": "node scripts/verify-cloudflare-deployment.mjs admin",
-    "validate:media-regressions": "node scripts/validate-media-regressions.mjs && node scripts/validate-unsynced-lyrics-status.mjs && node scripts/test-lyrics-autoscroll.mjs && node scripts/validate-pwa-update.mjs && node scripts/validate-audio-startup.mjs && node scripts/validate-mobile-studio.mjs && node scripts/validate-canvas-layout.mjs && node scripts/validate-smart-canvas.mjs && node scripts/validate-canvas-identity.mjs && node scripts/validate-admin-access.mjs",
+    "validate:media-regressions": "node scripts/validate-media-regressions.mjs && node scripts/validate-unsynced-lyrics-status.mjs && node scripts/test-lyrics-autoscroll.mjs && node scripts/validate-pwa-update.mjs && node scripts/validate-audio-startup.mjs && node scripts/validate-mobile-studio.mjs && node scripts/validate-canvas-layout.mjs && node scripts/validate-smart-canvas.mjs && node scripts/validate-canvas-identity.mjs && node scripts/validate-admin-access.mjs && npm run check:visual-card-export",
     "audit:r2": "node scripts/audit-r2-cleanup-readiness.mjs",
     "test:service-worker": "npm run validate:media-regressions && node scripts/test-service-worker.mjs",
     "validate": "npm run check:syntax && npm run check:deployment-topology && npm run validate:catalog && npm run validate:cloudflare && npm run test:service-worker"
