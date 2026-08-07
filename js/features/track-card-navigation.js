@@ -24,12 +24,17 @@ function trackFromIndex(value) {
 
 function addHistoryQuickPlay(row) {
   if (!(row instanceof Element) || row.querySelector('.memory-history-quick-play')) return;
-  const legacy = row.querySelector('.memory-history-play[data-play-index]');
+  const legacy = row.querySelector('.memory-history-play[data-play-index],.memory-history-play[data-track-navigation-index]');
   if (!legacy) return;
 
-  const index = legacy.dataset.playIndex;
+  const index = legacy.dataset.playIndex ?? legacy.dataset.trackNavigationIndex;
   const track = trackFromIndex(index);
   if (!track) return;
+
+  legacy.dataset.trackNavigationIndex = index;
+  delete legacy.dataset.playIndex;
+  legacy.setAttribute('aria-label', `Open details for ${track.title}`);
+  legacy.title = `Open ${track.title}`;
 
   const play = document.createElement('button');
   play.type = 'button';
@@ -93,8 +98,8 @@ function handleClick(event) {
     event.preventDefault();
     event.stopImmediatePropagation();
     if (!openRowImage(historyRow)) {
-      const legacy = historyRow.querySelector('.memory-history-play[data-play-index]');
-      proxyOpenTrack(trackFromIndex(legacy?.dataset.playIndex)?.id);
+      const legacy = historyRow.querySelector('.memory-history-play[data-track-navigation-index]');
+      proxyOpenTrack(trackFromIndex(legacy?.dataset.trackNavigationIndex)?.id);
     }
     return;
   }
@@ -115,19 +120,39 @@ function handleKeydown(event) {
   const target = event.target instanceof Element ? event.target : null;
   if (!target) return;
 
-  const row = target.closest('.memory-history-row[data-track-surface],.album-card[data-track-surface]');
-  if (!row || target.closest('button,a,input,select,textarea')) return;
-  const track = trackFromIndex(row.dataset.index || row.querySelector('[data-play-index]')?.dataset.playIndex);
-  if (!track) return;
-  event.preventDefault();
-  proxyOpenTrack(track.id);
+  const card = target.closest('.album-card[data-track-surface]');
+  if (card && target === card) {
+    const track = trackFromIndex(card.dataset.index);
+    if (!track) return;
+    event.preventDefault();
+    proxyOpenTrack(track.id);
+    return;
+  }
+
+  const historyRow = target.closest('.memory-history-row[data-track-surface]');
+  if (historyRow && target === historyRow) {
+    const index = historyRow.querySelector('[data-track-navigation-index]')?.dataset.trackNavigationIndex;
+    const track = trackFromIndex(index);
+    if (!track) return;
+    event.preventDefault();
+    proxyOpenTrack(track.id);
+  }
 }
 
 function decorateTrackSurfaces(root = document) {
+  if (root instanceof Element && root.matches('.album-card[data-index]')) {
+    root.dataset.trackSurface = 'true';
+    if (!root.hasAttribute('tabindex')) root.tabIndex = 0;
+  }
   root.querySelectorAll?.('.album-card[data-index]').forEach(card => {
     card.dataset.trackSurface = 'true';
     if (!card.hasAttribute('tabindex')) card.tabIndex = 0;
   });
+
+  if (root instanceof Element && root.matches('.memory-history-row')) {
+    root.dataset.trackSurface = 'true';
+    if (!root.hasAttribute('tabindex')) root.tabIndex = 0;
+  }
   root.querySelectorAll?.('.memory-history-row').forEach(row => {
     row.dataset.trackSurface = 'true';
     if (!row.hasAttribute('tabindex')) row.tabIndex = 0;
