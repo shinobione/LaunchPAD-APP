@@ -1,40 +1,41 @@
 # SHINOBIWAN LaunchPAD — catalog guide
 
-_Current application baseline: Build `2026.08.07.41`._
+> Current application build: `2026.08.07.50` — release `audiolab-signal-first-20260807`.
 
 The production catalog is managed in Cloudflare R2 through the private LaunchPAD Track Manager. `js/catalog.js` contains album/editorial presentation data only; production track metadata and media are not maintained by hand in the PWA.
 
-## Open the Track Manager
+## Open the admin tools
 
-The private administration Worker is protected by Cloudflare Access:
+The private Track Manager is protected by Cloudflare Access:
 
 ```text
 https://launchpad-r2-api.jerryquinet.workers.dev/
 ```
 
-Use it from a desktop browser. The public `launchpad-media` Worker is read-only and must never be used for uploads.
+LaunchPAD exposes private desktop shortcuts after an explicit `?admin=1` opt-in:
 
-LaunchPAD can expose a private local shortcut on desktop: open the public PWA once with `?admin=1`. The resulting **Track Manager** control opens Cloudflare Access in a new tab and remains invisible to ordinary visitors. Use `?admin=0` to clear the opt-in.
+- **LRC Maker** — external synchronized-lyrics authoring tool;
+- **Track Manager** — private R2/catalog administration.
+
+The opt-in persists for the installed desktop PWA. Use `?admin=0` to clear it.
 
 Repository Track Manager contract: **v5.7**. Public media Worker contract: **v2.6**.
 
 ## Add or edit a track
 
-Choose **Ajouter un titre** and complete the release form:
+Complete the release form with:
 
 - title and permanent slug;
-- draft or published status;
-- release type, year and exact release date when known;
-- album ID and album title;
+- draft/published status;
+- release type/year/date;
+- album/project context;
 - genres, moods, themes and era;
 - languages, BPM, key and confidence;
 - duration and content rating;
-- primary and secondary accent colours;
-- audio, original cover, optional lyrics and optional video/Canvas.
+- primary/secondary accent colours;
+- audio, original cover, optional lyrics and optional Canvas video.
 
-The Track Manager can derive metadata from structured TXT/Lyrics input and can extract a cover palette on explicit request. Review inferred values before publication.
-
-When a cover is uploaded, the browser can generate the optimized WebP thumbnail used by public catalog cards.
+The Track Manager can derive metadata from structured TXT/Lyrics input and extract a cover palette on explicit request. Review inferred values before publication.
 
 Canonical R2 layout:
 
@@ -49,29 +50,15 @@ tracks/<slug>/video.<ext>     # optional
 
 Do not rename a published slug. It is the permanent catalog/share-route identifier.
 
-Durations may be entered in `mm:ss` form; fractional seconds supported by the current Track Manager validation are preserved when present and normalized into the canonical manifest representation.
-
 ## Publication quality
 
-Use **draft** while metadata/media is incomplete. Before publishing, run the Track Manager quality control and resolve blocking errors.
+Use **draft** while metadata/media is incomplete. Before publishing, run Track Manager quality control and resolve blocking errors.
 
-The public catalog exposes publishable active entries; draft/archived/inactive states are not ordinary public releases.
-
-Track Manager quality checks can cover, depending on available assets:
-
-- required audio/cover presence;
-- generated thumbnail state;
-- manifest/R2 reference consistency;
-- lyrics readability and timestamp state;
-- duration/media geometry evidence;
-- editorial metadata and musical-key confidence;
-- content rating and release metadata.
-
-Saving a track and rebuilding the public catalog are related but distinct operations. Rebuild `catalog/index.json` whenever manifest or derived lyrics/media metadata must be reflected in public catalog summaries.
+Saving a track and rebuilding the public catalog are related but distinct. Rebuild `catalog/index.json` whenever manifest or derived lyrics/media metadata must be reflected in public summaries.
 
 ## Lyrics formats
 
-Plain lyrics are supported, as are synchronized lyrics in forms including:
+Plain lyrics are supported, as are synchronized forms including:
 
 ```text
 [00:12.50] A bracketed LRC line
@@ -81,72 +68,34 @@ Plain lyrics are supported, as are synchronized lyrics in forms including:
 A timestamp followed by its lyric on the next line
 ```
 
-Structured metadata may appear before a line containing exactly:
+Structured metadata may appear before a line containing exactly `LYRICS:`.
 
-```text
-LYRICS:
-```
-
-The catalog rebuild derives public lyrics/timestamp flags from the actual R2 lyrics asset. Track Detail exposes one Lyrics status and Lyrics Studio uses the same canonical asset, so both should agree after a correct rebuild.
+Track Detail exposes one Lyrics state and Lyrics Studio consumes the same canonical asset, so both should agree after a correct catalog rebuild.
 
 ## Metadata conventions
 
-### Dates
-
-Use ISO `YYYY-MM-DD`. Leave the value empty rather than inventing an approximate date.
-
-### Languages
-
-Current catalog conventions include:
-
-```text
-English
-French
-Vietnamese
-```
-
-Separate multiple languages with commas in Track Manager.
-
-### BPM and key
-
-Use the analyzed BPM and English note notation for keys, for example:
-
-```text
-C major
-F# minor
-Bb major
-```
-
-Treat low key-analysis confidence as a review flag rather than fabricated certainty.
-
-### Content rating
-
-Use the Track Manager’s current Clean / Explicit / Unrated state. `Unrated` means the content rating has not yet been reviewed.
-
-### Accents
-
-Use six-digit hexadecimal colours such as `#d450ff`. They theme track/player surfaces and visual identity. Cover extraction is a helper; curated values may be kept manually.
+- Dates: ISO `YYYY-MM-DD`.
+- Languages: use canonical names such as English, French, Vietnamese; comma-separate multiples.
+- Keys: English note notation, e.g. `F# minor`; low confidence remains a review flag.
+- Content: Clean / Explicit / Unrated.
+- Accents: six-digit hex such as `#d450ff`; cover extraction is a helper, not an authority.
+- Duration: Track Manager accepts friendly input and stores canonical values.
 
 The saved R2 manifest is authoritative.
 
-## Cover optimization
+## Cover / Canvas
 
-Use the Track Manager cover/thumbnail optimization action for tracks lacking a proper `thumbnail.webp` or when intentionally regenerating thumbnails.
+Generate `thumbnail.webp` from the original cover when needed. Keep the original artwork beside it.
 
-The optimized thumbnail is stored beside the original cover. Original cover assets remain available for detailed/full artwork views.
+Optional Canvas video belongs at `tracks/<slug>/video.<ext>`. Public/Studio presentation is silent, inline and looped; the music player remains independent.
 
 ## Batch import
 
-The current Track Manager supports grouped file/folder import. Review every detected group before confirmation, especially:
+Review every detected group before confirmation, especially audio/cover/lyrics/video association, generated slug/title, album inference, TXT metadata, duplicate handling and quality warnings. Incomplete imports stay drafts.
 
-- audio/cover/lyrics/video role assignment;
-- generated slug/title;
-- album inference;
-- structured TXT metadata;
-- duplicate/existing slug handling;
-- quality warnings.
+## Audio Lab note
 
-New/incomplete imports should remain drafts until reviewed.
+Audio Lab is not a catalog-authoring feature, but media changes should still be smoke-tested there. Build 50 analyzes a separately fetched/decoded copy of the current track, while the audible HTML5 player stays outside Web Audio. Spectrum is the reference FFT view; custom effects must visibly follow the same signal.
 
 ## Repository validation
 
@@ -156,18 +105,14 @@ npm run validate
 npm run check:wrangler
 ```
 
-The one-time GitHub-to-R2 migration cleanup audit has been retired from the active repository. Current media verification belongs to the normal catalog, Worker and browser regression suites rather than a historical migration command.
+Every new app build must update every Markdown file to the active build display/release; `check:build-docs` enforces that contract.
 
 ## Deployment boundaries
 
-Application/web deployment and Worker/R2 publication are separate states:
-
 - application source merges into GitHub `main`;
-- GitHub Pages publishes the canonical validated static artifact from `main`;
-- Cloudflare Pages staging mirrors the same `main` application runtime;
+- GitHub Pages publishes the canonical validated static artifact;
+- Cloudflare Pages staging mirrors the same runtime;
 - Worker code deploys separately through **Deploy Cloudflare Workers**;
 - R2 catalog/media changes happen through Track Manager and explicit catalog rebuilds.
 
-Do not report “deployed” without saying which of those states changed.
-
-See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md), [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) and [`cloudflare/README.md`](cloudflare/README.md) for the canonical operational flow.
+See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md), [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) and [`cloudflare/README.md`](cloudflare/README.md).
