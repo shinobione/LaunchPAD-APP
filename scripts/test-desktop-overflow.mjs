@@ -32,26 +32,20 @@ assert.ok(!/font-family:\s*serif(?:[;,}])/i.test(typography));
 
 const build = read('js/build-config.js');
 for (const required of [
-  "id: '20260806-navigation-recovery'","cache: 'shinobi-launchpad-v37'","revision: 'navigation-local-fallback-1'","display: '2026.08.06.37'","release: 'navigation-recovery-20260806'",
-  "id: '20260806-m7-audiolab-sanctuary'","cache: 'shinobi-launchpad-v34'","revision: 'audiolab-sanctuary-1'","display: '2026.08.06.34'","release: 'audiolab-sanctuary-20260806'",
-  "id: '20260806-m6-home-editorial'","cache: 'shinobi-launchpad-v33'","revision: 'home-editorial-switcher-1'","display: '2026.08.06.33'","release: 'home-editorial-switcher-20260806'",
-  "id: '20260806-m5-discography-eras'","cache: 'shinobi-launchpad-v32'","revision: 'discography-eras-cards-1'","display: '2026.08.06.32'","release: 'discography-eras-cards-20260806'",
-  "id: '20260806-m4-theme-scoping'","cache: 'shinobi-launchpad-v31'","revision: 'theme-scoping-1'","display: '2026.08.06.31'","release: 'theme-scoping-20260806'",
-  "id: '20260806-m2-catalog-ordering'","cache: 'shinobi-launchpad-v30'","revision: 'catalog-ordering-1'","display: '2026.08.06.30'","release: 'catalog-ordering-20260806'",
-  "id: '20260806-m1-routing-legal'","cache: 'shinobi-launchpad-v29'","revision: 'routing-navigation-legal-1'","display: '2026.08.06.29'","release: 'routing-navigation-legal-20260806'",
-  "id: '20260806-pwa-single-update'","cache: 'shinobi-launchpad-v28'","revision: 'pwa-single-update-1'","display: '2026.08.06.28'","release: 'pwa-single-update-20260806'",
-  "id: '20260806-audiolab-rms-clarity'","cache: 'shinobi-launchpad-v27'","revision: 'audiolab-rms-clarity-1'","display: '2026.08.06.27'","release: 'audiolab-rms-clarity-20260806'",
-  "id: '20260806-audiolab-animation-calibration'","cache: 'shinobi-launchpad-v26'","revision: 'audiolab-animation-calibration-1'","display: '2026.08.06.26'","release: 'audiolab-animation-calibration-20260806'",
-  "id: '20260806-audiolab-catalog-reactivity'","cache: 'shinobi-launchpad-v25'","revision: 'audiolab-catalog-reactivity-1'","display: '2026.08.06.25'","release: 'audiolab-catalog-reactivity-20260806'",
-  "id: '20260805-audiolab-live-reactivity'","cache: 'shinobi-launchpad-v24'","revision: 'audiolab-live-reactivity-1'","display: '2026.08.05.24'","release: 'audiolab-live-reactivity-20260805'",
-  "id: '20260805-audiolab-core-modes'","cache: 'shinobi-launchpad-v23'","id: '20260805-fixed-shell'","cache: 'shinobi-launchpad-v21'",
-  "revision: 'fixed-shell-scroll-boundary-1'","display: '2026.08.05.21'","release: 'fixed-shell-scroll-boundary-20260805'",
-  "id: '20260805-mobile-hero-order'","cache: 'shinobi-launchpad-v20'","id: '20260805-native-scrollbar-fix'","cache: 'shinobi-launchpad-v19'",
-  'function installTypographyStylesheet()',"new URL('css/typography-refresh.css', document.baseURI)",'installTypographyStylesheet();'
-]) assert.ok(build.includes(required), `PWA release metadata is missing ${required}.`);
+  "id: '20260807-unified-v40'",
+  "cache: 'shinobi-launchpad-v40'",
+  "revision: 'cloudflare-main-reconciliation-1'",
+  "display: '2026.08.07.40'",
+  "release: 'unified-v40-20260807'",
+  'const initialStylesheets = new WeakSet',
+  'if (initialStylesheets.has(link)) return link;',
+  'function installTypographyStylesheet()',
+  "ensureBuildStylesheet('link[data-launchpad-typography]', 'css/typography-refresh.css'",
+  "ensureBuildStylesheet('link[data-ui-stability-v39]', 'css/ui-stability-v39.css'",
+  'installNavigationStability();'
+]) assert.ok(build.includes(required), `Build 40 runtime metadata/stability is missing ${required}.`);
 
 const activeId = build.match(/const config = Object\.freeze\(\{[\s\S]*?id:\s*'([^']+)'/)?.[1];
-assert.equal(activeId, '20260806-navigation-recovery', 'The active runtime cache key must match Build 37.');
-assert.ok(build.includes("const stylesheetVersion = visualTest ? '20260805-audiolab-core-modes' : config.id"));
+assert.equal(activeId, '20260807-unified-v40', 'The active runtime cache key must match Build 40.');
 
-console.log('Desktop fixed shell and typography remain valid under navigation recovery Build 37.');
+console.log('Desktop fixed shell, typography and single-paint Build 40 runtime are valid.');
