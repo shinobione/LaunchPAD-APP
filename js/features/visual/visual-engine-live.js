@@ -19,6 +19,7 @@ const CUSTOM_RENDERERS = new Map(CUSTOM_MODES.map(mode => [mode.id, mode.rendere
 const CUSTOM_MODE_IDS = CUSTOM_MODES.map(mode => mode.id);
 const CUSTOM_DESKTOP_FRAME_INTERVAL = 1000 / 60;
 const CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60;
+const TELEMETRY_INTERVAL = 120;
 
 function mobileVisualDevice(width = globalThis.innerWidth || 0) {
   const coarse = globalThis.matchMedia?.('(hover: none), (pointer: coarse)')?.matches === true;
@@ -30,7 +31,9 @@ function prepareCanvas(canvas, mode) {
   const rect = canvas?.getBoundingClientRect();
   if (!canvas || !rect?.width || !rect?.height) return null;
   const mobile = mobileVisualDevice(rect.width);
-  const dprCap = mode === 'neon-shatter' && mobile ? 1.2 : mobile ? 1.5 : 2;
+  // Preserve the 60 Hz animation target while lowering pixel fill-rate on
+  // phones. Audio playback gets priority over supersampling in Audio Lab.
+  const dprCap = mode === 'neon-shatter' && mobile ? 1 : mobile ? 1.35 : 2;
   const dpr = Math.min(window.devicePixelRatio || 1, dprCap);
   const widthPx = Math.round(rect.width * dpr);
   const heightPx = Math.round(rect.height * dpr);
@@ -119,6 +122,7 @@ export function createVisualController(options) {
   let mode = DEFAULT_MODE;
   let frame = 0;
   let lastFrameAt = 0;
+  let lastTelemetryAt = 0;
   let lastTelemetrySignature = '';
 
   const defaultButton = installControls(controls);
@@ -145,7 +149,7 @@ export function createVisualController(options) {
   }
   const homeTitle = document.querySelector('.now-panel .panel-head h3');
   if (homeTitle) homeTitle.textContent = 'Neon Shatter';
-  document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v6';
+  document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v7';
   document.documentElement.dataset.audioLabSpectrum = controls?.querySelector('[data-visual="spectrum"]') ? 'restored' : 'missing';
 
   function readReactiveFrame() {
@@ -175,7 +179,9 @@ export function createVisualController(options) {
     return { reading, features };
   }
 
-  function updateTelemetry(reading, features) {
+  function updateTelemetry(reading, features, now) {
+    if (now - lastTelemetryAt < TELEMETRY_INTERVAL) return;
+    lastTelemetryAt = now;
     const values = [
       reading.state || (reading.available ? 'live' : 'warming'),
       features.kick.toFixed(3),
@@ -205,7 +211,7 @@ export function createVisualController(options) {
       lastFrameAt = now;
       const time = now / 1000;
       const { reading, features } = readReactiveFrame();
-      if (labActive) updateTelemetry(reading, features);
+      if (labActive) updateTelemetry(reading, features, now);
 
       if (labActive) renderMode(labCanvas, customRenderer, reactive, getAccent, time, features, mode);
       if (homeActive) renderMode(homeCanvas, customRenderer, reactive, getAccent, time, features, mode);
