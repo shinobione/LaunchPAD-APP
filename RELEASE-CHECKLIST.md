@@ -1,6 +1,6 @@
 # LaunchPAD release checklist
 
-_Current operating baseline: Build `2026.08.07.40`._
+_Current operating baseline: Build `2026.08.07.41`._
 
 This checklist separates four independent states that used to get mixed together: **source merge**, **web-host deployment**, **Worker deployment**, and **R2 catalog/media publication**.
 
@@ -33,7 +33,7 @@ npm run check:wrangler
 12. Review unexpected visual/behavioral regressions rather than weakening tests to match a bug.
 13. Merge into `main` only when the PR represents the complete intended source state.
 14. Record the merge SHA when diagnosing a deployment.
-15. Delete the temporary branch after merge once it is no longer needed.
+15. Confirm GitHub automatically deletes the merged head branch; `main` should remain the only persistent branch.
 
 ## 3. Web application deployment
 
@@ -95,23 +95,26 @@ Worker deployment is **not** implied by merging or by Pages deployment.
 45. Test favorites-only queue behavior when queue code changed.
 46. Test installed-PWA startup after fully closing the browser/app when service-worker code changed.
 47. Confirm the expected Build/Release is displayed after accepting a PWA update.
+48. For Visual Card changes, verify both **Share image** and **Download PNG** with a real R2-hosted cover so CORS/canvas export regressions are caught.
 
 ## 7. Rollback
 
-48. Web-app rollback should be performed by reverting/fixing `main` and redeploying the canonical artifact, not by making a private host-only patch.
-49. Worker rollback uses the protected **Roll back Cloudflare Worker** workflow.
-50. Remember that Worker rollback does not restore R2 objects or `catalog/index.json`.
-51. Record rollback source/version and verify health afterward.
+49. Web-app rollback should be performed by reverting/fixing `main` and redeploying the canonical artifact, not by making a private host-only patch.
+50. Worker rollback uses the protected **Roll back Cloudflare Worker** workflow.
+51. Remember that Worker rollback does not restore R2 objects or `catalog/index.json`.
+52. Record rollback source/version and verify health afterward.
 
 ## 8. Infrastructure/repository hygiene
 
-52. `main` remains the only application source of truth.
-53. Delete merged/abandoned `agent/`, `fix/`, `hotfix/`, `migration/` and `release/` branches.
-54. Keep `gh-pages` unused by workflow deployment; delete it once historical recovery is no longer required.
-55. Do not introduce a second build/version source.
-56. Keep documentation synchronized with the actual deployment topology.
-57. Treat Lovable as prototype-only unless a future migration is explicitly designed and promoted through GitHub.
-58. Report these states separately when troubleshooting:
+53. `main` remains the only application source of truth and the only persistent branch.
+54. Keep automatic merged-head deletion enabled; abandoned temporary branches should also be removed promptly.
+55. Keep `gh-pages` absent and unused by workflow deployment.
+56. Do not introduce a second build/version source.
+57. Keep documentation synchronized with the actual deployment topology.
+58. Treat Lovable as prototype-only unless a future migration is explicitly designed and promoted through GitHub.
+59. Keep one-time migration audits and superseded branding/PWA assets out of the active tree once their purpose is complete.
+60. Do not delete compatibility files solely because their filenames contain an old version/host name; first prove they are no longer wired into boot, CI, Wrangler or Track Manager.
+61. Report these states separately when troubleshooting:
     - code merged to `main`;
     - GitHub Pages deployed;
     - Cloudflare Pages deployed;
