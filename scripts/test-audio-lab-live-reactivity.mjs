@@ -20,13 +20,15 @@ for (const required of [
   'const attack = shaped[index] > reactive[index] ? .78 : .2',
   'renderMode(labCanvas, customRenderer, reactive, getAccent, time, features, mode)',
   'const customRenderer = CUSTOM_RENDERERS.get(mode)',
-  "const dprCap = mode === 'neon-shatter' && mobile ? 1.2 : mobile ? 1.5 : 2",
+  "const dprCap = mode === 'neon-shatter' && mobile ? 1 : mobile ? 1.35 : 2",
   'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60',
+  'const TELEMETRY_INTERVAL = 120',
   'base.setMode(mode)',
   "homeTitle.textContent = 'Neon Shatter'",
-  "document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v6'",
+  "document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v7'",
   "document.documentElement.dataset.audioLabSpectrum = controls?.querySelector('[data-visual=\"spectrum\"]') ? 'restored' : 'missing'",
-  'function updateTelemetry(reading, features)',
+  'function updateTelemetry(reading, features, now)',
+  'if (now - lastTelemetryAt < TELEMETRY_INTERVAL) return',
   'data.audioLabRms = values[2]',
   'data.audioLabPeak = values[3]',
   'data.audioLabDynamics = values[4]',
@@ -63,4 +65,4 @@ assert.ok(worker.includes('PUBLIC_WORKER_VERSION = 2.6'));
 assert.ok(worker.includes("payload.crossOriginResourcePolicy = 'cross-origin'"));
 assert.ok(worker.includes("headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')"));
 
-console.log('Audio Lab restores Spectrum, renders mobile-adaptive Neon Shatter and drives Aurora directly from live spectral/transient data.');
+console.log('Audio Lab keeps 60 Hz custom rendering while reducing mobile fill rate and telemetry pressure under Build 45.');
