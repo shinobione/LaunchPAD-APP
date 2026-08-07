@@ -1,0 +1,66 @@
+name: Diagnose Build 42
+
+on:
+  push:
+    branches:
+      - fix/audio-audiolab-admin-v42
+
+permissions:
+  contents: read
+
+jobs:
+  catalog-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: validate-catalog
+        continue-on-error: true
+        run: node scripts/validate-catalog.mjs
+      - name: hero-layout
+        continue-on-error: true
+        run: node scripts/validate-hero-layout.mjs
+      - name: legacy-catalog
+        continue-on-error: true
+        run: node scripts/validate-legacy-catalog-merge.mjs
+      - name: favorites-queue
+        continue-on-error: true
+        run: node scripts/validate-favorites-queue.mjs
+      - name: catalog-filters
+        continue-on-error: true
+        run: node scripts/test-catalog-filters.mjs
+      - name: feature-10
+        continue-on-error: true
+        run: node scripts/test-feature-10.mjs
+      - name: feature-11
+        continue-on-error: true
+        run: node scripts/test-feature-11.mjs
+      - name: phase-12
+        continue-on-error: true
+        run: node scripts/test-phase-12.mjs
+      - name: phase-13
+        continue-on-error: true
+        run: node scripts/test-phase-13.mjs
+      - name: milestone-7
+        continue-on-error: true
+        run: node scripts/test-milestone-7.mjs
+      - name: navigation-recovery
+        continue-on-error: true
+        run: node scripts/test-navigation-recovery.mjs
+      - name: sanctuary-idempotence
+        continue-on-error: true
+        run: node scripts/test-audio-lab-sanctuary-idempotence.mjs
+      - name: audio-signal
+        continue-on-error: true
+        run: node scripts/test-audio-lab-signal.mjs
+      - name: core-modes
+        continue-on-error: true
+        run: node scripts/test-audio-lab-core-modes.mjs
+      - name: live-reactivity
+        continue-on-error: true
+        run: node scripts/test-audio-lab-live-reactivity.mjs
+      - name: desktop-overflow
+        continue-on-error: true
+        run: node scripts/test-desktop-overflow.mjs
