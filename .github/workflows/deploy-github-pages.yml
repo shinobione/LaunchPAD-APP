@@ -37,14 +37,14 @@ jobs:
       - name: Validate canonical static runtime
         run: node scripts/validate-cloudflare-pages-build.mjs
 
-      - name: Verify Build 40 metadata
+      - name: Verify canonical release artifact
         shell: bash
         run: |
           set -euo pipefail
-          grep -q "display: '2026.08.07.40'" dist/cloudflare-pages/js/build-config.js
-          grep -q "release: 'unified-v40-20260807'" dist/cloudflare-pages/js/build-config.js
+          cmp js/build-config.js dist/cloudflare-pages/js/build-config.js
           test -s dist/cloudflare-pages/index.html
           test -s dist/cloudflare-pages/sw.js
+          grep -q "globalThis.SHINOBIWAN_BUILD = config" dist/cloudflare-pages/js/build-config.js
           touch dist/cloudflare-pages/.nojekyll
 
       - name: Upload canonical Pages artifact
