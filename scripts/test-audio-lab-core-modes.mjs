@@ -86,10 +86,15 @@ const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
   'function captureMethod(audio)',
   'function createCaptureSourceProxy(context, audio)',
+  'function mediaIdentity()',
+  'function invalidateCapture(reason',
+  "audio.addEventListener('loadstart', () => invalidateCapture('loadstart'))",
+  "attributeFilter: ['src', 'data-track-id']",
   'context.createMediaStreamSource(scopedStream)',
   "document.documentElement.dataset.audioGraph = 'html5-direct-plus-capture-metering'",
   "document.documentElement.dataset.audioGraph = 'html5-direct-plus-synthetic-metering'",
   "audio.dataset.audioPlaybackPath = 'html5-direct'",
+  "if (CAPTURE_STATE !== 'synthetic')",
   'async function suspendContexts()',
   "if (document.hidden) {",
   'export function readAudioLabAmplitude('
@@ -105,8 +110,8 @@ assert.ok(worker.includes("'./js/features/visual/audio-lab-registry.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-sanctuary.js'"));
 assert.ok(!worker.includes('visual-engine-hex-reactor.js'));
 
-const build = assertCurrentBuild('Audio Lab Build 45');
-assert.equal(build.number, 45);
-assert.equal(build.release, 'audio-background-stability-20260807');
+const build = assertCurrentBuild('Audio Lab Build 46');
+assert.equal(build.number, 46);
+assert.equal(build.release, 'audiolab-track-switch-20260807');
 
-console.log('Audio Lab keeps protected renderers while HTML5 playback remains isolated from capture-stream metering under Build 45.');
+console.log('Audio Lab keeps protected renderers, native playback isolation and fresh capture-stream metering across track switches under Build 46.');
