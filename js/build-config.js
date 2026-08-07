@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260807-admin-tools-pwa-v43',
-    cache: 'shinobi-launchpad-v43',
-    revision: 'admin-tools-pwa-polish-1',
-    display: '2026.08.07.43',
-    release: 'admin-tools-pwa-polish-20260807'
+    id: '20260807-now-playing-alignment-v44',
+    cache: 'shinobi-launchpad-v44',
+    revision: 'now-playing-alignment-1',
+    display: '2026.08.07.44',
+    release: 'now-playing-alignment-20260807'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
