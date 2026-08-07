@@ -3,7 +3,6 @@ const VIEW_ALIASES = {
   albums: 'albums'
 };
 
-const TRACK_DETAIL_HISTORY_KEY = 'shinobiTrackDetail';
 const TRACK_ROUTES = new Set(['track', 'album', 'lyrics', 'studio']);
 const ROUTE_CHANGE_EVENT = 'shinobi:route-change';
 
@@ -39,11 +38,14 @@ function announceRoute(route) {
 export function createRouter({ onRoute }) {
   function dispatch() {
     const route = parseRoute();
-    const isPassiveTrackDetail =
-      route.type === 'track' &&
-      window.history.state?.[TRACK_DETAIL_HISTORY_KEY] === true;
 
-    if (isPassiveTrackDetail) return;
+    // Track Detail owns #track=... completely. The generic router must not
+    // briefly activate Home before the dedicated detail renderer mounts; that
+    // was the source of the visible double route and Track DNA scroll landing.
+    if (route.type === 'track') {
+      announceRoute(route);
+      return;
+    }
 
     // Studio reuses the Lyrics view, while the original route remains visible
     // and shareable in the address bar.
