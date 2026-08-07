@@ -3,6 +3,7 @@ const CAPTURE_PROXY_MARK = Symbol.for('shinobi.audioLabCaptureProxy');
 const ACTIVE_CONTEXTS = new Set();
 const CAPTURE_PROXIES = new Set();
 let ACTIVE_ANALYSER = null;
+let CAPTURE_STATE = 'idle';
 
 function clampByte(value) {
   return Math.max(0, Math.min(255, Math.round(value)));
@@ -60,6 +61,11 @@ function signalPeak(data) {
 
 function markSignal(state) {
   if (typeof document !== 'undefined') document.documentElement.dataset.audioLabSignal = state;
+}
+
+function markCapture(state) {
+  CAPTURE_STATE = state;
+  if (typeof document !== 'undefined') document.documentElement.dataset.audioLabCapture = state;
 }
 
 export function readAudioLabSpectrum(target) {
@@ -148,6 +154,16 @@ function patchAnalyser(analyser, audio) {
       return;
     }
 
+    // Never disguise a broken/stale live capture as audio-reactivity. While a
+    // supported captureStream is reconnecting, show a neutral signal and wait
+    // for the real track. Synthetic movement is reserved for browsers where a
+    // live capture stream genuinely cannot be used.
+    if (CAPTURE_STATE !== 'synthetic') {
+      target.fill(0);
+      markSignal(CAPTURE_STATE === 'connected' ? 'capture-silent' : 'warming-capture');
+      return;
+    }
+
     synthesizePlaybackSpectrum(target, currentTime);
     markSignal('fallback');
   };
@@ -200,22 +216,73 @@ function createCaptureSourceProxy(context, audio) {
   let stream = null;
   let mediaSource = null;
   let activeTrack = null;
+  let captureIdentity = '';
+  let activeTrackEndedHandler = null;
+
+  function mediaIdentity() {
+    const trackId = audio.dataset?.trackId || '';
+    const source = audio.getAttribute?.('src') || audio.currentSrc || '';
+    return `${trackId}::${source}`;
+  }
 
   const disconnectSource = () => {
+    if (activeTrack && activeTrackEndedHandler) {
+      activeTrack.removeEventListener?.('ended', activeTrackEndedHandler);
+    }
+    activeTrackEndedHandler = null;
     try { mediaSource?.disconnect(); } catch {}
     mediaSource = null;
     activeTrack = null;
   };
 
-  const connectCurrentTrack = () => {
-    if (document.hidden || !capture) return false;
+  const onStreamTrackChange = () => {
+    queueMicrotask(() => {
+      invalidateCapture('stream-track-change');
+      if (!audio.paused && !audio.ended) connectCurrentTrack();
+    });
+  };
+
+  const releaseCapturedStream = () => {
+    disconnectSource();
+    stream?.removeEventListener?.('addtrack', onStreamTrackChange);
+    stream?.removeEventListener?.('removetrack', onStreamTrackChange);
+    stream = null;
+    captureIdentity = '';
+  };
+
+  function invalidateCapture(reason = 'source-change') {
+    releaseCapturedStream();
+    markCapture('refreshing');
+    markSignal('warming-capture');
+    if (typeof document !== 'undefined') document.documentElement.dataset.audioLabCaptureReset = reason;
+  }
+
+  function connectCurrentTrack() {
+    if ((typeof document !== 'undefined' && document.hidden) || !capture) {
+      if (!capture) markCapture('synthetic');
+      return false;
+    }
+
+    const identity = mediaIdentity();
+    if (stream && captureIdentity && identity && captureIdentity !== identity) {
+      invalidateCapture('identity-change');
+    }
+
+    // Do not snapshot captureStream while the media element is between two
+    // sources. Chrome can otherwise hand us the previous track's stream.
+    if (Number(audio.readyState || 0) < 1) {
+      markCapture('warming');
+      return false;
+    }
 
     if (!stream) {
       try {
         stream = capture();
-        stream?.addEventListener?.('addtrack', () => queueMicrotask(connectCurrentTrack));
-        stream?.addEventListener?.('removetrack', () => queueMicrotask(connectCurrentTrack));
+        captureIdentity = identity;
+        stream?.addEventListener?.('addtrack', onStreamTrackChange);
+        stream?.addEventListener?.('removetrack', onStreamTrackChange);
       } catch (error) {
+        markCapture('synthetic');
         console.info('Audio Lab captureStream unavailable; using synthetic metering.', error);
         return false;
       }
@@ -223,26 +290,42 @@ function createCaptureSourceProxy(context, audio) {
 
     const tracks = stream?.getAudioTracks?.() || [];
     const nextTrack = tracks.find(track => track.readyState === 'live') || tracks.at(-1) || null;
-    if (!nextTrack) return false;
-    if (mediaSource && activeTrack === nextTrack) return true;
+    if (!nextTrack) {
+      markCapture('warming');
+      return false;
+    }
+    if (mediaSource && activeTrack === nextTrack) {
+      markCapture('connected');
+      return true;
+    }
 
     disconnectSource();
     try {
       const scopedStream = typeof MediaStream === 'function' ? new MediaStream([nextTrack]) : stream;
       mediaSource = context.createMediaStreamSource(scopedStream);
       activeTrack = nextTrack;
-      nextTrack.addEventListener?.('ended', () => queueMicrotask(connectCurrentTrack), { once: true });
+      activeTrackEndedHandler = () => {
+        queueMicrotask(() => {
+          invalidateCapture('captured-track-ended');
+          if (!audio.paused && !audio.ended) connectCurrentTrack();
+        });
+      };
+      nextTrack.addEventListener?.('ended', activeTrackEndedHandler, { once: true });
       connections.forEach(({ destination, args }) => mediaSource.connect(destination, ...args));
+      markCapture('connected');
+      markSignal('warming');
       if (typeof document !== 'undefined') {
         document.documentElement.dataset.audioGraph = 'html5-direct-plus-capture-metering';
+        document.documentElement.dataset.audioLabCaptureSource = identity;
       }
       return true;
     } catch (error) {
       disconnectSource();
+      markCapture('synthetic');
       console.info('Audio Lab capture source could not be attached; using synthetic metering.', error);
       return false;
     }
-  };
+  }
 
   const proxy = {
     [CAPTURE_PROXY_MARK]: true,
@@ -251,21 +334,39 @@ function createCaptureSourceProxy(context, audio) {
       connections.push({ destination, args });
       if (!capture && typeof document !== 'undefined') {
         document.documentElement.dataset.audioGraph = 'html5-direct-plus-synthetic-metering';
+        markCapture('synthetic');
       }
       connectCurrentTrack();
       return destination;
     },
     disconnect() {
       connections.length = 0;
-      disconnectSource();
+      releaseCapturedStream();
     },
-    ensure: connectCurrentTrack
+    ensure: connectCurrentTrack,
+    invalidate: invalidateCapture
   };
 
   CAPTURE_PROXIES.add(proxy);
+
+  // A media element keeps the same DOM node while LaunchPAD swaps its src.
+  // captureStream() does not reliably swap the captured MediaStreamTrack with
+  // it, so source transitions must invalidate the whole capture stream, not
+  // merely reconnect the existing MediaStreamAudioSourceNode.
+  audio.addEventListener('emptied', () => invalidateCapture('emptied'));
+  audio.addEventListener('loadstart', () => invalidateCapture('loadstart'));
   ['loadedmetadata', 'loadeddata', 'canplay', 'playing'].forEach(type => {
     audio.addEventListener(type, connectCurrentTrack);
   });
+
+  if (typeof MutationObserver === 'function') {
+    new MutationObserver(records => {
+      if (records.some(record => record.attributeName === 'src' || record.attributeName === 'data-track-id')) {
+        invalidateCapture('source-attribute');
+      }
+    }).observe(audio, { attributes: true, attributeFilter: ['src', 'data-track-id'] });
+  }
+
   return proxy;
 }
 
@@ -313,6 +414,7 @@ async function suspendContexts() {
     if (context.state === 'running') return context.suspend();
     return Promise.resolve();
   }));
+  markCapture('background-suspended');
   markSignal('background-suspended');
 }
 
@@ -342,5 +444,6 @@ export function initAudioLabSignalBridge({ audio }) {
   });
   document.querySelector('#view-lab')?.addEventListener('pointerdown', recover, { passive: true });
 
+  markCapture(captureMethod(audio) ? 'idle' : 'synthetic');
   markSignal('idle');
 }
