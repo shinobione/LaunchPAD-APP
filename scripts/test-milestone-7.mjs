@@ -70,31 +70,37 @@ for (const [name, expected] of Object.entries(protectedHashes)) {
 for (const binding of [
   "case 'liquid-chrome': drawLiquidChrome(ctx, width, height, data, accent, accent2); break;",
   'default: drawSpectrum(ctx, width, height, data, accent, accent2);'
-]) assert.ok(base.includes(binding), `Protected Audio Lab binding changed: ${binding}`);
+]) assert.ok(base.includes(binding), `Protected Audio Lab base binding changed: ${binding}`);
 
 const core = read('js/features/visual/visual-engine-core-modes.js');
 for (const required of [
   'export function drawAuroraGlassMode(',
   'export function drawNeonShatterAdaptiveMode(',
-  'const transient = clamp(Math.max(kick, peak))',
-  'const spectralIndex = Math.min(',
-  'const spectralRipple = Math.sin(',
-  'const spectralDeformation = (spectral - bandValue)',
-  'const fragments = mobile ? 20 : 52'
-]) assert.ok(core.includes(required), `Build 42 visual calibration is missing ${required}.`);
+  'export function drawLiquidChromeLiveMode(',
+  'export function drawSingularityLiveMode(',
+  'const radialDrive = .72 + value * .82',
+  'const spectralLift = (spectral - bandValue * .36)',
+  'const fragments = mobile ? 22 : 54',
+  'const baseRadius = .247',
+  'const outerReach = minSide * .37'
+]) assert.ok(core.includes(required), `Signal-first visual calibration is missing ${required}.`);
 
 const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
   "const DEFAULT_MODE = 'neon-shatter'",
   "{ id: 'spectrum', label: 'Spectrum' }",
+  "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeLiveMode }",
+  "{ id: 'singularity', label: 'Singularity', renderer: drawSingularityLiveMode }",
   'readAudioLabSpectrum(raw)',
   'readAudioLabAmplitude(waveform)',
   'createAmplitudeDynamicsTracker',
-  'shapeReactiveSpectrum(raw, shaped, features)',
+  'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)',
+  "dataset.audioLabRenderer = 'signal-first-v9'",
   "homeTitle.textContent = 'Neon Shatter'",
   'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60'
 ]) assert.ok(live.includes(required), `Live Audio Lab integration is missing ${required}.`);
 assert.ok(!live.includes("'bars'"), 'Legacy bars alias must not survive Spectrum restoration.');
+assert.ok(!live.includes('shapeReactiveSpectrum(raw, shaped, features)'), 'Custom effects must not use the old shaped-spectrum loop path.');
 
 const sanctuary = read('js/features/visual/audio-lab-sanctuary.js');
 for (const required of [
@@ -112,5 +118,5 @@ const worker = read('sw.js');
 assert.ok(worker.includes("'./js/features/visual/audio-lab-registry.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-sanctuary.js'"));
 
-const build = assertCurrentBuild('Milestone 7');
-console.log(`Milestone 7 Spectrum restoration, adaptive Neon, reactive Aurora and sanctuary hashes remain valid under Build ${build.number}.`);
+const build = assertCurrentBuild('Milestone 7/current release');
+console.log(`Milestone 7 registry, protected base renderers and signal-first FFT effects remain valid under Build ${build.number}.`);
