@@ -37,8 +37,9 @@ for (const forbidden of ['hex-reactor', 'drawHexReactor', 'hexPath']) assert.ok(
 const coreVisuals = read('js/features/visual/visual-engine-core-modes.js');
 for (const required of [
   'drawAuroraGlassMode(', 'drawNeonShatterAdaptiveMode(',
-  'const transient = clamp(Math.max(kick, peak))', 'const spectralIndex = Math.min(',
-  'const spectralRipple = Math.sin(', 'const fragments = mobile ? 20 : 52'
+  'const rawBass = bandAverage(', 'const beatDrive = clamp(',
+  'const spectralIndex = Math.min(', 'const spectralRipple = Math.sin(',
+  'const fragments = mobile ? 20 : 52'
 ]) assert.ok(coreVisuals.includes(required), `Audio Lab adaptive renderer is missing ${required}.`);
 assert.ok(!fs.existsSync('js/features/visual/visual-engine-hex-reactor.js'));
 
@@ -93,10 +94,10 @@ assert.ok(engine.includes('initPhase13({ audio });'));
 const worker = read('sw.js');
 for (const required of ["'./js/features/audio-lab-signal.js'","'./js/features/feature-13.js'","'./js/features/visual/audio-reactivity.js'","'./js/features/visual/visual-engine-v2.js'","'./js/features/visual/visual-engine-core-modes.js'","'./js/features/visual/visual-engine-live.js'","event.data?.type === 'GET_RELEASE'"]) assert.ok(worker.includes(required));
 
-const build = assertCurrentBuild('Phase 13 / Build 48');
-assert.equal(build.number, 48);
-assert.equal(build.release, 'audiolab-decoded-buffer-20260807');
+const build = assertCurrentBuild('Phase 13 / Build 49');
+assert.equal(build.number, 49);
+assert.equal(build.release, 'mobile-studio-reactivity-20260807');
 
 await import('./test-milestone-4.mjs');
 await import('./test-milestone-6.mjs');
-console.log('Phase 13 remains valid with decoded-buffer FFT metering and boosted live custom-mode reactivity under Build 48.');
+console.log('Phase 13 remains valid with decoded-buffer FFT metering and direct-band custom-mode reactivity under Build 49.');
