@@ -87,20 +87,24 @@ includesAll(icons, ["const SVG_NS = 'http://www.w3.org/2000/svg'", "svg.setAttri
 const badges = read('js/features/badge-hierarchy.js');
 includesAll(badges, ["STATUS_LABELS = new Set(['CLEAN', 'EXPLICIT', 'LYRICS', 'LYRICS SYNCED', 'VIDEO', 'UPCOMING', 'DRAFT'])", "if (admin && status === 'draft') statuses.push('DRAFT')", 'parentGenre', 'secondary.slice(0, 3)', 'secondary.length - 3', 'TECHNICAL_TAG.test(label)'], 'Milestone 8 badge hierarchy');
 
-// 9 — Final release wiring, admin tools and PWA shell.
+// 9 — Final release wiring, persistent admin tools and PWA shell.
 const engine = read('js/app-engine.js');
 includesAll(engine, ['initThemeScoping({ audio })', 'initDiscographyExperience({ audio })', 'initHomeEditorial()', 'initAudioLabSanctuary({ audio })', 'initSvgIconSystem()', 'initBadgeHierarchy()', "'css/admin-tools.css'"], 'Application boot');
 const admin = read('js/features/admin-access.js');
-includesAll(admin, ['resolveLrcMakerAccess', "new URLSearchParams(search).get('admin') === '1'", 'https://shinobione.github.io/lrc-maker/', "label: 'LRC Maker'"], 'Admin LRC Maker access');
+includesAll(admin, ['resolveLrcMakerAccess', 'return resolveAdminAccess({ search, storage, desktop });', 'https://shinobione.github.io/lrc-maker/', "label: 'LRC Maker'", 'storage, desktop: media.matches'], 'Persistent admin LRC Maker access');
+const adminStyles = read('css/admin-tools.css');
+includesAll(adminStyles, ['.top-actions .admin-tool-access', 'border-radius:999px', '.top-actions .lrc-maker-access', '--admin-tool-disc:#d76cff'], 'Admin tool pill styling');
+const pwaStyles = read('css/pwa.css');
+includesAll(pwaStyles, ['.track-manager-access,', '.lrc-maker-access{', 'text-decoration:none!important', 'background:#d76cff'], 'Admin tool CSS fallback');
 const worker = read('sw.js');
 includesAll(worker, ["'./js/features/theme-scope.js'", "'./js/features/visual/audio-lab-registry.js'", "'./js/features/visual/audio-lab-sanctuary.js'", "'./js/visual-card-export-guard.js'", "'./css/admin-tools.css'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification');
-assert.equal(build.number, 42);
-assert.equal(build.id, '20260807-audio-audiolab-admin-v42');
-assert.equal(build.cache, 'shinobi-launchpad-v42');
-assert.equal(build.revision, 'audio-buffer-audiolab-admin-1');
-assert.equal(build.display, '2026.08.07.42');
-assert.equal(build.release, 'audio-audiolab-admin-20260807');
+assert.equal(build.number, 43);
+assert.equal(build.id, '20260807-admin-tools-pwa-v43');
+assert.equal(build.cache, 'shinobi-launchpad-v43');
+assert.equal(build.revision, 'admin-tools-pwa-polish-1');
+assert.equal(build.display, '2026.08.07.43');
+assert.equal(build.release, 'admin-tools-pwa-polish-20260807');
 
-console.log('All nine LaunchPAD master-spec sections are regression-protected under Build 42.');
+console.log('All nine LaunchPAD master-spec sections are regression-protected under Build 43.');
