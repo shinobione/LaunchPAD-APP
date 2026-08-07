@@ -141,9 +141,6 @@ function patchAnalyser(analyser, audio) {
     markSignal(METER_STATE === 'running' ? 'mirror-silent' : METER_STATE || 'warming-mirror');
   };
 
-  // The analyser only feeds a zero-gain sink. The primary player never enters
-  // this AudioContext, so Web Audio cannot crackle or interrupt audible HTML5
-  // playback when the PWA is backgrounded or the analyser is suspended.
   const meteringOnlyConnect = (destination, ...args) => {
     if (destination === analyser.context?.destination) {
       if (!silentSink) {
@@ -195,7 +192,7 @@ function createMirrorSourceProxy(context, audio, nativeCreateMediaElementSource)
   document.body?.appendChild(mirror);
 
   function primarySource() {
-    return audio.currentSrc || audio.src || audio.getAttribute?.('src') || '';
+    return audio.src || audio.getAttribute?.('src') || audio.currentSrc || '';
   }
 
   function primaryIdentity() {
@@ -315,9 +312,11 @@ function createMirrorSourceProxy(context, audio, nativeCreateMediaElementSource)
     [MIRROR_PROXY_MARK]: true,
     context,
     connect(destination, ...args) {
-      if (!connections.some(item => item.destination === destination)) connections.push({ destination, args });
+      const known = connections.some(item => item.destination === destination);
+      const hadNode = Boolean(mirrorSource);
+      if (!known) connections.push({ destination, args });
       const node = ensureMirrorNode();
-      if (node) {
+      if (node && hadNode && !known) {
         try { node.connect(destination, ...args); } catch {}
       }
       if (wanted()) start('connect');
