@@ -80,7 +80,11 @@ assert.ok(deployWorkflow.includes("EXPECTED_ADMIN_VERSION: '5.6'"));
 assert.ok(deployWorkflow.includes("EXPECTED_PUBLIC_VERSION: '2.6'"));
 
 const build = read('js/build-config.js');
-assert.ok(build.includes("display: '2026.08.05.16'"));
-assert.ok(build.includes("release: 'audiolab-signal-recovery-20260805'"));
+for (const required of [
+  "id: '20260807-unified-v40'",
+  "cache: 'shinobi-launchpad-v40'",
+  "display: '2026.08.07.40'",
+  "release: 'unified-v40-20260807'"
+]) assert.ok(build.includes(required), `Feature 10 must be validated against current Build 40 metadata: ${required}.`);
 
-console.log('Feature 10 remains valid under public Worker v2.6 and Track Manager v5.6.');
+console.log('Feature 10 remains valid under public Worker v2.6, Track Manager v5.6 and Build 40.');
