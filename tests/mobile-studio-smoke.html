@@ -45,6 +45,7 @@
   </section>
   <div class="player-bar">Compact player</div>
   <nav class="mobile-nav">Mobile nav</nav>
+  <button id="track-lyrics-entry" data-track-detail-route="lyrics">Open lyrics</button>
   <audio id="audio" data-track-id="thick"></audio>
   <output id="result">MOBILE STUDIO PENDING</output>
 
@@ -88,6 +89,7 @@
       mergeRemoteTracks([{
         id:'thick',
         title:'THICK',
+        cover:'../assets/coal-to-diamond.jpeg',
         video:'https://example.test/thick.mp4',
         videoContentType:'video/mp4'
       }]);
@@ -102,10 +104,12 @@
       const panel = document.querySelector('.lyrics-track-panel');
       const toggle = document.querySelector('.lyrics-mobile-track-toggle');
       const canvas = document.querySelector('.lyrics-studio-canvas');
+      const canvasVideo = document.querySelector('.lyrics-studio-canvas-video');
       const readerShell = document.querySelector('.lyrics-reader-shell');
       const readerHead = document.querySelector('.lyrics-reader-head');
       const player = document.querySelector('.player-bar');
       const mobileNav = document.querySelector('.mobile-nav');
+      const trackLyricsEntry = document.querySelector('#track-lyrics-entry');
 
       if (!view.classList.contains('lyrics-studio-mode')) throw new Error('Studio route did not open.');
       if (!toggle || toggle.hidden) throw new Error('Mobile panel toggle is unavailable.');
@@ -113,9 +117,21 @@
       if (toggle.getAttribute('aria-expanded') !== 'false') throw new Error('Collapsed state is not announced.');
       if (getComputedStyle(readerHead).position !== 'sticky') throw new Error('Studio controls are not sticky.');
       if (getComputedStyle(player).visibility === 'hidden') throw new Error('Compact player is hidden in Studio.');
-      if (getComputedStyle(player).bottom !== '0px') throw new Error('Compact player is not docked to the safe bottom edge.');
-      if (getComputedStyle(mobileNav).visibility !== 'hidden') throw new Error('Mobile navigation remained visible in Studio.');
-      if (readerShell.getBoundingClientRect().height < 260) throw new Error('Lyrics do not receive enough mobile height.');
+      if (getComputedStyle(player).bottom !== '54px') throw new Error('Compact player is not docked above mobile navigation.');
+      if (getComputedStyle(mobileNav).visibility === 'hidden') throw new Error('Mobile navigation is hidden in Studio.');
+      if (readerShell.getBoundingClientRect().height < 220) throw new Error('Lyrics do not receive enough mobile height.');
+      if (!canvasVideo.autoplay || !canvasVideo.loop || !canvasVideo.muted || !canvasVideo.playsInline) throw new Error('Canvas mobile autoplay/loop flags are incomplete.');
+      if (canvasVideo.preload !== 'auto') throw new Error('Canvas is not preloading for mobile playback.');
+      if (!canvasVideo.hasAttribute('webkit-playsinline')) throw new Error('Canvas lacks the WebKit inline playback hint.');
+
+      history.replaceState(null,'','#track=thick');
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+      await frame();
+      trackLyricsEntry.click();
+      await frame();
+      await frame();
+      if (window.location.hash !== '#studio=thick') throw new Error('Track Lyrics action did not route directly to Studio on mobile.');
+      if (!view.classList.contains('lyrics-studio-mode')) throw new Error('Direct track Lyrics action did not reopen Studio.');
 
       toggle.click();
       await frame();
@@ -140,7 +156,7 @@
       if (panel.scrollTop > 1) throw new Error('Reopened panel preserved stale scroll.');
       if (canvas.getBoundingClientRect().height < 120) throw new Error('Canvas disappeared after reopening.');
 
-      finish('MOBILE STUDIO READY COLLAPSIBLE STICKY SAFE PLAYER PORTRAIT LANDSCAPE');
+      finish('MOBILE STUDIO READY NAV ROUTE CANVAS LOOP COLLAPSIBLE STICKY SAFE PLAYER PORTRAIT LANDSCAPE');
     } catch (error) {
       finish(`MOBILE STUDIO ERROR ${error.message}`);
     }

@@ -25,19 +25,33 @@ function bandAverage(data, start, end) {
   return total / Math.max(1, to - from) / 255;
 }
 
+function featureValue(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
 function audioBands(data, features = {}) {
+  const rawBass = bandAverage(data, 0, data.length * .16);
+  const rawMiddle = bandAverage(data, data.length * .16, data.length * .58);
+  const rawHigh = bandAverage(data, data.length * .58, data.length);
+  const rawEnergy = bandAverage(data, 0, data.length);
+  const bass = clamp(Math.max(rawBass * 1.55, featureValue(features.bass)));
+  const middle = clamp(Math.max(rawMiddle * 1.38, featureValue(features.mid)));
+  const high = clamp(Math.max(rawHigh * 1.48, featureValue(features.high)));
+  const energy = clamp(Math.max(rawEnergy * 1.42, featureValue(features.energy)));
+
   return {
-    bass: features.bass ?? bandAverage(data, 0, data.length * .16),
-    middle: features.mid ?? bandAverage(data, data.length * .16, data.length * .58),
-    high: features.high ?? bandAverage(data, data.length * .58, data.length),
-    energy: features.energy ?? bandAverage(data, 0, data.length),
-    kick: features.kick ?? 0,
-    presence: features.presence ?? 0,
-    sparkle: features.sparkle ?? 0,
-    intensity: features.intensity ?? 0,
-    rms: features.rms ?? features.energy ?? 0,
-    peak: features.peak ?? features.kick ?? 0,
-    dynamics: features.dynamics ?? features.intensity ?? features.energy ?? 0
+    bass,
+    middle,
+    high,
+    energy,
+    kick: clamp(featureValue(features.kick)),
+    presence: clamp(Math.max(featureValue(features.presence), middle * .72 + high * .28)),
+    sparkle: clamp(Math.max(featureValue(features.sparkle), high * .92)),
+    intensity: clamp(Math.max(featureValue(features.intensity), energy * .72 + bass * .38)),
+    rms: clamp(Math.max(featureValue(features.rms), rawEnergy * 1.2)),
+    peak: clamp(Math.max(featureValue(features.peak), rawBass * 1.18, rawHigh * .92)),
+    dynamics: clamp(Math.max(featureValue(features.dynamics), Math.abs(rawBass - rawMiddle) * 1.7))
   };
 }
 
@@ -60,7 +74,8 @@ export function drawNeonShatterAdaptiveMode(context, width, height, data, accent
   const minSide = Math.min(width, height);
   const fragments = mobile ? 20 : 52;
   const cracks = mobile ? 9 : 16;
-  const burst = .3 + bass * .62 + kick * .58 + peak * .18;
+  const beatDrive = clamp(bass * .82 + kick * 1.35 + peak * .55 + dynamics * .45);
+  const burst = .22 + beatDrive * 1.38 + middle * .18;
 
   context.save();
   context.translate(cx, cy);
@@ -69,16 +84,16 @@ export function drawNeonShatterAdaptiveMode(context, width, height, data, accent
     const depth = .36 + seeded(index, 31) * 1.02;
     const value = data[index % data.length] / 255;
     const angle = seeded(index, 7) * Math.PI * 2
-      + time * (seeded(index, 32) - .5) * (.13 + energy * .2 + dynamics * .08)
-      + Math.sin(time * (.46 + high * .2) + index) * (.08 + kick * .06);
-    const distance = minSide * (.07 + seeded(index, 8) * .43 * burst) * depth;
+      + time * (seeded(index, 32) - .5) * (.12 + energy * .32 + dynamics * .22)
+      + Math.sin(time * (.5 + high * .42) + index) * (.07 + beatDrive * .14);
+    const distance = minSide * (.045 + seeded(index, 8) * .42 * burst) * depth;
     const perspective = .64 + depth * .48;
-    const size = minSide * (.015 + seeded(index, 10) * .038)
-      * (1 + value * .55 + kick * .24 + peak * .1)
+    const size = minSide * (.014 + seeded(index, 10) * .038)
+      * (1 + value * .62 + beatDrive * .68 + high * .16)
       * perspective;
-    const x = Math.cos(angle) * distance + Math.sin(time * .7 + index) * minSide * .012 * depth;
-    const y = Math.sin(angle) * distance * (.73 + depth * .2) + Math.cos(time * .58 + index * .7) * minSide * .011 * depth;
-    const spin = time * (index % 2 ? -.28 : .34) * (1.18 - depth * .2) + seeded(index, 9) * Math.PI;
+    const x = Math.cos(angle) * distance + Math.sin(time * .78 + index) * minSide * (.008 + beatDrive * .018) * depth;
+    const y = Math.sin(angle) * distance * (.73 + depth * .2) + Math.cos(time * .66 + index * .7) * minSide * (.008 + beatDrive * .016) * depth;
+    const spin = time * (index % 2 ? -.3 : .36) * (1.18 - depth * .2 + beatDrive * .35) + seeded(index, 9) * Math.PI;
 
     context.save();
     context.translate(x, y);
@@ -89,22 +104,24 @@ export function drawNeonShatterAdaptiveMode(context, width, height, data, accent
     context.lineTo(size, 0);
     context.lineTo(-size * .25, -size);
     context.closePath();
-    context.fillStyle = colorWithAlpha(index % 2 ? accent2 : accent, .055 + value * .2 + dynamics * .075);
-    context.strokeStyle = colorWithAlpha(index % 2 ? accent : accent2, .28 + value * .5 + kick * .15);
-    context.lineWidth = .6 + value * 1.5 + high * .42;
+    context.fillStyle = colorWithAlpha(index % 2 ? accent2 : accent, .045 + value * .22 + dynamics * .09 + beatDrive * .1);
+    context.strokeStyle = colorWithAlpha(index % 2 ? accent : accent2, .24 + value * .5 + beatDrive * .34);
+    context.lineWidth = .55 + value * 1.5 + high * .5 + beatDrive * .65;
     context.shadowColor = index % 2 ? accent2 : accent;
-    context.shadowBlur = mobile ? 2.5 + value * 6 + kick * 3 : 7 + value * 17 + kick * 8;
+    context.shadowBlur = mobile
+      ? 2.5 + value * 6 + beatDrive * 6
+      : 7 + value * 17 + beatDrive * 18;
     context.fill();
     context.stroke();
     context.restore();
   }
   context.restore();
 
-  const coreRadius = minSide * (.17 + bass * .05 + kick * .032);
+  const coreRadius = minSide * (.135 + bass * .045 + beatDrive * .095);
   const core = context.createRadialGradient(cx, cy, 0, cx, cy, coreRadius);
-  core.addColorStop(0, colorWithAlpha('#ffffff', .72 + high * .2));
-  core.addColorStop(.14, colorWithAlpha(accent, .54 + kick * .18));
-  core.addColorStop(.46, colorWithAlpha(accent2, .16 + middle * .23));
+  core.addColorStop(0, colorWithAlpha('#ffffff', .68 + high * .2 + beatDrive * .12));
+  core.addColorStop(.14, colorWithAlpha(accent, .5 + beatDrive * .34));
+  core.addColorStop(.46, colorWithAlpha(accent2, .13 + middle * .23 + beatDrive * .16));
   core.addColorStop(1, 'rgba(0,0,0,0)');
   context.fillStyle = core;
   context.beginPath();
@@ -112,30 +129,42 @@ export function drawNeonShatterAdaptiveMode(context, width, height, data, accent
   context.fill();
 
   for (let index = 0; index < cracks; index += 1) {
-    const angle = index / cracks * Math.PI * 2 + time * (.04 + energy * .055);
-    const length = minSide * (.19 + seeded(index, 12) * .31 + bass * .075 + kick * .085);
-    context.strokeStyle = colorWithAlpha(index % 2 ? accent2 : accent, .22 + high * .5 + peak * .16);
-    context.lineWidth = .65 + high * 1.7 + kick * .72;
+    const angle = index / cracks * Math.PI * 2 + time * (.035 + energy * .07 + beatDrive * .06);
+    const length = minSide * (.15 + seeded(index, 12) * .29 + bass * .07 + beatDrive * .18);
+    context.strokeStyle = colorWithAlpha(index % 2 ? accent2 : accent, .18 + high * .45 + peak * .14 + beatDrive * .28);
+    context.lineWidth = .55 + high * 1.6 + beatDrive * 1.25;
     context.beginPath();
-    context.moveTo(cx + Math.cos(angle) * minSide * .07, cy + Math.sin(angle) * minSide * .07);
+    context.moveTo(cx + Math.cos(angle) * minSide * (.055 + beatDrive * .02), cy + Math.sin(angle) * minSide * (.055 + beatDrive * .02));
     context.lineTo(cx + Math.cos(angle + .08) * length, cy + Math.sin(angle + .08) * length);
     context.stroke();
+  }
+
+  if (beatDrive > .08) {
+    context.save();
+    context.globalCompositeOperation = 'lighter';
+    context.strokeStyle = colorWithAlpha('#ffffff', beatDrive * .22);
+    context.lineWidth = 1 + beatDrive * 2.2;
+    context.beginPath();
+    context.arc(cx, cy, coreRadius * (1.18 + beatDrive * .5), 0, Math.PI * 2);
+    context.stroke();
+    context.restore();
   }
 }
 
 export function drawAuroraGlassMode(context, width, height, data, accent, accent2, time, features) {
   const { bass, middle, high, energy, kick, presence, sparkle, rms, peak, dynamics } = audioBands(data, features);
   const transient = clamp(Math.max(kick, peak));
+  const beatDrive = clamp(bass * .8 + kick * 1.25 + peak * .58 + dynamics * .55);
   const ribbons = width < 600 ? 5 : 6;
-  const expansion = .34 + bass * .86 + middle * .54 + high * .28 + dynamics * .62 + transient * .68;
-  const motionRate = .16 + bass * .58 + middle * .48 + high * .38 + dynamics * .78 + transient * 1.05;
-  const horizon = height * (.5 + Math.sin(time * (.045 + dynamics * .085 + transient * .06)) * (.008 + dynamics * .026 + transient * .012));
-  const separation = height * (.024 + middle * .022 + dynamics * .038 + transient * .012);
+  const expansion = .25 + bass * .72 + middle * .48 + high * .24 + dynamics * .48 + beatDrive * 1.05;
+  const motionRate = .14 + bass * .52 + middle * .42 + high * .34 + dynamics * .62 + beatDrive * 1.18;
+  const horizon = height * (.5 + Math.sin(time * (.05 + dynamics * .1 + beatDrive * .11)) * (.008 + beatDrive * .036));
+  const separation = height * (.018 + middle * .02 + dynamics * .025 + beatDrive * .068);
 
   const ambient = context.createLinearGradient(0, 0, 0, height);
-  ambient.addColorStop(0, colorWithAlpha(accent2, .02 + high * .08 + sparkle * .045));
-  ambient.addColorStop(.45, colorWithAlpha(accent, .045 + middle * .13 + rms * .14 + transient * .05));
-  ambient.addColorStop(.78, colorWithAlpha(accent2, .015 + bass * .065 + kick * .035));
+  ambient.addColorStop(0, colorWithAlpha(accent2, .018 + high * .08 + sparkle * .045 + beatDrive * .045));
+  ambient.addColorStop(.45, colorWithAlpha(accent, .035 + middle * .12 + rms * .12 + beatDrive * .12));
+  ambient.addColorStop(.78, colorWithAlpha(accent2, .014 + bass * .065 + beatDrive * .07));
   ambient.addColorStop(1, 'rgba(0,0,0,0)');
   context.fillStyle = ambient;
   context.fillRect(0, 0, width, height);
@@ -151,18 +180,18 @@ export function drawAuroraGlassMode(context, width, height, data, accent, accent
     const bandSpeed = band === 0 ? .3 : band === 1 ? .43 : .58;
     const speed = direction * bandSpeed * motionRate;
     const offset = (ribbon - (ribbons - 1) / 2) * separation;
-    const baseAmplitude = band === 0 ? .038 : band === 1 ? .031 : .023;
+    const baseAmplitude = band === 0 ? .032 : band === 1 ? .028 : .021;
     const bandDrive = band === 0
-      ? bass * .15 + kick * .1 + transient * .055
+      ? bass * .15 + kick * .12 + beatDrive * .11
       : band === 1
-        ? middle * .12 + presence * .055 + transient * .035
-        : high * .095 + sparkle * .055 + transient * .045;
-    const amplitude = height * (baseAmplitude + bandDrive * expansion + dynamics * .026);
+        ? middle * .12 + presence * .055 + beatDrive * .075
+        : high * .095 + sparkle * .055 + beatDrive * .085;
+    const amplitude = height * (baseAmplitude + bandDrive * expansion + dynamics * .018 + beatDrive * .055);
     const thickness = height * (
-      .008
-      + bandValue * (band === 0 ? .038 : .029)
-      + dynamics * .013
-      + transient * .009
+      .0065
+      + bandValue * (band === 0 ? .034 : .027)
+      + dynamics * .01
+      + beatDrive * .018
       + (ribbon % 2) * .0018
     );
     const points = width < 600 ? 42 : 58;
@@ -172,7 +201,7 @@ export function drawAuroraGlassMode(context, width, height, data, accent, accent
         data.length - 1,
         Math.max(0, Math.floor(sampleStart + (sampleEnd - sampleStart) * progress))
       );
-      const spectral = Math.pow((data[spectralIndex] || 0) / 255, 1.08);
+      const spectral = Math.pow((data[spectralIndex] || 0) / 255, 1.04);
       const primary = Math.sin(
         progress * Math.PI * (1.7 + band * .76 + ribbon * .08)
         + time * speed
@@ -182,17 +211,17 @@ export function drawAuroraGlassMode(context, width, height, data, accent, accent
         progress * Math.PI * (4.4 + band * 1.7)
         - time * speed * (band === 2 ? 1.72 : .8)
         + ribbon * .41
-      ) * (.11 + bandValue * .34 + dynamics * .18);
+      ) * (.11 + bandValue * .34 + dynamics * .15 + beatDrive * .18);
       const spectralRipple = Math.sin(
         progress * Math.PI * (9.2 + band * 3.4 + ribbon * .3)
-        + time * speed * (2.1 + transient * 2.7)
+        + time * speed * (2.1 + beatDrive * 3.2)
         + ribbon
-      ) * spectral * (.2 + dynamics * .22 + transient * .34);
-      const spectralDeformation = (spectral - bandValue) * (.28 + dynamics * .32 + transient * .18);
+      ) * spectral * (.2 + dynamics * .18 + beatDrive * .5);
+      const spectralDeformation = (spectral - bandValue) * (.28 + dynamics * .28 + beatDrive * .34);
       const peakRipple = Math.sin(
         progress * Math.PI * (7.5 + ribbon * .28)
-        + time * (1.15 + transient * 2.1) * direction
-      ) * transient * (band === 2 ? .24 : .14);
+        + time * (1.15 + beatDrive * 2.7) * direction
+      ) * beatDrive * (band === 2 ? .3 : .18);
       return primary + secondary + spectralRipple + spectralDeformation + peakRipple;
     };
 
@@ -214,21 +243,21 @@ export function drawAuroraGlassMode(context, width, height, data, accent, accent
     const colorA = band === 0 ? accent : band === 1 ? accent2 : '#ffffff';
     const colorB = band === 0 ? accent2 : band === 1 ? accent : accent2;
     const gradient = context.createLinearGradient(0, horizon - amplitude, width, horizon + amplitude);
-    gradient.addColorStop(0, colorWithAlpha(colorA, .012 + dynamics * .018));
-    gradient.addColorStop(.24, colorWithAlpha(colorB, .085 + bandValue * .2 + rms * .14 + transient * .06));
-    gradient.addColorStop(.5, colorWithAlpha('#ffffff', .03 + high * .14 + transient * .13));
-    gradient.addColorStop(.77, colorWithAlpha(colorA, .075 + bandValue * .2 + dynamics * .09));
+    gradient.addColorStop(0, colorWithAlpha(colorA, .01 + dynamics * .016 + beatDrive * .03));
+    gradient.addColorStop(.24, colorWithAlpha(colorB, .07 + bandValue * .2 + rms * .12 + beatDrive * .2));
+    gradient.addColorStop(.5, colorWithAlpha('#ffffff', .025 + high * .12 + beatDrive * .22));
+    gradient.addColorStop(.77, colorWithAlpha(colorA, .065 + bandValue * .2 + dynamics * .07 + beatDrive * .16));
     gradient.addColorStop(1, 'rgba(0,0,0,0)');
     context.fillStyle = gradient;
     context.shadowColor = colorB;
-    context.shadowBlur = 4 + bandValue * 10 + dynamics * 7 + transient * 8;
+    context.shadowBlur = 3 + bandValue * 9 + dynamics * 6 + beatDrive * 15;
     context.fill();
   }
 
-  if (transient > .045) {
+  if (beatDrive > .035) {
     const attackGlow = context.createLinearGradient(0, horizon - height * .2, 0, horizon + height * .2);
     attackGlow.addColorStop(0, 'rgba(0,0,0,0)');
-    attackGlow.addColorStop(.5, colorWithAlpha('#ffffff', transient * .16 + kick * .07));
+    attackGlow.addColorStop(.5, colorWithAlpha('#ffffff', beatDrive * .23 + kick * .08));
     attackGlow.addColorStop(1, 'rgba(0,0,0,0)');
     context.fillStyle = attackGlow;
     context.fillRect(0, horizon - height * .22, width, height * .44);
