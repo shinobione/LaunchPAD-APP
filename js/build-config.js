@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260807-audiolab-mirror-meter-v47',
-    cache: 'shinobi-launchpad-v47',
-    revision: 'audiolab-mirror-meter-1',
-    display: '2026.08.07.47',
-    release: 'audiolab-mirror-meter-20260807'
+    id: '20260807-audiolab-decoded-buffer-v48',
+    cache: 'shinobi-launchpad-v48',
+    revision: 'audiolab-decoded-buffer-1',
+    display: '2026.08.07.48',
+    release: 'audiolab-decoded-buffer-20260807'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;

@@ -73,18 +73,20 @@ for (const [name, expected] of Object.entries(protectedHashes)) {
 
 const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
-  'function createMirrorSourceProxy(context, audio, nativeCreateMediaElementSource)',
-  "mirror.dataset.audioLabMirror = 'true'",
-  'nativeCreateMediaElementSource.call(context, mirror)',
-  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-mirror-metering'",
+  'function createDecodedSourceProxy(context, audio)',
+  'context.decodeAudioData(bytes.slice(0))',
+  'context.createBufferSource()',
+  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-decoded-buffer-metering'",
   "audio.dataset.audioPlaybackPath = 'html5-direct'",
+  "audio.dataset.audioAnalysisPath = 'decoded-buffer'",
   "window.addEventListener('shinobi:route-change'",
   "document.addEventListener('pointerdown'",
   'async function suspendContexts()',
   'export function readAudioLabAmplitude('
-]) assert.ok(signal.includes(required), `Audio mirror isolation layer is missing ${required}.`);
+]) assert.ok(signal.includes(required), `Decoded-buffer isolation layer is missing ${required}.`);
 assert.ok(!signal.includes('captureStream('));
 assert.ok(!signal.includes('createMediaStreamSource('));
+assert.ok(!signal.includes('createMirrorSourceProxy'));
 
 const worker = read('sw.js');
 assert.ok(worker.includes("'./js/features/visual/audio-reactivity.js'"));
@@ -92,7 +94,7 @@ assert.ok(worker.includes("'./js/features/visual/audio-lab-registry.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-sanctuary.js'"));
 assert.ok(!worker.includes('visual-engine-hex-reactor.js'));
 
-const build = assertCurrentBuild('Audio Lab Build 47');
-assert.equal(build.number, 47);
-assert.equal(build.release, 'audiolab-mirror-meter-20260807');
-console.log('Audio Lab keeps protected renderers while Build 47 uses isolated mirror metering and boosted custom-mode reactivity.');
+const build = assertCurrentBuild('Audio Lab Build 48');
+assert.equal(build.number, 48);
+assert.equal(build.release, 'audiolab-decoded-buffer-20260807');
+console.log('Audio Lab keeps protected renderers while Build 48 uses isolated decoded-buffer metering and boosted custom-mode reactivity.');

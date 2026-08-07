@@ -42,11 +42,19 @@ for (const required of ['drawNeonShatterAdaptiveMode','const fragments = mobile 
 }
 
 const signal = read('js/features/audio-lab-signal.js');
-for (const required of ['createMirrorSourceProxy','nativeCreateMediaElementSource.call(context, mirror)',"dataset.audioGraph = 'html5-direct-plus-mirror-metering'","markMeter('running')"]) {
-  assert.ok(signal.includes(required), `Mirror meter is missing ${required}.`);
+for (const required of [
+  'createDecodedSourceProxy',
+  'fetch(source, {',
+  'context.decodeAudioData(bytes.slice(0))',
+  'context.createBufferSource()',
+  "dataset.audioGraph = 'html5-direct-plus-decoded-buffer-metering'",
+  "markMeter('running')"
+]) {
+  assert.ok(signal.includes(required), `Decoded meter is missing ${required}.`);
 }
 assert.ok(!signal.includes('captureStream('));
+assert.ok(!signal.includes('createMirrorSourceProxy'));
 
 const bridge = read('js/features/visual/visual-engine.js').trim();
 assert.equal(bridge, "export { createVisualController } from './visual-engine-live.js';");
-console.log('Audio Lab uses real mirror FFT data with stronger Neon Shatter and Aurora Glass response under Build 47.');
+console.log('Audio Lab uses real decoded-buffer FFT data with stronger Neon Shatter and Aurora Glass response under Build 48.');

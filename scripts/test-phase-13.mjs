@@ -64,15 +64,17 @@ for (const required of ['createAudioReactivityTracker','createAmplitudeDynamicsT
 const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
   'initAudioLabSignalBridge', 'readAudioLabSpectrum', 'readAudioLabAmplitude',
-  'createMirrorSourceProxy', "mirror.dataset.audioLabMirror = 'true'",
-  'nativeCreateMediaElementSource.call(context, mirror)',
-  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-mirror-metering'",
+  'createDecodedSourceProxy', 'context.decodeAudioData(bytes.slice(0))',
+  'context.createBufferSource()',
+  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-decoded-buffer-metering'",
   "audio.dataset.audioPlaybackPath = 'html5-direct'",
+  "audio.dataset.audioAnalysisPath = 'decoded-buffer'",
   "audio.addEventListener('playing', recover)", "window.addEventListener('shinobi:route-change'",
   'async function suspendContexts()', "document.documentElement.dataset.audioLabSignal"
 ]) assert.ok(signal.includes(required), `Audio Lab signal recovery is missing ${required}.`);
 assert.ok(!signal.includes('captureStream('));
 assert.ok(!signal.includes('createMediaStreamSource('));
+assert.ok(!signal.includes('data.audioLabMirror'));
 
 const bridge = read('js/features/visual/visual-engine.js');
 assert.equal(bridge.trim(), "export { createVisualController } from './visual-engine-live.js';");
@@ -91,10 +93,10 @@ assert.ok(engine.includes('initPhase13({ audio });'));
 const worker = read('sw.js');
 for (const required of ["'./js/features/audio-lab-signal.js'","'./js/features/feature-13.js'","'./js/features/visual/audio-reactivity.js'","'./js/features/visual/visual-engine-v2.js'","'./js/features/visual/visual-engine-core-modes.js'","'./js/features/visual/visual-engine-live.js'","event.data?.type === 'GET_RELEASE'"]) assert.ok(worker.includes(required));
 
-const build = assertCurrentBuild('Phase 13 / Build 47');
-assert.equal(build.number, 47);
-assert.equal(build.release, 'audiolab-mirror-meter-20260807');
+const build = assertCurrentBuild('Phase 13 / Build 48');
+assert.equal(build.number, 48);
+assert.equal(build.release, 'audiolab-decoded-buffer-20260807');
 
 await import('./test-milestone-4.mjs');
 await import('./test-milestone-6.mjs');
-console.log('Phase 13 remains valid with isolated mirror FFT metering and boosted live custom-mode reactivity under Build 47.');
+console.log('Phase 13 remains valid with decoded-buffer FFT metering and boosted live custom-mode reactivity under Build 48.');
