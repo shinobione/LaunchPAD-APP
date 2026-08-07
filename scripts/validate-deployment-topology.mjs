@@ -12,8 +12,8 @@ const pages = read(pagesWorkflow);
 for (const required of [
   'branches:\n      - main',
   'actions/checkout@v4',
-  'node scripts/build-cloudflare-pages.mjs',
-  'node scripts/validate-cloudflare-pages-build.mjs',
+  'npm run build:web',
+  'npm run check:web-build',
   'cmp js/build-config.js dist/cloudflare-pages/js/build-config.js',
   'actions/upload-pages-artifact@v4',
   'actions/deploy-pages@v4'
@@ -21,6 +21,11 @@ for (const required of [
 assert.ok(!/ref:\s*gh-pages/.test(pages), 'GitHub Pages must never deploy application source from gh-pages.');
 assert.ok(!pages.includes("display: '2026."), 'GitHub Pages workflow must derive release metadata from build-config instead of pinning a build number.');
 assert.ok(!pages.includes("release: 'unified-"), 'GitHub Pages workflow must not pin a release string.');
+
+const packageJson = JSON.parse(read('package.json'));
+assert.equal(packageJson.scripts['build:web'], 'node scripts/build-cloudflare-pages.mjs', 'Host-neutral web build command must wrap the compatibility builder.');
+assert.equal(packageJson.scripts['check:web-build'], 'node scripts/validate-cloudflare-pages-build.mjs', 'Host-neutral web validation command must wrap the compatibility validator.');
+assert.ok(packageJson.scripts.validate.includes('check:deployment-topology'), 'Full validation must guard deployment topology.');
 
 const builder = read('scripts/build-cloudflare-pages.mjs');
 for (const required of [
