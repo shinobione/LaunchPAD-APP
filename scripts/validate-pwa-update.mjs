@@ -46,18 +46,15 @@ if (!worker.includes("request.destination === 'video'")) fail('Service worker do
 
 const build = read('js/build-config.js');
 for (const required of [
-  "id: '20260805-audiolab-signal'",
-  "cache: 'shinobi-launchpad-v16'",
-  "revision: 'audiolab-signal-recovery-1'",
-  "display: '2026.08.05.16'",
-  "release: 'audiolab-signal-recovery-20260805'",
-  "id: '20260806-pwa-single-update'",
-  "cache: 'shinobi-launchpad-v28'",
-  "revision: 'pwa-single-update-1'",
-  "display: '2026.08.06.28'",
-  "release: 'pwa-single-update-20260806'"
+  "id: '20260807-unified-v40'",
+  "cache: 'shinobi-launchpad-v40'",
+  "revision: 'cloudflare-main-reconciliation-1'",
+  "display: '2026.08.07.40'",
+  "release: 'unified-v40-20260807'",
+  'const initialStylesheets = new WeakSet',
+  'if (initialStylesheets.has(link)) return link;'
 ]) {
-  if (!build.includes(required)) fail(`Build metadata is missing ${required}.`);
+  if (!build.includes(required)) fail(`Build 40 metadata/bootstrap is missing ${required}.`);
 }
 for (const required of ['installAppIconLinks',"assets/app-icon-neon.svg","assets/app-icon-neon-192.png","link[rel=\"alternate icon\"]","link[rel=\"manifest\"]"]) {
   if (!build.includes(required)) fail(`Cache-busting app icon wiring is missing ${required}.`);
@@ -96,4 +93,4 @@ if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RE
   fail('Browser regression coverage for the deduped PWA update prompt is not wired into CI.');
 }
 
-console.log('PWA updates use one verified waiting worker, one prompt and one reload while the offline shell remains valid.');
+console.log('PWA updates use one verified waiting worker, one prompt and one reload while Build 40 offline shell remains valid.');

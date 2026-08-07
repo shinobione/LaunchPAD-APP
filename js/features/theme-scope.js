@@ -21,55 +21,84 @@ function playingTrack(audio) {
   return getTrack(audio?.dataset?.trackId || '') || null;
 }
 
-function setPalette(target, track, attribute) {
-  if (!target || !track) return false;
-  const [accent, accent2] = getTrackPalette(track);
-  target.style.setProperty('--accent', accent);
-  target.style.setProperty('--accent2', accent2);
-  target.style.setProperty('--page-accent', accent);
-  target.style.setProperty('--page-accent2', accent2);
-  if (attribute) target.dataset[attribute] = track.id;
+function setStyleIfChanged(target, property, value) {
+  if (!target || target.style.getPropertyValue(property) === value) return false;
+  target.style.setProperty(property, value);
   return true;
 }
 
+function setDataIfChanged(target, attribute, value) {
+  if (!target || !attribute) return false;
+  if (target.dataset[attribute] === value) return false;
+  target.dataset[attribute] = value;
+  return true;
+}
+
+function setPalette(target, track, attribute) {
+  if (!target || !track) return false;
+  const [accent, accent2] = getTrackPalette(track);
+  let changed = false;
+  changed = setStyleIfChanged(target, '--accent', accent) || changed;
+  changed = setStyleIfChanged(target, '--accent2', accent2) || changed;
+  changed = setStyleIfChanged(target, '--page-accent', accent) || changed;
+  changed = setStyleIfChanged(target, '--page-accent2', accent2) || changed;
+  if (attribute) changed = setDataIfChanged(target, attribute, track.id) || changed;
+  return changed;
+}
+
 function clearPlayerScope(target) {
-  target.style.removeProperty('--accent');
-  target.style.removeProperty('--accent2');
-  target.style.removeProperty('--player-accent');
-  target.style.removeProperty('--player-accent2');
-  delete target.dataset.playerTrackTheme;
+  let changed = false;
+  for (const property of ['--accent', '--accent2', '--player-accent', '--player-accent2']) {
+    if (target.style.getPropertyValue(property)) {
+      target.style.removeProperty(property);
+      changed = true;
+    }
+  }
+  if (target.dataset.playerTrackTheme !== undefined) {
+    delete target.dataset.playerTrackTheme;
+    changed = true;
+  }
+  return changed;
 }
 
 function applyPlayerPalette(track) {
   const nodes = [...document.querySelectorAll(PLAYER_SCOPE_SELECTOR)];
+  let changed = false;
   if (!track) {
-    nodes.forEach(clearPlayerScope);
-    return;
+    nodes.forEach(node => { changed = clearPlayerScope(node) || changed; });
+    return changed;
   }
   const [accent, accent2] = getTrackPalette(track);
   nodes.forEach(node => {
-    node.style.setProperty('--accent', accent);
-    node.style.setProperty('--accent2', accent2);
-    node.style.setProperty('--player-accent', accent);
-    node.style.setProperty('--player-accent2', accent2);
-    node.dataset.playerTrackTheme = track.id;
+    changed = setStyleIfChanged(node, '--accent', accent) || changed;
+    changed = setStyleIfChanged(node, '--accent2', accent2) || changed;
+    changed = setStyleIfChanged(node, '--player-accent', accent) || changed;
+    changed = setStyleIfChanged(node, '--player-accent2', accent2) || changed;
+    changed = setDataIfChanged(node, 'playerTrackTheme', track.id) || changed;
   });
+  return changed;
 }
 
 function applyPagePalette(viewedTrack, fallbackTrack) {
   const pageTrack = viewedTrack || fallbackTrack;
-  if (!pageTrack) return;
-  setPalette(document.documentElement, pageTrack, 'pageTrackTheme');
+  if (!pageTrack) return false;
+  let changed = false;
+  changed = setPalette(document.documentElement, pageTrack, 'pageTrackTheme') || changed;
   const app = document.querySelector('.app-shell');
-  if (app) setPalette(app, pageTrack, 'pageTrackTheme');
+  if (app) changed = setPalette(app, pageTrack, 'pageTrackTheme') || changed;
 
   const detail = document.querySelector('#view-track');
   if (viewedTrack && detail?.classList.contains('active')) {
-    setPalette(detail, viewedTrack, 'localTrackTheme');
-    document.body.dataset.viewedTrackTheme = viewedTrack.id;
-  } else {
+    changed = setPalette(detail, viewedTrack, 'localTrackTheme') || changed;
+    if (document.body.dataset.viewedTrackTheme !== viewedTrack.id) {
+      document.body.dataset.viewedTrackTheme = viewedTrack.id;
+      changed = true;
+    }
+  } else if (document.body.dataset.viewedTrackTheme !== undefined) {
     delete document.body.dataset.viewedTrackTheme;
+    changed = true;
   }
+  return changed;
 }
 
 export function initThemeScoping({ audio = document.querySelector('#audio') } = {}) {
@@ -77,6 +106,7 @@ export function initThemeScoping({ audio = document.querySelector('#audio') } = 
   window.__shinobiThemeScopingReady = true;
 
   let scheduled = false;
+  let lastSignature = '';
   const synchronize = () => {
     if (scheduled) return;
     scheduled = true;
@@ -84,14 +114,22 @@ export function initThemeScoping({ audio = document.querySelector('#audio') } = 
       scheduled = false;
       const played = playingTrack(audio);
       const viewed = trackFromRoute();
-      applyPagePalette(viewed, played);
-      applyPlayerPalette(played);
-      document.documentElement.dataset.themeScope = viewed && played && viewed.id !== played.id
-        ? 'split'
-        : 'unified';
-      window.dispatchEvent(new CustomEvent('shinobi:theme-scope', {
-        detail: { viewedTrackId: viewed?.id || null, playingTrackId: played?.id || null }
-      }));
+      const signature = `${viewed?.id || ''}|${played?.id || ''}`;
+      let changed = false;
+      changed = applyPagePalette(viewed, played) || changed;
+      changed = applyPlayerPalette(played) || changed;
+      const scope = viewed && played && viewed.id !== played.id ? 'split' : 'unified';
+      if (document.documentElement.dataset.themeScope !== scope) {
+        document.documentElement.dataset.themeScope = scope;
+        changed = true;
+      }
+
+      if (changed || signature !== lastSignature) {
+        lastSignature = signature;
+        window.dispatchEvent(new CustomEvent('shinobi:theme-scope', {
+          detail: { viewedTrackId: viewed?.id || null, playingTrackId: played?.id || null }
+        }));
+      }
     });
   };
 

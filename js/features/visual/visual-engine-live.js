@@ -13,6 +13,7 @@ const CUSTOM_MODES = [
 ];
 const CUSTOM_RENDERERS = new Map(CUSTOM_MODES.map(mode => [mode.id, mode.renderer]));
 const CUSTOM_MODE_IDS = CUSTOM_MODES.map(mode => mode.id);
+const LIVE_FRAME_INTERVAL = 1000 / 30;
 
 function prepareCanvas(canvas) {
   const rect = canvas?.getBoundingClientRect();
@@ -104,6 +105,8 @@ export function createVisualController(options) {
   const amplitudeTracker = createAmplitudeDynamicsTracker({ attack: .58, release: .055, peakDecay: .9 });
   let mode = DEFAULT_MODE;
   let frame = 0;
+  let lastFrameAt = 0;
+  let lastTelemetrySignature = '';
 
   const defaultButton = installControls(controls);
   controls?.querySelectorAll('[data-visual]').forEach(button => {
@@ -158,19 +161,41 @@ export function createVisualController(options) {
     return { reading, features };
   }
 
-  function render() {
-    const time = performance.now() / 1000;
-    const { reading, features } = readReactiveFrame();
-    document.documentElement.dataset.audioLabFeed = reading.state || (reading.available ? 'live' : 'warming');
-    document.documentElement.dataset.audioLabKick = features.kick.toFixed(3);
-    document.documentElement.dataset.audioLabRms = features.rms.toFixed(3);
-    document.documentElement.dataset.audioLabPeak = features.peak.toFixed(3);
-    document.documentElement.dataset.audioLabDynamics = features.dynamics.toFixed(3);
+  function updateTelemetry(reading, features) {
+    const values = [
+      reading.state || (reading.available ? 'live' : 'warming'),
+      features.kick.toFixed(3),
+      features.rms.toFixed(3),
+      features.peak.toFixed(3),
+      features.dynamics.toFixed(3)
+    ];
+    const signature = values.join('|');
+    if (signature === lastTelemetrySignature) return;
+    lastTelemetrySignature = signature;
+    const data = document.documentElement.dataset;
+    data.audioLabFeed = values[0];
+    data.audioLabKick = values[1];
+    data.audioLabRms = values[2];
+    data.audioLabPeak = values[3];
+    data.audioLabDynamics = values[4];
+  }
 
-    const customRenderer = CUSTOM_RENDERERS.get(mode);
-    if (customRenderer) {
-      renderMode(labCanvas, customRenderer, reactive, getAccent, time, features);
-      renderMode(homeCanvas, customRenderer, reactive, getAccent, time, features);
+  function render(now = performance.now()) {
+    const labActive = document.querySelector('#view-lab')?.classList.contains('active') === true;
+    const homeActive = document.querySelector('#view-home')?.classList.contains('active') === true;
+    const shouldRender = labActive || homeActive;
+
+    if (shouldRender && document.visibilityState !== 'hidden' && now - lastFrameAt >= LIVE_FRAME_INTERVAL) {
+      lastFrameAt = now;
+      const time = now / 1000;
+      const { reading, features } = readReactiveFrame();
+      if (labActive) updateTelemetry(reading, features);
+
+      const customRenderer = CUSTOM_RENDERERS.get(mode);
+      if (customRenderer) {
+        if (labActive) renderMode(labCanvas, customRenderer, reactive, getAccent, time, features);
+        if (homeActive) renderMode(homeCanvas, customRenderer, reactive, getAccent, time, features);
+      }
     }
 
     frame = requestAnimationFrame(render);

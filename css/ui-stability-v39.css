@@ -1,0 +1,115 @@
+/* LaunchPAD 2026.08.07.39 — navigation and layout stability pass */
+
+/* One route change = one visual state. Feature 11 currently replays a second
+   entrance animation after the view has already become active. */
+.view,
+.view.active,
+.view.active.route-entering{
+  animation:none!important;
+}
+
+/* Audio Lab: keep the sanctioned preset controls above the persistent player
+   on normal desktop/laptop viewports. */
+#view-lab .page-intro{
+  padding:14px 0 10px;
+}
+
+#view-lab .page-intro h1{
+  margin:6px 0 6px;
+  font-size:clamp(42px,4.5vw,62px);
+}
+
+#view-lab .page-intro p{
+  margin:0;
+  line-height:1.45;
+}
+
+#view-lab .lab-stage{
+  box-sizing:border-box;
+  min-height:320px!important;
+  height:clamp(330px,43dvh,430px);
+  padding:14px;
+}
+
+#view-lab .lab-controls{
+  position:relative;
+  z-index:6;
+  margin:10px 0 8px!important;
+}
+
+#view-lab .lab-controls .chip{
+  min-height:30px;
+  padding:6px 12px;
+}
+
+@media(max-height:820px) and (min-width:761px){
+  #view-lab .page-intro{
+    padding-top:8px;
+    padding-bottom:8px;
+  }
+
+  #view-lab .page-intro h1{
+    margin:4px 0;
+    font-size:clamp(38px,4vw,54px);
+  }
+
+  #view-lab .lab-stage{
+    min-height:300px!important;
+    height:39dvh;
+  }
+}
+
+/* Track detail: remove the outer tinted frame/shadow while retaining the
+   track-specific gradient and palette inside the content itself. */
+body[data-viewed-track-theme] #view-track,
+#view-track{
+  background:transparent!important;
+}
+
+#view-track .track-detail-hero,
+#view-track .track-detail-hero.has-cloud-signal{
+  border:0!important;
+  box-shadow:none!important;
+}
+
+/* Mouse clicks should not leave the oversized double focus halo shown in the
+   screenshots. Keyboard focus remains explicit and accessible. */
+.track-detail-actions .primary:focus{
+  outline:none!important;
+}
+
+.track-detail-actions .primary:focus-visible{
+  outline:2px solid color-mix(in srgb,var(--accent) 68%,#fff 18%)!important;
+  outline-offset:2px;
+}
+
+/* NOW PLAYING belongs on the same top rail as LYRICS/CANVAS/CLEAN. */
+.album-card .cover-wrap .now-playing-card-badge-v39{
+  position:absolute!important;
+  top:9px!important;
+  left:50%!important;
+  right:auto!important;
+  bottom:auto!important;
+  z-index:6!important;
+  max-width:48%;
+  margin:0!important;
+  transform:translateX(-50%)!important;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+@media(max-width:760px){
+  .album-card .cover-wrap .now-playing-card-badge-v39{
+    top:7px!important;
+  }
+
+  #view-lab .page-intro{
+    padding:10px 0 8px;
+  }
+
+  #view-lab .lab-stage{
+    min-height:300px!important;
+    height:clamp(310px,50dvh,420px);
+  }
+}

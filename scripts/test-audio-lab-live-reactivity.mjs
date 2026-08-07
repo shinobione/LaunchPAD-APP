@@ -21,9 +21,10 @@ for (const required of [
   'base.setMode(mode)',
   "homeTitle.textContent = 'Neon Shatter'",
   "document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v5'",
-  'document.documentElement.dataset.audioLabRms = features.rms.toFixed(3)',
-  'document.documentElement.dataset.audioLabPeak = features.peak.toFixed(3)',
-  'document.documentElement.dataset.audioLabDynamics = features.dynamics.toFixed(3)',
+  'function updateTelemetry(reading, features)',
+  'data.audioLabRms = values[2]',
+  'data.audioLabPeak = values[3]',
+  'data.audioLabDynamics = values[4]',
   "new CustomEvent('shinobi:visual-mode'"
 ]) assert.ok(live.includes(required), `Live Audio Lab integration is missing ${required}.`);
 

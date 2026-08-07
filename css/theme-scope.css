@@ -29,54 +29,13 @@ html[data-theme-scope="split"] .app-shell{
   --accent2:var(--player-accent2)!important;
 }
 
-/* Keep the viewed track palette inside its cards. Painting the whole dynamic
-   view produced a visible translucent rectangle around the detail page. */
 body[data-viewed-track-theme] #view-track{
-  background:none;
+  background:
+    radial-gradient(circle at 8% 2%,color-mix(in srgb,var(--accent) 20%,transparent),transparent 34%),
+    radial-gradient(circle at 92% 12%,color-mix(in srgb,var(--accent2) 17%,transparent),transparent 36%);
 }
 
 #view-track[data-local-track-theme] .track-detail-hero,
 #view-track[data-local-track-theme] .track-detail-section{
   border-color:color-mix(in srgb,var(--accent) 22%,rgba(255,255,255,.08));
-}
-
-/* Desktop Audio Lab should expose the preset selector without requiring a
-   scroll behind the fixed 88px player. Keep the visual stage responsive to
-   viewport height rather than forcing the old 500px minimum. */
-@media(min-width:761px){
-  #view-lab .page-intro{
-    padding:18px 0 16px;
-  }
-
-  #view-lab .page-intro h1{
-    margin:8px 0 10px;
-  }
-
-  #view-lab .lab-stage{
-    min-height:0!important;
-    height:clamp(390px,calc(100dvh - 460px),500px);
-  }
-
-  #view-lab .lab-controls{
-    margin-top:10px!important;
-    margin-bottom:0!important;
-  }
-}
-
-/* NOW PLAYING lives on the card while Lyrics/Canvas lives inside cover-wrap.
-   Offset it by the card padding so all top badges share the same baseline. */
-.album-card.is-current::after{
-  top:19px!important;
-}
-
-@media(max-width:760px){
-  .album-card.is-current::after{
-    top:17px!important;
-  }
-}
-
-@media(max-width:420px){
-  .album-card.is-current::after{
-    top:15px!important;
-  }
 }

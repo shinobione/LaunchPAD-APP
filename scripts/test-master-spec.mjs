@@ -64,7 +64,8 @@ includesAll(theme, [
   'playingTrack(audio)',
   'applyPagePalette(viewed, played)',
   'applyPlayerPalette(played)',
-  "document.documentElement.dataset.themeScope = viewed && played && viewed.id !== played.id"
+  "const scope = viewed && played && viewed.id !== played.id ? 'split' : 'unified';",
+  'document.documentElement.dataset.themeScope = scope'
 ], 'Milestone 4 theme scoping');
 
 // 5 — Discography hierarchy, Eras, embedded metadata and playback states.
@@ -181,10 +182,11 @@ includesAll(worker, [
 ], 'PWA shell');
 const build = read('js/build-config.js');
 includesAll(build, [
-  "id: '20260806-navigation-recovery'",
-  "cache: 'shinobi-launchpad-v37'",
-  "display: '2026.08.06.37'",
-  "release: 'navigation-recovery-20260806'"
+  "id: '20260807-unified-v40'",
+  "cache: 'shinobi-launchpad-v40'",
+  "revision: 'cloudflare-main-reconciliation-1'",
+  "display: '2026.08.07.40'",
+  "release: 'unified-v40-20260807'"
 ], 'Final release metadata');
 
-console.log('All nine LaunchPAD master-spec sections are present and regression-protected under navigation recovery Build 37.');
+console.log('All nine LaunchPAD master-spec sections are present and regression-protected under unified Build 40.');

@@ -39,9 +39,9 @@ export function createRouter({ onRoute }) {
   function dispatch() {
     const route = parseRoute();
 
-    // Track detail owns #track=... completely. Letting the generic application
-    // router switch to Home first creates a visible two-step render and starts a
-    // competing smooth scroll before the dedicated track view is mounted.
+    // Track Detail owns #track=... completely. The generic router must not
+    // briefly activate Home before the dedicated detail renderer mounts; that
+    // was the source of the visible double route and Track DNA scroll landing.
     if (route.type === 'track') {
       announceRoute(route);
       return;

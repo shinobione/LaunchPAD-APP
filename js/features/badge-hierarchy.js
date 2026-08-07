@@ -156,19 +156,26 @@ export function initBadgeHierarchy() {
   document.documentElement.dataset.badgeSystem = 'hierarchy-v1';
   hydrate(document);
 
+  const pendingRoots = new Set();
   let scheduled = false;
-  new MutationObserver(records => {
-    records.forEach(record => record.addedNodes.forEach(node => {
-      if (node instanceof Element) hydrate(node);
-    }));
+  const scheduleHydration = root => {
+    if (root instanceof Element) pendingRoots.add(root);
     if (scheduled) return;
     scheduled = true;
     requestAnimationFrame(() => {
       scheduled = false;
-      hydrate(document);
+      [...pendingRoots].forEach(hydrate);
+      pendingRoots.clear();
     });
+  };
+
+  new MutationObserver(records => {
+    records.forEach(record => record.addedNodes.forEach(node => {
+      if (node instanceof Element) scheduleHydration(node);
+    }));
   }).observe(document.body, { childList: true, subtree: true });
 
-  window.addEventListener('shinobi:route-change', () => hydrate(document));
-  window.addEventListener('shinobi:theme-scope', () => hydrate(document));
+  window.addEventListener('shinobi:route-change', () => {
+    hydrate(document.querySelector('.view.active') || document);
+  });
 }

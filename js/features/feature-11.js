@@ -7,6 +7,7 @@ import {
 import { ensureStylesheet } from '../core/assets.js';
 
 const VIDEO_SELECTOR = 'video.track-video-player, video.lyrics-studio-canvas-video';
+const VIDEO_PLAYBACK_HANDLER = Symbol('feature11PlaybackHandler');
 const SHAREABLE_ROUTE_PATTERN = /^#(?:track|album|lyrics|studio)=.+/i;
 const LEGACY_DISCOGRAPHY_PATH = /\/discography\/?$/i;
 const ROUTE_TRANSITION_CLASS = 'route-entering';
@@ -97,7 +98,16 @@ function renderRecentlyAdded() {
   const section = ensureRecentlyAddedSection();
   const grid = section?.querySelector('#recently-added-grid');
   if (!grid) return;
-  grid.innerHTML = recentlyAddedTrackEntries(tracks, 5)
+
+  const latestIds = new Set(
+    latestActiveTrackEntries(tracks, 5).map(({ track }) => track.id)
+  );
+  const entries = recentlyAddedTrackEntries(tracks, tracks.length)
+    .filter(({ track }) => !latestIds.has(track.id))
+    .slice(0, 5);
+
+  section.hidden = entries.length === 0;
+  grid.innerHTML = entries
     .map(({ track, index }) => featuredCard(track, index, { recent: true }))
     .join('');
 }
@@ -116,10 +126,7 @@ function replayRouteTransition() {
     return;
   }
 
-  activeView.classList.remove(ROUTE_TRANSITION_CLASS);
-  void activeView.offsetWidth;
   activeView.classList.add(ROUTE_TRANSITION_CLASS);
-
   window.clearTimeout(routeTransitionTimer);
   routeTransitionTimer = window.setTimeout(() => {
     activeView.classList.remove(ROUTE_TRANSITION_CLASS);
@@ -130,7 +137,6 @@ function installRouteTransitions() {
   if (window.__shinobiRouteTransitionsReady) return;
   window.__shinobiRouteTransitionsReady = true;
   window.addEventListener('shinobi:route-change', replayRouteTransition);
-  window.requestAnimationFrame(replayRouteTransition);
 }
 
 function relabelVideoUI(root = document) {
@@ -156,7 +162,7 @@ function relabelVideoUI(root = document) {
   });
 }
 
-function stabilizeVideo(video, audio) {
+function stabilizeVideo(video) {
   if (!(video instanceof HTMLVideoElement) || video.dataset.feature11Stable === 'true') return;
   video.dataset.feature11Stable = 'true';
   video.muted = true;
@@ -179,7 +185,7 @@ function stabilizeVideo(video, audio) {
   };
 
   const ensurePlayback = reason => {
-    if (!visible() || audio?.paused || document.visibilityState === 'hidden') return;
+    if (!visible() || document.visibilityState === 'hidden') return;
     video.muted = true;
     if (video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA && video.networkState !== HTMLMediaElement.NETWORK_LOADING) {
       try { video.load(); } catch {}
@@ -187,6 +193,8 @@ function stabilizeVideo(video, audio) {
     const result = video.play();
     Promise.resolve(result).catch(error => console.info(`Track video recovery (${reason}) awaits a gesture.`, error));
   };
+
+  video[VIDEO_PLAYBACK_HANDLER] = ensurePlayback;
 
   const recoverLoop = reason => {
     const now = performance.now();
@@ -214,20 +222,25 @@ function stabilizeVideo(video, audio) {
   video.addEventListener('timeupdate', () => {
     if (Number.isFinite(video.duration) && video.duration - video.currentTime < 0.12) recoverLoop('boundary');
   });
-
-  audio?.addEventListener('play', () => ensurePlayback('audio-play'));
-  audio?.addEventListener('playing', () => ensurePlayback('audio-playing'));
-  audio?.addEventListener('pause', () => video.pause());
-  audio?.addEventListener('ended', () => video.pause());
-
-  if (audio && !audio.paused) ensurePlayback('registered');
 }
 
 function installVideoStability(audio) {
   const hydrate = root => {
-    if (root instanceof HTMLVideoElement && root.matches(VIDEO_SELECTOR)) stabilizeVideo(root, audio);
-    root.querySelectorAll?.(VIDEO_SELECTOR).forEach(video => stabilizeVideo(video, audio));
+    if (root instanceof HTMLVideoElement && root.matches(VIDEO_SELECTOR)) stabilizeVideo(root);
+    root.querySelectorAll?.(VIDEO_SELECTOR).forEach(video => stabilizeVideo(video));
     relabelVideoUI(root);
+  };
+
+  const connectedVideos = () => [...document.querySelectorAll(VIDEO_SELECTOR)];
+  const synchronizeWithAudio = reason => {
+    connectedVideos().forEach(video => {
+      stabilizeVideo(video);
+      if (audio?.paused || audio?.ended) {
+        if (!video.paused) video.pause();
+        return;
+      }
+      video[VIDEO_PLAYBACK_HANDLER]?.(reason);
+    });
   };
 
   hydrate(document);
@@ -237,11 +250,20 @@ function installVideoStability(audio) {
     }));
   }).observe(document.body, { childList: true, subtree: true });
 
-  document.addEventListener('click', () => queueMicrotask(() => relabelVideoUI(document)), true);
+  document.addEventListener('click', event => queueMicrotask(() => {
+    const scope = event.target.closest?.('.view') || document.querySelector('.view.active') || document;
+    relabelVideoUI(scope);
+  }), true);
+
   window.addEventListener('shinobi:route-change', () => queueMicrotask(() => {
-    hydrate(document);
-    renderHomeCatalogSections();
+    const activeView = document.querySelector('.view.active') || document;
+    hydrate(activeView);
   }));
+
+  audio?.addEventListener('play', () => synchronizeWithAudio('audio-play'));
+  audio?.addEventListener('playing', () => synchronizeWithAudio('audio-playing'));
+  audio?.addEventListener('pause', () => synchronizeWithAudio('audio-pause'));
+  audio?.addEventListener('ended', () => synchronizeWithAudio('audio-ended'));
 }
 
 export function initFeature11({ audio = document.querySelector('#audio') } = {}) {

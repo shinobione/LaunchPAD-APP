@@ -26,22 +26,27 @@ for (const path of ['js/app-engine.js', 'js/app-engine-recovery.js']) {
 }
 
 const build = fs.readFileSync('js/build-config.js', 'utf8');
-assert.ok(build.includes('js/app-engine-recovery.js?v='), 'Build 38 must load the uncached recovery bootstrap.');
-assert.ok(build.includes('const initialStylesheets = new WeakSet'), 'Build bootstrap must remember parser-delivered stylesheets.');
-assert.ok(build.includes('if (initialStylesheets.has(link)) return link;'), 'Parser-delivered stylesheets must not be rewritten after first paint.');
+for (const required of [
+  "id: '20260807-unified-v40'",
+  'js/app-engine-recovery.js?v=',
+  'const initialStylesheets = new WeakSet',
+  'if (initialStylesheets.has(link)) return link;',
+  'js/navigation-stability-v39.js?v='
+]) assert.ok(build.includes(required), `Build 40 bootstrap is missing ${required}.`);
 
 const router = fs.readFileSync('js/core/router.js', 'utf8');
 assert.ok(router.includes("if (route.type === 'track')"), 'Dedicated track routes must bypass the generic view router.');
-assert.ok(router.includes('announceRoute(route);'), 'Passive track routes must still announce route state.');
+assert.ok(router.includes('announceRoute(route);'), 'Track routes must still announce route state.');
+assert.ok(!router.includes('isPassiveTrackDetail'), 'The generic router must not depend on the old passive-track history gate.');
 
-const themeScope = fs.readFileSync('css/theme-scope.css', 'utf8');
-assert.ok(themeScope.includes('body[data-viewed-track-theme] #view-track{\n  background:none;'), 'Track detail must not paint a full-view translucent theme frame.');
-assert.ok(themeScope.includes('height:clamp(390px,calc(100dvh - 460px),500px);'), 'Audio Lab stage must fit preset controls above the desktop player.');
-assert.ok(themeScope.includes('.album-card.is-current::after{\n  top:19px!important;'), 'NOW PLAYING must align vertically with cover badges.');
+const stability = fs.readFileSync('css/ui-stability-v39.css', 'utf8');
+assert.ok(stability.includes('body[data-viewed-track-theme] #view-track,'), 'Track detail outer frame suppression must remain enabled.');
+assert.ok(stability.includes('height:clamp(330px,43dvh,430px);'), 'Audio Lab must remain viewport-aware on desktop.');
+assert.ok(stability.includes('.now-playing-card-badge-v39'), 'NOW PLAYING card alignment must remain guarded.');
 
 const worker = fs.readFileSync('sw.js', 'utf8');
 assert.ok(worker.includes("'./js/app-engine-recovery.js'"), 'The recovery bootstrap must be part of the PWA shell.');
 assert.ok(worker.includes("url.pathname.endsWith('/js/app-engine-recovery.js')"), 'The recovery bootstrap must bypass stale caches.');
 assert.ok(worker.includes("fetch(request, { cache: 'no-store' })"), 'The recovery bootstrap must be fetched without cache reuse.');
 
-console.log('Navigation remains available, dedicated track routes render once, and layout polish stays cache-safe.');
+console.log('Build 40 navigation renders dedicated track routes once and keeps the runtime cache-safe.');

@@ -102,6 +102,7 @@ async function boot() {
     { createPlayerExperience },
     { initResilienceAccessibility },
     { initTrackDetail },
+    { initTrackCardNavigation },
     { initTrackVideos },
     { initSmartCanvasManager },
     { initCanvasIdentity },
@@ -126,6 +127,7 @@ async function boot() {
     import(versioned('./features/player-experience.js')),
     import(versioned('./features/resilience-accessibility.js')),
     import(versioned('./features/track-detail.js')),
+    import(versioned('./features/track-card-navigation.js')),
     import(versioned('./features/track-videos.js')),
     import(versioned('./features/smart-canvas.js')),
     import(versioned('./features/canvas-identity.js')),
@@ -150,6 +152,7 @@ async function boot() {
   initLibraryMemory({ audio });
   initListeningHistorySummary({ audio });
   initTrackDetail({ audio });
+  initTrackCardNavigation();
   initTrackVideos({ audio });
   initSmartCanvasManager();
   initCanvasIdentity();

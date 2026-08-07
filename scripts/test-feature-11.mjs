@@ -64,7 +64,9 @@ for (const required of [
   'renderLatestReleases',
   'latestActiveTrackEntries(tracks, 5)',
   'renderRecentlyAdded',
-  'recentlyAddedTrackEntries(tracks, 5)',
+  'recentlyAddedTrackEntries(tracks, tracks.length)',
+  '.filter(({ track }) => !latestIds.has(track.id))',
+  '.slice(0, 5)',
   'Release date unavailable',
   'CATALOG ACTIVITY',
   "button.textContent = expanded ? 'Player' : 'Video'",
@@ -149,9 +151,11 @@ assert.ok(!managerClient.includes('buildCanonicalTrackSummaries'));
 assert.ok(!managerClient.includes('readManifest'));
 
 const build = read('js/build-config.js');
-assert.ok(build.includes("id: '20260806-m2-catalog-ordering'"));
-assert.ok(build.includes("cache: 'shinobi-launchpad-v30'"));
-assert.ok(build.includes("display: '2026.08.06.30'"));
-assert.ok(build.includes("release: 'catalog-ordering-20260806'"));
+for (const required of [
+  "id: '20260807-unified-v40'",
+  "cache: 'shinobi-launchpad-v40'",
+  "display: '2026.08.07.40'",
+  "release: 'unified-v40-20260807'"
+]) assert.ok(build.includes(required), `Feature 11 must be validated against current Build 40 metadata: ${required}.`);
 
-console.log('Milestone 2 canonical catalog ordering and Recently Added separation remain valid.');
+console.log('Milestone 2 canonical catalog ordering and Recently Added separation remain valid under Build 40.');

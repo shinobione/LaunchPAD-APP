@@ -9,28 +9,48 @@ function routeTrack() {
   return getTrack(id) || null;
 }
 
+function setStyleIfChanged(target, property, value) {
+  if (!target) return false;
+  if (target.style.getPropertyValue(property) === value) return false;
+  target.style.setProperty(property, value);
+  return true;
+}
+
 function applyTrackDetailPalette() {
   const view = document.querySelector('#view-track');
   const track = routeTrack();
   if (!view || !track || !view.classList.contains('active')) return false;
   const [accent, accent2] = getTrackPalette(track);
-  view.style.setProperty('--accent', accent);
-  view.style.setProperty('--accent2', accent2);
-  view.dataset.localTrackTheme = track.id;
   const hero = view.querySelector('.track-detail-hero');
-  if (hero) {
-    hero.style.setProperty('--accent', accent);
-    hero.style.setProperty('--accent2', accent2);
-  }
   const play = view.querySelector('.track-detail-actions .primary');
-  if (play) {
-    play.style.setProperty('--accent', accent);
-    play.style.setProperty('--accent2', accent2);
+  const signature = `${track.id}|${accent}|${accent2}`;
+  let changed = view.dataset.phase13ThemeSignature !== signature;
+
+  changed = setStyleIfChanged(view, '--accent', accent) || changed;
+  changed = setStyleIfChanged(view, '--accent2', accent2) || changed;
+  if (view.dataset.localTrackTheme !== track.id) {
+    view.dataset.localTrackTheme = track.id;
+    changed = true;
   }
-  document.title = `${track.title} — Track details — SHINOBIWAN`;
-  window.dispatchEvent(new CustomEvent('shinobi:track-detail-themed', {
-    detail: { trackId: track.id, accent, accent2 }
-  }));
+
+  if (hero) {
+    changed = setStyleIfChanged(hero, '--accent', accent) || changed;
+    changed = setStyleIfChanged(hero, '--accent2', accent2) || changed;
+  }
+  if (play) {
+    changed = setStyleIfChanged(play, '--accent', accent) || changed;
+    changed = setStyleIfChanged(play, '--accent2', accent2) || changed;
+  }
+
+  const expectedTitle = `${track.title} — Track details — SHINOBIWAN`;
+  if (document.title !== expectedTitle) document.title = expectedTitle;
+  view.dataset.phase13ThemeSignature = signature;
+
+  if (changed) {
+    window.dispatchEvent(new CustomEvent('shinobi:track-detail-themed', {
+      detail: { trackId: track.id, accent, accent2 }
+    }));
+  }
   return true;
 }
 
@@ -40,6 +60,7 @@ function clearTrackDetailPalette() {
   view.style.removeProperty('--accent');
   view.style.removeProperty('--accent2');
   view.removeAttribute('data-local-track-theme');
+  view.removeAttribute('data-phase13-theme-signature');
 }
 
 export function initPhase13({ audio = document.querySelector('#audio') } = {}) {
@@ -73,9 +94,6 @@ export function initPhase13({ audio = document.querySelector('#audio') } = {}) {
       attributeFilter: ['class']
     });
   }
-
-  const title = document.querySelector('title');
-  if (title) new MutationObserver(synchronize).observe(title, { childList: true });
 
   document.addEventListener('click', event => {
     if (event.target.closest?.('img[data-track-cover-link], [data-track-detail-action], [data-play-index]')) synchronize();
