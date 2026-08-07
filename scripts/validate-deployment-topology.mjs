@@ -32,6 +32,7 @@ const packageJson = JSON.parse(read('package.json'));
 assert.equal(packageJson.scripts['build:web'], 'node scripts/build-cloudflare-pages.mjs', 'Host-neutral web build command must wrap the compatibility builder.');
 assert.equal(packageJson.scripts['check:web-build'], 'node scripts/validate-cloudflare-pages-build.mjs', 'Host-neutral web validation command must wrap the compatibility validator.');
 assert.ok(packageJson.scripts.validate.includes('check:deployment-topology'), 'Full validation must guard deployment topology.');
+assert.ok(packageJson.scripts.validate.includes('check:build-docs'), 'Full validation must guard documentation/build coherence.');
 
 const builder = read('scripts/build-cloudflare-pages.mjs');
 for (const required of [
@@ -64,15 +65,16 @@ for (const required of [
   'GitHub Pages',
   'Cloudflare Pages',
   'Cloudflare R2',
-  'Lovable is treated as an external prototyping/experimentation environment only'
+  'Lovable is prototype-only'
 ]) assert.ok(topology.includes(required), `Deployment topology documentation is missing ${required}.`);
 
 const architecture = read('ARCHITECTURE.md');
 assert.ok(architecture.includes('GitHub `main`'), 'Architecture must identify GitHub main as source authority.');
-assert.ok(architecture.includes('R2 manifests/media are the only production track/media authority.'), 'Architecture must identify R2 data authority.');
+assert.ok(architecture.includes('R2 manifests/media are the production track/media authority.'), 'Architecture must identify R2 data authority.');
 
 const readme = read('README.md');
-assert.ok(readme.includes('**Source of truth:** `main`'), 'README must identify main as the application source of truth.');
+assert.ok(readme.includes('GitHub `main` is the only application-code authority'), 'README must identify main as the application source of truth.');
 assert.ok(readme.includes('docs/DEPLOYMENT-TOPOLOGY.md'), 'README must link the canonical deployment topology.');
+assert.ok(readme.includes('check:build-docs'), 'README must document build-synchronized Markdown validation.');
 
-console.log('Deployment topology is coherent: one GitHub source, two mirrored web hosts, manual Workers, separate R2 state.');
+console.log('Deployment topology is coherent: one GitHub source, mirrored web hosts, manual Workers, separate R2 state, synchronized docs.');
