@@ -63,8 +63,9 @@ for (const required of [
   'shapeReactiveSpectrum(raw, shaped, features)',
   "homeTitle.textContent = 'Neon Shatter'",
   "new CustomEvent('shinobi:visual-mode'",
-  "dataset.audioLabRenderer = 'hybrid-reactive-v6'",
-  'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60'
+  "dataset.audioLabRenderer = 'hybrid-reactive-v7'",
+  'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60',
+  'const TELEMETRY_INTERVAL = 120'
 ]) assert.ok(liveVisuals.includes(required), `Live Audio Lab renderer is missing ${required}.`);
 for (const forbidden of ['wave-cathedral', "id: 'circle'", "'bars'", 'hex-reactor', 'drawHexReactorMode']) {
   assert.ok(!liveVisuals.includes(forbidden), `Retired Audio Lab route leaked into Phase 13: ${forbidden}.`);
@@ -87,9 +88,12 @@ for (const required of [
   'readAudioLabAmplitude',
   'synthesizePlaybackSpectrum',
   'waveformToSpectrum',
-  'patchMediaElementSource',
-  "document.documentElement.dataset.audioGraph = 'direct-plus-metering'",
+  'createCaptureSourceProxy',
+  'context.createMediaStreamSource(scopedStream)',
+  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-capture-metering'",
+  "audio.dataset.audioPlaybackPath = 'html5-direct'",
   "audio.addEventListener('playing', recover)",
+  'async function suspendContexts()',
   "markSignal('fallback')",
   "document.documentElement.dataset.audioLabSignal"
 ]) assert.ok(signal.includes(required), `Audio Lab signal recovery is missing ${required}.`);
@@ -134,15 +138,15 @@ for (const required of [
   "headers.set('Cross-Origin-Resource-Policy', 'cross-origin')",
   "headers.set('X-LaunchPAD-Media-Version', String(PUBLIC_WORKER_VERSION))",
   "headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')",
-  'payload.audioLabCors = true',
+  'payload.audioLabCors = true,
   "payload.crossOriginResourcePolicy = 'cross-origin'"
 ]) assert.ok(publicWorker.includes(required), `Public media Worker v2.6 is missing ${required}.`);
 
-const build = assertCurrentBuild('Phase 13 / Build 44');
-assert.equal(build.number, 44);
-assert.equal(build.release, 'now-playing-alignment-20260807');
+const build = assertCurrentBuild('Phase 13 / Build 45');
+assert.equal(build.number, 45);
+assert.equal(build.release, 'audio-background-stability-20260807');
 
 await import('./test-milestone-4.mjs');
 await import('./test-milestone-6.mjs');
 
-console.log('Phase 13 palette, restored Spectrum, adaptive Neon Shatter and reactive Aurora remain valid under Build 44.');
+console.log('Phase 13 palette and Audio Lab visuals remain valid with background-safe metering under Build 45.');
