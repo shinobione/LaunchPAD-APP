@@ -38,7 +38,8 @@ if (!worker.includes("url.pathname.endsWith('/js/build-config.js')")) fail('Buil
 for (const required of [
   './css/catalog-filters.css','./js/features/catalog-filters.js','./css/feature-10.css','./js/core/editorial-normalization.js',
   './js/features/content-advisory-badges.js','./css/feature-11.css','./js/core/catalog-ordering.js','./js/features/feature-11.js',
-  './css/feature-12.css','./js/features/feature-12.js','./js/features/feature-13.js','./js/features/audio-lab-signal.js','./js/features/visual/visual-engine-v2.js'
+  './css/feature-12.css','./js/features/feature-12.js','./js/features/feature-13.js','./js/features/audio-lab-signal.js','./js/features/visual/visual-engine-v2.js',
+  './js/visual-card-export-guard.js'
 ]) {
   if (!worker.includes(required)) fail(`Offline shell is missing ${required}.`);
 }
@@ -46,15 +47,16 @@ if (!worker.includes("request.destination === 'video'")) fail('Service worker do
 
 const build = read('js/build-config.js');
 for (const required of [
-  "id: '20260807-unified-v40'",
-  "cache: 'shinobi-launchpad-v40'",
-  "revision: 'cloudflare-main-reconciliation-1'",
-  "display: '2026.08.07.40'",
-  "release: 'unified-v40-20260807'",
+  "id: '20260807-visual-card-mobile-v41'",
+  "cache: 'shinobi-launchpad-v41'",
+  "revision: 'visual-card-cors-mobile-layout-1'",
+  "display: '2026.08.07.41'",
+  "release: 'visual-card-mobile-polish-20260807'",
   'const initialStylesheets = new WeakSet',
-  'if (initialStylesheets.has(link)) return link;'
+  'if (initialStylesheets.has(link)) return link;',
+  'installVisualCardExportGuard'
 ]) {
-  if (!build.includes(required)) fail(`Build 40 metadata/bootstrap is missing ${required}.`);
+  if (!build.includes(required)) fail(`Build 41 metadata/bootstrap is missing ${required}.`);
 }
 for (const required of ['installAppIconLinks',"assets/app-icon-neon.svg","assets/app-icon-neon-192.png","link[rel=\"alternate icon\"]","link[rel=\"manifest\"]"]) {
   if (!build.includes(required)) fail(`Cache-busting app icon wiring is missing ${required}.`);
@@ -93,4 +95,4 @@ if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RE
   fail('Browser regression coverage for the deduped PWA update prompt is not wired into CI.');
 }
 
-console.log('PWA updates use one verified waiting worker, one prompt and one reload while Build 40 offline shell remains valid.');
+console.log('PWA updates use one verified waiting worker, one prompt and one reload while Build 41 offline shell remains valid.');
