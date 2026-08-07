@@ -17,8 +17,11 @@ export function resolveAdminAccess({ search = '', storage, desktop = false } = {
   return Boolean(enabled && desktop);
 }
 
-export function resolveLrcMakerAccess({ search = '', desktop = false } = {}) {
-  return Boolean(desktop && new URLSearchParams(search).get('admin') === '1');
+export function resolveLrcMakerAccess({ search = '', storage, desktop = false } = {}) {
+  // The installed desktop PWA normally launches without the browser query string.
+  // Share the same persisted admin gate as Track Manager so ?admin=1 activates
+  // both private tools across browser and standalone app sessions.
+  return resolveAdminAccess({ search, storage, desktop });
 }
 
 function adminToolLink({ className, datasetKey, href, label, initials, ariaLabel }) {
@@ -43,7 +46,7 @@ export function initAdminAccess({
 
   const render = () => {
     const trackManagerEnabled = resolveAdminAccess({ search, storage, desktop: media.matches });
-    const lrcMakerEnabled = resolveLrcMakerAccess({ search, desktop: media.matches });
+    const lrcMakerEnabled = resolveLrcMakerAccess({ search, storage, desktop: media.matches });
 
     let trackManager = actions.querySelector('[data-track-manager-access]');
     if (!trackManagerEnabled) trackManager?.remove();
