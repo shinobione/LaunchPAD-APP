@@ -32,7 +32,10 @@ const core = read('js/features/visual/visual-engine-core-modes.js');
 for (const required of [
   'export function drawAuroraGlassMode(',
   'export function drawNeonShatterAdaptiveMode(',
-  'const transient = clamp(Math.max(kick, peak))',
+  'const rawBass = bandAverage(',
+  'const rawMiddle = bandAverage(',
+  'const rawHigh = bandAverage(',
+  'const beatDrive = clamp(',
   'const spectralIndex = Math.min(',
   'const spectralRipple = Math.sin(',
   'const spectralDeformation = (spectral - bandValue)',
@@ -94,7 +97,7 @@ assert.ok(worker.includes("'./js/features/visual/audio-lab-registry.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-sanctuary.js'"));
 assert.ok(!worker.includes('visual-engine-hex-reactor.js'));
 
-const build = assertCurrentBuild('Audio Lab Build 48');
-assert.equal(build.number, 48);
-assert.equal(build.release, 'audiolab-decoded-buffer-20260807');
-console.log('Audio Lab keeps protected renderers while Build 48 uses isolated decoded-buffer metering and boosted custom-mode reactivity.');
+const build = assertCurrentBuild('Audio Lab Build 49');
+assert.equal(build.number, 49);
+assert.equal(build.release, 'mobile-studio-reactivity-20260807');
+console.log('Audio Lab keeps protected renderers while Build 49 uses decoded-buffer metering and direct FFT drive for Neon Shatter and Aurora Glass.');
