@@ -95,8 +95,8 @@ assert.ok(worker.includes("'./js/features/visual/audio-lab-registry.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-sanctuary.js'"));
 assert.ok(!worker.includes('visual-engine-hex-reactor.js'));
 
-const build = assertCurrentBuild('Audio Lab Build 42');
-assert.equal(build.number, 42);
-assert.equal(build.release, 'audio-audiolab-admin-20260807');
+const build = assertCurrentBuild('Audio Lab Build 43');
+assert.equal(build.number, 43);
+assert.equal(build.release, 'admin-tools-pwa-polish-20260807');
 
-console.log('Audio Lab Spectrum/Liquid Chrome sanctuary, adaptive Neon, reactive Aurora and parallel metering are valid under Build 42.');
+console.log('Audio Lab Spectrum/Liquid Chrome sanctuary, adaptive Neon, reactive Aurora and parallel metering remain valid under Build 43.');

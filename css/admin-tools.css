@@ -1,60 +1,89 @@
 .top-actions .admin-tool-access{
-  --admin-tool-accent:var(--accent,#a63cff);
+  --admin-tool-bg:rgba(166,60,255,.08);
+  --admin-tool-bg-hover:rgba(166,60,255,.14);
+  --admin-tool-border:rgba(190,112,255,.28);
+  --admin-tool-border-hover:rgba(210,150,255,.48);
+  --admin-tool-fg:#ead5f8;
+  --admin-tool-disc:#b963ee;
+  --admin-tool-disc-fg:#100716;
+  --admin-tool-arrow:#d992ff;
   display:inline-flex;
   align-items:center;
   gap:7px;
-  min-height:34px;
-  padding:5px 10px 5px 6px;
-  border:1px solid color-mix(in srgb,var(--admin-tool-accent) 45%,rgba(255,255,255,.08));
-  border-radius:11px;
-  color:color-mix(in srgb,var(--admin-tool-accent) 74%,white 26%);
-  background:linear-gradient(145deg,color-mix(in srgb,var(--admin-tool-accent) 13%,rgba(12,8,20,.86)),rgba(9,6,16,.78));
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025),0 8px 24px rgba(0,0,0,.18);
-  text-decoration:none;
+  min-height:36px;
+  padding:5px 11px 5px 6px;
+  border:1px solid var(--admin-tool-border);
+  border-radius:999px;
+  color:var(--admin-tool-fg);
+  background:var(--admin-tool-bg);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.018),0 8px 24px rgba(0,0,0,.16);
+  text-decoration:none!important;
   white-space:nowrap;
+  font-size:10px;
+  line-height:1;
+  letter-spacing:.025em;
   transition:transform .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease;
 }
 
 .top-actions .admin-tool-access:hover{
   transform:translateY(-1px);
-  border-color:color-mix(in srgb,var(--admin-tool-accent) 72%,rgba(255,255,255,.14));
-  background:linear-gradient(145deg,color-mix(in srgb,var(--admin-tool-accent) 20%,rgba(12,8,20,.88)),rgba(9,6,16,.82));
-  box-shadow:0 10px 26px color-mix(in srgb,var(--admin-tool-accent) 12%,transparent);
+  border-color:var(--admin-tool-border-hover);
+  background:var(--admin-tool-bg-hover);
+  box-shadow:0 9px 24px rgba(0,0,0,.2);
 }
 
 .top-actions .admin-tool-access>span{
   display:grid;
   place-items:center;
-  width:23px;
-  height:23px;
-  flex:0 0 23px;
+  width:25px;
+  height:25px;
+  flex:0 0 25px;
   border-radius:50%;
-  color:#09060f;
-  background:var(--admin-tool-accent);
+  color:var(--admin-tool-disc-fg);
+  background:var(--admin-tool-disc);
   font-size:8px;
-  font-weight:900;
+  font-weight:950;
+  line-height:1;
   letter-spacing:-.03em;
 }
 
 .top-actions .admin-tool-access>strong{
+  color:inherit;
   font-size:9px;
-  font-weight:800;
+  font-weight:850;
+  line-height:1;
   letter-spacing:.015em;
 }
 
 .top-actions .admin-tool-access>b{
   margin-left:1px;
-  font-size:9px;
-  font-weight:700;
-  opacity:.78;
+  color:var(--admin-tool-arrow);
+  font-size:10px;
+  font-weight:800;
+  line-height:1;
+  opacity:.9;
 }
 
 .top-actions .lrc-maker-access{
-  --admin-tool-accent:#d76cff;
+  --admin-tool-bg:rgba(190,80,255,.075);
+  --admin-tool-bg-hover:rgba(190,80,255,.14);
+  --admin-tool-border:rgba(210,108,255,.28);
+  --admin-tool-border-hover:rgba(226,148,255,.5);
+  --admin-tool-fg:#f0d6ff;
+  --admin-tool-disc:#d76cff;
+  --admin-tool-disc-fg:#130719;
+  --admin-tool-arrow:#df94ff;
 }
 
 .top-actions .track-manager-access{
-  --admin-tool-accent:#68e6b1;
+  --admin-tool-bg:rgba(84,230,155,.07);
+  --admin-tool-bg-hover:rgba(84,230,155,.13);
+  --admin-tool-border:rgba(84,230,155,.24);
+  --admin-tool-border-hover:rgba(84,230,155,.42);
+  --admin-tool-fg:#c7f8dd;
+  --admin-tool-disc:#54e69b;
+  --admin-tool-disc-fg:#07120c;
+  --admin-tool-arrow:#78edaa;
 }
 
 @media(max-width:980px){

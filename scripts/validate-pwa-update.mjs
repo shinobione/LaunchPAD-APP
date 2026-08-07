@@ -44,8 +44,8 @@ if (!worker.includes("request.destination === 'video'")) fail('Service worker do
 if (!worker.includes("request.destination === 'audio'")) fail('Service worker does not keep audio network-oriented.');
 
 const build = assertCurrentBuild('PWA update');
-if (build.number !== 42) fail(`Expected Build 42, received ${build.display}.`);
-if (build.release !== 'audio-audiolab-admin-20260807') fail(`Unexpected Build 42 release ${build.release}.`);
+if (build.number !== 43) fail(`Expected Build 43, received ${build.display}.`);
+if (build.release !== 'admin-tools-pwa-polish-20260807') fail(`Unexpected Build 43 release ${build.release}.`);
 const buildSource = build.source;
 for (const required of [
   'const initialStylesheets = new WeakSet',
@@ -57,7 +57,7 @@ for (const required of [
   'link[rel="alternate icon"]',
   'link[rel="manifest"]'
 ]) {
-  if (!buildSource.includes(required)) fail(`Build 42 metadata/bootstrap is missing ${required}.`);
+  if (!buildSource.includes(required)) fail(`Build 43 metadata/bootstrap is missing ${required}.`);
 }
 
 const signal = read('js/features/audio-lab-signal.js');
@@ -79,7 +79,7 @@ for (const required of [
 }
 
 const styles = read('css/pwa.css');
-for (const required of ['.pwa-update-banner','.pwa-install-banner','.pwa-install-actions','pwa-install-pulse','env(safe-area-inset-bottom)','.pwa-update-actions','@media(max-width:760px)']) {
+for (const required of ['.pwa-update-banner','.pwa-install-banner','.pwa-install-actions','pwa-install-pulse','env(safe-area-inset-bottom)','.pwa-update-actions','@media(max-width:760px)','.lrc-maker-access{','text-decoration:none!important']) {
   if (!styles.includes(required)) fail(`Responsive PWA styling is missing ${required}.`);
 }
 
@@ -88,4 +88,4 @@ if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RE
   fail('Browser regression coverage for the deduped PWA update prompt is not wired into CI.');
 }
 
-console.log('PWA updates keep one verified waiting worker, one prompt and one reload under Build 42.');
+console.log('PWA updates keep one verified waiting worker, one prompt and one reload under Build 43.');

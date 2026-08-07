@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260807-audio-audiolab-admin-v42',
-    cache: 'shinobi-launchpad-v42',
-    revision: 'audio-buffer-audiolab-admin-1',
-    display: '2026.08.07.42',
-    release: 'audio-audiolab-admin-20260807'
+    id: '20260807-admin-tools-pwa-v43',
+    cache: 'shinobi-launchpad-v43',
+    revision: 'admin-tools-pwa-polish-1',
+    display: '2026.08.07.43',
+    release: 'admin-tools-pwa-polish-20260807'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
