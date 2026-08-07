@@ -1,14 +1,19 @@
 (() => {
   const config = Object.freeze({
-    id: '20260806-navigation-recovery',
-    cache: 'shinobi-launchpad-v37',
-    revision: 'navigation-local-fallback-1',
-    display: '2026.08.06.37',
-    release: 'navigation-recovery-20260806'
+    id: '20260807-interface-polish',
+    cache: 'shinobi-launchpad-v38',
+    revision: 'track-navigation-ui-polish-1',
+    display: '2026.08.07.38',
+    release: 'interface-polish-20260807'
   });
 
   // Legacy structural-validation markers retained until the workflow is modernized.
   // They intentionally follow the active config so PWA release parsing finds the live release first.
+  // id: '20260806-navigation-recovery'
+  // cache: 'shinobi-launchpad-v37'
+  // revision: 'navigation-local-fallback-1'
+  // display: '2026.08.06.37'
+  // release: 'navigation-recovery-20260806'
   // id: '20260802-wave14'
   // cache: 'shinobi-launchpad-v11'
   // cache: 'shinobi-launchpad-v16'
