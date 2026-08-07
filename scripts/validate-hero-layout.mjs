@@ -36,7 +36,7 @@ requirePattern(
 
 requirePattern(
   buildConfig,
-  /revision:\s*'(?:routing-video-sorting-1|phase12-ui-hotfixes-1|phase13-visuals-palette-filters-1|phase13-mobile-about-layout-1|audiolab-signal-recovery-1|mobile-hero-order-1)'/,
+  /revision:\s*'(?:cloudflare-main-reconciliation-1|routing-video-sorting-1|phase12-ui-hotfixes-1|phase13-visuals-palette-filters-1|phase13-mobile-about-layout-1|audiolab-signal-recovery-1|mobile-hero-order-1)'/,
   'The build config must refresh cached routing, video, mobile hero and current phase assets.'
 );
 
