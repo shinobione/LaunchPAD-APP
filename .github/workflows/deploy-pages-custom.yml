@@ -5,11 +5,9 @@ on:
   push:
     branches:
       - main
-    paths:
-      - .github/workflows/deploy-pages-custom.yml
 
 concurrency:
-  group: pages-recovery-fresh-20260806-2105
+  group: github-pages-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -22,33 +20,37 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout recovery site
+      - name: Checkout canonical LaunchPAD source
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          ref: gh-pages
+          node-version: 22
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Assemble recovery site
+      - name: Build canonical static runtime
+        run: node scripts/build-cloudflare-pages.mjs
+
+      - name: Validate canonical static runtime
+        run: node scripts/validate-cloudflare-pages-build.mjs
+
+      - name: Verify Build 40 metadata
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf _site
-          mkdir -p _site
+          grep -q "display: '2026.08.07.40'" dist/cloudflare-pages/js/build-config.js
+          grep -q "release: 'unified-v40-20260807'" dist/cloudflare-pages/js/build-config.js
+          test -s dist/cloudflare-pages/index.html
+          test -s dist/cloudflare-pages/sw.js
+          touch dist/cloudflare-pages/.nojekyll
 
-          find . -mindepth 1 -maxdepth 1 \
-            ! -name .git \
-            ! -name _site \
-            -exec cp -a {} _site/ \;
-
-          touch _site/.nojekyll
-          test -s _site/index.html
-
-      - name: Upload recovery artifact
+      - name: Upload canonical Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: _site
+          path: dist/cloudflare-pages
           name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
 
   deploy:
@@ -59,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Deploy recovery site to GitHub Pages
+      - name: Deploy canonical LaunchPAD to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
         with:
