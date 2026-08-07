@@ -44,8 +44,8 @@ if (!worker.includes("request.destination === 'video'")) fail('Service worker do
 if (!worker.includes("request.destination === 'audio'")) fail('Service worker does not keep audio network-oriented.');
 
 const build = assertCurrentBuild('PWA update');
-if (build.number !== 44) fail(`Expected Build 44, received ${build.display}.`);
-if (build.release !== 'now-playing-alignment-20260807') fail(`Unexpected Build 44 release ${build.release}.`);
+if (build.number !== 45) fail(`Expected Build 45, received ${build.display}.`);
+if (build.release !== 'audio-background-stability-20260807') fail(`Unexpected Build 45 release ${build.release}.`);
 const buildSource = build.source;
 for (const required of [
   'const initialStylesheets = new WeakSet',
@@ -57,13 +57,15 @@ for (const required of [
   'link[rel="alternate icon"]',
   'link[rel="manifest"]'
 ]) {
-  if (!buildSource.includes(required)) fail(`Build 44 metadata/bootstrap is missing ${required}.`);
+  if (!buildSource.includes(required)) fail(`Build 45 metadata/bootstrap is missing ${required}.`);
 }
 
 const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
-  'initAudioLabSignalBridge','synthesizePlaybackSpectrum','waveformToSpectrum','patchMediaElementSource',
+  'initAudioLabSignalBridge','synthesizePlaybackSpectrum','waveformToSpectrum','createCaptureSourceProxy',
+  'context.createMediaStreamSource(scopedStream)',"audio.dataset.audioPlaybackPath = 'html5-direct'",
   "audio.addEventListener('play', recover)","audio.addEventListener('playing', recover)",
+  "window.addEventListener('pagehide'",'async function suspendContexts()',
   "markSignal('live')","markSignal('fallback')"
 ]) {
   if (!signal.includes(required)) fail(`AudioLab signal recovery is missing ${required}.`);
@@ -93,4 +95,4 @@ if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RE
   fail('Browser regression coverage for the deduped PWA update prompt is not wired into CI.');
 }
 
-console.log('PWA updates keep one verified waiting worker, one prompt and one reload under Build 44.');
+console.log('PWA updates remain single-shot while background-safe audio metering is active under Build 45.');
