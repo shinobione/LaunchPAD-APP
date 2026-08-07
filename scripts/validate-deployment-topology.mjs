@@ -22,6 +22,12 @@ assert.ok(!/ref:\s*gh-pages/.test(pages), 'GitHub Pages must never deploy applic
 assert.ok(!pages.includes("display: '2026."), 'GitHub Pages workflow must derive release metadata from build-config instead of pinning a build number.');
 assert.ok(!pages.includes("release: 'unified-"), 'GitHub Pages workflow must not pin a release string.');
 
+const workerDeploy = read('.github/workflows/deploy-cloudflare.yml');
+assert.ok(workerDeploy.includes('workflow_dispatch:'), 'Production Worker deployment must be explicitly dispatched.');
+assert.ok(!workerDeploy.includes('\n  push:'), 'Production Worker deployment must not run automatically on a main push.');
+assert.ok(workerDeploy.includes("test \"${{ inputs.confirm }}\" = 'DEPLOY'"), 'Production Worker deployment must require explicit DEPLOY confirmation.');
+assert.ok(workerDeploy.includes("if: github.ref == 'refs/heads/main'"), 'Production Worker deployment must be restricted to main.');
+
 const packageJson = JSON.parse(read('package.json'));
 assert.equal(packageJson.scripts['build:web'], 'node scripts/build-cloudflare-pages.mjs', 'Host-neutral web build command must wrap the compatibility builder.');
 assert.equal(packageJson.scripts['check:web-build'], 'node scripts/validate-cloudflare-pages-build.mjs', 'Host-neutral web validation command must wrap the compatibility validator.');
@@ -69,4 +75,4 @@ const readme = read('README.md');
 assert.ok(readme.includes('**Source of truth:** `main`'), 'README must identify main as the application source of truth.');
 assert.ok(readme.includes('docs/DEPLOYMENT-TOPOLOGY.md'), 'README must link the canonical deployment topology.');
 
-console.log('Deployment topology is coherent: one GitHub source, two mirrored web hosts, separate Workers/R2 state.');
+console.log('Deployment topology is coherent: one GitHub source, two mirrored web hosts, manual Workers, separate R2 state.');
