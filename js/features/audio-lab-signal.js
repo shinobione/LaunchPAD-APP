@@ -1,4 +1,5 @@
 const PATCH_MARK = Symbol.for('shinobi.audioLabSignalPatch');
+const SOURCE_PATCH_MARK = Symbol.for('shinobi.audioLabSourcePatch');
 const ACTIVE_CONTEXTS = new Set();
 let ACTIVE_ANALYSER = null;
 
@@ -110,6 +111,7 @@ function patchAnalyser(analyser, audio) {
 
   const nativeFrequency = analyser.getByteFrequencyData.bind(analyser);
   const nativeWaveform = analyser.getByteTimeDomainData.bind(analyser);
+  const nativeConnect = analyser.connect.bind(analyser);
   let silentFrames = 0;
   let previousTime = Number(audio.currentTime) || 0;
   let waveform = new Uint8Array(Math.max(32, analyser.fftSize || 256));
@@ -148,14 +150,29 @@ function patchAnalyser(analyser, audio) {
     markSignal('fallback');
   };
 
+  // Audio Lab is a metering tap, never an audible insert. The application used
+  // to route MediaElement -> Analyser -> destination, making playback share the
+  // visualisation graph. A patched media source now owns the direct audible
+  // route, so an analyser connection to the context destination is intentionally
+  // ignored to avoid a duplicated/doubled signal.
+  const meteringOnlyConnect = (destination, ...args) => {
+    if (destination === analyser.context?.destination) return destination;
+    return nativeConnect(destination, ...args);
+  };
+
   try {
     Object.defineProperty(analyser, 'getByteFrequencyData', {
       configurable: true,
       value: resilientFrequencyData
     });
+    Object.defineProperty(analyser, 'connect', {
+      configurable: true,
+      value: meteringOnlyConnect
+    });
     Object.defineProperty(analyser, PATCH_MARK, { value: true });
   } catch {
     analyser.getByteFrequencyData = resilientFrequencyData;
+    analyser.connect = meteringOnlyConnect;
     analyser[PATCH_MARK] = true;
   }
 
@@ -163,17 +180,51 @@ function patchAnalyser(analyser, audio) {
   return analyser;
 }
 
+function patchMediaElementSource(source, context) {
+  if (!source || source[SOURCE_PATCH_MARK]) return source;
+  const nativeConnect = source.connect.bind(source);
+  let directPlaybackConnected = false;
+
+  const parallelConnect = (destination, ...args) => {
+    const result = nativeConnect(destination, ...args);
+    if (destination?.[PATCH_MARK] === true && destination.context === context && !directPlaybackConnected) {
+      nativeConnect(context.destination);
+      directPlaybackConnected = true;
+      if (typeof document !== 'undefined') document.documentElement.dataset.audioGraph = 'direct-plus-metering';
+    }
+    return result;
+  };
+
+  try {
+    Object.defineProperty(source, 'connect', { configurable: true, value: parallelConnect });
+    Object.defineProperty(source, SOURCE_PATCH_MARK, { value: true });
+  } catch {
+    source.connect = parallelConnect;
+    source[SOURCE_PATCH_MARK] = true;
+  }
+  return source;
+}
+
 function patchAudioContextClass(AudioContextClass, audio) {
   const prototype = AudioContextClass?.prototype;
   if (!prototype || prototype[PATCH_MARK]) return;
 
   const nativeCreateAnalyser = prototype.createAnalyser;
+  const nativeCreateMediaElementSource = prototype.createMediaElementSource;
   if (typeof nativeCreateAnalyser !== 'function') return;
 
   prototype.createAnalyser = function createResilientAnalyser(...args) {
     ACTIVE_CONTEXTS.add(this);
     return patchAnalyser(nativeCreateAnalyser.apply(this, args), audio);
   };
+
+  if (typeof nativeCreateMediaElementSource === 'function') {
+    prototype.createMediaElementSource = function createSafeMediaElementSource(element, ...args) {
+      const source = nativeCreateMediaElementSource.call(this, element, ...args);
+      if (element === audio) patchMediaElementSource(source, this);
+      return source;
+    };
+  }
 
   try {
     Object.defineProperty(prototype, PATCH_MARK, { value: true });
