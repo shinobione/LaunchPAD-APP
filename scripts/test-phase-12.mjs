@@ -53,9 +53,12 @@ assert.ok(serviceWorker.includes("'./css/feature-12.css'"));
 assert.ok(serviceWorker.includes("'./js/features/feature-12.js'"));
 
 const build = read('js/build-config.js');
-assert.ok(build.includes("display: '2026.08.05.16'"));
-assert.ok(build.includes("release: 'audiolab-signal-recovery-20260805'"));
-assert.ok(build.includes("cache: 'shinobi-launchpad-v16'"));
+for (const required of [
+  "id: '20260807-unified-v40'",
+  "cache: 'shinobi-launchpad-v40'",
+  "display: '2026.08.07.40'",
+  "release: 'unified-v40-20260807'"
+]) assert.ok(build.includes(required), `Phase 12 must be validated against current Build 40 metadata: ${required}.`);
 
 const deployment = read('.github/workflows/deploy-cloudflare.yml');
 assert.ok(deployment.includes("EXPECTED_ADMIN_VERSION: '5.6'"));
@@ -63,4 +66,4 @@ assert.ok(deployment.includes("EXPECTED_PUBLIC_VERSION: '2.6'"));
 
 await import('./test-milestone-5.mjs');
 
-console.log('Phase 12 filtering, manual cover colors, Studio cleanup, local themes, metadata layout and Discography order remain valid under Track Manager v5.6 and Build 32.');
+console.log('Phase 12 filtering, manual cover colors, Studio cleanup, local themes, metadata layout and Discography order remain valid under Build 40.');
