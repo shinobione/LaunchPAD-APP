@@ -4,21 +4,26 @@
 
 @media(max-width:760px){
   body.lyrics-studio-open .sidebar,
-  body.lyrics-studio-open .topbar,
-  body.lyrics-studio-open .mobile-nav{
+  body.lyrics-studio-open .topbar{
     visibility:hidden!important;
     pointer-events:none!important;
+  }
+
+  body.lyrics-studio-open .mobile-nav{
+    visibility:visible!important;
+    pointer-events:auto!important;
+    z-index:560!important;
   }
 
   body.lyrics-studio-open .player-bar{
     visibility:visible!important;
     pointer-events:auto!important;
-    z-index:540!important;
+    z-index:550!important;
     left:0!important;
     right:0!important;
-    bottom:0!important;
-    height:calc(68px + env(safe-area-inset-bottom,0px))!important;
-    padding-bottom:env(safe-area-inset-bottom,0px)!important;
+    bottom:54px!important;
+    height:68px!important;
+    padding-bottom:0!important;
   }
 
   #view-lyrics.lyrics-studio-mode{
@@ -27,7 +32,7 @@
     padding:
       max(8px,env(safe-area-inset-top,0px))
       max(8px,env(safe-area-inset-right,0px))
-      calc(76px + env(safe-area-inset-bottom,0px))
+      calc(138px + env(safe-area-inset-bottom,0px))
       max(8px,env(safe-area-inset-left,0px))!important;
     overflow:hidden!important;
   }
@@ -93,10 +98,10 @@
     z-index:6;
     top:0;
     display:grid;
-    grid-template-columns:58px minmax(0,1fr);
+    grid-template-columns:66px minmax(0,1fr);
     align-items:center;
     gap:8px;
-    min-height:54px;
+    min-height:56px;
     padding:8px 9px;
     border-bottom:1px solid var(--line);
     background:rgba(8,5,15,.96);
@@ -105,11 +110,11 @@
 
   #view-lyrics.lyrics-studio-mode .lyrics-reader-head>#lyrics-reader-label{
     display:block;
-    max-width:58px;
-    color:#998fa6;
-    font-size:7px;
+    max-width:66px;
+    color:#a89daf;
+    font-size:8px;
     line-height:1.2;
-    letter-spacing:.11em;
+    letter-spacing:.1em;
   }
 
   #view-lyrics.lyrics-studio-mode .lyrics-studio-controls{
@@ -126,10 +131,10 @@
 
   #view-lyrics.lyrics-studio-mode .lyrics-studio-controls .chip{
     min-width:0;
-    min-height:38px;
+    min-height:40px;
     padding:8px 5px;
     overflow:hidden;
-    font-size:8px;
+    font-size:9px;
     line-height:1.1;
     text-overflow:ellipsis;
   }
@@ -228,6 +233,12 @@
     border-radius:14px;
   }
 
+  #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-track-panel:not(.lyrics-track-panel-collapsed) .lyrics-studio-canvas[data-playback="loading"],
+  #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-track-panel:not(.lyrics-track-panel-collapsed) .lyrics-studio-canvas[data-playback="waiting"],
+  #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-track-panel:not(.lyrics-track-panel-collapsed) .lyrics-studio-canvas[data-playback="stalled"]{
+    background:linear-gradient(145deg,rgba(166,60,255,.08),rgba(4,3,9,.96));
+  }
+
   #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-track-panel:not(.lyrics-track-panel-collapsed) .eyebrow,
   #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-track-panel:not(.lyrics-track-panel-collapsed) h2,
   #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-track-panel:not(.lyrics-track-panel-collapsed)>p,
@@ -250,11 +261,12 @@
 
 @media(max-width:760px) and (orientation:landscape){
   body.lyrics-studio-open .player-bar{
-    height:calc(60px + env(safe-area-inset-bottom,0px))!important;
+    bottom:54px!important;
+    height:60px!important;
   }
 
   #view-lyrics.lyrics-studio-mode{
-    padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))!important;
+    padding-bottom:calc(122px + env(safe-area-inset-bottom,0px))!important;
   }
 
   #view-lyrics.lyrics-studio-mode .lyrics-track-panel{
@@ -291,16 +303,16 @@
 
 @media(max-width:380px){
   #view-lyrics.lyrics-studio-mode .lyrics-reader-head{
-    grid-template-columns:48px minmax(0,1fr);
+    grid-template-columns:54px minmax(0,1fr);
   }
 
   #view-lyrics.lyrics-studio-mode .lyrics-reader-head>#lyrics-reader-label{
-    max-width:48px;
-    font-size:6px;
+    max-width:54px;
+    font-size:7px;
   }
 
   #view-lyrics.lyrics-studio-mode .lyrics-studio-controls .chip{
-    font-size:7px;
+    font-size:8px;
   }
 
   #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-track-panel:not(.lyrics-track-panel-collapsed){
