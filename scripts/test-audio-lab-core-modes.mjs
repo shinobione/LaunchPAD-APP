@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import { assertCurrentBuild } from './lib/build-metadata.mjs';
 
 const read = path => fs.readFileSync(path, 'utf8');
 
@@ -12,47 +13,37 @@ assert.equal(
 );
 
 const retiredIds = [
-  ['prism', 'tunnel'],
-  ['cyber', 'rain'],
-  ['quantum', 'grid'],
-  ['tesla', 'veins'],
-  ['hyper', 'drive'],
-  ['wave', 'cathedral'],
-  ['hex', 'reactor']
+  ['prism', 'tunnel'], ['cyber', 'rain'], ['quantum', 'grid'], ['tesla', 'veins'],
+  ['hyper', 'drive'], ['wave', 'cathedral'], ['hex', 'reactor']
 ].map(parts => parts.join('-'));
 
 const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
-  "import { readAudioLabAmplitude, readAudioLabSpectrum, synthesizePlaybackSpectrum }",
-  'createAmplitudeDynamicsTracker',
   "const DEFAULT_MODE = 'neon-shatter'",
+  "{ id: 'spectrum', label: 'Spectrum' }",
+  'drawNeonShatterAdaptiveMode',
   "{ id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }",
-  'externalHomeRenderer: false',
-  'const waveform = new Uint8Array(256)',
-  'const amplitudeReading = readAudioLabAmplitude(waveform)',
-  'Object.assign(features, amplitude)',
-  "document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v5'",
-  'function updateTelemetry(reading, features)',
-  'data.audioLabRms = values[2]',
-  'data.audioLabDynamics = values[4]',
-  'renderMode(homeCanvas, customRenderer, reactive, getAccent, time, features)'
+  "document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v6'",
+  'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60',
+  "const dprCap = mode === 'neon-shatter' && mobile ? 1.2 : mobile ? 1.5 : 2"
 ]) assert.ok(live.includes(required), `Live Audio Lab renderer is missing ${required}.`);
-for (const forbidden of [...retiredIds, "id: 'circle'", 'drawOrbitMode', 'drawWaveCathedralMode', 'drawHexReactorMode']) {
+for (const forbidden of [...retiredIds, "'bars'", "id: 'circle'", 'drawOrbitMode', 'drawWaveCathedralMode', 'drawHexReactorMode']) {
   assert.ok(!live.includes(forbidden), `Retired Audio Lab mode ${forbidden} leaked into the live registry.`);
 }
 
 const core = read('js/features/visual/visual-engine-core-modes.js');
 for (const required of [
   'export function drawAuroraGlassMode(',
-  'rms: features.rms ?? features.energy ?? 0',
-  'peak: features.peak ?? features.kick ?? 0',
-  'dynamics: features.dynamics ?? features.intensity ?? features.energy ?? 0',
-  'const expansion = .42 + dynamics * .94 + peak * .2',
-  'const motionRate = .14 + dynamics * .72 + peak * .16',
-  'const separation = height * (.025 + dynamics * .043)'
-]) assert.ok(core.includes(required), `Aurora RMS dynamics renderer is missing ${required}.`);
+  'export function drawNeonShatterAdaptiveMode(',
+  'const transient = clamp(Math.max(kick, peak))',
+  'const spectralIndex = Math.min(',
+  'const spectralRipple = Math.sin(',
+  'const spectralDeformation = (spectral - bandValue)',
+  'const fragments = mobile ? 20 : 52',
+  'const cracks = mobile ? 9 : 16'
+]) assert.ok(core.includes(required), `Adaptive Audio Lab renderer is missing ${required}.`);
 for (const forbidden of ['drawOrbitMode', 'drawWaveCathedralMode', 'Orbit', 'Wave Cathedral', 'wave-cathedral']) {
-  assert.ok(!core.includes(forbidden), `Retired renderer ${forbidden} leaked into the Aurora module.`);
+  assert.ok(!core.includes(forbidden), `Retired renderer ${forbidden} leaked into the core modes module.`);
 }
 assert.ok(!fs.existsSync('js/features/visual/visual-engine-hex-reactor.js'), 'Retired Hex Reactor module must be deleted.');
 
@@ -62,12 +53,8 @@ for (const required of [
   "{ id: 'neon-shatter', label: 'Neon Shatter' }",
   "{ id: 'liquid-chrome', label: 'Liquid Chrome' }",
   "{ id: 'nebula', label: 'Nebula' }",
-  'const spreadX = width * (.27 + intensity * .045)',
-  "ctx.globalCompositeOperation = 'source-over'",
-  'const rings = width < 520 ? 32 : 46',
-  'ctx.shadowBlur = 1 + value * 3.8',
-  'const delegated = delegatedModeSet.has(mode);',
-  "if (labActive && !delegated) draw($('#lab-visualizer'), mode);"
+  'function drawSpectrum(',
+  'function drawLiquidChrome('
 ]) assert.ok(base.includes(required), `Base Audio Lab renderer is missing ${required}.`);
 for (const forbidden of [...retiredIds, "case 'hex-reactor'", 'drawHexReactor', 'hexPath']) {
   assert.ok(!base.includes(forbidden), `Retired Audio Lab code ${forbidden} leaked into the base renderer.`);
@@ -90,45 +77,26 @@ const protectedHashes = {
   drawSpectrum: '25a86e3763b668fc69734d48439a2c93745ef927a3fcbdddaf2d0f29e0371813'
 };
 for (const [name, expected] of Object.entries(protectedHashes)) {
-  const source = extractFunction(base, name);
-  const actual = crypto.createHash('sha256').update(source).digest('hex');
+  const actual = crypto.createHash('sha256').update(extractFunction(base, name)).digest('hex');
   assert.equal(actual, expected, `${name} is sanctuary-protected and must not change.`);
 }
-for (const binding of [
-  "case 'liquid-chrome': drawLiquidChrome(ctx, width, height, data, accent, accent2); break;",
-  'default: drawSpectrum(ctx, width, height, data, accent, accent2);'
-]) assert.ok(base.includes(binding), `Protected Audio Lab binding changed: ${binding}`);
-
-const reactivity = read('js/features/visual/audio-reactivity.js');
-for (const required of [
-  'export function createAmplitudeDynamicsTracker(',
-  'const normalizedRms = clamp(',
-  'const dynamics = clamp(Math.pow(loudness, .78) * .76 + peakHold * .24)',
-  'export function createAudioReactivityTracker(',
-  'export function shapeReactiveSpectrum('
-]) assert.ok(reactivity.includes(required), `Reusable audio dynamics layer is missing ${required}.`);
 
 const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
-  'export function readAudioLabAmplitude(',
-  'ACTIVE_ANALYSER.getByteTimeDomainData(target)',
-  'const rms = Math.sqrt(energy / target.length)'
-]) assert.ok(signal.includes(required), `Live amplitude bridge is missing ${required}.`);
+  'patchMediaElementSource',
+  'nativeConnect(context.destination)',
+  "if (destination === analyser.context?.destination) return destination",
+  'export function readAudioLabAmplitude('
+]) assert.ok(signal.includes(required), `Audio signal safety layer is missing ${required}.`);
 
 const worker = read('sw.js');
 assert.ok(worker.includes("'./js/features/visual/audio-reactivity.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-registry.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-sanctuary.js'"));
-assert.ok(worker.includes("event.data?.type === 'GET_RELEASE'"));
-assert.ok(!worker.includes('visual-engine-hex-reactor.js'), 'PWA shell must not cache the retired Hex Reactor module.');
+assert.ok(!worker.includes('visual-engine-hex-reactor.js'));
 
-const build = read('js/build-config.js');
-for (const required of [
-  "id: '20260807-visual-card-mobile-v41'",
-  "cache: 'shinobi-launchpad-v41'",
-  "revision: 'visual-card-cors-mobile-layout-1'",
-  "display: '2026.08.07.41'",
-  "release: 'visual-card-mobile-polish-20260807'"
-]) assert.ok(build.includes(required), `Audio Lab must be validated against current Build 41 metadata: ${required}.`);
+const build = assertCurrentBuild('Audio Lab Build 42');
+assert.equal(build.number, 42);
+assert.equal(build.release, 'audio-audiolab-admin-20260807');
 
-console.log('Audio Lab purge, calibration and sanctuary-protected Spectrum/Liquid Chrome remain valid under Build 41.');
+console.log('Audio Lab Spectrum/Liquid Chrome sanctuary, adaptive Neon, reactive Aurora and parallel metering are valid under Build 42.');

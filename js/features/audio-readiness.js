@@ -16,7 +16,8 @@ export function initAudioReadiness({ audio }) {
   if (!(audio instanceof HTMLMediaElement) || audio.dataset.audioReadinessReady === 'true') return;
 
   audio.dataset.audioReadinessReady = 'true';
-  audio.preload = 'metadata';
+  audio.preload = 'auto';
+  audio.setAttribute('preload', 'auto');
   audio.dataset.playbackRequestState = 'idle';
 
   let playbackRequested = false;
@@ -58,7 +59,8 @@ export function initAudioReadiness({ audio }) {
 
     const time = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
     restorePositionWhenReady(time);
-    audio.preload = 'metadata';
+    audio.preload = 'auto';
+    audio.setAttribute('preload', 'auto');
     audio.setAttribute('src', source);
 
     if (forceLoad) nativeLoad();

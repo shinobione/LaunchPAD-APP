@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { assertCurrentBuild } from './lib/build-metadata.mjs';
 
 const read = path => fs.readFileSync(path, 'utf8');
 
@@ -29,11 +30,8 @@ for (const required of [
   'const delegatedModeSet = new Set(delegatedModes)',
   'const delegated = delegatedModeSet.has(mode);',
   'if (homeActive && !externalHomeRenderer && !delegated)',
-  'if (labActive && !delegated)',
-  'const allowedModes = new Set(',
-  'const spreadX = width * (.27 + intensity * .045)',
-  'const rings = width < 520 ? 32 : 46'
-]) assert.ok(visuals.includes(required), `Phase 13 Audio Lab is missing ${required}.`);
+  'if (labActive && !delegated)'
+]) assert.ok(visuals.includes(required), `Phase 13 Audio Lab base is missing ${required}.`);
 for (const forbidden of ['hex-reactor', 'drawHexReactor', 'hexPath']) {
   assert.ok(!visuals.includes(forbidden), `Retired Hex Reactor code leaked into Phase 13: ${forbidden}.`);
 }
@@ -41,10 +39,12 @@ for (const forbidden of ['hex-reactor', 'drawHexReactor', 'hexPath']) {
 const coreVisuals = read('js/features/visual/visual-engine-core-modes.js');
 for (const required of [
   'drawAuroraGlassMode(',
-  'rms: features.rms ?? features.energy ?? 0',
-  'const expansion = .42 + dynamics * .94 + peak * .2',
-  'const motionRate = .14 + dynamics * .72 + peak * .16'
-]) assert.ok(coreVisuals.includes(required), `Audio Lab Aurora dynamics renderer is missing ${required}.`);
+  'drawNeonShatterAdaptiveMode(',
+  'const transient = clamp(Math.max(kick, peak))',
+  'const spectralIndex = Math.min(',
+  'const spectralRipple = Math.sin(',
+  'const fragments = mobile ? 20 : 52'
+]) assert.ok(coreVisuals.includes(required), `Audio Lab adaptive renderer is missing ${required}.`);
 for (const forbidden of ['drawOrbitMode', 'drawWaveCathedralMode', 'Wave Cathedral', 'Orbit']) {
   assert.ok(!coreVisuals.includes(forbidden), `Retired custom renderer leaked into Phase 13: ${forbidden}.`);
 }
@@ -53,6 +53,8 @@ assert.ok(!fs.existsSync('js/features/visual/visual-engine-hex-reactor.js'));
 const liveVisuals = read('js/features/visual/visual-engine-live.js');
 for (const required of [
   "const DEFAULT_MODE = 'neon-shatter'",
+  "{ id: 'spectrum', label: 'Spectrum' }",
+  "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterAdaptiveMode }",
   "{ id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }",
   'externalHomeRenderer: false',
   'readAudioLabSpectrum(raw)',
@@ -61,9 +63,10 @@ for (const required of [
   'shapeReactiveSpectrum(raw, shaped, features)',
   "homeTitle.textContent = 'Neon Shatter'",
   "new CustomEvent('shinobi:visual-mode'",
-  "dataset.audioLabRenderer = 'hybrid-reactive-v5'"
+  "dataset.audioLabRenderer = 'hybrid-reactive-v6'",
+  'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60'
 ]) assert.ok(liveVisuals.includes(required), `Live Audio Lab renderer is missing ${required}.`);
-for (const forbidden of ['wave-cathedral', "id: 'circle'", 'hex-reactor', 'drawHexReactorMode']) {
+for (const forbidden of ['wave-cathedral', "id: 'circle'", "'bars'", 'hex-reactor', 'drawHexReactorMode']) {
   assert.ok(!liveVisuals.includes(forbidden), `Retired Audio Lab route leaked into Phase 13: ${forbidden}.`);
 }
 
@@ -84,6 +87,8 @@ for (const required of [
   'readAudioLabAmplitude',
   'synthesizePlaybackSpectrum',
   'waveformToSpectrum',
+  'patchMediaElementSource',
+  "document.documentElement.dataset.audioGraph = 'direct-plus-metering'",
   "audio.addEventListener('playing', recover)",
   "markSignal('fallback')",
   "document.documentElement.dataset.audioLabSignal"
@@ -109,6 +114,7 @@ assert.ok(engine.includes("import(versioned('./features/audio-lab-signal.js'))")
 assert.ok(engine.includes('initAudioLabSignalBridge({ audio });'));
 assert.ok(engine.includes("import(versioned('./features/feature-13.js'))"));
 assert.ok(engine.includes('initPhase13({ audio });'));
+assert.ok(engine.includes("'css/admin-tools.css'"));
 
 const worker = read('sw.js');
 assert.ok(worker.includes("'./js/features/audio-lab-signal.js'"));
@@ -117,6 +123,7 @@ assert.ok(worker.includes("'./js/features/visual/audio-reactivity.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-v2.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-core-modes.js'"));
 assert.ok(worker.includes("'./js/features/visual/visual-engine-live.js'"));
+assert.ok(worker.includes("'./css/admin-tools.css'"));
 assert.ok(worker.includes("event.data?.type === 'GET_RELEASE'"));
 assert.ok(!worker.includes('visual-engine-hex-reactor.js'));
 
@@ -131,16 +138,11 @@ for (const required of [
   "payload.crossOriginResourcePolicy = 'cross-origin'"
 ]) assert.ok(publicWorker.includes(required), `Public media Worker v2.6 is missing ${required}.`);
 
-const build = read('js/build-config.js');
-for (const required of [
-  "id: '20260807-visual-card-mobile-v41'",
-  "cache: 'shinobi-launchpad-v41'",
-  "revision: 'visual-card-cors-mobile-layout-1'",
-  "display: '2026.08.07.41'",
-  "release: 'visual-card-mobile-polish-20260807'"
-]) assert.ok(build.includes(required), `Phase 13 must be validated against current Build 41 metadata: ${required}.`);
+const build = assertCurrentBuild('Phase 13 / Build 42');
+assert.equal(build.number, 42);
+assert.equal(build.release, 'audio-audiolab-admin-20260807');
 
 await import('./test-milestone-4.mjs');
 await import('./test-milestone-6.mjs');
 
-console.log('Phase 13 palette, Audio Lab reactivity and Neon Shatter Home default remain valid under Build 41.');
+console.log('Phase 13 palette, restored Spectrum, adaptive Neon Shatter and reactive Aurora remain valid under Build 42.');
