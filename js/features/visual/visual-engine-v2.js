@@ -374,12 +374,23 @@ export function createVisualController({ audio, $, getAccent, delegatedModes = [
 
   function start() {
     cancelAnimationFrame(frame);
-    const loop = () => {
-      if (!externalHomeRenderer) draw($('#home-visualizer'), 'nebula');
-      if (!delegatedModeSet.has(mode)) draw($('#lab-visualizer'), mode);
+    const frameInterval = 1000 / 30;
+    let lastFrameAt = 0;
+
+    const loop = now => {
+      const homeActive = document.querySelector('#view-home')?.classList.contains('active') === true;
+      const labActive = document.querySelector('#view-lab')?.classList.contains('active') === true;
+      const delegated = delegatedModeSet.has(mode);
+
+      if (document.visibilityState !== 'hidden' && now - lastFrameAt >= frameInterval) {
+        lastFrameAt = now;
+        if (homeActive && !externalHomeRenderer && !delegated) draw($('#home-visualizer'), mode);
+        if (labActive && !delegated) draw($('#lab-visualizer'), mode);
+      }
+
       frame = requestAnimationFrame(loop);
     };
-    loop();
+    frame = requestAnimationFrame(loop);
   }
 
   function startAmbient() {
