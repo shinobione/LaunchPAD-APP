@@ -1,13 +1,14 @@
-
 name: Validate Cloudflare Workers
 
 on:
   push:
     branches:
       - main
-      - 'feature/**'
-      - 'fix/**'
   pull_request:
+
+concurrency:
+  group: validate-cloudflare-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -15,6 +16,7 @@ permissions:
 jobs:
   validate-workers:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -39,4 +41,3 @@ jobs:
 
       - name: Dry-run both Wrangler deployments
         run: npm run check:wrangler
-
