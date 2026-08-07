@@ -84,7 +84,7 @@ body[data-viewed-track-theme] #view-track,
 }
 
 /* NOW PLAYING belongs on the same top rail as LYRICS/CANVAS/CLEAN. */
-.album-card .cover-wrap .now-playing-card-badge-v38{
+.album-card .cover-wrap .now-playing-card-badge-v39{
   position:absolute!important;
   top:9px!important;
   left:50%!important;
@@ -100,7 +100,7 @@ body[data-viewed-track-theme] #view-track,
 }
 
 @media(max-width:760px){
-  .album-card .cover-wrap .now-playing-card-badge-v38{
+  .album-card .cover-wrap .now-playing-card-badge-v39{
     top:7px!important;
   }
 
