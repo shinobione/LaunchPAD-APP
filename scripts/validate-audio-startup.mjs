@@ -5,7 +5,8 @@ const fail = message => { throw new Error(message); };
 
 const readiness = read('js/features/audio-readiness.js');
 for (const required of [
-  "audio.preload = 'metadata'",
+  "audio.preload = 'auto'",
+  "audio.setAttribute('preload', 'auto')",
   'navigator.userActivation?.isActive',
   'PLAY_START_WATCHDOG_MS',
   'prepareSourceInsideGesture',
@@ -18,6 +19,29 @@ for (const required of [
   'audio.networkState === HTMLMediaElement.NETWORK_NO_SOURCE'
 ]) {
   if (!readiness.includes(required)) fail(`Audio readiness is missing ${required}.`);
+}
+
+const signal = read('js/features/audio-lab-signal.js');
+for (const required of [
+  'patchMediaElementSource',
+  'nativeConnect(context.destination)',
+  "document.documentElement.dataset.audioGraph = 'direct-plus-metering'",
+  "if (destination === analyser.context?.destination) return destination",
+  'patchAudioContextClass(globalThis.AudioContext, audio)'
+]) {
+  if (!signal.includes(required)) fail(`Parallel Audio Lab metering is missing ${required}.`);
+}
+
+const publicWorker = read('cloudflare/public-worker.js');
+for (const required of [
+  'request.headers.get("range")',
+  'bucket.get(key, { range: parsedRange })',
+  'headers.set("Accept-Ranges", "bytes")',
+  'headers.set("Content-Range"',
+  'status: 206',
+  'headers.set("Content-Length", String(object.range.length))'
+]) {
+  if (!publicWorker.includes(required)) fail(`Range-safe R2 streaming is missing ${required}.`);
 }
 
 const resilience = read('js/features/resilience-accessibility.js');
@@ -72,4 +96,4 @@ if (!visualRunner.includes('run_audio_startup_smoke')) {
   fail('Studio audio startup browser regression is not wired into CI.');
 }
 
-console.log('Studio metadata preparation, playback-driven browser titles, honest loading state, lyric seeking, source rebuild and Retry recovery are covered.');
+console.log('Buffered playback, parallel Audio Lab metering, Range streaming and playback recovery are covered.');
