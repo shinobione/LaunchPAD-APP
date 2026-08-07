@@ -32,8 +32,9 @@ for (const required of [
   'const amplitudeReading = readAudioLabAmplitude(waveform)',
   'Object.assign(features, amplitude)',
   "document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v5'",
-  'document.documentElement.dataset.audioLabRms = features.rms.toFixed(3)',
-  'document.documentElement.dataset.audioLabDynamics = features.dynamics.toFixed(3)',
+  'function updateTelemetry(reading, features)',
+  'data.audioLabRms = values[2]',
+  'data.audioLabDynamics = values[4]',
   'renderMode(homeCanvas, customRenderer, reactive, getAccent, time, features)'
 ]) assert.ok(live.includes(required), `Live Audio Lab renderer is missing ${required}.`);
 for (const forbidden of [...retiredIds, "id: 'circle'", 'drawOrbitMode', 'drawWaveCathedralMode', 'drawHexReactorMode']) {
@@ -65,7 +66,8 @@ for (const required of [
   "ctx.globalCompositeOperation = 'source-over'",
   'const rings = width < 520 ? 32 : 46',
   'ctx.shadowBlur = 1 + value * 3.8',
-  "if (!delegatedModeSet.has(mode)) draw($('#lab-visualizer'), mode)"
+  'const delegated = delegatedModeSet.has(mode);',
+  "if (labActive && !delegated) draw($('#lab-visualizer'), mode);"
 ]) assert.ok(base.includes(required), `Base Audio Lab renderer is missing ${required}.`);
 for (const forbidden of [...retiredIds, "case 'hex-reactor'", 'drawHexReactor', 'hexPath']) {
   assert.ok(!base.includes(forbidden), `Retired Audio Lab code ${forbidden} leaked into the base renderer.`);
@@ -122,24 +124,11 @@ assert.ok(!worker.includes('visual-engine-hex-reactor.js'), 'PWA shell must not 
 
 const build = read('js/build-config.js');
 for (const required of [
-  "id: '20260806-audiolab-rms-clarity'",
-  "cache: 'shinobi-launchpad-v27'",
-  "revision: 'audiolab-rms-clarity-1'",
-  "display: '2026.08.06.27'",
-  "release: 'audiolab-rms-clarity-20260806'",
-  "id: '20260806-pwa-single-update'",
-  "cache: 'shinobi-launchpad-v28'",
-  "revision: 'pwa-single-update-1'",
-  "display: '2026.08.06.28'",
-  "release: 'pwa-single-update-20260806'",
-  "id: '20260806-m6-home-editorial'",
-  "cache: 'shinobi-launchpad-v33'",
-  "display: '2026.08.06.33'",
-  "id: '20260806-m7-audiolab-sanctuary'",
-  "cache: 'shinobi-launchpad-v34'",
-  "revision: 'audiolab-sanctuary-1'",
-  "display: '2026.08.06.34'",
-  "release: 'audiolab-sanctuary-20260806'"
-]) assert.ok(build.includes(required), `Audio Lab/PWA metadata is missing ${required}.`);
+  "id: '20260807-unified-v40'",
+  "cache: 'shinobi-launchpad-v40'",
+  "revision: 'cloudflare-main-reconciliation-1'",
+  "display: '2026.08.07.40'",
+  "release: 'unified-v40-20260807'"
+]) assert.ok(build.includes(required), `Audio Lab must be validated against current Build 40 metadata: ${required}.`);
 
-console.log('Audio Lab purge, calibration and sanctuary-protected Spectrum/Liquid Chrome remain valid under Build 34.');
+console.log('Audio Lab purge, calibration and sanctuary-protected Spectrum/Liquid Chrome remain valid under Build 40.');
