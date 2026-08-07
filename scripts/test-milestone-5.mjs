@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { assertCurrentBuild } from './lib/build-metadata.mjs';
 
 const read = path => fs.readFileSync(path, 'utf8');
 
@@ -48,9 +49,5 @@ const worker = read('sw.js');
 assert.ok(worker.includes("'./css/discography-experience.css'"));
 assert.ok(worker.includes("'./js/features/discography-experience.js'"));
 
-const build = read('js/build-config.js');
-assert.ok(build.includes("id: '20260806-m5-discography-eras'"));
-assert.ok(build.includes("cache: 'shinobi-launchpad-v32'"));
-assert.ok(build.includes("display: '2026.08.06.32'"));
-
-console.log('Milestone 5 Discography hierarchy, dynamic Eras and now-playing cards remain valid.');
+const build = assertCurrentBuild('Milestone 5');
+console.log(`Milestone 5 Discography hierarchy, dynamic Eras and now-playing cards remain valid under Build ${build.number}.`);
