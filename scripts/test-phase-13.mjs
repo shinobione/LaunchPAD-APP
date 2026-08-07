@@ -6,10 +6,11 @@ const read = path => fs.readFileSync(path, 'utf8');
 const feature = read('js/features/feature-13.js');
 for (const required of [
   "const TRACK_ROUTE_PREFIX = '#track='",
+  'function setStyleIfChanged(',
   'function applyTrackDetailPalette()',
-  "view.style.setProperty('--accent', accent)",
-  "view.style.setProperty('--accent2', accent2)",
-  "document.title = `${track.title} — Track details — SHINOBIWAN`",
+  "changed = setStyleIfChanged(view, '--accent', accent) || changed;",
+  "changed = setStyleIfChanged(view, '--accent2', accent2) || changed;",
+  'const expectedTitle = `${track.title} — Track details — SHINOBIWAN`;',
   "new MutationObserver(synchronize).observe(view",
   "audio?.addEventListener('play', synchronize)",
   'export function initPhase13'
@@ -129,36 +130,14 @@ for (const required of [
 
 const build = read('js/build-config.js');
 for (const required of [
-  "display: '2026.08.05.16'",
-  "release: 'audiolab-signal-recovery-20260805'",
-  "cache: 'shinobi-launchpad-v16'",
-  "display: '2026.08.05.22'",
-  "release: 'audiolab-core-modes-fix-20260805'",
-  "cache: 'shinobi-launchpad-v22'",
-  "display: '2026.08.05.23'",
-  "release: 'audiolab-showcase-five-20260805'",
-  "cache: 'shinobi-launchpad-v23'",
-  "display: '2026.08.05.24'",
-  "release: 'audiolab-live-reactivity-20260805'",
-  "cache: 'shinobi-launchpad-v24'",
-  "display: '2026.08.06.25'",
-  "release: 'audiolab-catalog-reactivity-20260806'",
-  "cache: 'shinobi-launchpad-v25'",
-  "display: '2026.08.06.26'",
-  "release: 'audiolab-animation-calibration-20260806'",
-  "cache: 'shinobi-launchpad-v26'",
-  "display: '2026.08.06.27'",
-  "release: 'audiolab-rms-clarity-20260806'",
-  "cache: 'shinobi-launchpad-v27'",
-  "display: '2026.08.06.28'",
-  "release: 'pwa-single-update-20260806'",
-  "cache: 'shinobi-launchpad-v28'",
-  "display: '2026.08.06.33'",
-  "release: 'home-editorial-switcher-20260806'",
-  "cache: 'shinobi-launchpad-v33'"
-]) assert.ok(build.includes(required), `Build history is missing ${required}.`);
+  "id: '20260807-unified-v40'",
+  "cache: 'shinobi-launchpad-v40'",
+  "revision: 'cloudflare-main-reconciliation-1'",
+  "display: '2026.08.07.40'",
+  "release: 'unified-v40-20260807'"
+]) assert.ok(build.includes(required), `Phase 13 must be validated against current Build 40 metadata: ${required}.`);
 
 await import('./test-milestone-4.mjs');
 await import('./test-milestone-6.mjs');
 
-console.log('Phase 13 palette, Audio Lab reactivity and Neon Shatter Home default remain valid under Build 33.');
+console.log('Phase 13 palette, Audio Lab reactivity and Neon Shatter Home default remain valid under Build 40.');
