@@ -25,7 +25,19 @@ function installStudioReliabilityStyles() {
   const style = document.createElement('style');
   style.id = 'studio-reliability-styles';
   style.textContent = `
-    [data-action="toggle"].is-loading{cursor:progress}
+    [data-action="toggle"].is-loading{cursor:progress;position:relative;color:currentColor}
+    [data-action="toggle"].is-loading::after{
+      content:"";
+      display:block;
+      width:13px;
+      height:13px;
+      border:2px solid rgba(255,255,255,.28);
+      border-top-color:currentColor;
+      border-radius:50%;
+      animation:shinobi-player-loading .72s linear infinite;
+    }
+    @keyframes shinobi-player-loading{to{transform:rotate(1turn)}}
+    @media(prefers-reduced-motion:reduce){[data-action="toggle"].is-loading::after{animation:none}}
     @media(max-width:760px){
       #view-lyrics.lyrics-studio-mode .lyrics-track-select-label,
       #view-lyrics.lyrics-studio-mode .lyrics-track-select{display:none!important}
@@ -61,17 +73,19 @@ export function applyPlaybackState(root = document, playing = false) {
     setClassIfChanged(button, 'is-loading', false);
     setAttributeIfChanged(button, 'aria-label', label);
     setAttributeIfChanged(button, 'aria-pressed', String(playing));
+    setAttributeIfChanged(button, 'aria-busy', 'false');
     setPlaybackDatasetIfChanged(button, state);
   });
 }
 
 function applyLoadingState(root = document) {
   root.querySelectorAll(TOGGLE_SELECTOR).forEach(button => {
-    setTextIfChanged(button, '…');
+    setTextIfChanged(button, '');
     setClassIfChanged(button, 'is-playing', false);
     setClassIfChanged(button, 'is-loading', true);
     setAttributeIfChanged(button, 'aria-label', 'Loading audio');
     setAttributeIfChanged(button, 'aria-pressed', 'true');
+    setAttributeIfChanged(button, 'aria-busy', 'true');
     setPlaybackDatasetIfChanged(button, 'loading');
   });
 }
