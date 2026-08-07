@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { assertCurrentBuild } from './lib/build-metadata.mjs';
 
 for (const path of ['js/app-engine.js', 'js/app-engine-recovery.js']) {
   const engine = fs.readFileSync(path, 'utf8');
@@ -25,14 +26,13 @@ for (const path of ['js/app-engine.js', 'js/app-engine-recovery.js']) {
   assert.ok(fallbackIndex >= 0 && appMainIndex > fallbackIndex, `${path} must continue booting after the local catalog fallback.`);
 }
 
-const build = fs.readFileSync('js/build-config.js', 'utf8');
+const build = assertCurrentBuild('Navigation bootstrap');
 for (const required of [
-  "id: '20260807-unified-v40'",
   'js/app-engine-recovery.js?v=',
   'const initialStylesheets = new WeakSet',
   'if (initialStylesheets.has(link)) return link;',
   'js/navigation-stability-v39.js?v='
-]) assert.ok(build.includes(required), `Build 40 bootstrap is missing ${required}.`);
+]) assert.ok(build.source.includes(required), `Navigation bootstrap is missing ${required}.`);
 
 const router = fs.readFileSync('js/core/router.js', 'utf8');
 assert.ok(router.includes("if (route.type === 'track')"), 'Dedicated track routes must bypass the generic view router.');
@@ -49,4 +49,4 @@ assert.ok(worker.includes("'./js/app-engine-recovery.js'"), 'The recovery bootst
 assert.ok(worker.includes("url.pathname.endsWith('/js/app-engine-recovery.js')"), 'The recovery bootstrap must bypass stale caches.');
 assert.ok(worker.includes("fetch(request, { cache: 'no-store' })"), 'The recovery bootstrap must be fetched without cache reuse.');
 
-console.log('Build 40 navigation renders dedicated track routes once and keeps the runtime cache-safe.');
+console.log(`Navigation renders dedicated track routes once and keeps the runtime cache-safe under Build ${build.number}.`);
