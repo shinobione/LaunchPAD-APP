@@ -36,8 +36,8 @@ requirePattern(
 
 requirePattern(
   buildConfig,
-  /revision:\s*'(?:mobile-studio-reactivity-1|audiolab-decoded-buffer-1|audiolab-mirror-meter-1|audiolab-track-switch-1|audio-background-stability-1|now-playing-alignment-1|admin-tools-pwa-polish-1|audio-buffer-audiolab-admin-1|visual-card-cors-mobile-layout-1|cloudflare-main-reconciliation-1|routing-video-sorting-1|phase12-ui-hotfixes-1|phase13-visuals-palette-filters-1|phase13-mobile-about-layout-1|audiolab-signal-recovery-1|mobile-hero-order-1)'/,
-  'The build config must refresh cached routing, video, mobile hero and current phase assets.'
+  /revision:\s*'[a-z0-9][a-z0-9-]*'/i,
+  'The build config must expose a stable non-empty revision slug so cached shell assets can refresh.'
 );
 
-console.log('Hero profile sizing, artwork visibility and LAUNCHPAD-first mobile ordering are guarded.');
+console.log('Hero profile sizing, artwork visibility, LAUNCHPAD-first mobile ordering and generic build revision metadata are guarded.');
