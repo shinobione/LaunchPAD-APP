@@ -16,41 +16,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: npm catalog-filters
-        continue-on-error: true
-        run: npm run check:catalog-filters
-      - name: npm feature-10
-        continue-on-error: true
-        run: npm run check:feature-10
-      - name: npm feature-11
-        continue-on-error: true
-        run: npm run check:feature-11
-      - name: npm phase-12
-        continue-on-error: true
-        run: npm run check:phase-12
-      - name: npm phase-13
-        continue-on-error: true
-        run: npm run check:phase-13
-      - name: npm milestone-7
-        continue-on-error: true
-        run: npm run check:milestone-7
-      - name: npm navigation-recovery
-        continue-on-error: true
-        run: npm run check:navigation-recovery
-      - name: npm sanctuary-idempotence
-        continue-on-error: true
-        run: npm run check:sanctuary-idempotence
-      - name: npm audio-signal
-        continue-on-error: true
-        run: npm run check:audiolab-signal
-      - name: npm core-modes
-        continue-on-error: true
-        run: npm run check:audiolab-core-modes
-      - name: npm live-reactivity
-        continue-on-error: true
-        run: npm run check:audiolab-live
-      - name: npm desktop-overflow
-        continue-on-error: true
-        run: npm run check:desktop-overflow
-      - name: exact npm validate catalog
-        run: npm run validate:catalog
+      - name: Capture exact npm validate catalog
+        id: validate
+        shell: bash
+        run: |
+          set +e
+          npm run validate:catalog > npm-validate-catalog.log 2>&1
+          STATUS=$?
+          echo "$STATUS" > npm-validate-catalog.status
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Upload exact validation diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: build42-npm-validation
+          path: |
+            npm-validate-catalog.log
+            npm-validate-catalog.status
+          retention-days: 1
+      - name: Fail if exact validation failed
+        if: steps.validate.outputs.status != '0'
+        run: exit 1
