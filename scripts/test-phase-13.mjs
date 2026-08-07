@@ -89,11 +89,16 @@ for (const required of [
   'synthesizePlaybackSpectrum',
   'waveformToSpectrum',
   'createCaptureSourceProxy',
+  'function mediaIdentity()',
+  'function invalidateCapture(reason',
+  "audio.addEventListener('loadstart', () => invalidateCapture('loadstart'))",
+  "attributeFilter: ['src', 'data-track-id']",
   'context.createMediaStreamSource(scopedStream)',
   "document.documentElement.dataset.audioGraph = 'html5-direct-plus-capture-metering'",
   "audio.dataset.audioPlaybackPath = 'html5-direct'",
   "audio.addEventListener('playing', recover)",
   'async function suspendContexts()',
+  "if (CAPTURE_STATE !== 'synthetic')",
   "markSignal('fallback')",
   "document.documentElement.dataset.audioLabSignal"
 ]) assert.ok(signal.includes(required), `Audio Lab signal recovery is missing ${required}.`);
@@ -142,11 +147,11 @@ for (const required of [
   "payload.crossOriginResourcePolicy = 'cross-origin'"
 ]) assert.ok(publicWorker.includes(required), `Public media Worker v2.6 is missing ${required}.`);
 
-const build = assertCurrentBuild('Phase 13 / Build 45');
-assert.equal(build.number, 45);
-assert.equal(build.release, 'audio-background-stability-20260807');
+const build = assertCurrentBuild('Phase 13 / Build 46');
+assert.equal(build.number, 46);
+assert.equal(build.release, 'audiolab-track-switch-20260807');
 
 await import('./test-milestone-4.mjs');
 await import('./test-milestone-6.mjs');
 
-console.log('Phase 13 palette and Audio Lab visuals remain valid with background-safe metering under Build 45.');
+console.log('Phase 13 palette and Audio Lab visuals remain valid with source-renewing capture metering under Build 46.');
