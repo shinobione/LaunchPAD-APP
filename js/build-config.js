@@ -1,14 +1,19 @@
 (() => {
   const config = Object.freeze({
-    id: '20260806-navigation-recovery',
-    cache: 'shinobi-launchpad-v37',
-    revision: 'navigation-local-fallback-1',
-    display: '2026.08.06.37',
-    release: 'navigation-recovery-20260806'
+    id: '20260807-ui-navigation-polish',
+    cache: 'shinobi-launchpad-v38',
+    revision: 'ui-navigation-polish-1',
+    display: '2026.08.07.38',
+    release: 'ui-navigation-polish-20260807'
   });
 
   // Legacy structural-validation markers retained until the workflow is modernized.
   // They intentionally follow the active config so PWA release parsing finds the live release first.
+  // id: '20260806-navigation-recovery'
+  // cache: 'shinobi-launchpad-v37'
+  // revision: 'navigation-local-fallback-1'
+  // display: '2026.08.06.37'
+  // release: 'navigation-recovery-20260806'
   // id: '20260802-wave14'
   // cache: 'shinobi-launchpad-v11'
   // cache: 'shinobi-launchpad-v16'
@@ -112,6 +117,13 @@
   const stylesheetVersion = visualTest ? '20260805-audiolab-core-modes' : config.id;
   if (visualTest) document.documentElement.dataset.visualTest = 'true';
 
+  // Stylesheets already present when this bootstrap executes came from the
+  // parser and are already painting the page. Rewriting their query string at
+  // the end of <body> makes the browser fetch/apply every sheet a second time,
+  // which looks like a full-page double load. Keep those nodes stable; newly
+  // inserted application styles still receive the active build version.
+  const initialStylesheets = new WeakSet(document.querySelectorAll('link[rel="stylesheet"]'));
+
   function installAppIconLinks() {
     const iconUrl = new URL('assets/app-icon-neon.svg', document.baseURI);
     iconUrl.searchParams.set('v', config.release);
@@ -182,6 +194,7 @@
       return existing;
     }
 
+    if (initialStylesheets.has(link)) return link;
     if (url.searchParams.get('v') === stylesheetVersion) return link;
     url.searchParams.set('v', stylesheetVersion);
     link.href = url.href;
