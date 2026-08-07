@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { assertCurrentBuild } from './lib/build-metadata.mjs';
 import {
   AUDIO_LAB_DEFAULT_MODE,
   AUDIO_LAB_PRESET_IDS,
@@ -149,9 +150,5 @@ const worker = read('sw.js');
 assert.ok(worker.includes("'./js/features/visual/audio-lab-registry.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-sanctuary.js'"));
 
-const build = read('js/build-config.js');
-assert.ok(build.includes("id: '20260806-m7-audiolab-sanctuary'"));
-assert.ok(build.includes("cache: 'shinobi-launchpad-v34'"));
-assert.ok(build.includes("display: '2026.08.06.34'"));
-
-console.log('Milestone 7 Audio Lab purge, calibration, Studio cleanup and sanctuary hashes are valid.');
+const build = assertCurrentBuild('Milestone 7');
+console.log(`Milestone 7 Audio Lab purge, calibration, Studio cleanup and sanctuary hashes remain valid under Build ${build.number}.`);
