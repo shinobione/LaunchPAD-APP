@@ -37,17 +37,6 @@
   scrollbar-width:thin;
 }
 
-.era-timeline-track::before{
-  content:"";
-  position:absolute;
-  top:15px;
-  left:20px;
-  right:20px;
-  height:1px;
-  background:linear-gradient(90deg,var(--accent),var(--accent2));
-  opacity:.35;
-}
-
 .era-timeline-item{
   position:relative;
   z-index:1;
