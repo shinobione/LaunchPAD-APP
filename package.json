@@ -6,6 +6,9 @@
     "wrangler": "4.118.0"
   },
   "scripts": {
+    "build:web": "node scripts/build-cloudflare-pages.mjs",
+    "check:web-build": "node scripts/validate-cloudflare-pages-build.mjs",
+    "check:deployment-topology": "node scripts/validate-deployment-topology.mjs",
     "build:admin-worker": "node scripts/build-admin-worker.mjs dist/launchpad-r2-admin-worker.js",
     "check:admin-worker": "node scripts/build-admin-worker.mjs",
     "check:lyrics-txt-metadata": "node scripts/validate-lyrics-txt-metadata.mjs",
@@ -43,6 +46,6 @@
     "validate:media-regressions": "node scripts/validate-media-regressions.mjs && node scripts/validate-unsynced-lyrics-status.mjs && node scripts/test-lyrics-autoscroll.mjs && node scripts/validate-pwa-update.mjs && node scripts/validate-audio-startup.mjs && node scripts/validate-mobile-studio.mjs && node scripts/validate-canvas-layout.mjs && node scripts/validate-smart-canvas.mjs && node scripts/validate-canvas-identity.mjs && node scripts/validate-admin-access.mjs",
     "audit:r2": "node scripts/audit-r2-cleanup-readiness.mjs",
     "test:service-worker": "npm run validate:media-regressions && node scripts/test-service-worker.mjs",
-    "validate": "npm run check:syntax && npm run validate:catalog && npm run validate:cloudflare && npm run test:service-worker"
+    "validate": "npm run check:syntax && npm run check:deployment-topology && npm run validate:catalog && npm run validate:cloudflare && npm run test:service-worker"
   }
 }
