@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD — catalog guide
 
-_Current application baseline: Build `2026.08.07.40`._
+_Current application baseline: Build `2026.08.07.41`._
 
 The production catalog is managed in Cloudflare R2 through the private LaunchPAD Track Manager. `js/catalog.js` contains album/editorial presentation data only; production track metadata and media are not maintained by hand in the PWA.
 
@@ -156,14 +156,7 @@ npm run validate
 npm run check:wrangler
 ```
 
-For R2/media auditing when specifically needed:
-
-```bash
-npm run audit:r2
-npm run audit:r2 -- --full-audio
-```
-
-The audit is read-only. Full-audio mode verifies public transfer behavior; it is not a substitute for real-device playback testing.
+The one-time GitHub-to-R2 migration cleanup audit has been retired from the active repository. Current media verification belongs to the normal catalog, Worker and browser regression suites rather than a historical migration command.
 
 ## Deployment boundaries
 

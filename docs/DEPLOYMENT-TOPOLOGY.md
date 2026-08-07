@@ -1,6 +1,6 @@
 # LaunchPAD deployment topology
 
-_Last reconciled: 2026-08-07 — Build 2026.08.07.40_
+_Last reconciled: 2026-08-07 — Build 2026.08.07.41_
 
 ## One source of truth
 
@@ -12,7 +12,7 @@ No deployment branch, hosted editor, dashboard copy or generated bundle is allow
                          GitHub repository
                               main
                                |
-                      validated Build 40
+                      validated Build 41
                                |
                 +--------------+--------------+
                 |                             |
@@ -36,15 +36,15 @@ No deployment branch, hosted editor, dashboard copy or generated bundle is allow
                       shinobiwan-media
 ```
 
-## Canonical Build 40
+## Canonical Build 41
 
 The current application release is defined only in `js/build-config.js`:
 
 ```text
-id       20260807-unified-v40
-cache    shinobi-launchpad-v40
-display  2026.08.07.40
-release  unified-v40-20260807
+id       20260807-visual-card-mobile-v41
+cache    shinobi-launchpad-v41
+display  2026.08.07.41
+release  visual-card-mobile-polish-20260807
 ```
 
 Both web hosts must publish files generated from the same checkout of `main` and must expose that build metadata.
@@ -61,7 +61,7 @@ https://shinobione.github.io/LaunchPAD-APP/
 
 GitHub Pages is deployed by `.github/workflows/deploy-github-pages.yml` after a successful push to `main` or a manual dispatch. The workflow builds and validates the same static runtime used by Cloudflare Pages before uploading the Pages artifact.
 
-The historical `gh-pages` branch is no longer a deployment source. It can be deleted after repository branch cleanup; the workflow deployment is authoritative.
+The historical `gh-pages` branch is no longer a deployment source and has been removed. Workflow deployment from `main` is authoritative.
 
 ### Cloudflare Pages
 
@@ -146,6 +146,8 @@ Catalog/media changes:
 Track Manager --> R2 --> rebuild catalog/index.json when required
 ```
 
+Merged head branches are automatically deleted. `main` is the only persistent repository branch.
+
 ## Rules that prevent another split-brain state
 
 1. `main` is the only source of truth.
@@ -153,14 +155,16 @@ Track Manager --> R2 --> rebuild catalog/index.json when required
 3. Cloudflare Pages tracks `main`; it does not contain unique runtime patches.
 4. Deployment scripts may copy/validate the runtime but may not mutate it.
 5. A branch named `fix/`, `agent/`, `migration/`, `release/` or `hotfix/` is temporary.
-6. Merged temporary branches should be deleted.
+6. Merged temporary branches are deleted automatically.
 7. Build numbers advance in one place: `js/build-config.js`.
 8. CI tests current behavior, not obsolete historical build numbers.
 9. Cloudflare Workers and R2 remain separate backend concerns; publishing the PWA does not implicitly deploy or rebuild them.
 10. Lovable is not production authority unless explicitly promoted through GitHub.
 
-## Compatibility debt still visible after v40
+## Compatibility debt still visible after Build 41
 
-A few filenames still contain historical host/version names, notably `build-cloudflare-pages.mjs`, `validate-cloudflare-pages-build.mjs`, `navigation-stability-v39.js` and `ui-stability-v39.css`. They remain temporarily because external deployment configuration and regression-tested runtime wiring still reference them.
+Build 40 eliminated the repository/hosting split-brain and Build 41 repaired Visual Card export plus the mobile Home regressions. A few filenames still contain historical host/version names, notably `build-cloudflare-pages.mjs`, `validate-cloudflare-pages-build.mjs`, `navigation-stability-v39.js` and `ui-stability-v39.css`.
 
-They should be renamed/absorbed only in a dedicated refactor after both web hosts have been observed running v40. Their names are legacy debt; their contents are part of the current validated runtime.
+They remain intentionally because external deployment configuration and regression-tested runtime wiring still reference them. Likewise, the versioned `public-worker-v26.js` wrapper and the legacy migration manifest/backend routes remain active Track Manager/Worker contracts, not dead files.
+
+Those compatibility names should be renamed or absorbed only in a dedicated runtime/backend refactor. Their names are legacy debt; their contents are part of the current validated system.

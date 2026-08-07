@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD architecture
 
-_Current baseline: Build `2026.08.07.40` (`unified-v40-20260807`)_
+_Current baseline: Build `2026.08.07.41` (`visual-card-mobile-polish-20260807`)_
 
 LaunchPAD is a modular static PWA whose application source lives in GitHub `main`. The web shell is mirrored to GitHub Pages and Cloudflare Pages; production catalog/media state lives in Cloudflare R2 and is exposed through public/private Workers.
 
@@ -67,6 +67,7 @@ css/
 
 js/
   build-config.js             Single app build/release source
+  visual-card-export-guard.js CORS-safe image bootstrap for canvas exports
   app-engine.js               Main bootstrap
   app-engine-recovery.js      Cache-safe recovery bootstrap
   app-main.js                 Playback, routing and app composition
@@ -109,14 +110,15 @@ tests/                        Browser/regression fixtures
 ## Boot sequence
 
 1. `index.html` loads the static shell and `js/build-config.js`.
-2. `build-config.js` exposes the Build 40 metadata and installs dynamic stability/boot resources.
+2. `build-config.js` exposes the Build 41 metadata and installs dynamic stability/boot resources.
 3. Parser-delivered stylesheets are deliberately left untouched after first paint; only dynamically inserted styles receive the active build query string.
-4. The recovery bootstrap initializes the catalog/runtime and attempts the public Cloudflare catalog.
-5. Remote catalog data is normalized through the shared schema/store before rendering.
-6. If the remote catalog is temporarily unavailable, the shell remains navigable through the local fallback path instead of aborting application boot. This fallback is a resilience path, not a second production catalog authority.
-7. `app-main.js` composes playback, views and feature modules.
-8. `#track=<id>` is owned by Track Detail; the generic view router does not render Home first.
-9. The service worker caches same-origin application assets while audio/video media remain network-oriented with dedicated Range behavior.
+4. The Visual Card export guard installs before the application engine so cross-origin R2/Worker artwork is requested anonymously before any canvas draw/export.
+5. The recovery bootstrap initializes the catalog/runtime and attempts the public Cloudflare catalog.
+6. Remote catalog data is normalized through the shared schema/store before rendering.
+7. If the remote catalog is temporarily unavailable, the shell remains navigable through the local fallback path instead of aborting application boot. This fallback is a resilience path, not a second production catalog authority.
+8. `app-main.js` composes playback, views and feature modules.
+9. `#track=<id>` is owned by Track Detail; the generic view router does not render Home first.
+10. The service worker caches same-origin application assets while audio/video media remain network-oriented with dedicated Range behavior.
 
 ## Routing rules
 
@@ -194,6 +196,7 @@ These names are compatibility debt because the Cloudflare Pages dashboard alread
 13. Historical/recovery branches are never deployment authorities.
 14. Lovable remains external prototyping unless a deliberate migration lands back in `main`.
 15. Regression tests should assert current behavior/contracts rather than obsolete historical build identifiers.
+16. Historical-looking compatibility files that remain wired into boot or Worker deployment must not be deleted as cosmetic cleanup.
 
 ## Validation
 

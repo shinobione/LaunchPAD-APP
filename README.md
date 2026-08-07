@@ -4,8 +4,8 @@ Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized
 
 ## Current release
 
-**Canonical application build:** `2026.08.07.40`  
-**Release:** `unified-v40-20260807`  
+**Canonical application build:** `2026.08.07.41`  
+**Release:** `visual-card-mobile-polish-20260807`  
 **Source of truth:** `main`
 
 Public / staging hosts:
@@ -80,7 +80,7 @@ npm run validate
 npm run check:wrangler
 ```
 
-CI additionally checks browser navigation, PWA/service-worker behavior, catalog contracts, Cloudflare bundles and desktop overflow regressions.
+CI additionally checks browser navigation, PWA/service-worker behavior, catalog contracts, Cloudflare bundles, repository cleanliness and desktop overflow regressions.
 
 The important rule is simple: **tests protect current behavior, not historical build-number strings.**
 
@@ -135,14 +135,16 @@ Useful documents:
 
 1. `main` is the only source of truth.
 2. Do not edit production code only in Cloudflare, GitHub Pages, `gh-pages`, Lovable or a generated `dist/` directory.
-3. Temporary `agent/`, `fix/`, `hotfix/`, `migration/` and `release/` branches should be deleted after merge/abandonment.
+3. Temporary `agent/`, `fix/`, `hotfix/`, `migration/` and `release/` branches are disposable and should be deleted automatically after merge.
 4. Do not restore the old `gh-pages` recovery branch as a deployment source.
 5. Advance application versions only in `js/build-config.js`.
 6. Keep Worker deployment, web deployment and R2 catalog rebuild as separate explicit states.
 7. Preserve the Audio Lab sanctuary guarantees for validated renderers unless a dedicated change intentionally updates their regression hashes.
 
-## Build 40 consolidation note
+## Consolidation status
 
-Build 40 reconciled the previously divergent Cloudflare v39 line and GitHub `main` line. It also restored GitHub Pages from the canonical `main` artifact, removed the stale `gh-pages` recovery checkout, fixed single-owner track routing and prevents the old second stylesheet paint.
+Build 40 reconciled the previously divergent Cloudflare v39 line and GitHub `main` line, restored GitHub Pages from the canonical `main` artifact, removed the stale `gh-pages` recovery checkout, fixed single-owner track routing and prevented the old second stylesheet paint.
 
-Historical branch names and a few compatibility filenames may still exist remotely. They are cleanup debt, **not active architecture**.
+Build 41 repaired CORS-safe Visual Card PNG export and the mobile Home layout. The historical branch backlog has now been purged: `main` is the only persistent branch, and GitHub is configured to delete merged head branches automatically.
+
+Repository cleanup now treats old one-time migration audits, duplicate branding/PWA assets and obsolete branch-cleanup documents as retired artifacts. Compatibility files whose historical names remain wired into the current bootstrap or Worker deployment are intentionally retained until a dedicated runtime refactor replaces them.
