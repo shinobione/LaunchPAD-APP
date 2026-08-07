@@ -82,10 +82,15 @@ includesAll(live, [
   'features.kick = clamp(features.kick * 2.25',
   'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60',
   'const TELEMETRY_INTERVAL = 120'
-], 'Build 48 live visuals');
+], 'Build 49 live visuals');
 assert.ok(!live.includes("'bars'"), 'Legacy bars alias must not replace Spectrum.');
 const coreModes = read('js/features/visual/visual-engine-core-modes.js');
-includesAll(coreModes, ['drawAuroraGlassMode', 'drawNeonShatterAdaptiveMode', 'const spectralIndex = Math.min(', 'const spectralRipple = Math.sin(', 'const fragments = mobile ? 20 : 52'], 'Adaptive modes');
+includesAll(coreModes, [
+  'drawAuroraGlassMode', 'drawNeonShatterAdaptiveMode',
+  'const rawBass = bandAverage(', 'const rawMiddle = bandAverage(', 'const rawHigh = bandAverage(',
+  'const beatDrive = clamp(', 'const spectralIndex = Math.min(', 'const spectralRipple = Math.sin(',
+  'const fragments = mobile ? 20 : 52'
+], 'Build 49 direct-band adaptive modes');
 const signal = read('js/features/audio-lab-signal.js');
 includesAll(signal, [
   'createDecodedSourceProxy',
@@ -102,7 +107,7 @@ includesAll(signal, [
   "window.addEventListener('shinobi:route-change'",
   "document.addEventListener('pointerdown'",
   'async function suspendContexts()'
-], 'Build 48 isolated audio graph');
+], 'Build 49 isolated audio graph');
 assert.ok(!signal.includes('captureStream('), 'captureStream must stay retired from Audio Lab metering.');
 assert.ok(!signal.includes('createMediaStreamSource('), 'MediaStream metering must stay retired.');
 assert.ok(!signal.includes('createMirrorSourceProxy'), 'The failed hidden HTMLAudio mirror path must stay retired.');
@@ -115,7 +120,27 @@ includesAll(icons, ["const SVG_NS = 'http://www.w3.org/2000/svg'", "svg.setAttri
 const badges = read('js/features/badge-hierarchy.js');
 includesAll(badges, ["STATUS_LABELS = new Set(['CLEAN', 'EXPLICIT', 'LYRICS', 'LYRICS SYNCED', 'VIDEO', 'UPCOMING', 'DRAFT'])", "if (admin && status === 'draft') statuses.push('DRAFT')", 'parentGenre', 'secondary.slice(0, 3)', 'secondary.length - 3', 'TECHNICAL_TAG.test(label)'], 'Milestone 8 badge hierarchy');
 
-// 9 — Final release wiring, persistent admin tools and PWA shell.
+// 9 — Mobile Studio navigation, Canvas resilience and final release wiring.
+const lyricsStudio = read('js/features/lyrics-studio.js');
+includesAll(lyricsStudio, [
+  "video.setAttribute('webkit-playsinline', '')",
+  "video.setAttribute('autoplay', '')",
+  "video.preload = 'auto'",
+  "const trackLyricsEntry = event.target.closest?.('[data-track-detail-route=\"lyrics\"]')",
+  "const trackId = route.type === 'track' ? route.id : currentTrack(audio)?.id;",
+  "routeToHash({ type: 'studio', id: trackId })",
+  "canvasVideo.addEventListener('canplay'",
+  "canvasVideo.addEventListener('ended'",
+  "document.addEventListener('visibilitychange'"
+], 'Build 49 mobile Lyrics Studio');
+const mobileStudioStyles = read('css/mobile-studio.css');
+includesAll(mobileStudioStyles, [
+  'body.lyrics-studio-open .mobile-nav{',
+  'visibility:visible!important;',
+  'bottom:54px!important;',
+  'calc(138px + env(safe-area-inset-bottom,0px))'
+], 'Build 49 mobile Studio shell');
+
 const engine = read('js/app-engine.js');
 includesAll(engine, ['initThemeScoping({ audio })', 'initDiscographyExperience({ audio })', 'initHomeEditorial()', 'initAudioLabSanctuary({ audio })', 'initSvgIconSystem()', 'initBadgeHierarchy()', "'css/admin-tools.css'"], 'Application boot');
 const admin = read('js/features/admin-access.js');
@@ -128,11 +153,11 @@ const worker = read('sw.js');
 includesAll(worker, ["'./js/features/theme-scope.js'", "'./js/features/visual/audio-lab-registry.js'", "'./js/features/visual/audio-lab-sanctuary.js'", "'./js/visual-card-export-guard.js'", "'./css/admin-tools.css'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification');
-assert.equal(build.number, 48);
-assert.equal(build.id, '20260807-audiolab-decoded-buffer-v48');
-assert.equal(build.cache, 'shinobi-launchpad-v48');
-assert.equal(build.revision, 'audiolab-decoded-buffer-1');
-assert.equal(build.display, '2026.08.07.48');
-assert.equal(build.release, 'audiolab-decoded-buffer-20260807');
+assert.equal(build.number, 49);
+assert.equal(build.id, '20260807-mobile-studio-reactivity-v49');
+assert.equal(build.cache, 'shinobi-launchpad-v49');
+assert.equal(build.revision, 'mobile-studio-reactivity-1');
+assert.equal(build.display, '2026.08.07.49');
+assert.equal(build.release, 'mobile-studio-reactivity-20260807');
 
-console.log('All nine LaunchPAD master-spec sections are regression-protected under Build 48.');
+console.log('All nine LaunchPAD master-spec sections are regression-protected under Build 49.');
