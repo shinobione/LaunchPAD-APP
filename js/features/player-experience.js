@@ -1,6 +1,7 @@
 import { getTrack, tracks } from '../core/catalog-store.js';
 
 const SITE_TITLE = 'ShinoBiWan LaunchPAD';
+const TOGGLE_SELECTOR = '[data-action="toggle"]';
 
 function formatReleaseDate(value) {
   if (!value) return 'Date TBD';
@@ -33,25 +34,45 @@ function installStudioReliabilityStyles() {
   document.head.appendChild(style);
 }
 
+function setTextIfChanged(element, value) {
+  if (element.textContent !== value) element.textContent = value;
+}
+
+function setAttributeIfChanged(element, name, value) {
+  if (element.getAttribute(name) !== value) element.setAttribute(name, value);
+}
+
+function setClassIfChanged(element, className, active) {
+  if (element.classList.contains(className) !== active) element.classList.toggle(className, active);
+}
+
+function setPlaybackDatasetIfChanged(button, state) {
+  if (button.dataset.playbackState !== state) button.dataset.playbackState = state;
+}
+
 export function applyPlaybackState(root = document, playing = false) {
-  root.querySelectorAll('[data-action="toggle"]').forEach(button => {
-    button.textContent = playing ? '❚❚' : '▶';
-    button.classList.toggle('is-playing', playing);
-    button.classList.remove('is-loading');
-    button.setAttribute('aria-label', playing ? 'Pause' : 'Play');
-    button.setAttribute('aria-pressed', String(playing));
-    button.dataset.playbackState = playing ? 'playing' : 'paused';
+  const state = playing ? 'playing' : 'paused';
+  const text = playing ? '❚❚' : '▶';
+  const label = playing ? 'Pause' : 'Play';
+
+  root.querySelectorAll(TOGGLE_SELECTOR).forEach(button => {
+    setTextIfChanged(button, text);
+    setClassIfChanged(button, 'is-playing', playing);
+    setClassIfChanged(button, 'is-loading', false);
+    setAttributeIfChanged(button, 'aria-label', label);
+    setAttributeIfChanged(button, 'aria-pressed', String(playing));
+    setPlaybackDatasetIfChanged(button, state);
   });
 }
 
 function applyLoadingState(root = document) {
-  root.querySelectorAll('[data-action="toggle"]').forEach(button => {
-    button.textContent = '…';
-    button.classList.remove('is-playing');
-    button.classList.add('is-loading');
-    button.setAttribute('aria-label', 'Loading audio');
-    button.setAttribute('aria-pressed', 'true');
-    button.dataset.playbackState = 'loading';
+  root.querySelectorAll(TOGGLE_SELECTOR).forEach(button => {
+    setTextIfChanged(button, '…');
+    setClassIfChanged(button, 'is-playing', false);
+    setClassIfChanged(button, 'is-loading', true);
+    setAttributeIfChanged(button, 'aria-label', 'Loading audio');
+    setAttributeIfChanged(button, 'aria-pressed', 'true');
+    setPlaybackDatasetIfChanged(button, 'loading');
   });
 }
 
@@ -157,7 +178,10 @@ export function createPlayerExperience({ audio = document.querySelector('#audio'
   });
 
   const controlsObserver = new MutationObserver(records => {
-    if (records.some(record => record.addedNodes.length || record.removedNodes.length)) scheduleSync();
+    const addedToggleControl = records.some(record => [...record.addedNodes].some(node =>
+      node instanceof Element && (node.matches?.(TOGGLE_SELECTOR) || node.querySelector?.(TOGGLE_SELECTOR))
+    ));
+    if (addedToggleControl) scheduleSync();
   });
   controlsObserver.observe(document.body, { childList: true, subtree: true });
 
