@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { assertCurrentBuild } from './lib/build-metadata.mjs';
 
 const read = path => fs.readFileSync(path, 'utf8');
 
@@ -25,8 +26,8 @@ assert.ok(!/feature10ExtractCoverColors\([^)]*\).*addEventListener\(['"]change/s
 const builder = read('scripts/build-admin-worker.mjs');
 for (const required of [
   "'5.5'",
-  "version: \"5.6\"",
-  "<span class=\"version-pill\">v5.6</span>",
+  'version: "5.6"',
+  '<span class="version-pill">v5.6</span>',
   "TRACK_MANAGER_MILESTONE_3_VERSION='5.6'",
   'function milestone3InstallReactiveFilters()',
   'function milestone3InstallManualPalette()'
@@ -34,13 +35,15 @@ for (const required of [
 
 const workflow = read('.github/workflows/deploy-cloudflare.yml');
 for (const required of [
-  'push:',
-  "- 'cloudflare/**'",
-  "DEPLOY_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || 'both' }}",
-  "EXPECTED_ADMIN_VERSION: '5.6'",
-  "if: github.event_name == 'workflow_dispatch'",
+  'workflow_dispatch:',
+  'DEPLOY_TARGET: ${{ inputs.target }}',
+  "if: github.ref == 'refs/heads/main'",
+  "test \"${{ inputs.confirm }}\" = 'DEPLOY'",
+  "EXPECTED_ADMIN_VERSION: '5.7'",
   "npm run deploy:cloudflare:admin",
   "node scripts/verify-cloudflare-deployment.mjs admin"
 ]) assert.ok(workflow.includes(required), `Cloudflare deployment workflow is missing ${required}.`);
+assert.ok(!workflow.includes('\n  push:'), 'Production Worker deployment must remain manual-only.');
 
-console.log('Milestone 3 Track Manager filters, manual palette extraction and automatic Worker deployment are valid.');
+const build = assertCurrentBuild('Milestone 3');
+console.log(`Milestone 3 Track Manager filters and manual palette extraction remain valid with explicit Worker deployment under Build ${build.number}.`);
