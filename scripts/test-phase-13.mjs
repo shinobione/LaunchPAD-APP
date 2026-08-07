@@ -138,7 +138,7 @@ for (const required of [
   "headers.set('Cross-Origin-Resource-Policy', 'cross-origin')",
   "headers.set('X-LaunchPAD-Media-Version', String(PUBLIC_WORKER_VERSION))",
   "headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')",
-  'payload.audioLabCors = true,
+  'payload.audioLabCors = true',
   "payload.crossOriginResourcePolicy = 'cross-origin'"
 ]) assert.ok(publicWorker.includes(required), `Public media Worker v2.6 is missing ${required}.`);
 
