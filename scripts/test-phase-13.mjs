@@ -26,8 +26,11 @@ for (const required of [
   'function drawNeonShatter(',
   'function drawLiquidChrome(',
   'function drawNebula(',
+  'const delegatedModeSet = new Set(delegatedModes)',
+  'const delegated = delegatedModeSet.has(mode);',
+  'if (homeActive && !externalHomeRenderer && !delegated)',
+  'if (labActive && !delegated)',
   'const allowedModes = new Set(',
-  'if (!delegatedModeSet.has(mode))',
   'const spreadX = width * (.27 + intensity * .045)',
   'const rings = width < 520 ? 32 : 46'
 ]) assert.ok(visuals.includes(required), `Phase 13 Audio Lab is missing ${required}.`);
