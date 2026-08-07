@@ -215,7 +215,6 @@ function installNowPlaying(audio) {
     sync();
   }));
   if (audio) new MutationObserver(sync).observe(audio, { attributes: true, attributeFilter: ['data-track-id', 'src'] });
-  window.addEventListener('shinobi:theme-scope', sync);
   sync();
   return sync;
 }
@@ -236,12 +235,19 @@ export function initDiscographyExperience({ audio = document.querySelector('#aud
   });
   window.addEventListener('popstate', () => timeline && synchronizeEraButtons(timeline));
 
+  const library = document.querySelector('#view-library');
+  if (!library) return;
+
   let observerScheduled = false;
+  const relevantSelector = '.album-card[data-index], .catalog-filter-groups, [data-filter-group]';
   const observer = new MutationObserver(records => {
+    let relevant = false;
     records.forEach(record => record.addedNodes.forEach(node => {
-      if (node instanceof Element) enrichCards(node);
+      if (!(node instanceof Element)) return;
+      enrichCards(node);
+      if (node.matches?.(relevantSelector) || node.querySelector?.(relevantSelector)) relevant = true;
     }));
-    if (observerScheduled) return;
+    if (!relevant || observerScheduled) return;
     observerScheduled = true;
     requestAnimationFrame(() => {
       observerScheduled = false;
@@ -249,5 +255,5 @@ export function initDiscographyExperience({ audio = document.querySelector('#aud
       syncPlaying();
     });
   });
-  observer.observe(document.body, { childList: true, subtree: true });
+  observer.observe(library, { childList: true, subtree: true });
 }
