@@ -1,19 +1,19 @@
 # SHINOBIWAN LaunchPAD
 
-Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA and shareable track experiences.
+> Current application build: `2026.08.07.50` — release `audiolab-signal-first-20260807`.
 
-## Current release
+Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
-**Canonical application build:** `2026.08.07.41`  
-**Release:** `visual-card-mobile-polish-20260807`  
-**Source of truth:** `main`
+## Source of truth
+
+**GitHub `main` is the only application-code authority.**
 
 Public / staging hosts:
 
 - GitHub Pages: `https://shinobione.github.io/LaunchPAD-APP/`
 - Cloudflare Pages staging: `https://shinobiwan-launchpad-staging.pages.dev/`
 
-The two web hosts are mirrors of the same validated repository runtime. Neither host is an editable source of truth.
+Both hosts publish the same validated runtime from `main`. Cloudflare R2 remains the canonical media/catalog store; Workers remain separate backend deployment units. Lovable is prototype-only unless a future migration is explicitly promoted back through GitHub.
 
 ## Architecture at a glance
 
@@ -34,15 +34,19 @@ GitHub main
                                Cloudflare R2
 ```
 
-- **GitHub `main`** — canonical application and infrastructure source.
-- **GitHub Pages** — public static PWA host.
-- **Cloudflare Pages** — staging/preview static PWA host.
-- **Cloudflare R2** — canonical production media and track manifests.
-- **Public Worker (`launchpad-media`)** — read-only catalog/media API and HTTP Range streaming; repository contract v2.6.
-- **Private Worker (`launchpad-r2-api`)** — Track Manager behind Cloudflare Access; repository Track Manager contract v5.7.
-- **Lovable** — external prototyping only unless a future migration is explicitly promoted back through this repository and `main`.
+See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the authoritative hosting map.
 
-See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the authoritative deployment map and anti-split-brain rules.
+## Build 50 highlights
+
+Build 50 makes Audio Lab **signal-first**:
+
+- Spectrum remains the reference visualizer and consumes the decoded FFT feed.
+- Neon Shatter and Aurora Glass now use the same raw FFT bins as their primary geometry input; autonomous time-based motion is reduced to a tiny energy-gated drift.
+- Liquid Chrome and Singularity use the same live FFT path with a deliberately moderate increase in footprint/reactive range.
+- The audible player remains the native HTML5 audio element. Audio Lab analyzes a separately fetched/decoded copy so visualization cannot sit in the audible playback graph.
+- When playback is paused, signal-first renderers settle instead of continuing a fake loop.
+
+Recent releases also restored mobile Lyrics → Studio routing, persistent mobile navigation in Studio, resilient Canvas looping, CORS-safe Visual Card export and single-owner track routing.
 
 ## Canonical media model
 
@@ -58,7 +62,7 @@ tracks/<slug>/lyrics.txt      # optional
 tracks/<slug>/video.<ext>     # optional
 ```
 
-The public application hydrates its catalog through the public Worker. Localhost/CI may use deterministic fixtures; production must not silently substitute a bundled production catalog.
+The public application hydrates through the public Worker. Localhost/CI may use deterministic fixtures; production must not silently substitute a bundled production catalog.
 
 ## Local development
 
@@ -80,30 +84,15 @@ npm run validate
 npm run check:wrangler
 ```
 
-CI additionally checks browser navigation, PWA/service-worker behavior, catalog contracts, Cloudflare bundles, repository cleanliness and desktop overflow regressions.
+CI checks browser navigation, PWA/service-worker behavior, Audio Lab signal contracts, catalog contracts, Cloudflare bundles, repository cleanliness, documentation/build coherence and desktop overflow regressions.
 
-The important rule is simple: **tests protect current behavior, not historical build-number strings.**
+## Release discipline
 
-## Deployment
+A runtime build advances in one place: `js/build-config.js`.
 
-### Web application
+Every build that changes that metadata must update **all Markdown documentation** to the same `display` and `release` values. `npm run check:build-docs` enforces this so README/architecture/roadmap/deployment docs cannot silently lag behind the shipped build.
 
-A merge to `main` is the only supported source transition.
-
-- GitHub Pages deploys the validated static runtime through `.github/workflows/deploy-github-pages.yml`.
-- Cloudflare Pages staging tracks the same `main` source.
-- The current compatibility build scripts are `scripts/build-cloudflare-pages.mjs` and `scripts/validate-cloudflare-pages-build.mjs`; despite their historical names, they copy and validate the runtime verbatim and do not patch application files.
-
-### Cloudflare Workers
-
-Workers are a separate release operation. Use the protected **Deploy Cloudflare Workers** workflow from `main`; do not infer Worker deployment from a web-app merge.
-
-Required GitHub environment secrets:
-
-- `CLOUDFLARE_ACCOUNT_ID`
-- `CLOUDFLARE_API_TOKEN`
-
-A Worker deployment does not rebuild `catalog/index.json`. Rebuild the public catalog explicitly through Track Manager when manifests/lyrics require it.
+Web-host deployment, Worker deployment and R2 catalog publication remain separate states. Do not report “deployed” without saying which state changed.
 
 ## Project map
 
@@ -112,7 +101,7 @@ index.html                    Static application shell
 css/                          UI, responsive and feature styles
 js/
   build-config.js             Single application release/version source
-  app-engine*.js              Boot and recovery bootstrap
+  app-engine*.js              Boot/recovery bootstrap
   app-main.js                 Main application composition
   core/                       Shared catalog/router/player/theme state
   features/                   User-facing modules
@@ -126,6 +115,7 @@ docs/                         Operational and architecture documentation
 Useful documents:
 
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — runtime/module structure
+- [`CHANGELOG.md`](CHANGELOG.md) — recent build history
 - [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) — canonical hosting/deployment topology
 - [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) — safe release procedure
 - [`ROADMAP.md`](ROADMAP.md) — remaining consolidation/product work
@@ -134,17 +124,10 @@ Useful documents:
 ## Repository rules
 
 1. `main` is the only source of truth.
-2. Do not edit production code only in Cloudflare, GitHub Pages, `gh-pages`, Lovable or a generated `dist/` directory.
-3. Temporary `agent/`, `fix/`, `hotfix/`, `migration/` and `release/` branches are disposable and should be deleted automatically after merge.
-4. Do not restore the old `gh-pages` recovery branch as a deployment source.
-5. Advance application versions only in `js/build-config.js`.
+2. Do not edit production code only in Cloudflare, GitHub Pages, Lovable or generated `dist/` output.
+3. Temporary feature/fix branches are disposable and automatically deleted after merge.
+4. Advance application versions only in `js/build-config.js`.
+5. Update every `.md` file for every new build; CI validates the build/release markers.
 6. Keep Worker deployment, web deployment and R2 catalog rebuild as separate explicit states.
-7. Preserve the Audio Lab sanctuary guarantees for validated renderers unless a dedicated change intentionally updates their regression hashes.
-
-## Consolidation status
-
-Build 40 reconciled the previously divergent Cloudflare v39 line and GitHub `main` line, restored GitHub Pages from the canonical `main` artifact, removed the stale `gh-pages` recovery checkout, fixed single-owner track routing and prevented the old second stylesheet paint.
-
-Build 41 repaired CORS-safe Visual Card PNG export and the mobile Home layout. The historical branch backlog has now been purged: `main` is the only persistent branch, and GitHub is configured to delete merged head branches automatically.
-
-Repository cleanup now treats old one-time migration audits, duplicate branding/PWA assets and obsolete branch-cleanup documents as retired artifacts. Compatibility files whose historical names remain wired into the current bootstrap or Worker deployment are intentionally retained until a dedicated runtime refactor replaces them.
+7. Spectrum remains the Audio Lab reference path; visual effects must consume the real FFT feed rather than independent loop animation.
+8. Historical-looking compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.
