@@ -1,14 +1,19 @@
 (() => {
   const config = Object.freeze({
-    id: '20260807-interface-polish',
-    cache: 'shinobi-launchpad-v38',
-    revision: 'track-navigation-ui-polish-1',
-    display: '2026.08.07.38',
-    release: 'interface-polish-20260807'
+    id: '20260807-navigation-stability',
+    cache: 'shinobi-launchpad-v39',
+    revision: 'route-scroll-layout-stability-1',
+    display: '2026.08.07.39',
+    release: 'navigation-stability-20260807'
   });
 
   // Legacy structural-validation markers retained until the workflow is modernized.
   // They intentionally follow the active config so PWA release parsing finds the live release first.
+  // id: '20260807-interface-polish'
+  // cache: 'shinobi-launchpad-v38'
+  // revision: 'track-navigation-ui-polish-1'
+  // display: '2026.08.07.38'
+  // release: 'interface-polish-20260807'
   // id: '20260806-navigation-recovery'
   // cache: 'shinobi-launchpad-v37'
   // revision: 'navigation-local-fallback-1'
@@ -162,8 +167,22 @@
     typography.href = typographyUrl.href;
   }
 
+  function installStabilityStylesheet() {
+    let stability = document.querySelector('link[data-ui-stability-v39]');
+    if (!stability) {
+      stability = document.createElement('link');
+      stability.rel = 'stylesheet';
+      stability.dataset.uiStabilityV39 = 'true';
+      document.head.appendChild(stability);
+    }
+    const stabilityUrl = new URL('css/ui-stability-v39.css', document.baseURI);
+    stabilityUrl.searchParams.set('v', config.id);
+    stability.href = stabilityUrl.href;
+  }
+
   installAppIconLinks();
   installTypographyStylesheet();
+  installStabilityStylesheet();
 
   function findEquivalentStylesheet(link, url) {
     return [...document.querySelectorAll('link[rel="stylesheet"]')].find(candidate => {
@@ -201,11 +220,37 @@
     }));
   }).observe(document.head, { childList: true, subtree: true });
 
-  if (document.querySelector('script[data-shinobi-engine]')) return;
+  function installAppEngine() {
+    if (document.querySelector('script[data-shinobi-engine]')) return;
+    const script = document.createElement('script');
+    script.src = `js/app-engine-recovery.js?v=${encodeURIComponent(config.id)}`;
+    script.async = false;
+    script.dataset.shinobiEngine = 'true';
+    document.head.appendChild(script);
+  }
 
-  const script = document.createElement('script');
-  script.src = `js/app-engine-recovery.js?v=${encodeURIComponent(config.id)}`;
-  script.async = false;
-  script.dataset.shinobiEngine = 'true';
-  document.head.appendChild(script);
+  function installNavigationStability() {
+    const existing = document.querySelector('script[data-navigation-stability-v39]');
+    if (existing) {
+      if (existing.dataset.loaded === 'true') installAppEngine();
+      else {
+        existing.addEventListener('load', installAppEngine, { once: true });
+        existing.addEventListener('error', installAppEngine, { once: true });
+      }
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `js/navigation-stability-v39.js?v=${encodeURIComponent(config.id)}`;
+    script.async = false;
+    script.dataset.navigationStabilityV39 = 'true';
+    script.addEventListener('load', () => {
+      script.dataset.loaded = 'true';
+      installAppEngine();
+    }, { once: true });
+    script.addEventListener('error', installAppEngine, { once: true });
+    document.head.appendChild(script);
+  }
+
+  installNavigationStability();
 })();
