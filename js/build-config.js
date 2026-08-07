@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260807-unified-v40',
-    cache: 'shinobi-launchpad-v40',
-    revision: 'cloudflare-main-reconciliation-1',
-    display: '2026.08.07.40',
-    release: 'unified-v40-20260807'
+    id: '20260807-visual-card-mobile-v41',
+    cache: 'shinobi-launchpad-v41',
+    revision: 'visual-card-cors-mobile-layout-1',
+    display: '2026.08.07.41',
+    release: 'visual-card-mobile-polish-20260807'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
@@ -125,8 +125,8 @@
     document.head.appendChild(script);
   }
 
-  function installNavigationStability() {
-    const existing = document.querySelector('script[data-navigation-stability-v39]');
+  function installVisualCardExportGuard() {
+    const existing = document.querySelector('script[data-visual-card-export-guard]');
     if (existing) {
       if (existing.dataset.loaded === 'true') installAppEngine();
       else {
@@ -137,14 +137,37 @@
     }
 
     const script = document.createElement('script');
-    script.src = `js/navigation-stability-v39.js?v=${encodeURIComponent(config.id)}`;
+    script.src = `js/visual-card-export-guard.js?v=${encodeURIComponent(config.id)}`;
     script.async = false;
-    script.dataset.navigationStabilityV39 = 'true';
+    script.dataset.visualCardExportGuard = 'true';
     script.addEventListener('load', () => {
       script.dataset.loaded = 'true';
       installAppEngine();
     }, { once: true });
     script.addEventListener('error', installAppEngine, { once: true });
+    document.head.appendChild(script);
+  }
+
+  function installNavigationStability() {
+    const existing = document.querySelector('script[data-navigation-stability-v39]');
+    if (existing) {
+      if (existing.dataset.loaded === 'true') installVisualCardExportGuard();
+      else {
+        existing.addEventListener('load', installVisualCardExportGuard, { once: true });
+        existing.addEventListener('error', installVisualCardExportGuard, { once: true });
+      }
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `js/navigation-stability-v39.js?v=${encodeURIComponent(config.id)}`;
+    script.async = false;
+    script.dataset.navigationStabilityV39 = 'true';
+    script.addEventListener('load', () => {
+      script.dataset.loaded = 'true';
+      installVisualCardExportGuard();
+    }, { once: true });
+    script.addEventListener('error', installVisualCardExportGuard, { once: true });
     document.head.appendChild(script);
   }
 
