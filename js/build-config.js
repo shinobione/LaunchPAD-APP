@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260807-mobile-studio-reactivity-v49',
-    cache: 'shinobi-launchpad-v49',
-    revision: 'mobile-studio-reactivity-1',
-    display: '2026.08.07.49',
-    release: 'mobile-studio-reactivity-20260807'
+    id: '20260807-audiolab-signal-first-v50',
+    cache: 'shinobi-launchpad-v50',
+    revision: 'audiolab-signal-first-1',
+    display: '2026.08.07.50',
+    release: 'audiolab-signal-first-20260807'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
