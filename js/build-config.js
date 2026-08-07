@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260807-audio-background-stability-v45',
-    cache: 'shinobi-launchpad-v45',
-    revision: 'audio-background-stability-1',
-    display: '2026.08.07.45',
-    release: 'audio-background-stability-20260807'
+    id: '20260807-audiolab-track-switch-v46',
+    cache: 'shinobi-launchpad-v46',
+    revision: 'audiolab-track-switch-1',
+    display: '2026.08.07.46',
+    release: 'audiolab-track-switch-20260807'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
