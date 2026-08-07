@@ -1,5 +1,6 @@
 const ADMIN_MODE_KEY = 'shinobiLaunchpadAdmin';
-const ADMIN_URL = 'https://launchpad-r2-api.jerryquinet.workers.dev/';
+const TRACK_MANAGER_URL = 'https://launchpad-r2-api.jerryquinet.workers.dev/';
+const LRC_MAKER_URL = 'https://shinobione.github.io/lrc-maker/';
 
 export function resolveAdminAccess({ search = '', storage, desktop = false } = {}) {
   const mode = new URLSearchParams(search).get('admin');
@@ -16,6 +17,22 @@ export function resolveAdminAccess({ search = '', storage, desktop = false } = {
   return Boolean(enabled && desktop);
 }
 
+export function resolveLrcMakerAccess({ search = '', desktop = false } = {}) {
+  return Boolean(desktop && new URLSearchParams(search).get('admin') === '1');
+}
+
+function adminToolLink({ className, datasetKey, href, label, initials, ariaLabel }) {
+  const link = document.createElement('a');
+  link.className = `admin-tool-access ${className}`;
+  link.dataset[datasetKey] = 'true';
+  link.href = href;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.setAttribute('aria-label', ariaLabel);
+  link.innerHTML = `<span aria-hidden="true">${initials}</span><strong>${label}</strong><b aria-hidden="true">↗</b>`;
+  return link;
+}
+
 export function initAdminAccess({
   search = globalThis.location?.search || '',
   storage = globalThis.localStorage,
@@ -25,23 +42,44 @@ export function initAdminAccess({
   if (!actions || !media) return;
 
   const render = () => {
-    const enabled = resolveAdminAccess({ search, storage, desktop: media.matches });
-    let link = actions.querySelector('[data-track-manager-access]');
-    if (!enabled) { link?.remove(); return; }
-    if (link) return;
+    const trackManagerEnabled = resolveAdminAccess({ search, storage, desktop: media.matches });
+    const lrcMakerEnabled = resolveLrcMakerAccess({ search, desktop: media.matches });
 
-    link = document.createElement('a');
-    link.className = 'track-manager-access';
-    link.dataset.trackManagerAccess = 'true';
-    link.href = ADMIN_URL;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.setAttribute('aria-label', 'Open the private Track Manager in a new tab');
-    link.innerHTML = '<span aria-hidden="true">LP</span><strong>Track Manager</strong><b aria-hidden="true">↗</b>';
-    actions.prepend(link);
+    let trackManager = actions.querySelector('[data-track-manager-access]');
+    if (!trackManagerEnabled) trackManager?.remove();
+    else if (!trackManager) {
+      trackManager = adminToolLink({
+        className: 'track-manager-access',
+        datasetKey: 'trackManagerAccess',
+        href: TRACK_MANAGER_URL,
+        label: 'Track Manager',
+        initials: 'LP',
+        ariaLabel: 'Open the private Track Manager in a new tab'
+      });
+      actions.prepend(trackManager);
+    }
+
+    let lrcMaker = actions.querySelector('[data-lrc-maker-access]');
+    if (!lrcMakerEnabled) {
+      lrcMaker?.remove();
+      return;
+    }
+    if (!lrcMaker) {
+      lrcMaker = adminToolLink({
+        className: 'lrc-maker-access',
+        datasetKey: 'lrcMakerAccess',
+        href: LRC_MAKER_URL,
+        label: 'LRC Maker',
+        initials: 'LM',
+        ariaLabel: 'Open LRC Maker in a new tab'
+      });
+    }
+
+    // Match the admin sketch: LRC Maker immediately before Track Manager.
+    if (trackManager?.isConnected) actions.insertBefore(lrcMaker, trackManager);
+    else actions.prepend(lrcMaker);
   };
 
   render();
   media.addEventListener?.('change', render);
 }
-
