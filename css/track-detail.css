@@ -10,6 +10,10 @@
   padding-bottom:36px;
 }
 
+.track-detail-view:focus{
+  outline:none;
+}
+
 .track-detail-back{
   margin:25px 0 14px;
   padding:8px 0;
