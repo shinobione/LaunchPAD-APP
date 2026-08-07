@@ -44,8 +44,8 @@ if (!worker.includes("request.destination === 'video'")) fail('Service worker do
 if (!worker.includes("request.destination === 'audio'")) fail('Service worker does not keep audio network-oriented.');
 
 const build = assertCurrentBuild('PWA update');
-if (build.number !== 47) fail(`Expected Build 47, received ${build.display}.`);
-if (build.release !== 'audiolab-mirror-meter-20260807') fail(`Unexpected Build 47 release ${build.release}.`);
+if (build.number !== 48) fail(`Expected Build 48, received ${build.display}.`);
+if (build.release !== 'audiolab-decoded-buffer-20260807') fail(`Unexpected Build 48 release ${build.release}.`);
 const buildSource = build.source;
 for (const required of [
   'const initialStylesheets = new WeakSet',
@@ -57,23 +57,23 @@ for (const required of [
   'link[rel="alternate icon"]',
   'link[rel="manifest"]'
 ]) {
-  if (!buildSource.includes(required)) fail(`Build 47 metadata/bootstrap is missing ${required}.`);
+  if (!buildSource.includes(required)) fail(`Build 48 metadata/bootstrap is missing ${required}.`);
 }
 
 const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
-  'initAudioLabSignalBridge','synthesizePlaybackSpectrum','waveformToSpectrum','createMirrorSourceProxy',
-  "mirror.dataset.audioLabMirror = 'true'",'nativeCreateMediaElementSource.call(context, mirror)',
-  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-mirror-metering'",
-  "audio.dataset.audioPlaybackPath = 'html5-direct'",
+  'initAudioLabSignalBridge','synthesizePlaybackSpectrum','waveformToSpectrum','createDecodedSourceProxy',
+  'fetch(source, {','context.decodeAudioData(bytes.slice(0))','context.createBufferSource()','node.start(0, offset)',
+  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-decoded-buffer-metering'",
+  "audio.dataset.audioPlaybackPath = 'html5-direct'","audio.dataset.audioAnalysisPath = 'decoded-buffer'",
   "audio.addEventListener('play', recover)","audio.addEventListener('playing', recover)",
   "window.addEventListener('shinobi:route-change'","window.addEventListener('pagehide'",'async function suspendContexts()',
   "document.addEventListener('pointerdown'","markSignal('live')","markMeter('running')"
 ]) {
-  if (!signal.includes(required)) fail(`AudioLab mirror recovery is missing ${required}.`);
+  if (!signal.includes(required)) fail(`AudioLab decoded-buffer recovery is missing ${required}.`);
 }
-if (signal.includes('captureStream(') || signal.includes('createMediaStreamSource(')) {
-  fail('The retired captureStream metering path returned.');
+if (signal.includes('captureStream(') || signal.includes('createMediaStreamSource(') || signal.includes('createMirrorSourceProxy')) {
+  fail('A retired Audio Lab metering path returned.');
 }
 
 const about = read('js/features/about/about-controller.js');
@@ -100,4 +100,4 @@ if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RE
   fail('Browser regression coverage for the deduped PWA update prompt is not wired into CI.');
 }
 
-console.log('PWA updates remain single-shot while isolated mirror FFT metering is active under Build 47.');
+console.log('PWA updates remain single-shot while isolated decoded-buffer FFT metering is active under Build 48.');
