@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260807-audiolab-track-switch-v46',
-    cache: 'shinobi-launchpad-v46',
-    revision: 'audiolab-track-switch-1',
-    display: '2026.08.07.46',
-    release: 'audiolab-track-switch-20260807'
+    id: '20260807-audiolab-mirror-meter-v47',
+    cache: 'shinobi-launchpad-v47',
+    revision: 'audiolab-mirror-meter-1',
+    display: '2026.08.07.47',
+    release: 'audiolab-mirror-meter-20260807'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
@@ -15,10 +15,6 @@
   const stylesheetVersion = config.id;
   if (visualTest) document.documentElement.dataset.visualTest = 'true';
 
-  // Parser-delivered stylesheets are already painting by the time build-config
-  // executes at the end of <body>. Rewriting those hrefs causes a second fetch
-  // and a visible page-wide repaint. Keep them stable; only dynamically added
-  // application styles receive the active build query string.
   const initialStylesheets = new WeakSet(document.querySelectorAll('link[rel="stylesheet"]'));
 
   function installAppIconLinks() {
