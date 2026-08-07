@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { assertCurrentBuild } from './lib/build-metadata.mjs';
 
 const read = path => fs.readFileSync(path, 'utf8');
 
@@ -56,9 +57,5 @@ const worker = read('sw.js');
 assert.ok(worker.includes("'./css/home-editorial.css'"));
 assert.ok(worker.includes("'./js/features/home-editorial.js'"));
 
-const build = read('js/build-config.js');
-assert.ok(build.includes("id: '20260806-m6-home-editorial'"));
-assert.ok(build.includes("cache: 'shinobi-launchpad-v33'"));
-assert.ok(build.includes("display: '2026.08.06.33'"));
-
-console.log('Milestone 6 Home editorial release, mobile order and visual switcher remain valid.');
+const build = assertCurrentBuild('Milestone 6');
+console.log(`Milestone 6 Home editorial release, mobile order and visual switcher remain valid under Build ${build.number}.`);

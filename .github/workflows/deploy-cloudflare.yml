@@ -1,17 +1,6 @@
 name: Deploy Cloudflare Workers
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'cloudflare/**'
-      - 'scripts/build-admin-worker.mjs'
-      - 'scripts/report-wrangler-deploy.mjs'
-      - 'scripts/verify-cloudflare-deployment.mjs'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/deploy-cloudflare.yml'
   workflow_dispatch:
     inputs:
       target:
@@ -24,7 +13,7 @@ on:
           - public
           - admin
       confirm:
-        description: Type DEPLOY to confirm a manual production deployment
+        description: Type DEPLOY to confirm a production deployment
         required: true
         type: string
 
@@ -42,7 +31,7 @@ jobs:
     timeout-minutes: 20
     environment: cloudflare-production
     env:
-      DEPLOY_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || 'both' }}
+      DEPLOY_TARGET: ${{ inputs.target }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       PUBLIC_WORKER_URL: https://launchpad-media.jerryquinet.workers.dev
@@ -53,8 +42,7 @@ jobs:
       CLOUDFLARE_ACCESS_CLIENT_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
       CLOUDFLARE_ACCESS_CLIENT_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
     steps:
-      - name: Confirm manual production deployment
-        if: github.event_name == 'workflow_dispatch'
+      - name: Confirm production deployment
         run: test "${{ inputs.confirm }}" = 'DEPLOY'
 
       - name: Validate deployment credentials
@@ -82,7 +70,7 @@ jobs:
           {
             echo '## LaunchPAD Cloudflare deployment'
             echo
-            echo "- Trigger: \`${{ github.event_name }}\`"
+            echo "- Trigger: \`workflow_dispatch\`"
             echo "- Requested target: \`$DEPLOY_TARGET\`"
             echo "- Source SHA: \`$GITHUB_SHA\`"
             echo "- Actor: \`$GITHUB_ACTOR\`"

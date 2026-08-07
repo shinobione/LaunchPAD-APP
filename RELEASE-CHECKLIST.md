@@ -1,64 +1,122 @@
-# Release checklist
+# LaunchPAD release checklist
 
-## Track Manager
+_Current operating baseline: Build `2026.08.07.40`._
 
-1. Open the private desktop Track Manager behind Cloudflare Access.
-2. Create or edit the release manifest.
-3. Upload audio, original cover, optional lyrics and optional video.
-4. Confirm that `thumbnail.webp` exists; run **Optimiser les covers** when needed.
-5. Confirm language, BPM, key, explicit status, duration, album and release date.
-6. Enter duration as `mm:ss` and confirm it reopens unchanged; manifests store the value in canonical seconds.
-7. Confirm both accent colours persist after reopening an older track.
-8. Publish only when audio and cover are complete.
-9. Rebuild the public catalog after lyrics or derived metadata changes.
+This checklist separates four independent states that used to get mixed together: **source merge**, **web-host deployment**, **Worker deployment**, and **R2 catalog/media publication**.
 
-## Lyrics
+## 1. Before a pull request
 
-10. Open the public `/tracks/<slug>` response and confirm `lyricsAvailable` and `timestampsAvailable`.
-11. Test Lyrics Studio from the beginning and after seeking into the track.
-12. Confirm the single Track-detail `Lyrics` status and Lyrics Studio show the same synchronization state.
-13. Test bracketed LRC and standalone timestamp-line formats when parsers change.
+1. Work from a temporary branch based on current `main`.
+2. Do not edit generated `dist/` output as source.
+3. Do not make a production-only fix in Cloudflare Pages, GitHub Pages, `gh-pages` or Lovable.
+4. Keep the application version centralized in `js/build-config.js` when a shell/runtime release actually needs a new build.
+5. Run:
 
-## Application and playback
+```bash
+npm ci
+npm run validate
+npm run check:wrangler
+```
 
-14. Run `npm ci`, `npm run validate` and `npm run check:wrangler`.
-15. Test Home, Discography, Favorites, Albums, Lyrics, Audio Lab, Streaming and About.
-16. Test **Play favorites**, removal during playback, Shuffle and all Repeat modes inside the favorites queue.
-17. Test first-tap playback on Android and desktop.
-18. Test seeking, Next, Previous, Shuffle and Repeat.
-19. Test Android notification/lock-screen identity, explicit SHINOBIWAN artwork and headset controls.
-20. Test the installed PWA after completely closing the browser and application.
-21. Review desktop and mobile visual-regression changes intentionally.
+6. Test the affected desktop/mobile routes and playback paths.
+7. For routing changes, test direct `#track=`, `#lyrics=`, `#studio=` and browser Back/Forward behavior.
+8. For Audio Lab changes, confirm Spectrum/Liquid Chrome sanctuary checks remain intentional and all supported presets still receive the shared live signal.
+9. For PWA changes, confirm update activation still results in one prompt and one reload.
 
-## Deployment order
+## 2. Pull request / merge
 
-22. Merge only after `Validate Launchpad` and `Validate Cloudflare Workers` are green.
-23. Record the merge SHA; do not describe Worker source as deployed yet.
-24. From `main`, dispatch **Deploy Cloudflare Workers** for `admin`, `public` or `both`, and enter `DEPLOY` in the confirmation field.
-25. Approve the protected `cloudflare-production` environment when prompted.
-26. Deploy the private Worker first when catalog-generation behavior changed.
-27. Run the required Track Manager rebuild or optimization action.
-28. Deploy the public Worker when its API or media behavior changed.
-29. Review the GitHub job summary and record each Cloudflare version ID with the deployed Git SHA.
-30. Confirm the automatic post-deployment checks passed: private Access protection, public `/health`, `/tracks`, HTTP Range `206`, and full-audio HEAD `200`.
-31. Change the service-worker release namespace whenever existing PWA installations must refresh.
-32. Verify GitHub Pages with a hard refresh and then verify the installed PWA.
-33. Check one full `/tracks/<slug>` response after any catalog or parser change.
-34. Report separately what is merged, published by Pages, deployed to Workers and rebuilt in R2; identify dashboard deployments separately from GitHub Actions deployments.
+10. Open a PR into `main`.
+11. Require green:
+    - **Validate Launchpad**
+    - **Validate Cloudflare Workers**
+    - **Validate Horizontal Overflow**
+12. Review unexpected visual/behavioral regressions rather than weakening tests to match a bug.
+13. Merge into `main` only when the PR represents the complete intended source state.
+14. Record the merge SHA when diagnosing a deployment.
+15. Delete the temporary branch after merge once it is no longer needed.
 
-## Rollback
+## 3. Web application deployment
 
-35. Use **Roll back Cloudflare Worker** only from `main` and enter `ROLLBACK` in the confirmation field.
-36. Select one Worker and optionally provide a known Cloudflare version ID; leave it blank only when the immediately previous deployment is the intended target.
-37. Approve the protected `cloudflare-production` environment and review the active deployment data in the job summary.
-38. Confirm the post-rollback smoke test passes.
-39. Remember that Worker rollback does not restore R2 objects or `catalog/index.json`.
+### GitHub Pages
 
-## Cleanup safety
+16. A push to `main` triggers **Deploy LaunchPAD to GitHub Pages**.
+17. The workflow must:
+    - check out `main`;
+    - build the canonical static runtime;
+    - validate the runtime byte-for-byte/contractually;
+    - verify the active Build metadata;
+    - upload/deploy the Pages artifact.
+18. Confirm the GitHub Pages API/workflow reports `built` / success.
+19. Hard-refresh `https://shinobione.github.io/LaunchPAD-APP/` and confirm the expected Build in About.
+20. Do **not** repoint the deployment to the historical `gh-pages` recovery branch.
 
-40. Run `npm run audit:r2` and `npm run audit:r2 -- --full-audio`, then archive both results before proposing deletion.
-41. Do not remove bundled GitHub media until R2 playback, thumbnails, lyrics and mobile Media Session tests pass.
-42. Require explicit approval before deleting any historical media.
-43. After removal, confirm there are no dead paths in the service-worker precache list.
-44. Confirm the repository size and GitHub Pages deployment after cleanup.
-45. Update project documentation whenever the operating workflow changes.
+### Cloudflare Pages staging
+
+21. Confirm the staging project tracked the same `main` merge SHA.
+22. Confirm its configured build command succeeds:
+
+```bash
+node scripts/build-cloudflare-pages.mjs && node scripts/validate-cloudflare-pages-build.mjs
+```
+
+23. Confirm `https://shinobiwan-launchpad-staging.pages.dev/` displays the same Build/Release as GitHub Pages.
+24. Treat a Cloudflare Pages deployment failure as a hosting/build state, not as proof that `main` changed or rolled back.
+
+## 4. Track Manager / R2 publication
+
+25. Open the private desktop Track Manager behind Cloudflare Access.
+26. Create/edit the canonical track manifest.
+27. Upload audio, original cover, optional lyrics and optional video.
+28. Confirm `thumbnail.webp` exists; optimize covers when needed.
+29. Confirm language, BPM, key, content rating, duration, album/project and release date.
+30. Publish only when required media/metadata are complete.
+31. Rebuild `catalog/index.json` after manifest/lyrics-derived metadata changes when required.
+32. Verify one full `/tracks/<slug>` response after parser/index changes.
+33. Test Lyrics Studio if lyrics/timestamps changed.
+
+## 5. Cloudflare Worker deployment
+
+Worker deployment is **not** implied by merging or by Pages deployment.
+
+34. From `main`, dispatch **Deploy Cloudflare Workers** for `public`, `admin` or `both`.
+35. Enter the workflow confirmation value requested by the protected job.
+36. Approve the `cloudflare-production` environment when prompted.
+37. Deploy the private Worker first when Track Manager/catalog-generation behavior changed.
+38. Rebuild R2 catalog state only if the data change requires it.
+39. Deploy the public Worker when its API/media contract changed.
+40. Confirm post-deployment health checks including Access protection, `/health`, `/tracks` and Range media behavior.
+41. Record deployed Worker version IDs and the source `main` SHA.
+
+## 6. Playback / PWA verification
+
+42. Test Home, Discography, Favorites, Albums, Lyrics, Audio Lab, Streaming and About.
+43. Test first-tap playback on desktop and Android when player/bootstrap code changed.
+44. Test seek, Next, Previous, Shuffle and Repeat.
+45. Test favorites-only queue behavior when queue code changed.
+46. Test installed-PWA startup after fully closing the browser/app when service-worker code changed.
+47. Confirm the expected Build/Release is displayed after accepting a PWA update.
+
+## 7. Rollback
+
+48. Web-app rollback should be performed by reverting/fixing `main` and redeploying the canonical artifact, not by making a private host-only patch.
+49. Worker rollback uses the protected **Roll back Cloudflare Worker** workflow.
+50. Remember that Worker rollback does not restore R2 objects or `catalog/index.json`.
+51. Record rollback source/version and verify health afterward.
+
+## 8. Infrastructure/repository hygiene
+
+52. `main` remains the only application source of truth.
+53. Delete merged/abandoned `agent/`, `fix/`, `hotfix/`, `migration/` and `release/` branches.
+54. Keep `gh-pages` unused by workflow deployment; delete it once historical recovery is no longer required.
+55. Do not introduce a second build/version source.
+56. Keep documentation synchronized with the actual deployment topology.
+57. Treat Lovable as prototype-only unless a future migration is explicitly designed and promoted through GitHub.
+58. Report these states separately when troubleshooting:
+    - code merged to `main`;
+    - GitHub Pages deployed;
+    - Cloudflare Pages deployed;
+    - public Worker deployed;
+    - private Worker deployed;
+    - R2 catalog rebuilt/media published.
+
+See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the canonical map.

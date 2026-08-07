@@ -1,27 +1,48 @@
+# SHINOBIWAN LaunchPAD architecture
 
-# SHINOBIWAN Launchpad architecture
+_Current baseline: Build `2026.08.07.40` (`unified-v40-20260807`)_
 
-LaunchPAD is a modular PWA backed by a canonical Cloudflare R2 media catalog. GitHub Pages serves the interface; Cloudflare Workers manage and publish media stored in R2.
+LaunchPAD is a modular static PWA whose application source lives in GitHub `main`. The web shell is mirrored to GitHub Pages and Cloudflare Pages; production catalog/media state lives in Cloudflare R2 and is exposed through public/private Workers.
+
+For the operational hosting map, see [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md).
 
 ## Runtime topology
 
 ```text
-Browser / installed PWA
-        |
-        | GitHub Pages shell, JavaScript and CSS
-        v
-shinobione.github.io/LaunchPAD-APP
-        |
-        | GET /tracks, /tracks/<slug>, /media/...
-        v
-launchpad-media Worker  --->  shinobiwan-media R2 bucket
-
-Private desktop administration
-        |
-        | ?admin=1 local opt-in, then Cloudflare Access
-        v
-launchpad-r2-api Worker  --->  same R2 bucket
+                    GitHub repository: main
+                              |
+                validated static application
+                              |
+              +---------------+---------------+
+              |                               |
+              v                               v
+       GitHub Pages                    Cloudflare Pages
+       public PWA host                 staging PWA host
+              |                               |
+              +---------------+---------------+
+                              |
+                         Browser / PWA
+                              |
+              +---------------+---------------+
+              |                               |
+              v                               v
+      launchpad-media Worker          launchpad-r2-api Worker
+      public GET/HEAD API             private Track Manager
+              |                               |
+              +---------------+---------------+
+                              |
+                       shinobiwan-media R2
 ```
+
+## Source-of-truth boundaries
+
+There are three different kinds of canonical state and they must not be confused:
+
+1. **Application/infrastructure code:** GitHub `main`.
+2. **Track/media data:** R2 manifests, media objects and `catalog/index.json`.
+3. **Deployment/service configuration:** versioned GitHub workflows/Wrangler config plus required external Cloudflare settings/secrets.
+
+GitHub Pages, Cloudflare Pages, generated `dist/` output and Lovable are not authoritative source trees.
 
 ## Canonical R2 structure
 
@@ -35,93 +56,151 @@ tracks/<slug>/lyrics.txt      # optional
 tracks/<slug>/video.<ext>     # optional
 ```
 
-`catalog/index.json` is the fast public catalog snapshot. It contains published manifests plus derived flags such as lyrics and timestamp availability. The original manifest remains the source of truth for a track.
+`manifest.json` is the canonical per-track metadata record. `catalog/index.json` is the optimized public catalog snapshot generated from publishable manifests and derived flags.
 
 ## Application structure
 
 ```text
+index.html
+css/
+  ...                         Base, responsive and feature styles
+
 js/
-  build-config.js               Dynamic resource version
-  app-engine.js                 Boot, catalog hydration and feature initialization
-  app-main.js                   Playback, routing and delegated events
-  catalog.js                    Album and editorial journey definitions
-  catalog-fixture.js            Minimal localhost/CI track fixture
+  build-config.js             Single app build/release source
+  app-engine.js               Main bootstrap
+  app-engine-recovery.js      Cache-safe recovery bootstrap
+  app-main.js                 Playback, routing and app composition
+  catalog.js                  Album/editorial presentation data
+  catalog-fixture.js          Deterministic local/CI fixture
 
   core/
-    assets.js                   Versioned asset and stylesheet helper
-    catalog-store.js            Hydrated catalog state and selectors
-    remote-catalog.js           Public Worker response adapter
-    player-queue.js             Queue, Shuffle and Repeat state
-    router.js                   Hash routes and deep links
-    share.js                    Native sharing and clipboard fallback
-    theme.js                    Per-track colour themes
+    assets.js                 Versioned dynamic asset helper
+    catalog-schema.js         Canonical track normalization
+    catalog-store.js          Hydrated catalog state/selectors
+    catalog-ordering.js       Release/import ordering
+    remote-catalog.js         Public Worker adapter
+    player-queue.js           Queue/Shuffle/Repeat state
+    router.js                 Hash routing/deep links
+    share.js                  Sharing/clipboard helpers
+    theme.js                  Track palette helpers
 
   features/
-    lyrics/lyrics-engine.js     Lyrics loading, parsing and synchronization
-    media-session.js            Android lock-screen and headset controls
-    player-experience.js        Play-state authority and Track DNA
-    library-memory.js           Favorites, history and playback persistence
-    admin-access.js             Desktop-only local Track Manager entry
-    pwa.js                      Installation and update controls
+    audio-readiness.js        First-start and media recovery
+    audio-lab-signal.js       Web Audio analyser bridge/fallback signal
+    player-experience.js      Global playback state and Track DNA
+    lyrics/                   Lyrics reader/synchronization
+    visual/                   Audio Lab renderers and sanctuary registry
+    track-detail.js           Dedicated #track= route renderer
+    track-videos.js           Video/canvas behavior
+    pwa.js                    Install/update orchestration
     ...
 
 cloudflare/
-  public-worker.js              Public read-only API and Range streaming
-  admin-worker.parts/           Ordered private Worker source
-  wrangler.public.jsonc         Public production deployment contract
-  wrangler.admin.jsonc          Private production deployment contract
-  migration-manifest.json       Legacy GitHub-to-R2 migration plan
-  README.md                     Worker bindings and deployment notes
+  public-worker*.js           Public media/catalog Worker source
+  admin-worker.parts/         Ordered private Track Manager source
+  wrangler.public.jsonc       Public deployment contract
+  wrangler.admin.jsonc        Private deployment contract
+
+scripts/                      Build, validation and operations tooling
+tests/                        Browser/regression fixtures
+.github/workflows/            CI and deployment pipelines
 ```
 
 ## Boot sequence
 
-1. `build-config.js` installs the application engine.
-2. `app-engine.js` prepares the PWA shell and requests `/tracks` from the public Worker.
-3. `remote-catalog.js` maps R2 manifests to LaunchPAD track objects.
-4. `catalog-store.js` receives the complete online catalog before application rendering.
-5. `app-main.js` renders the hydrated catalog and initializes playback.
-6. Favorites can replace the catalog queue with a contextual favorites-only queue without changing Shuffle or Repeat state.
-7. `admin-access.js` exposes the private link only after a desktop user opts in locally with `?admin=1`.
-8. Audio and catalog requests remain network-dependent; the service worker only accelerates same-origin application assets.
+1. `index.html` loads the static shell and `js/build-config.js`.
+2. `build-config.js` exposes the Build 40 metadata and installs dynamic stability/boot resources.
+3. Parser-delivered stylesheets are deliberately left untouched after first paint; only dynamically inserted styles receive the active build query string.
+4. The recovery bootstrap initializes the catalog/runtime and attempts the public Cloudflare catalog.
+5. Remote catalog data is normalized through the shared schema/store before rendering.
+6. If the remote catalog is temporarily unavailable, the shell remains navigable through the local fallback path instead of aborting application boot. This fallback is a resilience path, not a second production catalog authority.
+7. `app-main.js` composes playback, views and feature modules.
+8. `#track=<id>` is owned by Track Detail; the generic view router does not render Home first.
+9. The service worker caches same-origin application assets while audio/video media remain network-oriented with dedicated Range behavior.
 
-Localhost intentionally loads the four-track `catalog-fixture.js` module so CI and local development remain deterministic. Production does not precache or import this fixture and fails clearly when the R2 catalog is unavailable.
+## Routing rules
 
-## Lyrics metadata flow
-
-The Lyrics reader parses the actual `lyrics.txt` file. Track detail exposes one authoritative `Lyrics` value: remote tracks start at `Checking…`, then the full `/tracks/<slug>` response resolves the status to `Timestamped`, `Not timestamped` or `Status unavailable`.
-
-The Track Manager catalog rebuild must inspect each lyrics object and write the derived flag into `catalog/index.json`. The public Worker also validates the flag when a full `/tracks/<slug>` response is requested, avoiding a second contradictory Track-detail field. Both parsers accept:
+Hash routes are stable/shareable application state:
 
 ```text
-[00:12.50] A bracketed LRC line
-00:12.50 A timestamp and lyric on one line
-00:12.50
-A timestamp followed by its lyric on the next line
+#home
+#library
+#favorites
+#lyrics=<track-id>
+#studio=<track-id>
+#track=<track-id>
+#album=<album-id>
+#lab
+#streaming
+#about
 ```
+
+Dedicated route owners must remain single-owner. In particular, a track-detail route must not be transiently interpreted as Home because that causes double rendering and competing scroll restoration.
+
+## Player and page theme separation
+
+The viewed track and currently playing track can differ. Theme scoping therefore maintains:
+
+- page palette for the viewed detail context;
+- player palette for the loaded audio track;
+- `split` scope when those IDs differ;
+- `unified` scope when they are the same.
+
+Theme writes are idempotent to avoid MutationObserver/render loops.
+
+## Audio Lab
+
+The Audio Lab registry is authoritative for supported presets. The validated core set is:
+
+- Spectrum
+- Liquid Chrome
+- Aurora Glass
+- Nebula
+- Singularity
+- Neon Shatter as the default visual mode where applicable
+
+Spectrum and Liquid Chrome are sanctuary-protected by regression hashes. Retired renderers must not be reintroduced through stale routes or compatibility code.
+
+The signal path uses Web Audio frequency/time-domain data when available and a deterministic playback fallback while the analyser is warming/unavailable. Telemetry writes are throttled/idempotent so visual reactivity cannot create a DOM mutation loop.
+
+## Lyrics flow
+
+The public catalog can expose derived lyrics/timestamp flags for fast listing. Full track detail may resolve the exact lyrics status from the track resource.
+
+Supported timestamp forms include bracketed LRC and plain timestamp-line variants. Track Manager catalog rebuilds are responsible for refreshing derived index flags when lyrics change.
+
+## Web deployment artifact
+
+`scripts/build-cloudflare-pages.mjs` currently builds `dist/cloudflare-pages/` by copying the runtime verbatim. Despite the historical filename, the artifact is host-neutral and is also used by GitHub Pages.
+
+`scripts/validate-cloudflare-pages-build.mjs` checks that the artifact matches the source runtime and includes required boot/feature files.
+
+These names are compatibility debt because the Cloudflare Pages dashboard already references them. Renaming them should happen only after the external build configuration is updated atomically.
 
 ## Architecture rules
 
-1. R2 manifests are the canonical music metadata source.
-2. All UI consumers read tracks through `core/catalog-store.js`.
-3. The public Worker is GET/HEAD/OPTIONS only and has no Cloudflare Access policy.
-4. The private Worker is protected by Cloudflare Access and is the only publishing interface.
-5. Public catalog cards use `thumbnail.webp`; detailed pages may use the original cover.
-6. Audio responses support HTTP Range requests and bypass the PWA cache.
-7. Views remain addressable through hash routes.
-8. Playback order is controlled by `core/player-queue.js`.
-9. Catalog, album and favorites queues remain explicit contexts; an empty contextual queue never falls back silently to the catalog.
-10. Feature behavior lives in `js/features/`; shared state and helpers live in `js/core/`.
-11. Every shell-changing release receives a new service-worker cache namespace.
-12. Worker changes and PWA changes must pass CI before deployment.
-13. A merge, GitHub Pages publication, Worker deployment and catalog rebuild are distinct release states.
-14. Production has no bundled track or metadata fallback; R2 is required for the music catalog.
+1. `main` is the only application-code authority.
+2. R2 manifests/media are the only production track/media authority.
+3. All UI consumers normalize tracks through the shared catalog schema/store.
+4. The public Worker stays read-only and Range-capable.
+5. The private Worker remains behind Cloudflare Access.
+6. Audio/video delivery must not be silently trapped in the PWA static cache.
+7. Hash routes remain shareable and have one owner each.
+8. Queue contexts remain explicit; they do not silently fall back to another queue.
+9. Feature code belongs in `js/features/`; shared state/helpers belong in `js/core/`.
+10. Shell-changing releases advance `js/build-config.js` and the service-worker namespace through that build metadata.
+11. Web-host deployment, Worker deployment and R2 catalog rebuild are separate release states.
+12. Deployment builders may copy and validate runtime files but may not patch production runtime code.
+13. Historical/recovery branches are never deployment authorities.
+14. Lovable remains external prototyping unless a deliberate migration lands back in `main`.
+15. Regression tests should assert current behavior/contracts rather than obsolete historical build identifiers.
 
 ## Validation
 
-`npm run validate` checks JavaScript syntax, catalog integrity, the public Worker contract and service-worker behavior. `npm run check:wrangler` compiles the exact public and private deployment bundles without deploying. GitHub Actions runs both plus Chrome smoke tests, accessibility checks and desktop/mobile visual-regression captures.
+```bash
+npm ci
+npm run validate
+npm run check:wrangler
+```
 
-Production deployment is a manual `main` workflow protected by the `cloudflare-production` environment. Wrangler uses the existing `MEDIA_BUCKET` binding and preserves dashboard variables. The workflow does not rebuild the R2 catalog index.
-
-See `guide.md`, `RELEASE-CHECKLIST.md` and `ROADMAP.md` for operational workflows.
-
+GitHub Actions also runs LaunchPAD, Cloudflare Worker and horizontal-overflow validation. GitHub Pages performs an additional static artifact build/validation before deployment.

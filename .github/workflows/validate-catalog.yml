@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - main
-      - 'refactor/**'
-      - 'feature/**'
-      - 'fix/**'
-      - 'agent/**'
   pull_request:
 
 concurrency:
@@ -32,6 +28,9 @@ jobs:
 
       - name: Check JavaScript syntax
         run: npm run check:syntax
+
+      - name: Validate deployment topology
+        run: npm run check:deployment-topology
 
       - name: Validate catalog and referenced files
         run: npm run validate:catalog

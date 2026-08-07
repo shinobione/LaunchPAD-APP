@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { assertCurrentBuild } from './lib/build-metadata.mjs';
 
 const read = path => fs.readFileSync(path, 'utf8');
 
@@ -52,18 +53,13 @@ const serviceWorker = read('sw.js');
 assert.ok(serviceWorker.includes("'./css/feature-12.css'"));
 assert.ok(serviceWorker.includes("'./js/features/feature-12.js'"));
 
-const build = read('js/build-config.js');
-for (const required of [
-  "id: '20260807-unified-v40'",
-  "cache: 'shinobi-launchpad-v40'",
-  "display: '2026.08.07.40'",
-  "release: 'unified-v40-20260807'"
-]) assert.ok(build.includes(required), `Phase 12 must be validated against current Build 40 metadata: ${required}.`);
-
 const deployment = read('.github/workflows/deploy-cloudflare.yml');
-assert.ok(deployment.includes("EXPECTED_ADMIN_VERSION: '5.6'"));
+assert.ok(deployment.includes("EXPECTED_ADMIN_VERSION: '5.7'"));
 assert.ok(deployment.includes("EXPECTED_PUBLIC_VERSION: '2.6'"));
+assert.ok(deployment.includes('workflow_dispatch:'));
+assert.ok(!deployment.includes('\n  push:'), 'Production Worker deployment must remain manual-only.');
 
 await import('./test-milestone-5.mjs');
 
-console.log('Phase 12 filtering, manual cover colors, Studio cleanup, local themes, metadata layout and Discography order remain valid under Build 40.');
+const build = assertCurrentBuild('Phase 12');
+console.log(`Phase 12 filtering, manual cover colors, Studio cleanup, local themes, metadata layout and Discography order remain valid under Build ${build.number}.`);

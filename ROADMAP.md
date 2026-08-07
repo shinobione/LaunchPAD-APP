@@ -1,109 +1,81 @@
 # LaunchPAD roadmap
 
-_Last updated: 2026-08-03_
+_Last reset: 2026-08-07 — unified Build 40_
 
-## Current production state
+This roadmap starts from the post-reconciliation architecture. Historical migration checklists were intentionally removed from the active roadmap; completed work remains available in Git history.
 
-- GitHub Pages serves the installable LaunchPAD PWA.
-- Cloudflare R2 is the canonical media store.
-- The private `launchpad-r2-api` Worker provides Track Manager v4.5 behind Cloudflare Access.
-- The public `launchpad-media` Worker v2.4 exposes published metadata and Range-enabled media streams.
-- Sixteen tracks are published in the canonical `tracks/<slug>/` layout, with original covers, audio files and optimized WebP thumbnails.
-- The read-only R2 audit transferred all 16 audio files successfully (87,849,601 bytes) and retained 16/16 optimized thumbnails.
-- Android validation is complete: first-tap playback, Media Session identity/icon, cover loading and synchronized-lyrics coherence are confirmed on the physical device.
-- GitHub Pages serves the favorites-only playback queue and the opt-in desktop Track Manager entry.
-- The production PWA catalog is hydrated exclusively from R2; only album/editorial presentation data remains static.
-- Fourteen historical MP3 files (76,892,054 bytes) and fourteen duplicated per-track covers (37,064,826 bytes) have been removed from GitHub after R2 validation.
-- Runtime `fallbackFile` switching has been removed while preserving the Android audio-readiness recovery.
-- Bundled lyric fallbacks have been removed; the PWA now reads lyrics exclusively from the public R2 Worker.
-- The repository now contains protected production deployment and rollback workflows with post-deployment smoke tests and Cloudflare version tracing.
-- The first production deployment from GitHub Actions is still pending environment-secret configuration and review.
+## Baseline — complete
 
-## Step 7 — stabilization and consolidation
+- [x] Reconcile the divergent Cloudflare v39 and GitHub `main` lines.
+- [x] Establish Build `2026.08.07.40` / release `unified-v40-20260807` as the canonical application release.
+- [x] Restore the Cloudflare Pages build scripts to canonical `main`.
+- [x] Fix single-owner Track Detail routing and remove the Home/Track DNA detour.
+- [x] Stop parser-loaded stylesheets from being rewritten after first paint.
+- [x] Preserve the validated Audio Lab viewport/sanctuary behavior.
+- [x] Modernize stale regression tests so they validate current contracts rather than historical build numbers.
+- [x] Repair GitHub Pages so it deploys the validated Build 40 artifact directly from `main`.
+- [x] Make GitHub `main` the only application-code source of truth.
+- [x] Document GitHub Pages, Cloudflare Pages, Workers, R2 and Lovable boundaries.
 
-### P0: synchronized-lyrics metadata
+## P0 — repository consolidation
 
-- [x] Identify the mismatch between the Lyrics reader and Track detail.
-- [x] Make the public Worker accept bracketed LRC timestamps and standalone `mm:ss.xx` timestamp lines.
-- [x] Read `timestampsAvailable` from the catalog index for `/tracks` responses.
-- [x] Prepare the Track Manager catalog rebuild that derives timestamp flags from every lyrics file.
-- [x] Confirm public Worker v2.3 in production.
-- [x] Confirm the rebuilt public index reports timestamp metadata for ten tracks.
-- [x] Verify the public API flags for THICK, Carved from Pressure and The Throne Resonates.
-- [x] Confirm Track Manager v4.5 through the protected live Worker after the manual dashboard deployment.
-- [x] Unify Track detail into one authoritative `Lyrics` status and confirm Carved from Pressure and THICK report `Timestamped`.
-- [x] Complete the final Lyrics Studio and full-catalog Android device pass.
-- [ ] Complete the first reviewed repository-driven Track Manager deployment.
+- [ ] Confirm Cloudflare Pages staging visibly reports Build `2026.08.07.40` after the `main` reconciliation deployment.
+- [x] Confirm GitHub Pages workflow reports `built` from canonical Build 40.
+- [ ] Delete obsolete remote feature/fix/agent/migration branches after verifying they are merged or abandoned.
+- [ ] Delete the historical `gh-pages` branch after confirming it is no longer referenced by any deployment workflow.
+- [x] Rename the GitHub Pages workflow away from the old emergency/recovery filename.
+- [ ] Remove obsolete one-off recovery workflows/configuration if any remain after branch audit.
+- [ ] Audit root/docs files for duplicated or contradictory migration instructions.
+- [ ] Reduce historical build-marker comments in `js/build-config.js` once no regression guard depends on them.
+- [ ] Absorb/rename `navigation-stability-v39.js` and `ui-stability-v39.css` into permanent non-versioned runtime modules after a dedicated regression pass.
+- [ ] Rename host-specific static build filenames (`build-cloudflare-pages.mjs`, validator, output directory) to host-neutral names after Cloudflare Pages dashboard configuration is changed atomically.
 
-### P1: repository cleanup
+## P1 — deployment discipline
 
-- [x] Confirm final mobile playback, Media Session icon, thumbnails and synchronized lyrics.
-- [x] Add a read-only R2 audit and exact legacy deletion inventory.
-- [x] Add an opt-in full-audio transfer pass that compares every downloaded byte count with the Range total.
-- [x] Deploy public Worker v2.4 and complete the 16/16 full-audio transfer pass (87,849,601 bytes).
-- [x] Remove 14 validated legacy MP3 files from the GitHub repository.
-- [x] Switch the static catalog to R2 audio URLs and remove runtime `fallbackFile` recovery.
-- [x] Switch static track art to R2 thumbnails/originals and remove 14 duplicated per-track covers.
-- [x] Refresh service-worker cache namespaces after the audio and cover cleanup.
-- [x] Verify GitHub Pages after both historical-media deletion passes.
-- [x] Point the static catalog at R2 lyrics and remove the 10 bundled lyric fallbacks (31,603 bytes).
-- [x] Replace the hard-coded track catalog with a four-track localhost/CI fixture; production remains R2-only.
-- [x] Simplify `catalog.js`, remove `catalog-metadata.js` and remove it from the service-worker precache list.
-- [x] Measure the final tracked repository snapshot after lyrics/catalog cleanup (recorded in the cleanup audit).
+- [ ] Keep every application change on a temporary branch and merge through a green PR.
+- [ ] Auto-delete merged branches in GitHub repository settings if desired.
+- [ ] Treat Cloudflare Pages as a staging mirror of `main`, not an editable application source.
+- [ ] Treat GitHub Pages as a workflow artifact deployment from `main`, not a `gh-pages` source branch.
+- [ ] Keep Worker deployment protected/manual and separate from PWA deployment.
+- [ ] Record the first fully repository-driven deployment of each Worker after current secrets/environment settings are verified.
+- [ ] Stop dashboard source editing once Worker GitHub deployments are confirmed reproducible.
 
-### P1: Worker source control and CI/CD
+## P1 — product stability
 
-- [x] Version the public media Worker in `cloudflare/public-worker.js`.
-- [x] Version the private Track Manager Worker as ordered source parts in `cloudflare/admin-worker.parts/`.
-- [x] Add a reproducible build and syntax-check script for the dashboard-compatible private Worker bundle.
-- [x] Add Worker syntax and catalog-index checks to the existing CI validation command.
-- [x] Pin Wrangler and add configuration for both Workers.
-- [x] Dry-run the exact public and private bundles in CI.
-- [x] Add a protected, manual production deployment workflow from `main`.
-- [x] Add explicit production confirmation, structured Wrangler version tracing and post-deployment smoke tests.
-- [x] Add a protected manual rollback workflow with post-rollback verification.
-- [x] Document the one-time GitHub environment, required secrets and first deployment runbook.
-- [ ] Configure the `cloudflare-production` secrets and complete the first reviewed workflow deployment.
-- [ ] Stop all Dashboard source editing after both Workers have completed their first repository-driven deployment.
+- [ ] Continue Audio Lab regression testing for newly added presets through the shared reactivity layer.
+- [ ] Keep Spectrum and Liquid Chrome sanctuary hashes intentional and reviewed.
+- [ ] Test direct Track/Lyrics/Studio deep links on desktop and mobile after every routing refactor.
+- [ ] Keep PWA update behavior to one prompt / one activation / one reload.
+- [ ] Continue Android playback and Media Session smoke checks for player changes.
 
-### P2: desktop Track Manager access
+## P2 — catalog and Track Manager
 
-- [x] Add an opt-in desktop-only Track Manager entry inside LaunchPAD.
-- [x] Keep the entry hidden for normal public visitors.
-- [x] Persist admin mode locally after opening LaunchPAD with `?admin=1` (`?admin=0` clears it).
-- [x] Open the protected Cloudflare Access URL in a separate tab.
+- [ ] Complete catalog metadata for tracks that still have analysis/review warnings.
+- [ ] Keep Track Manager as the only publishing interface for production track manifests/media.
+- [ ] Rebuild `catalog/index.json` only when manifest/lyrics-derived metadata requires it.
+- [ ] Keep the public Worker read-only and the private Worker behind Cloudflare Access.
 
-### P2: favorites playback
+## P2 — Lovable decision
 
-- [x] Add **Play favorites** to the Favorites view.
-- [x] Build a queue containing only favorite track IDs.
-- [x] Continue automatically through that queue when a track ends.
-- [x] Preserve Shuffle and Repeat behavior inside the favorite queue.
-- [x] Add regression tests for queue order and track removal while playing.
+Lovable is currently **not** part of the production authority chain.
 
-### P2: interface and documentation
+Choose one future direction explicitly:
 
-- [x] Refresh and simplify the Track Manager interface.
-- [x] Remove obsolete legacy-import and test-file actions from the Track Manager UI.
-- [x] Add a distinctive Track Manager favicon.
-- [x] Constrain the About portrait to a compact 4:5 mobile frame and keep its heading clear of the floating menu.
-- [x] Rewrite `README.md` around the R2-first architecture.
-- [x] Update `ARCHITECTURE.md` with both Workers, R2, catalog indexing and thumbnails.
-- [x] Rewrite `guide.md` around the Track Manager rather than manual catalog edits.
-- [x] Update `RELEASE-CHECKLIST.md` for Cloudflare publication and PWA cache refreshes.
-- [x] Update the Cloudflare operating documentation.
-- [x] Add a dedicated reproducible deployment and rollback runbook.
-- [x] Synchronize this roadmap with the completed Android validation and media cleanup.
+- [ ] **Keep Lovable as prototype-only** and periodically port useful UI experiments back to GitHub PRs; or
+- [ ] **Plan a real migration** with a defined target architecture, cutover branch, CI parity and rollback plan.
 
-## Definition of migration complete
+Until one of those choices is deliberately made, no LaunchPAD feature is considered shipped merely because it exists in Lovable.
 
-The Cloudflare migration is finished when:
+## Definition of repository cleanup complete
 
-1. all sixteen tracks play exclusively from R2;
-2. all catalog cards use optimized R2 thumbnails;
-3. Lyrics Studio and Track detail agree on timestamp availability;
-4. Android playback starts on the first tap and exposes the expected PWA media identity;
-5. legacy GitHub media and fallback code are removed;
-6. both Workers are versioned and have completed a reviewed repository-driven deployment;
-7. CI validates the PWA and Worker sources;
-8. user and developer documentation describes the production architecture accurately.
+The consolidation is complete when:
+
+1. `main` is the only active application source branch;
+2. GitHub Pages and Cloudflare Pages both serve the same current build from `main`;
+3. `gh-pages` and obsolete temporary branches are gone;
+4. no workflow checks out a recovery/deployment branch as application source;
+5. architecture/README/release docs agree on the same topology;
+6. no current regression test depends on obsolete release-number comments;
+7. versioned emergency runtime shims have been absorbed or explicitly documented as compatibility debt;
+8. Workers/R2 remain clearly separate backend deployment/data concerns;
+9. Lovable has an explicit role rather than silently acting as a parallel codebase.

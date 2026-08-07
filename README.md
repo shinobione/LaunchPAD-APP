@@ -1,104 +1,148 @@
+# SHINOBIWAN LaunchPAD
 
-# SHINOBIWAN Launchpad
+Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA and shareable track experiences.
 
-An installable, responsive music application for the SHINOBIWAN catalog: album pages, synchronized lyrics, reactive visuals, queues, favorites and shareable Visual Cards.
+## Current release
 
-**Production:** https://shinobione.github.io/LaunchPAD-APP/
+**Canonical application build:** `2026.08.07.40`  
+**Release:** `unified-v40-20260807`  
+**Source of truth:** `main`
 
-## Verified status
+Public / staging hosts:
 
-| Component | Repository state | Production state |
-| --- | --- | --- |
-| PWA | Favorites-only queue, desktop admin access, Android media fixes and an R2-only catalog are merged | GitHub Pages serves the latest service-worker release from `main` |
-| Public media Worker | v2.4 source and Wrangler config are merged | `/health` reports v2.4; full requests return HTTP 200 and Range requests return HTTP 206 |
-| Private Track Manager | v4.5 source and Wrangler config are merged | Protected by Access; v4.5 is confirmed live after a manual dashboard deployment |
-| R2 media | Read-only Range and opt-in full-transfer audits are merged | 16/16 full audio transfers pass: 87,849,601 bytes verified, plus 16/16 optimized thumbnails |
-| Cloudflare delivery | Pinned Wrangler validation and manual deployment workflow are merged | The repository workflow has not yet performed a production deployment |
+- GitHub Pages: `https://shinobione.github.io/LaunchPAD-APP/`
+- Cloudflare Pages staging: `https://shinobiwan-launchpad-staging.pages.dev/`
 
-The first-tap playback, Android media icon, cover loading and timestamp-status regressions are validated on the target Android device. Carved from Pressure and THICK expose the same single `Lyrics — Timestamped` status, and the validated historical media have been removed from GitHub.
+The two web hosts are mirrors of the same validated repository runtime. Neither host is an editable source of truth.
 
-## Production architecture
-
-LaunchPAD is split into three services:
-
-- **GitHub Pages** serves the PWA interface.
-- **Cloudflare R2** stores canonical audio, covers, thumbnails, lyrics and release manifests.
-- **Cloudflare Workers** expose a private Track Manager and a public read-only media API.
-
-The public application loads its catalog from:
+## Architecture at a glance
 
 ```text
-https://launchpad-media.jerryquinet.workers.dev/tracks
+GitHub main
+   |
+   +--> GitHub Pages ---------+
+   |                          |
+   +--> Cloudflare Pages -----+--> LaunchPAD PWA
+                                      |
+                         +------------+------------+
+                         |                         |
+                         v                         v
+                launchpad-media Worker    launchpad-r2-api Worker
+                         |                         |
+                         +------------+------------+
+                                      |
+                               Cloudflare R2
 ```
 
-Media is streamed from R2 with HTTP Range support. Catalog cards use optimized 512 px WebP thumbnails, while original artwork remains available for detailed views.
+- **GitHub `main`** — canonical application and infrastructure source.
+- **GitHub Pages** — public static PWA host.
+- **Cloudflare Pages** — staging/preview static PWA host.
+- **Cloudflare R2** — canonical production media and track manifests.
+- **Public Worker (`launchpad-media`)** — read-only catalog/media API and HTTP Range streaming; repository contract v2.6.
+- **Private Worker (`launchpad-r2-api`)** — Track Manager behind Cloudflare Access; repository Track Manager contract v5.7.
+- **Lovable** — external prototyping only unless a future migration is explicitly promoted back through this repository and `main`.
 
-## Cloudflare components
+See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the authoritative deployment map and anti-split-brain rules.
 
-- `cloudflare/public-worker.js` — public catalog and media streaming Worker.
-- `cloudflare/admin-worker.parts/` — versioned private Track Manager source.
-- `cloudflare/wrangler.*.jsonc` — reproducible service names, entry points and R2 bindings.
-- `cloudflare/migration-manifest.json` — historical migration source data.
-- `cloudflare/README.md` — R2 layout, bindings and deployment notes.
-- `ROADMAP.md` — stabilization, cleanup and post-migration work.
+## Canonical media model
 
-The private Track Manager runs at `launchpad-r2-api` behind Cloudflare Access. On a desktop pointer device, open LaunchPAD once with `?admin=1` to persist a private local entry; `?admin=0` removes it. Ordinary visitors never see the control.
+Production media lives in R2:
+
+```text
+catalog/index.json
+tracks/<slug>/manifest.json
+tracks/<slug>/audio.<ext>
+tracks/<slug>/cover.<ext>
+tracks/<slug>/thumbnail.webp
+tracks/<slug>/lyrics.txt      # optional
+tracks/<slug>/video.<ext>     # optional
+```
+
+The public application hydrates its catalog through the public Worker. Localhost/CI may use deterministic fixtures; production must not silently substitute a bundled production catalog.
 
 ## Local development
 
 ```bash
+npm ci
 python3 -m http.server 4173
 ```
 
-Open `http://127.0.0.1:4173/`. A local HTTP server is required for ES modules, audio metadata and the service worker.
+Then open `http://127.0.0.1:4173/`.
 
-Local development deliberately loads a four-track fixture from `js/catalog-fixture.js` so browser tests do not depend on Cloudflare availability. Production never loads that fixture and requires the canonical public R2 catalog.
+A local HTTP server is required for ES modules, media behavior and the service worker.
 
 ## Validation
 
+Before merging application or infrastructure changes:
+
 ```bash
-npm ci
 npm run validate
 npm run check:wrangler
 ```
 
-Validation covers JavaScript syntax, catalog integrity, both exact Wrangler bundles and service-worker behavior. GitHub Actions additionally runs browser smoke tests, accessibility checks and desktop/mobile visual-regression screenshots.
+CI additionally checks browser navigation, PWA/service-worker behavior, catalog contracts, Cloudflare bundles and desktop overflow regressions.
 
-The live cleanup audit is read-only:
-
-```bash
-npm run audit:r2
-npm run audit:r2 -- --full-audio
-```
-
-## Project map
-
-- `js/app-engine.js` — boot sequence and remote-catalog hydration.
-- `js/app-main.js` — playback, routing and application composition.
-- `js/catalog.js` — album and editorial journey definitions only.
-- `js/catalog-fixture.js` — minimal localhost/CI track fixture; never loaded in production.
-- `js/core/catalog-store.js` — hydrated catalog state and selectors.
-- `js/core/remote-catalog.js` — public Cloudflare catalog adapter.
-- `js/features/` — user-facing features.
-- `cloudflare/` — Worker source, migration data and deployment documentation.
-- `R2-CLEANUP-AUDIT.md` — verified legacy-media inventory and deletion gate.
-- `css/` — base, feature and responsive layers.
-- `guide.md` — catalog and release workflow.
-- `ARCHITECTURE.md` — technical structure.
-- `RELEASE-CHECKLIST.md` — safe publication workflow.
-- `ROADMAP.md` — remaining migration and product work.
-
-## PWA cache updates
-
-The service worker uses a release namespace in `sw.js`. Change it whenever JavaScript, CSS, static HTML or remote-catalog behavior must be forced onto existing installations.
-
-`js/build-config.js` remains the version source for dynamically imported application resources.
+The important rule is simple: **tests protect current behavior, not historical build-number strings.**
 
 ## Deployment
 
-Merges to `main` are published through GitHub Pages. Worker source is not deployed by a merge: dispatch **Deploy Cloudflare Workers** from `main`, choose `public`, `admin` or `both`, and use the protected `cloudflare-production` environment.
+### Web application
 
-The GitHub environment must contain `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. A Worker deployment does not rebuild `catalog/index.json`; perform that explicit Track Manager action only when required. Track Manager v4.5 is currently live from a manual Cloudflare dashboard deployment; the first successful repository-driven deployment remains to be recorded.
+A merge to `main` is the only supported source transition.
 
-Do not merge unless both `Validate Launchpad` and `Validate Cloudflare Workers` are green. Report source merge, GitHub Pages publication, Worker deployment and R2 index rebuild as separate states.
+- GitHub Pages deploys the validated static runtime through `.github/workflows/deploy-github-pages.yml`.
+- Cloudflare Pages staging tracks the same `main` source.
+- The current compatibility build scripts are `scripts/build-cloudflare-pages.mjs` and `scripts/validate-cloudflare-pages-build.mjs`; despite their historical names, they copy and validate the runtime verbatim and do not patch application files.
 
+### Cloudflare Workers
+
+Workers are a separate release operation. Use the protected **Deploy Cloudflare Workers** workflow from `main`; do not infer Worker deployment from a web-app merge.
+
+Required GitHub environment secrets:
+
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_API_TOKEN`
+
+A Worker deployment does not rebuild `catalog/index.json`. Rebuild the public catalog explicitly through Track Manager when manifests/lyrics require it.
+
+## Project map
+
+```text
+index.html                    Static application shell
+css/                          UI, responsive and feature styles
+js/
+  build-config.js             Single application release/version source
+  app-engine*.js              Boot and recovery bootstrap
+  app-main.js                 Main application composition
+  core/                       Shared catalog/router/player/theme state
+  features/                   User-facing modules
+cloudflare/                   Public/private Worker source and Wrangler configs
+scripts/                      Validation, build and deployment tooling
+tests/                        Browser regression fixtures
+docs/                         Operational and architecture documentation
+.github/workflows/            CI and deployment workflows
+```
+
+Useful documents:
+
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — runtime/module structure
+- [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) — canonical hosting/deployment topology
+- [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) — safe release procedure
+- [`ROADMAP.md`](ROADMAP.md) — remaining consolidation/product work
+- [`cloudflare/README.md`](cloudflare/README.md) — Workers/R2 operations
+
+## Repository rules
+
+1. `main` is the only source of truth.
+2. Do not edit production code only in Cloudflare, GitHub Pages, `gh-pages`, Lovable or a generated `dist/` directory.
+3. Temporary `agent/`, `fix/`, `hotfix/`, `migration/` and `release/` branches should be deleted after merge/abandonment.
+4. Do not restore the old `gh-pages` recovery branch as a deployment source.
+5. Advance application versions only in `js/build-config.js`.
+6. Keep Worker deployment, web deployment and R2 catalog rebuild as separate explicit states.
+7. Preserve the Audio Lab sanctuary guarantees for validated renderers unless a dedicated change intentionally updates their regression hashes.
+
+## Build 40 consolidation note
+
+Build 40 reconciled the previously divergent Cloudflare v39 line and GitHub `main` line. It also restored GitHub Pages from the canonical `main` artifact, removed the stale `gh-pages` recovery checkout, fixed single-owner track routing and prevents the old second stylesheet paint.
+
+Historical branch names and a few compatibility filenames may still exist remotely. They are cleanup debt, **not active architecture**.

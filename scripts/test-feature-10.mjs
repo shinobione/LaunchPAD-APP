@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import { assertCurrentBuild } from './lib/build-metadata.mjs';
 import {
   normalizeEditorialTags,
   parentEditorialTag
@@ -76,15 +77,10 @@ for (const required of ['./css/feature-10.css','./js/core/editorial-normalizatio
 }
 
 const deployWorkflow = read('.github/workflows/deploy-cloudflare.yml');
-assert.ok(deployWorkflow.includes("EXPECTED_ADMIN_VERSION: '5.6'"));
+assert.ok(deployWorkflow.includes("EXPECTED_ADMIN_VERSION: '5.7'"));
 assert.ok(deployWorkflow.includes("EXPECTED_PUBLIC_VERSION: '2.6'"));
+assert.ok(deployWorkflow.includes('workflow_dispatch:'));
+assert.ok(!deployWorkflow.includes('\n  push:'), 'Production Worker deployment must remain manual-only.');
 
-const build = read('js/build-config.js');
-for (const required of [
-  "id: '20260807-unified-v40'",
-  "cache: 'shinobi-launchpad-v40'",
-  "display: '2026.08.07.40'",
-  "release: 'unified-v40-20260807'"
-]) assert.ok(build.includes(required), `Feature 10 must be validated against current Build 40 metadata: ${required}.`);
-
-console.log('Feature 10 remains valid under public Worker v2.6, Track Manager v5.6 and Build 40.');
+const build = assertCurrentBuild('Feature 10');
+console.log(`Feature 10 remains valid under public Worker v2.6, Track Manager v5.7 and Build ${build.number}.`);

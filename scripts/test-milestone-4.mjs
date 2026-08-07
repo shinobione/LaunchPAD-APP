@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { assertCurrentBuild } from './lib/build-metadata.mjs';
 
 const read = path => fs.readFileSync(path, 'utf8');
 
@@ -41,12 +42,5 @@ assert.ok(worker.includes("'./css/theme-scope.css'"));
 assert.ok(worker.includes("'./js/features/theme-scope.js'"));
 assert.ok(worker.includes("'./js/core/catalog-schema.js'"));
 
-const build = read('js/build-config.js');
-for (const required of [
-  "id: '20260807-unified-v40'",
-  "cache: 'shinobi-launchpad-v40'",
-  "display: '2026.08.07.40'",
-  "release: 'unified-v40-20260807'"
-]) assert.ok(build.includes(required), `Theme scope must be validated against current Build 40 metadata: ${required}.`);
-
-console.log('Milestone 4 page/player theme isolation remains valid under Build 40.');
+const build = assertCurrentBuild('Milestone 4');
+console.log(`Milestone 4 page/player theme isolation remains valid under Build ${build.number}.`);

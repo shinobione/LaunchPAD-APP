@@ -4,8 +4,10 @@ import path from 'node:path';
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, 'dist', 'cloudflare-pages');
 
-// Cloudflare Pages is only the host. The application runtime is copied
-// verbatim from the GitHub checkout: no JS/CSS/HTML/PWA patching here.
+// Compatibility filename/output path: Cloudflare Pages already references this
+// script and directory. The artifact itself is host-neutral and is also used by
+// GitHub Pages. Runtime files are copied verbatim; deployment must never patch
+// JS/CSS/HTML/PWA source on the way to a host.
 const RUNTIME_ENTRIES = [
   'index.html',
   'css',
@@ -41,18 +43,23 @@ async function main() {
     });
   }
 
+  const sourceBranch = process.env.CF_PAGES_BRANCH
+    || process.env.GITHUB_REF_NAME
+    || 'main';
+
   await fs.writeFile(
     path.join(OUT, 'cloudflare-build.json'),
     `${JSON.stringify({
       mode: 'verbatim-github-runtime',
       sourceSha: process.env.CF_PAGES_COMMIT_SHA || process.env.GITHUB_SHA || 'checkout',
-      sourceBranch: process.env.CF_PAGES_BRANCH || 'migration/cloudflare-pages',
+      sourceBranch,
       generatedAt: new Date().toISOString()
     }, null, 2)}\n`,
     'utf8'
   );
 
-  console.log('Cloudflare Pages build: verbatim GitHub runtime copy.');
+  console.log('Static web build: verbatim GitHub runtime copy.');
+  console.log(`Source branch: ${sourceBranch}`);
   console.log(`Output: ${path.relative(ROOT, OUT)}`);
   console.log('No application runtime patches were applied.');
 }

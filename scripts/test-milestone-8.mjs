@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { assertCurrentBuild } from './lib/build-metadata.mjs';
 
 const read = path => fs.readFileSync(path, 'utf8');
 
@@ -83,6 +84,8 @@ for (const required of [
 const deployment = read('.github/workflows/deploy-cloudflare.yml');
 assert.ok(deployment.includes("EXPECTED_ADMIN_VERSION: '5.7'"));
 assert.ok(deployment.includes("EXPECTED_PUBLIC_VERSION: '2.6'"));
+assert.ok(deployment.includes('workflow_dispatch:'));
+assert.ok(!deployment.includes('\n  push:'), 'Production Worker deployment must remain manual-only.');
 
 const engine = read('js/app-engine.js');
 for (const required of [
@@ -102,9 +105,5 @@ for (const required of [
   "'./js/features/badge-hierarchy.js'"
 ]) assert.ok(worker.includes(required), `Milestone 8 offline shell is missing ${required}.`);
 
-const build = read('js/build-config.js');
-assert.ok(build.includes("id: '20260806-navigation-recovery'"));
-assert.ok(build.includes("cache: 'shinobi-launchpad-v37'"));
-assert.ok(build.includes("display: '2026.08.06.37'"));
-
-console.log('Milestone 8 SVG icons, badge hierarchy and Track Manager v5.7 are valid under navigation recovery Build 37.');
+const build = assertCurrentBuild('Milestone 8');
+console.log(`Milestone 8 SVG icons, badge hierarchy and Track Manager v5.7 remain valid under Build ${build.number}.`);
