@@ -157,16 +157,6 @@
 }
 
 @media(max-width:760px){
-  .launchpad-hero[data-mobile-header-order="wordmark-first"] .hero-body{
-    order:1!important;
-  }
-
-  .launchpad-hero[data-mobile-header-order="wordmark-first"] .launchpad-banner-rail{
-    order:2!important;
-    margin-top:16px!important;
-    margin-bottom:0!important;
-  }
-
   .home-official-release{
     grid-template-columns:1fr;
     min-height:0;
@@ -178,6 +168,7 @@
   }
 
   .home-release-copy{
+    width:100%;
     text-align:center;
   }
 
@@ -186,7 +177,27 @@
   }
 
   .home-release-actions{
-    justify-content:center;
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+    width:100%;
+    margin-top:22px;
+  }
+
+  .home-release-actions .primary,
+  .home-release-actions .secondary{
+    width:100%;
+    min-width:0;
+    min-height:48px;
+    padding-inline:12px;
+  }
+
+  .home-release-play{
+    grid-column:1 / -1;
+  }
+
+  .home-release-actions a[href^="#studio="]{
+    grid-column:1 / -1;
   }
 
   .home-visual-switcher{

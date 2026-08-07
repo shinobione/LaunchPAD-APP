@@ -124,11 +124,11 @@ assert.ok(!worker.includes('visual-engine-hex-reactor.js'), 'PWA shell must not 
 
 const build = read('js/build-config.js');
 for (const required of [
-  "id: '20260807-unified-v40'",
-  "cache: 'shinobi-launchpad-v40'",
-  "revision: 'cloudflare-main-reconciliation-1'",
-  "display: '2026.08.07.40'",
-  "release: 'unified-v40-20260807'"
-]) assert.ok(build.includes(required), `Audio Lab must be validated against current Build 40 metadata: ${required}.`);
+  "id: '20260807-visual-card-mobile-v41'",
+  "cache: 'shinobi-launchpad-v41'",
+  "revision: 'visual-card-cors-mobile-layout-1'",
+  "display: '2026.08.07.41'",
+  "release: 'visual-card-mobile-polish-20260807'"
+]) assert.ok(build.includes(required), `Audio Lab must be validated against current Build 41 metadata: ${required}.`);
 
-console.log('Audio Lab purge, calibration and sanctuary-protected Spectrum/Liquid Chrome remain valid under Build 40.');
+console.log('Audio Lab purge, calibration and sanctuary-protected Spectrum/Liquid Chrome remain valid under Build 41.');

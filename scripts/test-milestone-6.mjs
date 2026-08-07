@@ -20,9 +20,10 @@ for (const required of [
   "canvas.addEventListener('touchstart'",
   "canvas.addEventListener('touchend'",
   "window.addEventListener('shinobi:visual-mode', update)",
-  "hero.dataset.mobileHeaderOrder = 'wordmark-first'",
   'export function initHomeEditorial'
 ]) assert.ok(feature.includes(required), `Milestone 6 Home module is missing ${required}.`);
+assert.ok(!feature.includes('mobileHeaderOrder'), 'Home editorial must not override the canonical banner-first mobile hero order.');
+assert.ok(!feature.includes('wordmark-first'), 'The retired wordmark-first mobile hero override returned.');
 
 const styles = read('css/home-editorial.css');
 for (const required of [
@@ -30,12 +31,21 @@ for (const required of [
   '--release-cover',
   '.home-release-cover',
   '.home-release-actions',
+  'grid-template-columns:repeat(2,minmax(0,1fr))',
+  'grid-column:1 / -1',
   '.home-visual-switcher',
   '.home-visual-arrow',
-  '.launchpad-hero[data-mobile-header-order="wordmark-first"] .hero-body',
-  '.launchpad-hero[data-mobile-header-order="wordmark-first"] .launchpad-banner-rail',
   'touch-action:pan-y'
 ]) assert.ok(styles.includes(required), `Milestone 6 Home styles are missing ${required}.`);
+assert.ok(!styles.includes('data-mobile-header-order="wordmark-first"'), 'Retired wordmark-first mobile CSS returned.');
+
+const routeStyles = read('css/feature-11.css');
+for (const required of [
+  '.launchpad-hero .launchpad-banner-rail',
+  'order: 1;',
+  '.launchpad-hero .hero-body',
+  'order: 2;'
+]) assert.ok(routeStyles.includes(required), `Canonical mobile hero order is missing ${required}.`);
 
 const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
@@ -58,4 +68,4 @@ assert.ok(worker.includes("'./css/home-editorial.css'"));
 assert.ok(worker.includes("'./js/features/home-editorial.js'"));
 
 const build = assertCurrentBuild('Milestone 6');
-console.log(`Milestone 6 Home editorial release, mobile order and visual switcher remain valid under Build ${build.number}.`);
+console.log(`Milestone 6 Home editorial release, banner-first mobile order and visual switcher remain valid under Build ${build.number}.`);

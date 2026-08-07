@@ -91,9 +91,13 @@ includesAll(home, [
   'home-official-release',
   'installVisualSwitcher',
   "canvas.addEventListener('touchstart'",
-  "canvas.addEventListener('touchend'",
-  "hero.dataset.mobileHeaderOrder = 'wordmark-first'"
+  "canvas.addEventListener('touchend'"
 ], 'Milestone 6 Home');
+assert.ok(!home.includes('wordmark-first'), 'The retired wordmark-first mobile hero override returned.');
+const homeStyles = read('css/home-editorial.css');
+assert.ok(homeStyles.includes('grid-template-columns:repeat(2,minmax(0,1fr))'), 'Mobile release actions must use equal-width columns.');
+const feature11Styles = read('css/feature-11.css');
+includesAll(feature11Styles, ['.launchpad-hero .launchpad-banner-rail', 'order: 1;', '.launchpad-hero .hero-body', 'order: 2;'], 'Canonical banner-first mobile Home');
 
 // 7 — Audio Lab definitive registry, calibration and sanctuary hashes.
 const registry = read('js/features/visual/audio-lab-registry.js');
@@ -181,15 +185,17 @@ includesAll(worker, [
   "'./js/features/visual/audio-lab-registry.js'",
   "'./js/features/visual/audio-lab-sanctuary.js'",
   "'./js/features/svg-icon-system.js'",
-  "'./js/features/badge-hierarchy.js'"
+  "'./js/features/badge-hierarchy.js'",
+  "'./js/visual-card-export-guard.js'"
 ], 'PWA shell');
 const build = read('js/build-config.js');
 includesAll(build, [
-  "id: '20260807-unified-v40'",
-  "cache: 'shinobi-launchpad-v40'",
-  "revision: 'cloudflare-main-reconciliation-1'",
-  "display: '2026.08.07.40'",
-  "release: 'unified-v40-20260807'"
+  "id: '20260807-visual-card-mobile-v41'",
+  "cache: 'shinobi-launchpad-v41'",
+  "revision: 'visual-card-cors-mobile-layout-1'",
+  "display: '2026.08.07.41'",
+  "release: 'visual-card-mobile-polish-20260807'",
+  'installVisualCardExportGuard'
 ], 'Final release metadata');
 
-console.log('All nine LaunchPAD master-spec sections are present and regression-protected under unified Build 40.');
+console.log('All nine LaunchPAD master-spec sections are present and regression-protected under Build 41.');

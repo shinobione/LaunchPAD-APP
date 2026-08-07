@@ -139,18 +139,12 @@ function installVisualSwitcher() {
   }
 }
 
-function installMobileHeroOrder() {
-  const hero = document.querySelector('#view-home .launchpad-hero');
-  if (hero) hero.dataset.mobileHeaderOrder = 'wordmark-first';
-}
-
 export function initHomeEditorial() {
   if (window.__shinobiHomeEditorialReady) return;
   window.__shinobiHomeEditorialReady = true;
   ensureStylesheet('css/home-editorial.css');
   renderOfficialRelease();
   installVisualSwitcher();
-  installMobileHeroOrder();
 
   window.addEventListener('shinobi:catalog-filtered', renderOfficialRelease);
   window.addEventListener('shinobi:ready', () => {
