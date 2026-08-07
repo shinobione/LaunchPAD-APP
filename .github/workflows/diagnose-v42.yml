@@ -64,3 +64,5 @@ jobs:
       - name: desktop-overflow
         continue-on-error: true
         run: node scripts/test-desktop-overflow.mjs
+      - name: exact npm validate catalog
+        run: npm run validate:catalog
