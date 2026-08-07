@@ -38,6 +38,8 @@ includesAll(theme, ['trackFromRoute', 'playingTrack(audio)', 'applyPagePalette(v
 // 5 — Discography hierarchy, Eras and playback states.
 const discography = read('js/features/discography-experience.js');
 includesAll(discography, ["const FILTER_GROUP_ORDER = ['genre', 'language', 'content', 'energy', 'era', 'type', 'media', 'year', 'mood']", 'erasFromCatalog', 'installEraTimeline', "signalGroup('Moods', signals.moods)", "signalGroup('Themes', signals.themes)", 'mini-equalizer', 'track-card-loader'], 'Milestone 5 Discography');
+const stabilityStyles = read('css/ui-stability-v39.css');
+includesAll(stabilityStyles, ['.album-card.is-current::after', 'top:19px!important', 'top:15px!important'], 'NOW PLAYING cover-rail alignment');
 
 // 6 — Editorial Home and canonical mobile order.
 const home = read('js/features/home-editorial.js');
@@ -100,11 +102,11 @@ const worker = read('sw.js');
 includesAll(worker, ["'./js/features/theme-scope.js'", "'./js/features/visual/audio-lab-registry.js'", "'./js/features/visual/audio-lab-sanctuary.js'", "'./js/visual-card-export-guard.js'", "'./css/admin-tools.css'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification');
-assert.equal(build.number, 43);
-assert.equal(build.id, '20260807-admin-tools-pwa-v43');
-assert.equal(build.cache, 'shinobi-launchpad-v43');
-assert.equal(build.revision, 'admin-tools-pwa-polish-1');
-assert.equal(build.display, '2026.08.07.43');
-assert.equal(build.release, 'admin-tools-pwa-polish-20260807');
+assert.equal(build.number, 44);
+assert.equal(build.id, '20260807-now-playing-alignment-v44');
+assert.equal(build.cache, 'shinobi-launchpad-v44');
+assert.equal(build.revision, 'now-playing-alignment-1');
+assert.equal(build.display, '2026.08.07.44');
+assert.equal(build.release, 'now-playing-alignment-20260807');
 
-console.log('All nine LaunchPAD master-spec sections are regression-protected under Build 43.');
+console.log('All nine LaunchPAD master-spec sections are regression-protected under Build 44.');

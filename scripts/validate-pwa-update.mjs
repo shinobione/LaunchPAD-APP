@@ -44,8 +44,8 @@ if (!worker.includes("request.destination === 'video'")) fail('Service worker do
 if (!worker.includes("request.destination === 'audio'")) fail('Service worker does not keep audio network-oriented.');
 
 const build = assertCurrentBuild('PWA update');
-if (build.number !== 43) fail(`Expected Build 43, received ${build.display}.`);
-if (build.release !== 'admin-tools-pwa-polish-20260807') fail(`Unexpected Build 43 release ${build.release}.`);
+if (build.number !== 44) fail(`Expected Build 44, received ${build.display}.`);
+if (build.release !== 'now-playing-alignment-20260807') fail(`Unexpected Build 44 release ${build.release}.`);
 const buildSource = build.source;
 for (const required of [
   'const initialStylesheets = new WeakSet',
@@ -57,7 +57,7 @@ for (const required of [
   'link[rel="alternate icon"]',
   'link[rel="manifest"]'
 ]) {
-  if (!buildSource.includes(required)) fail(`Build 43 metadata/bootstrap is missing ${required}.`);
+  if (!buildSource.includes(required)) fail(`Build 44 metadata/bootstrap is missing ${required}.`);
 }
 
 const signal = read('js/features/audio-lab-signal.js');
@@ -83,9 +83,14 @@ for (const required of ['.pwa-update-banner','.pwa-install-banner','.pwa-install
   if (!styles.includes(required)) fail(`Responsive PWA styling is missing ${required}.`);
 }
 
+const stability = read('css/ui-stability-v39.css');
+for (const required of ['.album-card.is-current::after','top:19px!important','top:15px!important']) {
+  if (!stability.includes(required)) fail(`NOW PLAYING alignment guard is missing ${required}.`);
+}
+
 const visualRunner = read('scripts/capture-visuals.sh');
 if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RELOAD DEDUPED VERIFIED')) {
   fail('Browser regression coverage for the deduped PWA update prompt is not wired into CI.');
 }
 
-console.log('PWA updates keep one verified waiting worker, one prompt and one reload under Build 43.');
+console.log('PWA updates keep one verified waiting worker, one prompt and one reload under Build 44.');

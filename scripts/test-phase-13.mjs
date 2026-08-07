@@ -138,11 +138,11 @@ for (const required of [
   "payload.crossOriginResourcePolicy = 'cross-origin'"
 ]) assert.ok(publicWorker.includes(required), `Public media Worker v2.6 is missing ${required}.`);
 
-const build = assertCurrentBuild('Phase 13 / Build 43');
-assert.equal(build.number, 43);
-assert.equal(build.release, 'admin-tools-pwa-polish-20260807');
+const build = assertCurrentBuild('Phase 13 / Build 44');
+assert.equal(build.number, 44);
+assert.equal(build.release, 'now-playing-alignment-20260807');
 
 await import('./test-milestone-4.mjs');
 await import('./test-milestone-6.mjs');
 
-console.log('Phase 13 palette, restored Spectrum, adaptive Neon Shatter and reactive Aurora remain valid under Build 43.');
+console.log('Phase 13 palette, restored Spectrum, adaptive Neon Shatter and reactive Aurora remain valid under Build 44.');
