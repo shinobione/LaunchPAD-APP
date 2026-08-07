@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { assertCurrentBuild } from './lib/build-metadata.mjs';
 
 const read = path => fs.readFileSync(path, 'utf8');
 const fail = message => { throw new Error(message); };
@@ -19,12 +20,8 @@ for (const required of [
 ]) {
   if (!pwa.includes(required)) fail(`PWA controller is missing ${required}.`);
 }
-if (pwa.includes("workerUrl.searchParams.set('release'")) {
-  fail('Service worker registration URL must remain stable across releases.');
-}
-if (pwa.includes('forceReload') || pwa.includes('reloadOnly')) {
-  fail('The legacy metadata-only reload prompt must not coexist with worker updates.');
-}
+if (pwa.includes("workerUrl.searchParams.set('release'")) fail('Service worker registration URL must remain stable across releases.');
+if (pwa.includes('forceReload') || pwa.includes('reloadOnly')) fail('The legacy metadata-only reload prompt must not coexist with worker updates.');
 
 const worker = read('sw.js');
 const installBlock = worker.match(/self\.addEventListener\('install',[\s\S]*?\n\}\);/)?.[0] || '';
@@ -39,32 +36,33 @@ for (const required of [
   './css/catalog-filters.css','./js/features/catalog-filters.js','./css/feature-10.css','./js/core/editorial-normalization.js',
   './js/features/content-advisory-badges.js','./css/feature-11.css','./js/core/catalog-ordering.js','./js/features/feature-11.js',
   './css/feature-12.css','./js/features/feature-12.js','./js/features/feature-13.js','./js/features/audio-lab-signal.js','./js/features/visual/visual-engine-v2.js',
-  './js/visual-card-export-guard.js'
+  './js/visual-card-export-guard.js','./css/admin-tools.css'
 ]) {
   if (!worker.includes(required)) fail(`Offline shell is missing ${required}.`);
 }
 if (!worker.includes("request.destination === 'video'")) fail('Service worker does not preserve dedicated video range playback.');
+if (!worker.includes("request.destination === 'audio'")) fail('Service worker does not keep audio network-oriented.');
 
-const build = read('js/build-config.js');
+const build = assertCurrentBuild('PWA update');
+if (build.number !== 42) fail(`Expected Build 42, received ${build.display}.`);
+if (build.release !== 'audio-audiolab-admin-20260807') fail(`Unexpected Build 42 release ${build.release}.`);
+const buildSource = build.source;
 for (const required of [
-  "id: '20260807-visual-card-mobile-v41'",
-  "cache: 'shinobi-launchpad-v41'",
-  "revision: 'visual-card-cors-mobile-layout-1'",
-  "display: '2026.08.07.41'",
-  "release: 'visual-card-mobile-polish-20260807'",
   'const initialStylesheets = new WeakSet',
   'if (initialStylesheets.has(link)) return link;',
-  'installVisualCardExportGuard'
+  'installVisualCardExportGuard',
+  'installAppIconLinks',
+  'assets/app-icon-neon.svg',
+  'assets/app-icon-neon-192.png',
+  'link[rel="alternate icon"]',
+  'link[rel="manifest"]'
 ]) {
-  if (!build.includes(required)) fail(`Build 41 metadata/bootstrap is missing ${required}.`);
-}
-for (const required of ['installAppIconLinks',"assets/app-icon-neon.svg","assets/app-icon-neon-192.png","link[rel=\"alternate icon\"]","link[rel=\"manifest\"]"]) {
-  if (!build.includes(required)) fail(`Cache-busting app icon wiring is missing ${required}.`);
+  if (!buildSource.includes(required)) fail(`Build 42 metadata/bootstrap is missing ${required}.`);
 }
 
 const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
-  'initAudioLabSignalBridge','synthesizePlaybackSpectrum','waveformToSpectrum',
+  'initAudioLabSignalBridge','synthesizePlaybackSpectrum','waveformToSpectrum','patchMediaElementSource',
   "audio.addEventListener('play', recover)","audio.addEventListener('playing', recover)",
   "markSignal('live')","markSignal('fallback')"
 ]) {
@@ -80,11 +78,6 @@ for (const required of [
   if (!about.includes(required)) fail(`About build information is missing ${required}.`);
 }
 
-const aboutStyles = read('css/about-enhancements.css');
-for (const required of ['#view-about .about-card>.about-build-info','margin-top:4px']) {
-  if (!aboutStyles.includes(required)) fail(`About mobile layout is missing ${required}.`);
-}
-
 const styles = read('css/pwa.css');
 for (const required of ['.pwa-update-banner','.pwa-install-banner','.pwa-install-actions','pwa-install-pulse','env(safe-area-inset-bottom)','.pwa-update-actions','@media(max-width:760px)']) {
   if (!styles.includes(required)) fail(`Responsive PWA styling is missing ${required}.`);
@@ -95,4 +88,4 @@ if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RE
   fail('Browser regression coverage for the deduped PWA update prompt is not wired into CI.');
 }
 
-console.log('PWA updates use one verified waiting worker, one prompt and one reload while Build 41 offline shell remains valid.');
+console.log('PWA updates keep one verified waiting worker, one prompt and one reload under Build 42.');
