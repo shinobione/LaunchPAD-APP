@@ -41,7 +41,8 @@ const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
   "const DEFAULT_MODE = 'neon-shatter'", 'externalHomeRenderer: false',
   "homeTitle.textContent = 'Neon Shatter'", "new CustomEvent('shinobi:visual-mode'",
-  "dataset.audioLabRenderer = 'hybrid-reactive-v8'", 'function boostLiveFeatures(features)'
+  "dataset.audioLabRenderer = 'signal-first-v9'", 'function boostLiveFeatures(features)',
+  'renderMode(homeCanvas, customRenderer, raw, getAccent, time, features, mode)'
 ]) assert.ok(live.includes(required), `Milestone 6 visual engine is missing ${required}.`);
 
 const engine = read('js/app-engine.js');
@@ -54,4 +55,4 @@ assert.ok(worker.includes("'./css/home-editorial.css'"));
 assert.ok(worker.includes("'./js/features/home-editorial.js'"));
 
 const build = assertCurrentBuild('Milestone 6');
-console.log(`Milestone 6 Home editorial release, banner-first mobile order and visual switcher remain valid under Build ${build.number}.`);
+console.log(`Milestone 6 Home editorial release, banner-first mobile order and signal-first visual switcher remain valid under Build ${build.number}.`);

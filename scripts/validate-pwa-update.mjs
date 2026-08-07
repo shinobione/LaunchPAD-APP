@@ -43,9 +43,9 @@ for (const required of [
 if (!worker.includes("request.destination === 'video'")) fail('Service worker does not preserve dedicated video range playback.');
 if (!worker.includes("request.destination === 'audio'")) fail('Service worker does not keep audio network-oriented.');
 
-const build = assertCurrentBuild('PWA update');
-if (build.number !== 49) fail(`Expected Build 49, received ${build.display}.`);
-if (build.release !== 'mobile-studio-reactivity-20260807') fail(`Unexpected Build 49 release ${build.release}.`);
+const build = assertCurrentBuild('PWA update/current release');
+if (build.number < 49) fail(`Unexpected pre-current PWA build ${build.display}.`);
+if (!build.release) fail('Current release metadata is missing.');
 const buildSource = build.source;
 for (const required of [
   'const initialStylesheets = new WeakSet',
@@ -57,7 +57,7 @@ for (const required of [
   'link[rel="alternate icon"]',
   'link[rel="manifest"]'
 ]) {
-  if (!buildSource.includes(required)) fail(`Build 49 metadata/bootstrap is missing ${required}.`);
+  if (!buildSource.includes(required)) fail(`Current build metadata/bootstrap is missing ${required}.`);
 }
 
 const signal = read('js/features/audio-lab-signal.js');
@@ -85,7 +85,7 @@ for (const required of [
   "canvasVideo.addEventListener('ended'",
   "document.addEventListener('visibilitychange'"
 ]) {
-  if (!lyricsStudio.includes(required)) fail(`Build 49 mobile Canvas resilience is missing ${required}.`);
+  if (!lyricsStudio.includes(required)) fail(`Mobile Canvas resilience is missing ${required}.`);
 }
 
 const about = read('js/features/about/about-controller.js');
@@ -112,4 +112,4 @@ if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RE
   fail('Browser regression coverage for the deduped PWA update prompt is not wired into CI.');
 }
 
-console.log('PWA updates remain single-shot while decoded-buffer FFT and mobile Studio Canvas resilience are active under Build 49.');
+console.log(`PWA single-shot updates, decoded-buffer FFT and mobile Studio Canvas resilience are valid under ${build.display}.`);

@@ -1,56 +1,57 @@
 # Changelog
 
-## Unreleased
+> Current application build: `2026.08.07.50` — release `audiolab-signal-first-20260807`.
 
-- Complete **Milestone 6 — Home Editorial & Visual Switcher**: feature the latest official release with dynamic cover colours and direct Play/Track/Lyrics/Studio actions, place the golden wordmark before the LaunchPAD frame on mobile, make Neon Shatter the Home default, and add themed desktop arrows plus horizontal mobile swipe navigation.
-- Complete **Milestone 5 — Discography, Eras & Track Cards**: enforce the Genre → Language → Content → Energy → Era → secondary filters → Mood hierarchy, generate an R2-driven Era timeline with shareable URL filtering, embed Moods/Themes inside cards, and add animated now-playing, pause/equalizer and network-loading states.
-- Complete **Milestone 4 — Theme Scoping**: let the viewed Track Detail page own the application palette while the global player independently preserves the currently playing track colours, including split-theme route/audio synchronization and PWA offline resources.
-- Complete **Milestone 3 — Track Manager Controls**: make catalog filters react immediately without losing state, add an explicit manual **Extraire les couleurs** action in the track editor, prevent cover selection from silently overwriting curated palettes, publish Track Manager v5.6, and automatically deploy/verify changed Cloudflare Workers after merges to `main`.
-- Complete **Milestone 2 — Data Architecture & Catalog Ordering**: normalize legacy and Cloudflare R2 track schemas, sort globally by release date with deterministic fallbacks, exclude future/draft/archived/inactive tracks from Latest Releases, flag fallback dates, and add a separately ordered Recently Added section.
-- Complete **Milestone 1 — Routing, Navigation & Legal**: reset view-level browser/PWA launches to Home while preserving shareable track routes, add 240 ms opacity/transform page transitions with reduced-motion support, and place the dynamic ShinoBiWan proprietary notice inside the About build card.
-- Add **Feature 09 — Editorial catalog filters** with combinable R2-powered Era, Energy, Mood, Genre, Language, release type, Canvas, Lyrics, synchronized Lyrics, Explicit/Clean and Year filters, responsive mobile drawer, active chips, result counts, reset action and shareable URL state.
-- Fix Track Manager v4.9 Lyrics badges by carrying the authoritative R2 quality result into every catalogue card, correctly distinguishing absent, invalid, unsynced and timestamped Lyrics.
-- Upgrade Track Manager to v4.8 with explicit Lyrics badges on every track card: red when lyrics are absent or invalid, yellow when lyrics are present without timestamps, and green when timestamped lyrics are available.
-- Fix Track Manager v4.7 quality checks for cover-only edits by safely ignoring generated assets without file inputs, while keeping R2 thumbnail inspection and publication controls intact.
-- Fix Track Manager v4.7 quality checks so selected audio and Lyrics are never reported as absent during metadata edits, manual control and publication share one non-stalling media analysis, and `ALBUM:` TXT metadata automatically creates an album-track with a normalized album ID.
-- Upgrade Track Manager to v4.7 with grouped file/folder imports, automatic audio/cover/Lyrics/Canvas association, TXT metadata previews, thumbnail generation, editable mappings, explicit existing-track completion and best-effort rollback for newly created tracks.
-- Upgrade Track Manager to v4.6 with authoritative R2 quality reports, browser-side media measurements, optional Lyrics/Canvas status, duplicate and orphan detection, draft-safe saving and explicit publication blocking for broken tracks.
-- Mark tracks with video using responsive **CANVAS** badges, lazy single-preview animation, mobile preview controls, quick Studio access, fixed-cover fallbacks and reduced-motion/data-saving safeguards across Home, Discography and Favorites cards.
-- Add smart Canvas lifecycle management: pause silent loops when hidden or offscreen, resume them when useful, respect reduced-motion/data-saving signals, enforce one active Canvas and release video resources on route or track changes without touching audio playback.
-- Add an audio-safe PWA update prompt with **Mettre à jour / Plus tard**, one-time reload protection, session dismissal and visible build metadata in About.
-- Add shareable `#studio=track-slug` routes that reopen Lyrics Studio directly, preserve browser history and no longer depend on temporary storage handoffs.
-- Align Lyrics controls into one responsive state-driven group, remove sticky mobile hover states, keep lyric auto-scroll inside its reader and add direct **Studio** entry from Track detail pages.
-- Integrate each 9:16 Canvas directly into the Track detail hero and the existing Lyrics Studio track panel, removing the oversized standalone video section and keeping responsive mobile sizing bounded.
-- Present uploaded 9:16 MP4/WebM assets as compact, silent looping Spotify Canvases on Track detail pages and inside responsive Lyrics Studio without interrupting music playback.
-- Display uploaded MP4/WebM track videos on demand from Track detail pages and keep the played-track summary growing beyond the twelve-item recent-history window.
-- Autofill Track Manager metadata from structured Lyrics TXT headers while preserving the original timestamped lyrics file and existing form values.
-- Improve Track Manager thumbnail generation with 1024 px supersampling, high-quality 512 px output, adaptive WebP compression, preserved framing for non-square artwork and an explicit full-catalog regeneration option.
-- Harden repository-driven Cloudflare deployments with explicit production confirmation, structured Wrangler version tracing, post-deployment smoke tests and a protected rollback workflow.
-- Make the production catalog R2-only, replace fourteen duplicated track definitions with a four-track localhost/CI fixture and remove `catalog-metadata.js` from the PWA precache.
-- Remove the ten bundled lyric fallbacks after validating their public R2 endpoints.
-- Fix legacy Track Manager edits so remote genres, tags, mood, colours and duration override bundled fallback metadata.
-- Accept `mm:ss` duration input while storing canonical seconds.
-- Refresh the Track Manager interface, grouping, accessibility and distinctive LP favicon; source version is 4.7.
-- Add a hidden desktop-only `?admin=1` entry that opens Cloudflare Access in a new tab.
-- Add a favorites-only playback queue with **Play favorites**, continuous playback, Shuffle, Repeat and removal handling.
-- Preserve first-tap play intent, provide explicit Android Media Session artwork and align Track detail with remote timestamp metadata.
-- Replace the duplicate lyrics fields with one live-verified `Lyrics` status and refresh the installed PWA cache.
-- Verify the live public Worker v2.3, 16 canonical R2 streams, optimized thumbnails and corrected Before the Noise metadata.
-- Deploy public Worker v2.4 so full media requests return HTTP 200, and verify 87,849,601 bytes across all 16 audio transfers.
-- Add a read-only cleanup audit while keeping all historical media locked behind explicit mobile approval.
-- Pin Wrangler 4.118.0, dry-run both Worker bundles in CI and add a protected manual production deployment workflow.
-- Stabilize layout regression fixtures with ordered loading, bounded readiness waits and post-ready geometry baselines.
-- Add dedicated track pages with complete tags, catalog metadata and shareable `#track=` routes.
-- Make every track cover navigate to its detail page without starting playback.
-- Add visual-regression protection for key desktop and mobile views.
-- Centralize build and PWA cache versioning.
-- Make the Albums editorial order data-driven.
-- Consolidate player feature CSS and remove unused legacy files.
-- Add SEO, social previews, accessibility and audio-failure recovery.
+This file intentionally tracks the recent stabilized release line. Older milestone-by-milestone history remains available in Git history and merged pull requests.
 
-## 2026-08-02
+## Build 50 — Audio Lab signal-first
 
-- Add Track DNA, enriched catalog metadata and a stable Lyrics Studio.
-- Add album durations and complete the legacy module migration.
-- Add Visual Card, installable PWA support, Favorites and listening history.
-- Add queue, Shuffle, Repeat, album playback, Media Session and deep links.
+- Make Neon Shatter consume raw FFT bins/local spectral deltas as its primary geometry input instead of time-driven rotation.
+- Make Aurora Glass deform from raw spectral lift/deltas; remove the dominant autonomous phase loop.
+- Move Liquid Chrome and Singularity onto the same live decoded-FFT renderer path and increase their footprint/reactivity moderately rather than aggressively.
+- Zero custom visual input while playback is paused so reactive effects settle instead of behaving like looping video.
+- Add a documentation/build contract: every Markdown file must carry the current build display/release markers and CI rejects stale docs.
+
+## Build 49 — Mobile Studio/reactivity polish
+
+- Route mobile Track Detail Lyrics actions directly into the selected track's Studio.
+- Keep the mobile bottom navigation visible in Studio and place the mini-player above it.
+- Harden silent Canvas autoplay/loop recovery for mobile lifecycle events.
+- Increase direct FFT influence in Neon Shatter/Aurora Glass as an intermediate step before Build 50's signal-first rewrite.
+
+## Build 48 — Decoded Audio Lab analysis copy
+
+- Replace hidden/mirrored media capture approaches with `fetch` + `decodeAudioData` + `AudioBufferSourceNode` metering.
+- Keep the audible HTML5 audio element outside the Web Audio analysis graph.
+- Synchronize the decoded analysis source with track identity, seek position and playback rate.
+
+## Builds 45–47 — Audio isolation investigation
+
+- Separate Audio Lab from the audible playback path to address artefacts under heavy visualization/background playback.
+- Retire fragile `captureStream()` and hidden-audio mirror experiments after real-device testing exposed track-switch and silent-meter failures.
+
+## Build 44 — Card status alignment
+
+- Align `NOW PLAYING` with cover-relative badges on track cards across desktop/mobile.
+
+## Build 43 — Admin tool persistence
+
+- Style LRC Maker as a LaunchPAD admin control.
+- Persist admin mode for installed desktop PWA launches after a deliberate `?admin=1` opt-in; `?admin=0` clears it.
+
+## Build 42 — Audio/Admin integration
+
+- Restore Spectrum as a first-class Audio Lab preset.
+- Add LRC Maker admin access beside Track Manager.
+- Begin audio-path isolation and mobile visual performance work.
+
+## Build 41 — Visual Card/mobile Home
+
+- Repair CORS-safe Visual Card PNG export.
+- Restore LAUNCHPAD-first mobile Home layout and action button consistency.
+
+## Build 40 — Repository reconciliation
+
+- Reconcile the previously divergent Cloudflare/GitHub runtime lines.
+- Restore canonical GitHub Pages deployment from `main`.
+- Remove the old split-brain deployment model and establish `main` as the single application source of truth.

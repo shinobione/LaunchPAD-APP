@@ -36,11 +36,11 @@ for (const forbidden of ['hex-reactor', 'drawHexReactor', 'hexPath']) assert.ok(
 
 const coreVisuals = read('js/features/visual/visual-engine-core-modes.js');
 for (const required of [
-  'drawAuroraGlassMode(', 'drawNeonShatterAdaptiveMode(',
+  'drawAuroraGlassMode(', 'drawNeonShatterAdaptiveMode(', 'drawLiquidChromeLiveMode(', 'drawSingularityLiveMode(',
   'const rawBass = bandAverage(', 'const beatDrive = clamp(',
-  'const spectralIndex = Math.min(', 'const spectralRipple = Math.sin(',
-  'const fragments = mobile ? 20 : 52'
-]) assert.ok(coreVisuals.includes(required), `Audio Lab adaptive renderer is missing ${required}.`);
+  'const radialDrive = .72 + value * .82', 'const spectralLift = (spectral - bandValue * .36)',
+  'const fragments = mobile ? 22 : 54'
+]) assert.ok(coreVisuals.includes(required), `Audio Lab signal-first renderer is missing ${required}.`);
 assert.ok(!fs.existsSync('js/features/visual/visual-engine-hex-reactor.js'));
 
 const liveVisuals = read('js/features/visual/visual-engine-live.js');
@@ -49,13 +49,16 @@ for (const required of [
   "{ id: 'spectrum', label: 'Spectrum' }",
   "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterAdaptiveMode }",
   "{ id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }",
+  "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeLiveMode }",
+  "{ id: 'singularity', label: 'Singularity', renderer: drawSingularityLiveMode }",
   'readAudioLabSpectrum(raw)', 'readAudioLabAmplitude(waveform)',
-  'createAmplitudeDynamicsTracker', 'shapeReactiveSpectrum(raw, shaped, features)',
+  'createAmplitudeDynamicsTracker',
+  'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)',
   'function boostLiveFeatures(features)',
-  "dataset.audioLabRenderer = 'hybrid-reactive-v8'",
+  "dataset.audioLabRenderer = 'signal-first-v9'",
   'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60', 'const TELEMETRY_INTERVAL = 120'
 ]) assert.ok(liveVisuals.includes(required), `Live Audio Lab renderer is missing ${required}.`);
-for (const forbidden of ['wave-cathedral', "id: 'circle'", "'bars'", 'hex-reactor', 'drawHexReactorMode']) assert.ok(!liveVisuals.includes(forbidden));
+for (const forbidden of ['wave-cathedral', "id: 'circle'", "'bars'", 'hex-reactor', 'drawHexReactorMode', 'shapeReactiveSpectrum(raw, shaped, features)']) assert.ok(!liveVisuals.includes(forbidden));
 
 const reactivity = read('js/features/visual/audio-reactivity.js');
 for (const required of ['createAudioReactivityTracker','createAmplitudeDynamicsTracker','readFrequencyBands','shapeReactiveSpectrum','const kickTarget = clamp(','const normalizedRms = clamp(']) {
@@ -94,10 +97,10 @@ assert.ok(engine.includes('initPhase13({ audio });'));
 const worker = read('sw.js');
 for (const required of ["'./js/features/audio-lab-signal.js'","'./js/features/feature-13.js'","'./js/features/visual/audio-reactivity.js'","'./js/features/visual/visual-engine-v2.js'","'./js/features/visual/visual-engine-core-modes.js'","'./js/features/visual/visual-engine-live.js'","event.data?.type === 'GET_RELEASE'"]) assert.ok(worker.includes(required));
 
-const build = assertCurrentBuild('Phase 13 / Build 49');
-assert.equal(build.number, 49);
-assert.equal(build.release, 'mobile-studio-reactivity-20260807');
+const build = assertCurrentBuild('Phase 13/current release');
+assert.ok(build.number >= 49, `Unexpected pre-Phase-13 build ${build.display}.`);
+assert.ok(build.release, 'Current release metadata is required.');
 
 await import('./test-milestone-4.mjs');
 await import('./test-milestone-6.mjs');
-console.log('Phase 13 remains valid with decoded-buffer FFT metering and direct-band custom-mode reactivity under Build 49.');
+console.log(`Phase 13 remains valid with isolated decoded FFT and signal-first custom visuals under ${build.display}.`);

@@ -16,32 +16,39 @@ const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
   "const DEFAULT_MODE = 'neon-shatter'",
   "{ id: 'spectrum', label: 'Spectrum' }",
-  'drawNeonShatterAdaptiveMode',
+  "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterAdaptiveMode }",
   "{ id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }",
-  "document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v8'",
+  "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeLiveMode }",
+  "{ id: 'singularity', label: 'Singularity', renderer: drawSingularityLiveMode }",
+  "document.documentElement.dataset.audioLabRenderer = 'signal-first-v9'",
   'function boostLiveFeatures(features)',
-  'features.kick = clamp(features.kick * 2.25',
+  'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)',
   'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60',
   'const TELEMETRY_INTERVAL = 120'
 ]) assert.ok(live.includes(required), `Live Audio Lab renderer is missing ${required}.`);
-for (const forbidden of [...retiredIds, "'bars'", "id: 'circle'", 'drawOrbitMode', 'drawWaveCathedralMode', 'drawHexReactorMode']) {
-  assert.ok(!live.includes(forbidden), `Retired Audio Lab mode ${forbidden} leaked into the live registry.`);
+for (const forbidden of [...retiredIds, "'bars'", "id: 'circle'", 'drawOrbitMode', 'drawWaveCathedralMode', 'drawHexReactorMode', 'shapeReactiveSpectrum(raw, shaped, features)']) {
+  assert.ok(!live.includes(forbidden), `Retired/over-smoothed Audio Lab path ${forbidden} leaked into the live registry.`);
 }
 
 const core = read('js/features/visual/visual-engine-core-modes.js');
 for (const required of [
   'export function drawAuroraGlassMode(',
   'export function drawNeonShatterAdaptiveMode(',
+  'export function drawLiquidChromeLiveMode(',
+  'export function drawSingularityLiveMode(',
   'const rawBass = bandAverage(',
   'const rawMiddle = bandAverage(',
   'const rawHigh = bandAverage(',
   'const beatDrive = clamp(',
-  'const spectralIndex = Math.min(',
-  'const spectralRipple = Math.sin(',
-  'const spectralDeformation = (spectral - bandValue)',
-  'const fragments = mobile ? 20 : 52',
-  'const cracks = mobile ? 9 : 16'
-]) assert.ok(core.includes(required), `Adaptive Audio Lab renderer is missing ${required}.`);
+  'const radialDrive = .72 + value * .82',
+  'const spectralLift = (spectral - bandValue * .36)',
+  'const fragments = mobile ? 22 : 54',
+  'const cracks = mobile ? 10 : 18',
+  'const baseRadius = .247',
+  'const outerReach = minSide * .37'
+]) assert.ok(core.includes(required), `Signal-first Audio Lab renderer is missing ${required}.`);
+assert.ok(core.includes('const tinyDrift = Math.sin(time * .31) * energy * .025'));
+assert.ok(core.includes('const microDrift = Math.sin(time * .23) * energy * .018'));
 assert.ok(!fs.existsSync('js/features/visual/visual-engine-hex-reactor.js'));
 
 const base = read('js/features/visual/visual-engine-v2.js');
@@ -97,7 +104,7 @@ assert.ok(worker.includes("'./js/features/visual/audio-lab-registry.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-sanctuary.js'"));
 assert.ok(!worker.includes('visual-engine-hex-reactor.js'));
 
-const build = assertCurrentBuild('Audio Lab Build 49');
-assert.equal(build.number, 49);
-assert.equal(build.release, 'mobile-studio-reactivity-20260807');
-console.log('Audio Lab keeps protected renderers while Build 49 uses decoded-buffer metering and direct FFT drive for Neon Shatter and Aurora Glass.');
+const build = assertCurrentBuild('Audio Lab current build');
+assert.match(build.display, /^\d{4}\.\d{2}\.\d{2}\.\d+$/);
+assert.ok(build.release, 'Current build release must be present.');
+console.log(`Audio Lab protected renderers and signal-first decoded-FFT contract are valid under ${build.display}.`);

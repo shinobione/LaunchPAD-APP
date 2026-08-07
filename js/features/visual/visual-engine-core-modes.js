@@ -60,6 +60,18 @@ function seeded(index, salt = 0) {
   return value - Math.floor(value);
 }
 
+function sampleAt(data, progress) {
+  const index = Math.max(0, Math.min(data.length - 1, Math.floor(progress * (data.length - 1))));
+  return (data[index] || 0) / 255;
+}
+
+function localDelta(data, progress, spread = 4) {
+  const index = Math.max(0, Math.min(data.length - 1, Math.floor(progress * (data.length - 1))));
+  const before = (data[Math.max(0, index - spread)] || 0) / 255;
+  const after = (data[Math.min(data.length - 1, index + spread)] || 0) / 255;
+  return after - before;
+}
+
 function mobileVisualDevice(width) {
   const coarse = globalThis.matchMedia?.('(hover: none), (pointer: coarse)')?.matches === true;
   const touch = Number(globalThis.navigator?.maxTouchPoints || 0) > 0;
@@ -72,28 +84,32 @@ export function drawNeonShatterAdaptiveMode(context, width, height, data, accent
   const cx = width / 2;
   const cy = height / 2;
   const minSide = Math.min(width, height);
-  const fragments = mobile ? 20 : 52;
-  const cracks = mobile ? 9 : 16;
-  const beatDrive = clamp(bass * .82 + kick * 1.35 + peak * .55 + dynamics * .45);
-  const burst = .22 + beatDrive * 1.38 + middle * .18;
+  const fragments = mobile ? 22 : 54;
+  const cracks = mobile ? 10 : 18;
+  const beatDrive = clamp(bass * .76 + kick * 1.22 + peak * .48 + dynamics * .42);
+  const tinyDrift = Math.sin(time * .31) * energy * .025;
 
   context.save();
   context.translate(cx, cy);
   context.globalCompositeOperation = 'lighter';
   for (let index = 0; index < fragments; index += 1) {
-    const depth = .36 + seeded(index, 31) * 1.02;
-    const value = data[index % data.length] / 255;
-    const angle = seeded(index, 7) * Math.PI * 2
-      + time * (seeded(index, 32) - .5) * (.12 + energy * .32 + dynamics * .22)
-      + Math.sin(time * (.5 + high * .42) + index) * (.07 + beatDrive * .14);
-    const distance = minSide * (.045 + seeded(index, 8) * .42 * burst) * depth;
-    const perspective = .64 + depth * .48;
-    const size = minSide * (.014 + seeded(index, 10) * .038)
-      * (1 + value * .62 + beatDrive * .68 + high * .16)
+    const progress = (index + .5) / fragments;
+    const value = sampleAt(data, progress);
+    const delta = localDelta(data, progress, 3);
+    const depth = .38 + seeded(index, 31) * .98;
+    const direction = index % 2 ? -1 : 1;
+    const baseAngle = seeded(index, 7) * Math.PI * 2;
+    const angle = baseAngle + direction * (value * .24 + delta * .22 + beatDrive * .08 + tinyDrift);
+    const radialDrive = .72 + value * .82 + beatDrive * .62 + Math.abs(delta) * .34;
+    const distance = minSide * (.08 + seeded(index, 8) * .34) * radialDrive * depth;
+    const perspective = .68 + depth * .44;
+    const size = minSide * (.015 + seeded(index, 10) * .036)
+      * (1 + value * .78 + beatDrive * .52 + high * .16)
       * perspective;
-    const x = Math.cos(angle) * distance + Math.sin(time * .78 + index) * minSide * (.008 + beatDrive * .018) * depth;
-    const y = Math.sin(angle) * distance * (.73 + depth * .2) + Math.cos(time * .66 + index * .7) * minSide * (.008 + beatDrive * .016) * depth;
-    const spin = time * (index % 2 ? -.3 : .36) * (1.18 - depth * .2 + beatDrive * .35) + seeded(index, 9) * Math.PI;
+    const sideKick = delta * minSide * .022 + direction * beatDrive * minSide * .009;
+    const x = Math.cos(angle) * distance + Math.cos(baseAngle + Math.PI / 2) * sideKick;
+    const y = Math.sin(angle) * distance * (.75 + depth * .18) + Math.sin(baseAngle + Math.PI / 2) * sideKick;
+    const spin = seeded(index, 9) * Math.PI + direction * (value * .72 + delta * .55 + high * .18);
 
     context.save();
     context.translate(x, y);
@@ -104,24 +120,22 @@ export function drawNeonShatterAdaptiveMode(context, width, height, data, accent
     context.lineTo(size, 0);
     context.lineTo(-size * .25, -size);
     context.closePath();
-    context.fillStyle = colorWithAlpha(index % 2 ? accent2 : accent, .045 + value * .22 + dynamics * .09 + beatDrive * .1);
-    context.strokeStyle = colorWithAlpha(index % 2 ? accent : accent2, .24 + value * .5 + beatDrive * .34);
-    context.lineWidth = .55 + value * 1.5 + high * .5 + beatDrive * .65;
+    context.fillStyle = colorWithAlpha(index % 2 ? accent2 : accent, .035 + value * .3 + beatDrive * .09);
+    context.strokeStyle = colorWithAlpha(index % 2 ? accent : accent2, .2 + value * .62 + beatDrive * .27);
+    context.lineWidth = .55 + value * 1.85 + high * .45 + beatDrive * .55;
     context.shadowColor = index % 2 ? accent2 : accent;
-    context.shadowBlur = mobile
-      ? 2.5 + value * 6 + beatDrive * 6
-      : 7 + value * 17 + beatDrive * 18;
+    context.shadowBlur = mobile ? 2 + value * 7 + beatDrive * 5 : 6 + value * 18 + beatDrive * 14;
     context.fill();
     context.stroke();
     context.restore();
   }
   context.restore();
 
-  const coreRadius = minSide * (.135 + bass * .045 + beatDrive * .095);
+  const coreRadius = minSide * (.125 + bass * .055 + beatDrive * .105);
   const core = context.createRadialGradient(cx, cy, 0, cx, cy, coreRadius);
-  core.addColorStop(0, colorWithAlpha('#ffffff', .68 + high * .2 + beatDrive * .12));
-  core.addColorStop(.14, colorWithAlpha(accent, .5 + beatDrive * .34));
-  core.addColorStop(.46, colorWithAlpha(accent2, .13 + middle * .23 + beatDrive * .16));
+  core.addColorStop(0, colorWithAlpha('#ffffff', .58 + high * .24 + beatDrive * .13));
+  core.addColorStop(.14, colorWithAlpha(accent, .42 + beatDrive * .38));
+  core.addColorStop(.48, colorWithAlpha(accent2, .1 + middle * .22 + beatDrive * .18));
   core.addColorStop(1, 'rgba(0,0,0,0)');
   context.fillStyle = core;
   context.beginPath();
@@ -129,42 +143,32 @@ export function drawNeonShatterAdaptiveMode(context, width, height, data, accent
   context.fill();
 
   for (let index = 0; index < cracks; index += 1) {
-    const angle = index / cracks * Math.PI * 2 + time * (.035 + energy * .07 + beatDrive * .06);
-    const length = minSide * (.15 + seeded(index, 12) * .29 + bass * .07 + beatDrive * .18);
-    context.strokeStyle = colorWithAlpha(index % 2 ? accent2 : accent, .18 + high * .45 + peak * .14 + beatDrive * .28);
-    context.lineWidth = .55 + high * 1.6 + beatDrive * 1.25;
+    const progress = (index + .5) / cracks;
+    const value = sampleAt(data, progress);
+    const delta = localDelta(data, progress, 5);
+    const angle = index / cracks * Math.PI * 2 + delta * .18 + beatDrive * .025 * (index % 2 ? -1 : 1);
+    const length = minSide * (.14 + seeded(index, 12) * .25 + value * .13 + bass * .05 + beatDrive * .12);
+    context.strokeStyle = colorWithAlpha(index % 2 ? accent2 : accent, .14 + value * .42 + high * .24 + beatDrive * .22);
+    context.lineWidth = .5 + value * 1.25 + high * 1.1 + beatDrive * .9;
     context.beginPath();
-    context.moveTo(cx + Math.cos(angle) * minSide * (.055 + beatDrive * .02), cy + Math.sin(angle) * minSide * (.055 + beatDrive * .02));
-    context.lineTo(cx + Math.cos(angle + .08) * length, cy + Math.sin(angle + .08) * length);
+    context.moveTo(cx + Math.cos(angle) * coreRadius * .55, cy + Math.sin(angle) * coreRadius * .55);
+    context.lineTo(cx + Math.cos(angle + delta * .12) * length, cy + Math.sin(angle + delta * .12) * length);
     context.stroke();
-  }
-
-  if (beatDrive > .08) {
-    context.save();
-    context.globalCompositeOperation = 'lighter';
-    context.strokeStyle = colorWithAlpha('#ffffff', beatDrive * .22);
-    context.lineWidth = 1 + beatDrive * 2.2;
-    context.beginPath();
-    context.arc(cx, cy, coreRadius * (1.18 + beatDrive * .5), 0, Math.PI * 2);
-    context.stroke();
-    context.restore();
   }
 }
 
-export function drawAuroraGlassMode(context, width, height, data, accent, accent2, time, features) {
+export function drawAuroraGlassMode(context, width, height, data, accent, accent2, time, features = {}) {
   const { bass, middle, high, energy, kick, presence, sparkle, rms, peak, dynamics } = audioBands(data, features);
-  const transient = clamp(Math.max(kick, peak));
-  const beatDrive = clamp(bass * .8 + kick * 1.25 + peak * .58 + dynamics * .55);
+  const beatDrive = clamp(bass * .74 + kick * 1.12 + peak * .5 + dynamics * .48);
   const ribbons = width < 600 ? 5 : 6;
-  const expansion = .25 + bass * .72 + middle * .48 + high * .24 + dynamics * .48 + beatDrive * 1.05;
-  const motionRate = .14 + bass * .52 + middle * .42 + high * .34 + dynamics * .62 + beatDrive * 1.18;
-  const horizon = height * (.5 + Math.sin(time * (.05 + dynamics * .1 + beatDrive * .11)) * (.008 + beatDrive * .036));
-  const separation = height * (.018 + middle * .02 + dynamics * .025 + beatDrive * .068);
+  const horizon = height * (.5 + (bass - high) * .035 + (middle - .25) * .018);
+  const separation = height * (.018 + middle * .025 + beatDrive * .04);
+  const microDrift = Math.sin(time * .23) * energy * .018;
 
   const ambient = context.createLinearGradient(0, 0, 0, height);
-  ambient.addColorStop(0, colorWithAlpha(accent2, .018 + high * .08 + sparkle * .045 + beatDrive * .045));
-  ambient.addColorStop(.45, colorWithAlpha(accent, .035 + middle * .12 + rms * .12 + beatDrive * .12));
-  ambient.addColorStop(.78, colorWithAlpha(accent2, .014 + bass * .065 + beatDrive * .07));
+  ambient.addColorStop(0, colorWithAlpha(accent2, .012 + high * .07 + sparkle * .035));
+  ambient.addColorStop(.45, colorWithAlpha(accent, .026 + middle * .11 + rms * .1 + beatDrive * .08));
+  ambient.addColorStop(.78, colorWithAlpha(accent2, .01 + bass * .06 + beatDrive * .045));
   ambient.addColorStop(1, 'rgba(0,0,0,0)');
   context.fillStyle = ambient;
   context.fillRect(0, 0, width, height);
@@ -174,55 +178,28 @@ export function drawAuroraGlassMode(context, width, height, data, accent, accent
   for (let ribbon = 0; ribbon < ribbons; ribbon += 1) {
     const band = ribbon % 3;
     const bandValue = band === 0 ? bass : band === 1 ? middle : high;
-    const sampleStart = band === 0 ? 0 : band === 1 ? data.length * .16 : data.length * .58;
-    const sampleEnd = band === 0 ? data.length * .16 : band === 1 ? data.length * .58 : data.length;
-    const direction = band === 1 ? -1 : 1;
-    const bandSpeed = band === 0 ? .3 : band === 1 ? .43 : .58;
-    const speed = direction * bandSpeed * motionRate;
+    const rangeStart = band === 0 ? 0 : band === 1 ? .16 : .58;
+    const rangeEnd = band === 0 ? .16 : band === 1 ? .58 : 1;
     const offset = (ribbon - (ribbons - 1) / 2) * separation;
-    const baseAmplitude = band === 0 ? .032 : band === 1 ? .028 : .021;
-    const bandDrive = band === 0
-      ? bass * .15 + kick * .12 + beatDrive * .11
+    const baseAmplitude = band === 0 ? .026 : band === 1 ? .023 : .019;
+    const reactiveAmplitude = band === 0
+      ? bass * .12 + kick * .1 + beatDrive * .08
       : band === 1
-        ? middle * .12 + presence * .055 + beatDrive * .075
-        : high * .095 + sparkle * .055 + beatDrive * .085;
-    const amplitude = height * (baseAmplitude + bandDrive * expansion + dynamics * .018 + beatDrive * .055);
-    const thickness = height * (
-      .0065
-      + bandValue * (band === 0 ? .034 : .027)
-      + dynamics * .01
-      + beatDrive * .018
-      + (ribbon % 2) * .0018
-    );
-    const points = width < 600 ? 42 : 58;
+        ? middle * .1 + presence * .045 + dynamics * .05
+        : high * .085 + sparkle * .045 + peak * .045;
+    const amplitude = height * (baseAmplitude + reactiveAmplitude + beatDrive * .035);
+    const thickness = height * (.006 + bandValue * .025 + beatDrive * .01 + (ribbon % 2) * .0015);
+    const points = width < 600 ? 46 : 64;
 
     const waveAt = progress => {
-      const spectralIndex = Math.min(
-        data.length - 1,
-        Math.max(0, Math.floor(sampleStart + (sampleEnd - sampleStart) * progress))
-      );
-      const spectral = Math.pow((data[spectralIndex] || 0) / 255, 1.04);
-      const primary = Math.sin(
-        progress * Math.PI * (1.7 + band * .76 + ribbon * .08)
-        + time * speed
-        + ribbon * .78
-      );
-      const secondary = Math.sin(
-        progress * Math.PI * (4.4 + band * 1.7)
-        - time * speed * (band === 2 ? 1.72 : .8)
-        + ribbon * .41
-      ) * (.11 + bandValue * .34 + dynamics * .15 + beatDrive * .18);
-      const spectralRipple = Math.sin(
-        progress * Math.PI * (9.2 + band * 3.4 + ribbon * .3)
-        + time * speed * (2.1 + beatDrive * 3.2)
-        + ribbon
-      ) * spectral * (.2 + dynamics * .18 + beatDrive * .5);
-      const spectralDeformation = (spectral - bandValue) * (.28 + dynamics * .28 + beatDrive * .34);
-      const peakRipple = Math.sin(
-        progress * Math.PI * (7.5 + ribbon * .28)
-        + time * (1.15 + beatDrive * 2.7) * direction
-      ) * beatDrive * (band === 2 ? .3 : .18);
-      return primary + secondary + spectralRipple + spectralDeformation + peakRipple;
+      const mapped = rangeStart + (rangeEnd - rangeStart) * progress;
+      const spectral = sampleAt(data, mapped);
+      const delta = localDelta(data, mapped, 3);
+      const baseWave = Math.sin(progress * Math.PI * (1.75 + band * .72 + ribbon * .07) + ribbon * .72);
+      const detailWave = Math.sin(progress * Math.PI * (5.1 + band * 1.6) + ribbon * .43) * (.1 + bandValue * .18);
+      const spectralLift = (spectral - bandValue * .36) * (1.05 + dynamics * .32 + beatDrive * .28);
+      const edge = delta * (.55 + peak * .25 + beatDrive * .22);
+      return baseWave * (.48 + bandValue * .42) + detailWave + spectralLift + edge + microDrift;
     };
 
     context.beginPath();
@@ -243,24 +220,107 @@ export function drawAuroraGlassMode(context, width, height, data, accent, accent
     const colorA = band === 0 ? accent : band === 1 ? accent2 : '#ffffff';
     const colorB = band === 0 ? accent2 : band === 1 ? accent : accent2;
     const gradient = context.createLinearGradient(0, horizon - amplitude, width, horizon + amplitude);
-    gradient.addColorStop(0, colorWithAlpha(colorA, .01 + dynamics * .016 + beatDrive * .03));
-    gradient.addColorStop(.24, colorWithAlpha(colorB, .07 + bandValue * .2 + rms * .12 + beatDrive * .2));
-    gradient.addColorStop(.5, colorWithAlpha('#ffffff', .025 + high * .12 + beatDrive * .22));
-    gradient.addColorStop(.77, colorWithAlpha(colorA, .065 + bandValue * .2 + dynamics * .07 + beatDrive * .16));
+    gradient.addColorStop(0, colorWithAlpha(colorA, .008 + beatDrive * .018));
+    gradient.addColorStop(.24, colorWithAlpha(colorB, .055 + bandValue * .22 + rms * .08));
+    gradient.addColorStop(.5, colorWithAlpha('#ffffff', .02 + high * .11 + beatDrive * .12));
+    gradient.addColorStop(.77, colorWithAlpha(colorA, .055 + bandValue * .2 + dynamics * .055));
     gradient.addColorStop(1, 'rgba(0,0,0,0)');
     context.fillStyle = gradient;
     context.shadowColor = colorB;
-    context.shadowBlur = 3 + bandValue * 9 + dynamics * 6 + beatDrive * 15;
+    context.shadowBlur = 2.5 + bandValue * 8 + dynamics * 4 + beatDrive * 9;
     context.fill();
   }
+  context.restore();
+}
 
-  if (beatDrive > .035) {
-    const attackGlow = context.createLinearGradient(0, horizon - height * .2, 0, horizon + height * .2);
-    attackGlow.addColorStop(0, 'rgba(0,0,0,0)');
-    attackGlow.addColorStop(.5, colorWithAlpha('#ffffff', beatDrive * .23 + kick * .08));
-    attackGlow.addColorStop(1, 'rgba(0,0,0,0)');
-    context.fillStyle = attackGlow;
-    context.fillRect(0, horizon - height * .22, width, height * .44);
+export function drawLiquidChromeLiveMode(context, width, height, data, accent, accent2, time, features = {}) {
+  const { bass, middle, high, peak } = audioBands(data, features);
+  const cx = width / 2;
+  const cy = height / 2;
+  const minSide = Math.min(width, height);
+  const points = width < 520 ? 72 : 104;
+  const baseRadius = .247;
+
+  context.save();
+  context.translate(cx, cy);
+  context.beginPath();
+  for (let index = 0; index <= points; index += 1) {
+    const progress = index / points;
+    const angle = progress * Math.PI * 2;
+    const sample = sampleAt(data, progress);
+    const delta = localDelta(data, progress, 3);
+    const wave = Math.sin(angle * 3 + time * .28) * (.018 + middle * .034)
+      + Math.sin(angle * 7 - time * .36) * (.008 + high * .02);
+    const radius = minSide * (baseRadius + bass * .045 + sample * .078 + Math.abs(delta) * .025 + wave);
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius * (.84 + peak * .035);
+    if (!index) context.moveTo(x, y); else context.lineTo(x, y);
   }
+  context.closePath();
+  const gradient = context.createLinearGradient(-minSide * .34, -minSide * .34, minSide * .34, minSide * .34);
+  gradient.addColorStop(0, colorWithAlpha('#ffffff', .8));
+  gradient.addColorStop(.18, colorWithAlpha(accent, .82));
+  gradient.addColorStop(.48, colorWithAlpha('#dce8ff', .43));
+  gradient.addColorStop(.72, colorWithAlpha(accent2, .84));
+  gradient.addColorStop(1, colorWithAlpha('#05050a', .9));
+  context.fillStyle = gradient;
+  context.shadowColor = accent;
+  context.shadowBlur = 19 + bass * 30;
+  context.fill();
+  context.lineWidth = 1.25 + high * 2.2;
+  context.strokeStyle = colorWithAlpha('#ffffff', .36 + high * .38);
+  context.stroke();
+  context.restore();
+}
+
+export function drawSingularityLiveMode(context, width, height, data, accent, accent2, time, features = {}) {
+  const { bass, middle, high, energy, peak } = audioBands(data, features);
+  const cx = width / 2;
+  const cy = height / 2;
+  const minSide = Math.min(width, height);
+  const horizon = minSide * (.118 + bass * .04 + peak * .012);
+  const outerReach = minSide * .37;
+  const glow = context.createRadialGradient(cx, cy, horizon * .72, cx, cy, minSide * .48);
+  glow.addColorStop(0, 'rgba(0,0,0,.99)');
+  glow.addColorStop(.23, colorWithAlpha(accent, .09 + bass * .13));
+  glow.addColorStop(.52, colorWithAlpha(accent2, .04 + middle * .075));
+  glow.addColorStop(1, 'rgba(0,0,0,0)');
+  context.fillStyle = glow;
+  context.fillRect(0, 0, width, height);
+
+  context.save();
+  context.translate(cx, cy);
+  context.rotate(-.16 + (high - bass) * .025);
+  context.scale(1.07, .38);
+  const rings = width < 520 ? 34 : 50;
+  for (let index = 0; index < rings; index += 1) {
+    const progress = index / rings;
+    const value = sampleAt(data, progress);
+    const radius = horizon * 1.28 + progress * outerReach * (1 + value * .08);
+    const start = time * (.065 + energy * .07) + index * .245 + value * .16;
+    const length = Math.PI * (1.04 + value * .68);
+    context.beginPath();
+    context.arc(0, 0, radius, start, start + length);
+    context.strokeStyle = colorWithAlpha(index % 3 ? accent : accent2, .075 + value * .36);
+    context.lineWidth = .55 + value * 1.75 + high * .25;
+    context.shadowColor = index % 3 ? accent : accent2;
+    context.shadowBlur = 1 + value * 4.2;
+    context.stroke();
+  }
+  context.restore();
+
+  context.save();
+  context.fillStyle = '#010103';
+  context.shadowColor = colorWithAlpha(accent, .44);
+  context.shadowBlur = 6 + bass * 9;
+  context.beginPath();
+  context.arc(cx, cy, horizon, 0, Math.PI * 2);
+  context.fill();
+  context.shadowBlur = 0;
+  context.strokeStyle = colorWithAlpha('#ffffff', .12 + high * .16);
+  context.lineWidth = .8 + high * .7;
+  context.beginPath();
+  context.arc(cx, cy, horizon * 1.015, 0, Math.PI * 2);
+  context.stroke();
   context.restore();
 }

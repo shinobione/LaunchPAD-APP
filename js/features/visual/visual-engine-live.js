@@ -1,16 +1,22 @@
 import { readAudioLabAmplitude, readAudioLabSpectrum, synthesizePlaybackSpectrum } from '../audio-lab-signal.js';
 import {
   createAmplitudeDynamicsTracker,
-  createAudioReactivityTracker,
-  shapeReactiveSpectrum
+  createAudioReactivityTracker
 } from './audio-reactivity.js';
 import { createVisualController as createBaseVisualController } from './visual-engine-v2.js';
-import { drawAuroraGlassMode, drawNeonShatterAdaptiveMode } from './visual-engine-core-modes.js';
+import {
+  drawAuroraGlassMode,
+  drawLiquidChromeLiveMode,
+  drawNeonShatterAdaptiveMode,
+  drawSingularityLiveMode
+} from './visual-engine-core-modes.js';
 
 const DEFAULT_MODE = 'neon-shatter';
 const CUSTOM_MODES = [
   { id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterAdaptiveMode },
-  { id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }
+  { id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode },
+  { id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeLiveMode },
+  { id: 'singularity', label: 'Singularity', renderer: drawSingularityLiveMode }
 ];
 const REQUIRED_BASE_MODES = [
   { id: 'spectrum', label: 'Spectrum' }
@@ -98,17 +104,17 @@ function renderMode(canvas, renderer, data, getAccent, time, features, mode) {
 
 function boostLiveFeatures(features) {
   const clamp = value => Math.max(0, Math.min(1, value));
-  features.bass = clamp(features.bass * 1.72);
-  features.mid = clamp(features.mid * 1.48);
-  features.high = clamp(features.high * 1.58);
-  features.energy = clamp(features.energy * 1.5);
-  features.rms = clamp(features.rms * 1.55);
-  features.peak = clamp(features.peak * 1.4);
-  features.dynamics = clamp(features.dynamics * 1.62);
-  features.kick = clamp(features.kick * 2.25 + features.peak * .18);
-  features.presence = clamp(features.mid * .72 + features.high * .42);
-  features.sparkle = clamp(features.high * 1.22);
-  features.intensity = clamp(features.energy * .62 + features.bass * .42 + features.kick * .48 + features.dynamics * .32);
+  features.bass = clamp(features.bass * 1.58);
+  features.mid = clamp(features.mid * 1.38);
+  features.high = clamp(features.high * 1.48);
+  features.energy = clamp(features.energy * 1.42);
+  features.rms = clamp(features.rms * 1.46);
+  features.peak = clamp(features.peak * 1.36);
+  features.dynamics = clamp(features.dynamics * 1.5);
+  features.kick = clamp(features.kick * 2.05 + features.peak * .16);
+  features.presence = clamp(features.mid * .72 + features.high * .4);
+  features.sparkle = clamp(features.high * 1.18);
+  features.intensity = clamp(features.energy * .6 + features.bass * .4 + features.kick * .44 + features.dynamics * .28);
   return features;
 }
 
@@ -128,11 +134,9 @@ export function createVisualController(options) {
   const homeCanvas = $('#home-visualizer');
   const controls = document.querySelector('.lab-controls');
   const raw = new Uint8Array(128);
-  const shaped = new Uint8Array(128);
-  const reactive = new Uint8Array(128);
   const waveform = new Uint8Array(256);
-  const tracker = createAudioReactivityTracker({ attack: .82, release: .1, transientDecay: .76 });
-  const amplitudeTracker = createAmplitudeDynamicsTracker({ attack: .72, release: .055, peakDecay: .86 });
+  const tracker = createAudioReactivityTracker({ attack: .84, release: .14, transientDecay: .74 });
+  const amplitudeTracker = createAmplitudeDynamicsTracker({ attack: .74, release: .07, peakDecay: .84 });
   let mode = DEFAULT_MODE;
   let frame = 0;
   let lastFrameAt = 0;
@@ -163,18 +167,23 @@ export function createVisualController(options) {
   }
   const homeTitle = document.querySelector('.now-panel .panel-head h3');
   if (homeTitle) homeTitle.textContent = 'Neon Shatter';
-  document.documentElement.dataset.audioLabRenderer = 'hybrid-reactive-v8';
+  document.documentElement.dataset.audioLabRenderer = 'signal-first-v9';
   document.documentElement.dataset.audioLabSpectrum = controls?.querySelector('[data-visual="spectrum"]') ? 'restored' : 'missing';
 
   function readReactiveFrame() {
-    const reading = readAudioLabSpectrum(raw);
-    if (!reading.available) {
-      if (!audio.paused && !audio.ended) synthesizePlaybackSpectrum(raw, Number(audio.currentTime) || 0);
-      else raw.fill(0);
+    let reading;
+    if (audio.paused || audio.ended) {
+      raw.fill(0);
+      reading = { available: true, peak: 0, state: 'idle' };
+    } else {
+      reading = readAudioLabSpectrum(raw);
+      if (!reading.available) synthesizePlaybackSpectrum(raw, Number(audio.currentTime) || 0);
     }
 
     const features = tracker.update(raw);
-    const amplitudeReading = readAudioLabAmplitude(waveform);
+    const amplitudeReading = audio.paused || audio.ended
+      ? { available: true, rms: 0, peak: 0, state: 'idle' }
+      : readAudioLabAmplitude(waveform);
     const amplitude = amplitudeTracker.update(amplitudeReading.available
       ? amplitudeReading
       : {
@@ -183,14 +192,6 @@ export function createVisualController(options) {
         });
     Object.assign(features, amplitude);
     boostLiveFeatures(features);
-
-    shapeReactiveSpectrum(raw, shaped, features);
-    for (let index = 0; index < reactive.length; index += 1) {
-      const attack = shaped[index] > reactive[index] ? .86 : .16;
-      reactive[index] = Math.max(0, Math.min(255, Math.round(
-        reactive[index] + (shaped[index] - reactive[index]) * attack
-      )));
-    }
     return { reading, features };
   }
 
@@ -228,8 +229,10 @@ export function createVisualController(options) {
       const { reading, features } = readReactiveFrame();
       if (labActive) updateTelemetry(reading, features, now);
 
-      if (labActive) renderMode(labCanvas, customRenderer, reactive, getAccent, time, features, mode);
-      if (homeActive) renderMode(homeCanvas, customRenderer, reactive, getAccent, time, features, mode);
+      // Build 50: signal-first renderers consume the same raw FFT bins that make
+      // Spectrum trustworthy. Time is only a secondary visual drift input.
+      if (labActive) renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode);
+      if (homeActive) renderMode(homeCanvas, customRenderer, raw, getAccent, time, features, mode);
     }
 
     frame = requestAnimationFrame(render);
