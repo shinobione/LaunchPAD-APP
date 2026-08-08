@@ -1,8 +1,18 @@
 # Changelog
 
-> Current application build: `2026.08.08.57` — release `kinetic-flow-20260808`.
+> Current application build: `2026.08.08.58` — release `adaptive-punch-20260808`.
 
 This file intentionally tracks the recent stabilized release line. Older milestone-by-milestone history remains available in Git history and merged pull requests.
+
+## Build 58 — Adaptive punch
+
+- Keep Build 57's integrated kinetic travel unchanged for **Pulse Reactor**, **Bass Fracture**, **Gravity Lens** and **Bio Structure**.
+- Add an adaptive low-frequency onset detector in `visual-engine-live.js` using a fast bass envelope, a slow local bass baseline, positive low-bin spectral flux and short-term bass rise.
+- Detect low-frequency impacts relative to the current groove instead of only from absolute bass level, so kicks remain visually distinct after a dense section has already raised the baseline.
+- Apply the short punch overlay only to the four kinetic presets by temporarily strengthening their kick/peak/dynamics/intensity features. **Neon Shatter**, **Spectrum** and **Liquid Chrome** keep their existing calibration.
+- Expose `audioLabPunch` telemetry for real-device diagnosis alongside bass/mid/high/kick/peak.
+- Do not add visual primitives, private RAF/timer loops, random motion or higher mobile DPR budgets.
+- Advance the PWA namespace to Build 58 / cache v58 so the new detector cannot be masked by cached Build 57 JavaScript.
 
 ## Build 57 — Kinetic flow
 
