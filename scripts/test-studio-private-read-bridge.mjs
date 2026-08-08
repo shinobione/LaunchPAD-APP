@@ -117,15 +117,14 @@ for (const forbiddenLiteral of ['LM-IA-Analayse', 'SonicTrace', 'analysis/sonict
   assert.ok(!phase4Part.includes(forbiddenLiteral), `Phase 4 operations must not leak Phase 5/duplicate lyrics concerns: ${forbiddenLiteral}`);
 }
 
-assert.ok(built.includes('version: "5.13"'), 'Built Track Manager contract must be v5.13.');
-assert.ok(built.includes('<span class="version-pill">v5.13</span>'), 'Built Track Manager UI must report v5.13.');
-assert.ok(built.includes('const STUDIO_BRIDGE_VERSION = "1.5";'), 'Studio bridge contract must be v1.5.');
-assert.ok(built.includes('trackManagerVersion: "5.13"'), 'Studio bridge health must report Track Manager v5.13.');
-assert.ok(built.includes('read: ["tracks", "track", "lyrics"]'), 'Studio health must retain private reads.');
+assert.ok(built.includes('version: "5.14"'), 'Built Track Manager contract must be v5.14.');
+assert.ok(built.includes('<span class="version-pill">v5.14</span>'), 'Built Track Manager UI must report v5.14.');
+assert.ok(built.includes('const STUDIO_BRIDGE_VERSION = "1.6";'), 'Studio bridge contract must be v1.6.');
+assert.ok(built.includes('trackManagerVersion: "5.14"'), 'Studio bridge health must report Track Manager v5.14.');
+assert.ok(built.includes('read: ["tracks", "track", "lyrics", "sonictrace-analysis", "sonictrace-catalog"]'), 'Studio health must retain private reads and add scoped SonicTrace reads.');
 assert.ok(built.includes('validate: ["metadata", "lyrics"]'), 'Studio health must retain validation capabilities.');
-assert.ok(built.includes('write: ["metadata", "lyrics"]'), 'Studio health write list must remain metadata + lyrics.');
+assert.ok(built.includes('write: ["metadata", "lyrics", "sonictrace-analysis"]'), 'Studio health write list must add only the guarded SonicTrace sidecar capability.');
 assert.ok(built.includes('manage: ["track-create", "assets", "catalog-rebuild"]'), 'Studio health must expose the final Phase 4 manage capabilities separately.');
-assert.ok(!built.includes('write: ["metadata", "lyrics",'), 'Operational management must not be disguised as a third generic write capability.');
 
 for (const routeCall of [
   'await getStudioTrackLyrics(studioLyricsReadRoute[1], env, user)',
@@ -154,5 +153,10 @@ for (const guardedRoute of [
 
 assert.ok(built.includes('else enforceSameOrigin(request, url);'), 'All unrelated legacy Track Manager writes must retain same-origin enforcement.');
 assert.ok(built.includes('Access-Control-Allow-Origin'), 'Built worker lost Studio CORS headers.');
+assert.ok(
+  built.includes('request.headers.get("origin") === STUDIO_ALLOWED_ORIGIN')
+    && built.includes('? withStudioCors(request, response)'),
+  'Protected canonical media must opt into the exact credentialed Studio CORS response.',
+);
 
-console.log('Studio bridge guard passed: v1.5 preserves metadata+lyrics writes and adds only scoped track-create, per-asset upload/delete and explicit catalog rebuild management while legacy Track Manager remains same-origin protected.');
+console.log('Studio bridge guard passed: v1.6 preserves Phase 4 capabilities and adds only guarded SonicTrace sidecar read/write routes while legacy Track Manager remains same-origin protected.');

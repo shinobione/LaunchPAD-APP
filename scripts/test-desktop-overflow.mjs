@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { assertCurrentBuild } from './lib/build-metadata.mjs';
 
-const read = path => fs.readFileSync(path, 'utf8');
+const read = path => fs.readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
 
 const styles = read('css/feature-12.css');
 for (const required of [

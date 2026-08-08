@@ -1,0 +1,247 @@
+
+const STUDIO_SONICTRACE_SAVE_INTENT = "sonictrace-analysis-save-v1";
+const STUDIO_SONICTRACE_SCHEMA_VERSION = 1;
+const STUDIO_SONICTRACE_MAX_BYTES = 2 * 1024 * 1024;
+const STUDIO_SONICTRACE_HISTORY_LIMIT = 50;
+
+function studioSonicTraceTrackMatch(pathname) {
+  return String(pathname || "").match(/^\/api\/studio\/tracks\/([a-z0-9][a-z0-9-]{0,119})\/analysis\/sonictrace$/);
+}
+
+function studioSonicTraceCatalogMatch(pathname) {
+  return String(pathname || "") === "/api/studio/analysis/sonictrace";
+}
+
+function studioSonicTraceLatestKey(slug) {
+  return trackPrefix(slug) + "analysis/sonictrace/latest.json";
+}
+
+function studioSonicTraceHistoryPrefix(slug) {
+  return trackPrefix(slug) + "analysis/sonictrace/history/";
+}
+
+function studioSonicTraceHistoryKey(slug, analysisId) {
+  return studioSonicTraceHistoryPrefix(slug) + analysisId + ".json";
+}
+
+async function readStudioJsonObject(bucket, key) {
+  const object = await bucket.get(key);
+  if (!object) return null;
+  try { return JSON.parse(await object.text()); }
+  catch { return null; }
+}
+
+async function studioAudioSourceVersion(bucket, manifest) {
+  const filename = manifest?.assets?.audio || null;
+  if (!filename) return null;
+  const object = await bucket.head(trackPrefix(manifest.slug) + filename);
+  if (!object) return null;
+  const uploadedAt = object.uploaded?.toISOString?.() || null;
+  const etag = String(object.etag || object.httpEtag || "").replace(/^W\//, "").replace(/^\"|\"$/g, "");
+  return {
+    kind: etag ? "r2-etag" : "r2-size-uploaded",
+    value: etag || `${Number(object.size || 0)}:${uploadedAt || "unknown"}`,
+    sizeBytes: Number(object.size || 0),
+    filename,
+    uploadedAt,
+  };
+}
+
+function studioSourceVersionEqual(left, right) {
+  return Boolean(
+    left && right
+    && String(left.kind || "") === String(right.kind || "")
+    && String(left.value || "") === String(right.value || "")
+    && Number(left.sizeBytes || 0) === Number(right.sizeBytes || 0)
+  );
+}
+
+function normalizeStudioSonicTraceAnalysis(value, slug, currentSourceVersion) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("INPUT_Analyse SonicTrace invalide.");
+  if (value.schemaVersion !== STUDIO_SONICTRACE_SCHEMA_VERSION) throw new Error("INPUT_Version de contrat SonicTrace invalide.");
+  if (value.trackId !== slug) throw new Error("INPUT_trackId SonicTrace non canonique.");
+  const analysisId = String(value.analysisId || "").trim();
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]{7,127}$/.test(analysisId)) throw new Error("INPUT_analysisId SonicTrace invalide.");
+  const analyzedAt = String(value.analyzedAt || "").trim();
+  if (!analyzedAt || !Number.isFinite(Date.parse(analyzedAt))) throw new Error("INPUT_Date d'analyse SonicTrace invalide.");
+  if (!studioSourceVersionEqual(value.sourceVersion, currentSourceVersion)) {
+    const error = new Error("STALE_AUDIO_L'audio canonique a changé depuis l'analyse.");
+    error.currentSourceVersion = currentSourceVersion;
+    throw error;
+  }
+
+  const embedding = value.embedding == null ? null : value.embedding;
+  if (embedding != null) {
+    if (!embedding || typeof embedding !== "object" || !Array.isArray(embedding.vector)) throw new Error("INPUT_Embedding SonicTrace invalide.");
+    if (embedding.dimension !== embedding.vector.length || embedding.dimension !== 512) throw new Error("INPUT_L'embedding SonicTrace doit contenir exactement 512 dimensions.");
+    if (embedding.vector.some(item => !Number.isFinite(Number(item)))) throw new Error("INPUT_L'embedding SonicTrace contient une valeur invalide.");
+  }
+
+  const normalized = {
+    schemaVersion: STUDIO_SONICTRACE_SCHEMA_VERSION,
+    analysisId,
+    trackId: slug,
+    sourceVersion: currentSourceVersion,
+    analyzedAt: new Date(analyzedAt).toISOString(),
+    engineVersion: value.engineVersion && typeof value.engineVersion === "object" ? value.engineVersion : {},
+    dsp: value.dsp ?? null,
+    mastering: value.mastering ?? null,
+    neural: value.neural ?? null,
+    embedding: embedding == null ? null : {
+      model: String(embedding.model || ""),
+      dimension: 512,
+      vector: embedding.vector.map(Number),
+    },
+    structure: value.structure ?? null,
+    semanticSummary: value.semanticSummary ?? null,
+    stemsSummary: value.stemsSummary ?? null,
+    provenance: value.provenance && typeof value.provenance === "object" ? value.provenance : {},
+    warnings: Array.isArray(value.warnings) ? value.warnings.map(item => String(item)).slice(0, 100) : [],
+    privacy: {
+      audioStored: false,
+      temporaryProcessingOnly: true,
+    },
+  };
+  const body = JSON.stringify(normalized, null, 2) + "\n";
+  if (new TextEncoder().encode(body).byteLength > STUDIO_SONICTRACE_MAX_BYTES) throw new Error("INPUT_Analyse SonicTrace trop volumineuse.");
+  return { normalized, body };
+}
+
+async function listStudioSonicTraceHistory(bucket, slug) {
+  const objects = await listAllObjects(bucket, studioSonicTraceHistoryPrefix(slug));
+  const selected = objects
+    .filter(object => object.key.endsWith(".json"))
+    .sort((left, right) => String(right.uploaded || "").localeCompare(String(left.uploaded || "")))
+    .slice(0, STUDIO_SONICTRACE_HISTORY_LIMIT);
+  const analyses = (await Promise.all(selected.map(object => readStudioJsonObject(bucket, object.key)))).filter(Boolean);
+  return analyses.sort((left, right) => String(right.analyzedAt || "").localeCompare(String(left.analyzedAt || "")));
+}
+
+async function getStudioSonicTraceAnalysis(slug, env, user) {
+  const manifest = await readManifest(env.MEDIA_BUCKET, slug);
+  if (!manifest) return jsonResponse({ ok: false, error: "Titre introuvable." }, 404);
+  const [latest, history, currentSourceVersion] = await Promise.all([
+    readStudioJsonObject(env.MEDIA_BUCKET, studioSonicTraceLatestKey(slug)),
+    listStudioSonicTraceHistory(env.MEDIA_BUCKET, slug),
+    studioAudioSourceVersion(env.MEDIA_BUCKET, manifest),
+  ]);
+  return jsonResponse({
+    ok: true,
+    trackId: slug,
+    latest,
+    history,
+    currentSourceVersion,
+    outdated: Boolean(latest && !studioSourceVersionEqual(latest.sourceVersion, currentSourceVersion)),
+    authenticatedEmail: user.email || null,
+  });
+}
+
+async function saveStudioSonicTraceAnalysis(slug, request, env, user) {
+  const payload = await readStudioPhase4JsonPayload(request, STUDIO_SONICTRACE_SAVE_INTENT);
+  const manifest = await readManifest(env.MEDIA_BUCKET, slug);
+  if (!manifest) return jsonResponse({ ok: false, error: "Titre introuvable." }, 404);
+  const currentSourceVersion = await studioAudioSourceVersion(env.MEDIA_BUCKET, manifest);
+  if (!currentSourceVersion) return jsonResponse({ ok: false, error: "Aucun audio canonique à analyser.", code: "AUDIO_MISSING" }, 409);
+
+  let prepared;
+  try { prepared = normalizeStudioSonicTraceAnalysis(payload.analysis, slug, currentSourceVersion); }
+  catch (error) {
+    if (String(error?.message || "").startsWith("STALE_AUDIO_")) {
+      return jsonResponse({ ok: false, error: "L'audio canonique a changé depuis l'analyse.", code: "STALE_AUDIO", currentSourceVersion }, 409);
+    }
+    throw error;
+  }
+
+  const latestKey = studioSonicTraceLatestKey(slug);
+  const historyKey = studioSonicTraceHistoryKey(slug, prepared.normalized.analysisId);
+  if (await env.MEDIA_BUCKET.head(historyKey)) {
+    return jsonResponse({ ok: false, error: "Cet analysisId existe déjà.", code: "ANALYSIS_EXISTS" }, 409);
+  }
+  const previousLatest = await env.MEDIA_BUCKET.get(latestKey);
+  let historyWritten = false;
+  let latestWritten = false;
+  try {
+    const metadata = {
+      kind: "sonictrace-analysis",
+      slug,
+      analysisId: prepared.normalized.analysisId,
+      analyzedAt: prepared.normalized.analyzedAt,
+      savedBy: String(user.email || "authorized-user").slice(0, 200),
+    };
+    await env.MEDIA_BUCKET.put(historyKey, prepared.body, {
+      httpMetadata: { contentType: "application/json; charset=utf-8", cacheControl: "private, no-store" },
+      customMetadata: metadata,
+    });
+    historyWritten = true;
+    await env.MEDIA_BUCKET.put(latestKey, prepared.body, {
+      httpMetadata: { contentType: "application/json; charset=utf-8", cacheControl: "private, no-store" },
+      customMetadata: metadata,
+    });
+    latestWritten = true;
+    const [historyCheck, latestCheck] = await Promise.all([
+      readStudioJsonObject(env.MEDIA_BUCKET, historyKey),
+      readStudioJsonObject(env.MEDIA_BUCKET, latestKey),
+    ]);
+    if (historyCheck?.analysisId !== prepared.normalized.analysisId || latestCheck?.analysisId !== prepared.normalized.analysisId) {
+      throw new Error("SAVE_VERIFY_Analyse SonicTrace non vérifiée.");
+    }
+    return jsonResponse({
+      ok: true,
+      saved: true,
+      trackId: slug,
+      analysis: latestCheck,
+      historyCount: (await listStudioSonicTraceHistory(env.MEDIA_BUCKET, slug)).length,
+      authenticatedEmail: user.email || null,
+    });
+  } catch (error) {
+    const rollback = { historyRemoved: false, latestRestored: false };
+    if (historyWritten) {
+      try { await env.MEDIA_BUCKET.delete(historyKey); rollback.historyRemoved = true; }
+      catch (rollbackError) { console.error("SonicTrace history rollback failed", rollbackError); }
+    }
+    if (latestWritten) {
+      try {
+        if (previousLatest) {
+          await env.MEDIA_BUCKET.put(latestKey, previousLatest.body, {
+            httpMetadata: previousLatest.httpMetadata || {},
+            customMetadata: previousLatest.customMetadata || {},
+          });
+        } else {
+          await env.MEDIA_BUCKET.delete(latestKey);
+        }
+        rollback.latestRestored = true;
+      } catch (rollbackError) { console.error("SonicTrace latest rollback failed", rollbackError); }
+    }
+    console.error("Studio SonicTrace save failed", error);
+    return jsonResponse({ ok: false, error: "Sauvegarde SonicTrace annulée après échec de vérification.", code: "ANALYSIS_ROLLBACK", rollback }, 500);
+  }
+}
+
+async function getStudioSonicTraceCatalog(env, user) {
+  const objects = await listAllObjects(env.MEDIA_BUCKET, TRACKS_PREFIX);
+  const latestObjects = objects.filter(object => /\/analysis\/sonictrace\/latest\.json$/.test(object.key));
+  const analyses = (await Promise.all(latestObjects.map(object => readStudioJsonObject(env.MEDIA_BUCKET, object.key)))).filter(Boolean);
+  const entries = await Promise.all(analyses.map(async analysis => {
+    const manifest = await readManifest(env.MEDIA_BUCKET, analysis.trackId);
+    const currentSourceVersion = manifest ? await studioAudioSourceVersion(env.MEDIA_BUCKET, manifest) : null;
+    return {
+      trackId: analysis.trackId,
+      title: manifest?.title || analysis.trackId,
+      analysisId: analysis.analysisId,
+      analyzedAt: analysis.analyzedAt,
+      sourceVersion: analysis.sourceVersion,
+      currentSourceVersion,
+      outdated: !studioSourceVersionEqual(analysis.sourceVersion, currentSourceVersion),
+      embedding: analysis.embedding || null,
+      semanticSummary: analysis.semanticSummary || null,
+      mastering: analysis.mastering || null,
+      structure: analysis.structure || null,
+    };
+  }));
+  return jsonResponse({
+    ok: true,
+    schemaVersion: STUDIO_SONICTRACE_SCHEMA_VERSION,
+    entries: entries.sort((left, right) => String(right.analyzedAt || "").localeCompare(String(left.analyzedAt || ""))),
+    authenticatedEmail: user.email || null,
+  });
+}

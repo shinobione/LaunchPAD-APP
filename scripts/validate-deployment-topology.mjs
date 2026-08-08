@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const read = path => fs.readFileSync(path, 'utf8');
+const read = path => fs.readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
 const exists = path => fs.existsSync(path);
 
 const pagesWorkflow = '.github/workflows/deploy-github-pages.yml';

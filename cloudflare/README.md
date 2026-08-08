@@ -4,6 +4,16 @@
 
 Public media Worker remains **v2.6**. Private Track Manager **v5.13** / Studio bridge **v1.5** is now deployed as the final backend capability set required by SHINOBIWAN Studio roadmap Phase 4.
 
+The current source branch is the **v5.14 / bridge v1.6 Phase 5 candidate**. It is not described as deployed until the protected admin workflow and Access verification complete. It adds only private SonicTrace sidecar contracts; public LaunchPAD and the public media Worker remain unchanged.
+
+Phase 5 candidate routes:
+
+```text
+GET  /api/studio/tracks/<slug>/analysis/sonictrace
+POST /api/studio/tracks/<slug>/analysis/sonictrace
+GET  /api/studio/analysis/sonictrace
+```
+
 Cloudflare provides three separate LaunchPAD concerns:
 
 1. **Cloudflare Pages** — staging host for the static PWA built from GitHub `main`.
