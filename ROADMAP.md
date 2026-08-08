@@ -1,6 +1,6 @@
 # LaunchPAD roadmap
 
-> Current application build: `2026.08.08.65` — release `studio-private-read-bridge-20260808`.
+> Current application build: `2026.08.08.66` — release `studio-metadata-validation-20260808`.
 
 The repository cleanup/reconciliation phase is complete. This roadmap now tracks product/runtime work rather than historical migration chores.
 
@@ -34,6 +34,7 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Build 64 corrects SonicTrace's live PWA styling so the cyan/teal `ST` control uses the same pill geometry and behavior as the two existing admin tools.
 - [x] Build 65 defines the GET-only, Access-authenticated Track Manager bridge for SHINOBIWAN Studio without weakening existing write protection.
 - [x] Build 65 corrects the shared lyrics contract: timestamped canonical `lyrics.txt` is synchronized; a duplicate `.lrc` file is not required.
+- [x] SHINOBIWAN Studio 0.4.0 / Build 5 successfully uses the private Track Manager read bridge in a real authenticated browser session.
 - [x] All Markdown documentation is version-coupled to `js/build-config.js` through CI.
 
 ## P0 — Studio integration safety
@@ -42,12 +43,22 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Keep Phase 4A additive: new `/api/studio/*` namespace only; no rewrite of existing Track Manager routes.
 - [x] Keep Phase 4A GET/OPTIONS only and advertise `write: []`.
 - [x] Keep Studio GET data behind Cloudflare Access and allow browser CORS only from `https://shinobione.github.io`.
-- [x] Add a CI regression guard that fails if the Studio namespace acquires write methods or loses the legacy same-origin write guard.
-- [ ] Merge Build 65 only after all LaunchPAD/Cloudflare/overflow validations are green.
-- [ ] Deploy the **admin Worker only** from merged `main`, through the protected Cloudflare environment.
-- [ ] Verify existing Track Manager operations after Worker deploy before connecting Studio to the new bridge.
-- [ ] Connect Studio to `/api/studio/health` first in a separate Studio PR/release, then progressively consume private read data.
-- [ ] Design Phase 4B write integration separately; no browser secret, wildcard CORS or direct weakening of `enforceSameOrigin()` is acceptable.
+- [x] Add a CI regression guard for the Studio namespace and legacy same-origin write guard.
+- [x] Merge Build 65 only after all LaunchPAD/Cloudflare/overflow validations are green.
+- [x] Deploy the Build 65 **admin Worker only** through the protected Cloudflare environment.
+- [x] Verify existing Track Manager deployment and private Studio reads after Worker deploy.
+- [x] Connect Studio 0.4.0 / Build 5 to `/api/studio/*` with public-read fallback and zero writes.
+- [x] Create fresh pre-4B.1A safety snapshots: `safety/pre-phase-4b1a-20260808-1452` for LaunchPAD/Track Manager and Studio.
+- [x] Design Phase 4B.1A as validation before mutation: one exact metadata-validation POST, no production writes.
+- [x] Require exact origin, Access JWT, custom intent header, JSON whitelist and `expectedUpdatedAt` stale protection.
+- [x] Reuse Track Manager manifest normalization and quality inspection without `writeManifest`, `writeCatalogIndex`, R2 put/delete or media operations.
+- [x] Keep bridge health explicit: `validate: ["metadata"]`, `write: []`.
+- [ ] Merge Build 66 only after LaunchPAD, Worker, overflow, dry-run and documentation validation are green.
+- [ ] Deploy Build 66 **admin Worker only**; public Worker stays v2.6.
+- [ ] Validate the POST in a real Studio browser session and prove `updatedAt`, R2 objects and catalog state are unchanged.
+- [ ] Add Studio 0.4.1 / Build 6 metadata editor in validation/preview mode only.
+- [ ] Only after successful 4B.1A browser validation, design Phase 4B.1B real metadata save as a separately versioned endpoint/release.
+- [ ] Real Studio writes must retain exact-origin CORS, Access auth, intent header, stale-write protection, confirmation UI and rollback documentation.
 
 ## P0 — real-device validation
 
@@ -101,7 +112,8 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] GitHub Pages and Cloudflare Pages publish repository-built artifacts only.
 - [x] Worker deployment remains protected/manual.
 - [x] Every new build updates every `.md` document and passes `check:build-docs`.
-- [ ] Record the next repository-driven private Worker production deploy with source SHA and Cloudflare version ID.
+- [x] Build 65 private Worker deploy recorded with source SHA and Cloudflare version ID.
+- [ ] Record Build 66 private Worker deploy with source SHA and Cloudflare version ID after protected deployment.
 
 ## P2 — catalog / Track Manager
 
@@ -129,4 +141,5 @@ The repo is considered structurally healthy when:
 9. spring/inertia amplitude decays to rest when the real audio target disappears;
 10. sustained musical energy produces visible kinetic travel while low-frequency onsets retain a separate post-pose impact with reserved headroom;
 11. the Audio Lab can introduce new composition families without duplicating the same centered radial grammar;
-12. Studio integration can fail or be reverted without disabling the standalone Track Manager, LaunchPAD, SonicTrace or LRC Maker.
+12. Studio integration can fail or be reverted without disabling the standalone Track Manager, LaunchPAD, SonicTrace or LRC Maker;
+13. validation-only cross-origin capabilities are proven before any production mutation endpoint is introduced.
