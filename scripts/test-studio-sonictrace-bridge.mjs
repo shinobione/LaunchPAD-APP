@@ -8,6 +8,7 @@ const output = path.join(os.tmpdir(), `launchpad-sonictrace-${process.pid}.js`);
 const built = spawnSync(process.execPath, ['scripts/build-admin-worker.mjs', output], { encoding: 'utf8' });
 if (built.status !== 0) throw new Error(`${built.stdout}\n${built.stderr}`);
 const source = fs.readFileSync(output, 'utf8');
+const deployWorkflow = fs.readFileSync('.github/workflows/deploy-cloudflare.yml', 'utf8');
 fs.rmSync(output, { force: true });
 
 for (const required of [
@@ -26,5 +27,6 @@ for (const required of [
 assert.ok(!source.includes('manifest.assets.sonictrace'), 'SonicTrace must not be written into manifest schema v1.');
 assert.ok(source.indexOf('await env.MEDIA_BUCKET.put(historyKey') < source.indexOf('await env.MEDIA_BUCKET.put(latestKey'), 'History must be persisted before latest.');
 assert.ok(source.includes('rollback.latestRestored = true'), 'Latest rollback verification is required.');
+assert.ok(deployWorkflow.includes("EXPECTED_ADMIN_VERSION: '5.14'"), 'Protected deployment must verify Track Manager v5.14.');
 
 console.log('Studio SonicTrace bridge contract is trackId-bound, versioned, append-only and rollback guarded.');
