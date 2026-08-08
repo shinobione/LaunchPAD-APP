@@ -1,6 +1,6 @@
 # LaunchPAD deployment topology
 
-> Current application build: `2026.08.08.52` — release `pulse-reactor-20260808`.
+> Current application build: `2026.08.08.53` — release `bass-fracture-20260808`.
 
 ## One source of truth
 
@@ -10,7 +10,7 @@
                          GitHub repository
                               main
                                |
-                      validated Build 52
+                      validated Build 53
                                |
                 +--------------+--------------+
                 |                             |
@@ -34,18 +34,18 @@
                       shinobiwan-media
 ```
 
-## Canonical Build 52
+## Canonical Build 53
 
 The current application release is defined only in `js/build-config.js`:
 
 ```text
-id       20260808-pulse-reactor-v52
-cache    shinobi-launchpad-v52
-display  2026.08.08.52
-release  pulse-reactor-20260808
+id       20260808-bass-fracture-v53
+cache    shinobi-launchpad-v53
+display  2026.08.08.53
+release  bass-fracture-20260808
 ```
 
-Every Markdown document must carry the same display/release markers; CI rejects stale documentation. The cache namespace advances with Build 52 so the new Pulse Reactor module and four-preset Audio Lab registry cannot be hidden by stale Build 51 shell assets.
+Every Markdown document must carry the same display/release markers; CI rejects stale documentation. The cache namespace advances with Build 53 so the new Bass Fracture module and five-preset Audio Lab registry cannot be hidden by stale Build 52 shell assets.
 
 ## Web hosting
 

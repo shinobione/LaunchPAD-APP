@@ -43,12 +43,18 @@ function mobileVisualDevice(width) {
   return width <= 760 || (width < 980 && (coarse || touch));
 }
 
+function hash(index, seed = 0) {
+  const value = Math.sin(index * 83.173 + seed * 29.731) * 43758.5453;
+  return value - Math.floor(value);
+}
+
 /**
  * Pulse Reactor
  *
  * A signal-first reactor visual: bass/kicks compress and expand the core,
- * mids open segmented orbital rings, highs fire radial needles. Time only
- * adds a tiny energy-gated drift, so silence produces a stable image.
+ * mids open segmented orbital rings, highs fire radial needles. Strong bass
+ * peaks temporarily de-cohere ring segments/core shards before they settle.
+ * Time only adds a tiny energy-gated drift, so silence produces a stable image.
  */
 export function drawPulseReactorMode(context, width, height, data, accent, accent2, time, features = {}) {
   const mobile = mobileVisualDevice(width);
@@ -70,24 +76,31 @@ export function drawPulseReactorMode(context, width, height, data, accent, accen
   const dynamics = feature(features, 'dynamics');
   const activity = clamp(energy * .72 + bass * .3 + high * .18 + kick * .22);
   const impact = clamp(Math.pow(bass, .66) * .72 + kick * .95 + peak * .26 + dynamics * .22);
+  const fracture = clamp(
+    Math.max(0, impact - .48) * 1.85
+    + Math.max(0, bass - .62) * 1.25
+    + kick * .24
+    + Math.max(0, peak - .6) * .35
+  );
   const drift = time * activity * .075;
 
   const ringCount = mobile ? 3 : 5;
   const segmentCount = mobile ? 18 : 32;
   const spokeCount = mobile ? 16 : 30;
+  const shardCount = mobile ? 6 : 10;
   const shadowCap = mobile ? 5 : 13;
 
-  const atmosphereRadius = minSide * (.48 + impact * .08);
+  const atmosphereRadius = minSide * (.48 + impact * .08 + fracture * .035);
   const atmosphere = context.createRadialGradient(cx, cy, 0, cx, cy, atmosphereRadius);
-  atmosphere.addColorStop(0, colorWithAlpha(accent, .055 + impact * .13));
+  atmosphere.addColorStop(0, colorWithAlpha(accent, .055 + impact * .13 + fracture * .05));
   atmosphere.addColorStop(.34, colorWithAlpha(accent2, .025 + mid * .08));
   atmosphere.addColorStop(.72, colorWithAlpha(accent, .012 + high * .04));
   atmosphere.addColorStop(1, 'rgba(0,0,0,0)');
   context.fillStyle = atmosphere;
   context.fillRect(0, 0, width, height);
 
-  const coreRadius = minSide * (.048 + bass * .034 + kick * .052 + peak * .018);
-  const coreGlowRadius = coreRadius * (2.7 + impact * .75);
+  const coreRadius = minSide * (.048 + bass * .034 + kick * .052 + peak * .018 - fracture * .007);
+  const coreGlowRadius = coreRadius * (2.7 + impact * .75 + fracture * .35);
   const coreGlow = context.createRadialGradient(cx, cy, 0, cx, cy, coreGlowRadius);
   coreGlow.addColorStop(0, colorWithAlpha('#ffffff', .72 + high * .22));
   coreGlow.addColorStop(.12, colorWithAlpha(accent2, .68 + impact * .24));
@@ -107,27 +120,30 @@ export function drawPulseReactorMode(context, width, height, data, accent, accen
     const ringProgress = ring / Math.max(1, ringCount - 1);
     const baseRadius = minSide * (.105 + ringProgress * .205);
     const ringPulse = minSide * (impact * (.022 + ringProgress * .018) + mid * .012);
-    const radius = baseRadius + ringPulse;
     const rotation = direction * (drift * (.7 + ringProgress * .55) + mid * .075 + impact * .028);
 
     for (let segment = 0; segment < segmentCount; segment += 1) {
       const progress = (segment + .5) / segmentCount;
       const spectral = Math.pow(sampleAt(data, progress * (.78 + ringProgress * .22)), .64);
       const localDrive = clamp(spectral * .82 + mid * .24 + high * ringProgress * .22 + impact * (1 - ringProgress) * .2);
-      const gap = .022 + (1 - localDrive) * .018;
+      const personality = hash(segment, ring + 1) * 2 - 1;
+      const fractureLift = fracture * minSide * (.008 + Math.abs(personality) * .018) * (1.08 - ringProgress * .32);
+      const tangentialBreak = personality * fracture * .045;
+      const gap = .022 + (1 - localDrive) * .018 + fracture * (.005 + Math.abs(personality) * .009);
       const segmentSpan = Math.PI * 2 / segmentCount;
-      const start = segment * segmentSpan + rotation + gap;
-      const end = start + segmentSpan * (.58 + localDrive * .34) - gap;
+      const start = segment * segmentSpan + rotation + gap + tangentialBreak;
+      const end = start + segmentSpan * (.58 + localDrive * .34 - fracture * .05) - gap;
+      const radius = baseRadius + ringPulse + spectral * minSide * .013 + fractureLift;
 
       context.beginPath();
-      context.arc(0, 0, radius + spectral * minSide * .013, start, end);
+      context.arc(0, 0, radius, start, end);
       context.strokeStyle = colorWithAlpha(
         (segment + ring) % 2 ? accent2 : accent,
-        .07 + localDrive * .52 + impact * .11
+        .07 + localDrive * .52 + impact * .11 + fracture * .08
       );
       context.lineWidth = .7 + localDrive * 2.35 + (1 - ringProgress) * impact * 1.05;
       context.shadowColor = (segment + ring) % 2 ? accent2 : accent;
-      context.shadowBlur = Math.min(shadowCap, 1.5 + localDrive * shadowCap);
+      context.shadowBlur = Math.min(shadowCap, 1.5 + localDrive * shadowCap + fracture * 2);
       context.stroke();
     }
   }
@@ -137,10 +153,11 @@ export function drawPulseReactorMode(context, width, height, data, accent, accen
     const progress = (spoke + .5) / spokeCount;
     const highSample = Math.pow(sampleAt(data, .46 + progress * .54), .58);
     const midSample = Math.pow(sampleAt(data, .18 + progress * .42), .7);
-    const drive = clamp(highSample * .82 + high * .42 + midSample * .2 + kick * .13);
-    const angle = progress * Math.PI * 2 - Math.PI / 2 + drift * .18;
-    const inner = minSide * (.105 + impact * .035);
-    const outer = inner + minSide * (.035 + drive * .17 + peak * .025);
+    const personality = hash(spoke, 13) * 2 - 1;
+    const drive = clamp(highSample * .82 + high * .42 + midSample * .2 + kick * .13 + fracture * .12);
+    const angle = progress * Math.PI * 2 - Math.PI / 2 + drift * .18 + personality * fracture * .035;
+    const inner = minSide * (.105 + impact * .035 + fracture * (.008 + Math.abs(personality) * .012));
+    const outer = inner + minSide * (.035 + drive * .17 + peak * .025 + fracture * .035);
 
     context.beginPath();
     context.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
@@ -151,23 +168,51 @@ export function drawPulseReactorMode(context, width, height, data, accent, accen
   }
 
   for (let wave = 0; wave < 2; wave += 1) {
-    const waveRadius = minSide * (.09 + wave * .075 + impact * (.065 + wave * .022));
+    const waveRadius = minSide * (.09 + wave * .075 + impact * (.065 + wave * .022) + fracture * (.018 + wave * .009));
     context.beginPath();
     context.arc(0, 0, waveRadius, 0, Math.PI * 2);
-    context.strokeStyle = colorWithAlpha(wave ? accent2 : accent, .03 + impact * (.26 - wave * .06));
+    context.strokeStyle = colorWithAlpha(wave ? accent2 : accent, .03 + impact * (.26 - wave * .06) + fracture * .07);
     context.lineWidth = .55 + impact * (1.55 - wave * .3);
     context.stroke();
+  }
+
+  if (fracture > .035) {
+    for (let shard = 0; shard < shardCount; shard += 1) {
+      const progress = (shard + .5) / shardCount;
+      const personality = hash(shard, 27) * 2 - 1;
+      const angle = progress * Math.PI * 2 + personality * .16;
+      const travel = minSide * fracture * (.018 + hash(shard, 7) * .038);
+      const centerRadius = coreRadius * (.32 + hash(shard, 5) * .72) + travel;
+      const size = coreRadius * (.22 + hash(shard, 9) * .28) * (.45 + fracture * .72);
+      const sx = Math.cos(angle) * centerRadius;
+      const sy = Math.sin(angle) * centerRadius;
+
+      context.save();
+      context.translate(sx, sy);
+      context.rotate(angle + personality * fracture * .85);
+      context.beginPath();
+      context.moveTo(-size, size * .32);
+      context.lineTo(size * .68, -size * .52);
+      context.lineTo(size * .42, size * .7);
+      context.closePath();
+      context.fillStyle = colorWithAlpha(shard % 2 ? accent : accent2, .04 + fracture * .18);
+      context.fill();
+      context.strokeStyle = colorWithAlpha(shard % 3 ? accent2 : '#ffffff', .1 + fracture * .48);
+      context.lineWidth = .4 + fracture * .8;
+      context.stroke();
+      context.restore();
+    }
   }
 
   context.restore();
 
   const innerCore = context.createRadialGradient(cx, cy, 0, cx, cy, coreRadius);
-  innerCore.addColorStop(0, colorWithAlpha('#ffffff', .92));
+  innerCore.addColorStop(0, colorWithAlpha('#ffffff', .92 - fracture * .18));
   innerCore.addColorStop(.18, colorWithAlpha(accent2, .78 + high * .16));
   innerCore.addColorStop(.58, colorWithAlpha(accent, .48 + bass * .28));
   innerCore.addColorStop(1, colorWithAlpha(accent, .02));
   context.fillStyle = innerCore;
   context.beginPath();
-  context.arc(cx, cy, coreRadius, 0, Math.PI * 2);
+  context.arc(cx, cy, Math.max(1, coreRadius), 0, Math.PI * 2);
   context.fill();
 }

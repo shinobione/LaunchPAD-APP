@@ -52,14 +52,14 @@ assert.ok(homeStyles.includes('grid-template-columns:repeat(2,minmax(0,1fr))'), 
 const registry = read('js/features/visual/audio-lab-registry.js');
 includesAll(registry, [
   "AUDIO_LAB_DEFAULT_MODE = 'neon-shatter'",
-  "id: 'neon-shatter'", "id: 'spectrum'", "id: 'liquid-chrome'", "id: 'pulse-reactor'",
+  "id: 'neon-shatter'", "id: 'spectrum'", "id: 'liquid-chrome'", "id: 'pulse-reactor'", "id: 'bass-fracture'",
   "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum'])"
 ], 'Audio Lab registry');
 for (const retired of ['aurora-glass', 'nebula', 'singularity']) {
   assert.ok(!registry.includes(retired), `Retired Audio Lab preset returned: ${retired}.`);
 }
 const presetCount = (registry.match(/Object\.freeze\(\{ id:/g) || []).length;
-assert.ok(presetCount >= 3, 'Audio Lab must retain the validated three-preset baseline.');
+assert.ok(presetCount >= 5, 'Audio Lab must retain the validated Build 53 five-preset baseline.');
 
 const visualBase = read('js/features/visual/visual-engine-v2.js');
 function extractFunction(source, name) {
@@ -91,10 +91,12 @@ includesAll(live, [
   "{ id: 'spectrum', label: 'Spectrum' }",
   "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
   "{ id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode }",
+  "{ id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }",
   'base.readSpectrum?.(raw)',
   'reading = readAudioLabSpectrum(raw)',
   'dataset.audioLabRenderer =',
   `dataset.audioLabPresetCount = '${presetCount}'`,
+  "mode === 'bass-fracture' ? 1.05",
   'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)',
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ], 'Live Audio Lab visuals');
@@ -121,10 +123,32 @@ includesAll(pulseReactor, [
   'const ringCount = mobile ? 3 : 5',
   'const segmentCount = mobile ? 18 : 32',
   'const spokeCount = mobile ? 16 : 30',
+  'const shardCount = mobile ? 6 : 10',
+  'const fracture = clamp(',
+  'Math.max(0, impact - .48) * 1.85',
+  'fractureLift',
   'const drift = time * activity * .075'
 ], 'Pulse Reactor');
 assert.ok(!pulseReactor.includes('requestAnimationFrame('), 'Pulse Reactor must use the shared renderer scheduler.');
 assert.ok(!pulseReactor.includes('setInterval('), 'Pulse Reactor must not self-schedule an autonomous loop.');
+assert.ok(!pulseReactor.includes('Math.random('), 'Pulse Reactor peak breakup must remain deterministic.');
+
+const bassFracture = read('js/features/visual/bass-fracture.js');
+includesAll(bassFracture, [
+  'export function drawBassFractureMode(',
+  'const layerCount = mobile ? 2 : 3',
+  'const sectorCount = mobile ? 12 : 20',
+  'const crackCount = mobile ? 10 : 18',
+  'const fracture = clamp(',
+  'const rupture = clamp(',
+  'const drift = time * activity * .038',
+  'localImpact',
+  'radialOffset',
+  'sampleAt(data, .5 + progress * .5)'
+], 'Bass Fracture');
+assert.ok(!bassFracture.includes('requestAnimationFrame('), 'Bass Fracture must use the shared renderer scheduler.');
+assert.ok(!bassFracture.includes('setInterval('), 'Bass Fracture must not self-schedule an autonomous loop.');
+assert.ok(!bassFracture.includes('Math.random('), 'Bass Fracture geometry must remain deterministic.');
 
 const signal = read('js/features/audio-lab-signal.js');
 includesAll(signal, [
@@ -162,7 +186,7 @@ includesAll(engine, ['initThemeScoping({ audio })', 'initDiscographyExperience({
 const admin = read('js/features/admin-access.js');
 includesAll(admin, ['resolveLrcMakerAccess', 'https://shinobione.github.io/lrc-maker/', "label: 'LRC Maker'"], 'Admin access');
 const worker = read('sw.js');
-includesAll(worker, ["'./js/features/theme-scope.js'", "'./js/features/visual/audio-lab-registry.js'", "'./js/features/visual/audio-lab-sanctuary.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/visual-card-export-guard.js'"], 'PWA shell');
+includesAll(worker, ["'./js/features/theme-scope.js'", "'./js/features/visual/audio-lab-registry.js'", "'./js/features/visual/audio-lab-sanctuary.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/visual-card-export-guard.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
 assert.match(build.id, /^\d{8}-[a-z0-9-]+$/);

@@ -6,18 +6,21 @@ import {
   drawNeonShatterV2Mode
 } from './visual-engine-core-modes.js';
 import { drawPulseReactorMode } from './pulse-reactor.js';
+import { drawBassFractureMode } from './bass-fracture.js';
 
 const DEFAULT_MODE = 'neon-shatter';
 const CUSTOM_MODES = [
   { id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode },
   { id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode },
-  { id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode }
+  { id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode },
+  { id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }
 ];
 const CONTROL_MODES = [
   { id: 'neon-shatter', label: 'Neon Shatter' },
   { id: 'spectrum', label: 'Spectrum' },
   { id: 'liquid-chrome', label: 'Liquid Chrome' },
-  { id: 'pulse-reactor', label: 'Pulse Reactor' }
+  { id: 'pulse-reactor', label: 'Pulse Reactor' },
+  { id: 'bass-fracture', label: 'Bass Fracture' }
 ];
 const CUSTOM_RENDERERS = new Map(CUSTOM_MODES.map(mode => [mode.id, mode.renderer]));
 const CUSTOM_MODE_IDS = CUSTOM_MODES.map(mode => mode.id);
@@ -39,7 +42,10 @@ function prepareCanvas(canvas, mode) {
   if (!canvas || !rect?.width || !rect?.height) return null;
   const mobile = mobileVisualDevice(rect.width);
   const dprCap = mobile
-    ? mode === 'neon-shatter' ? 1 : mode === 'pulse-reactor' ? 1.1 : 1.35
+    ? mode === 'neon-shatter' ? 1
+      : mode === 'bass-fracture' ? 1.05
+        : mode === 'pulse-reactor' ? 1.1
+          : 1.35
     : 2;
   const dpr = Math.min(window.devicePixelRatio || 1, dprCap);
   const widthPx = Math.round(rect.width * dpr);
@@ -166,9 +172,9 @@ export function createVisualController(options) {
   });
   applyMode(DEFAULT_MODE, defaultButton);
 
-  document.documentElement.dataset.audioLabRenderer = 'four-core-v1';
+  document.documentElement.dataset.audioLabRenderer = 'five-core-v1';
   document.documentElement.dataset.audioLabFeed = 'spectrum-shared';
-  document.documentElement.dataset.audioLabPresetCount = '4';
+  document.documentElement.dataset.audioLabPresetCount = '5';
 
   function readReactiveFrame() {
     if (audio.paused || audio.ended) {

@@ -14,7 +14,7 @@ import {
 const read = file => fs.readFileSync(file, 'utf8');
 
 assert.equal(AUDIO_LAB_DEFAULT_MODE, 'neon-shatter');
-for (const required of ['neon-shatter', 'spectrum', 'liquid-chrome', 'pulse-reactor']) {
+for (const required of ['neon-shatter', 'spectrum', 'liquid-chrome', 'pulse-reactor', 'bass-fracture']) {
   assert.ok(AUDIO_LAB_PRESET_IDS.includes(required), `Sanctioned Audio Lab registry is missing ${required}.`);
 }
 assert.equal(new Set(AUDIO_LAB_PRESET_IDS).size, AUDIO_LAB_PRESET_IDS.length, 'Audio Lab preset ids must remain unique.');
@@ -96,8 +96,28 @@ for (const required of [
   'const ringCount = mobile ? 3 : 5',
   'const segmentCount = mobile ? 18 : 32',
   'const spokeCount = mobile ? 16 : 30',
+  'const shardCount = mobile ? 6 : 10',
+  'const fracture = clamp(',
   'const drift = time * activity * .075'
 ]) assert.ok(reactor.includes(required), `Pulse Reactor contract is missing ${required}.`);
+assert.ok(!reactor.includes('Math.random('));
+assert.ok(!reactor.includes('requestAnimationFrame('));
+
+const fracture = read('js/features/visual/bass-fracture.js');
+for (const required of [
+  'export function drawBassFractureMode(',
+  'const layerCount = mobile ? 2 : 3',
+  'const sectorCount = mobile ? 12 : 20',
+  'const crackCount = mobile ? 10 : 18',
+  'const fracture = clamp(',
+  'const rupture = clamp(',
+  'const drift = time * activity * .038',
+  'radialOffset',
+  'sampleAt(data, .5 + progress * .5)'
+]) assert.ok(fracture.includes(required), `Bass Fracture contract is missing ${required}.`);
+assert.ok(!fracture.includes('Math.random('));
+assert.ok(!fracture.includes('requestAnimationFrame('));
+assert.ok(!fracture.includes('setInterval('));
 
 const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
@@ -106,11 +126,13 @@ for (const required of [
   "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode }",
   "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
   "{ id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode }",
+  "{ id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }",
   'base.readSpectrum?.(raw)',
   'reading = readAudioLabSpectrum(raw)',
   'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)',
   'dataset.audioLabRenderer =',
   `dataset.audioLabPresetCount = '${AUDIO_LAB_PRESET_IDS.length}'`,
+  "mode === 'bass-fracture' ? 1.05",
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ]) assert.ok(live.includes(required), `Live Audio Lab integration is missing ${required}.`);
 for (const forbidden of ['aurora-glass', 'nebula', 'singularity', "'bars'", 'readAudioLabAmplitude', 'createAmplitudeDynamicsTracker', 'synthesizePlaybackSpectrum']) {
@@ -133,6 +155,7 @@ const worker = read('sw.js');
 assert.ok(worker.includes("'./js/features/visual/audio-lab-registry.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-sanctuary.js'"));
 assert.ok(worker.includes("'./js/features/visual/pulse-reactor.js'"));
+assert.ok(worker.includes("'./js/features/visual/bass-fracture.js'"));
 
 const build = assertCurrentBuild('Milestone 7/current release');
 console.log(`Milestone 7 protects ${AUDIO_LAB_PRESET_IDS.length} sanctioned Audio Lab presets on the shared Spectrum FFT under Build ${build.number}.`);

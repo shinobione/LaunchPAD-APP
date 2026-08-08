@@ -1,8 +1,18 @@
 # Changelog
 
-> Current application build: `2026.08.08.52` — release `pulse-reactor-20260808`.
+> Current application build: `2026.08.08.53` — release `bass-fracture-20260808`.
 
 This file intentionally tracks the recent stabilized release line. Older milestone-by-milestone history remains available in Git history and merged pull requests.
+
+## Build 53 — Bass Fracture + Pulse Reactor breakup
+
+- Add **Bass Fracture** as the fifth sanctioned Audio Lab preset, isolated in `js/features/visual/bass-fracture.js`.
+- Render Bass Fracture as deterministic tectonic plates: bass/kicks separate the mass, mids twist plate groups and highs/transients light fault lines and edge cracks.
+- Give Bass Fracture an explicit mobile budget of 2 layers / 12 sectors / 10 crack spokes at DPR 1.05; desktop uses 3 / 20 / 18.
+- Increase Pulse Reactor peak violence without increasing its permanent mobile geometry: strong bass/kick peaks de-cohere ring segments and eject a small deterministic set of core shards before settling.
+- Keep both new behaviors on Spectrum's shared analyser feed with only signal-gated residual drift; paused/silent playback remains stable.
+- Keep both isolated renderers free of private `requestAnimationFrame`, `setInterval` and `Math.random()` animation paths.
+- Cache Bass Fracture in the PWA shell and advance the app/cache namespace to Build 53.
 
 ## Build 52 — Pulse Reactor
 

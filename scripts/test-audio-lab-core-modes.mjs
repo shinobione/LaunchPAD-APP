@@ -19,12 +19,13 @@ for (const required of [
   "id: 'spectrum', label: 'Spectrum'",
   "id: 'liquid-chrome', label: 'Liquid Chrome'",
   "id: 'pulse-reactor', label: 'Pulse Reactor'",
+  "id: 'bass-fracture', label: 'Bass Fracture'",
   "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum'])"
 ]) assert.ok(registry.includes(required), `Audio Lab registry is missing ${required}.`);
 for (const forbidden of retiredIds) {
   assert.ok(!registry.includes(forbidden), `Retired Audio Lab preset ${forbidden} leaked into the registry.`);
 }
-assert.equal((registry.match(/Object\.freeze\(\{ id:/g) || []).length, 4, 'Audio Lab must expose exactly four validated presets.');
+assert.equal((registry.match(/Object\.freeze\(\{ id:/g) || []).length, 5, 'Audio Lab must expose exactly five validated presets.');
 
 const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
@@ -32,11 +33,13 @@ for (const required of [
   "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode }",
   "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
   "{ id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode }",
+  "{ id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }",
   "{ id: 'spectrum', label: 'Spectrum' }",
   'base.readSpectrum?.(raw)',
   'reading = readAudioLabSpectrum(raw)',
-  "document.documentElement.dataset.audioLabRenderer = 'four-core-v1'",
-  "document.documentElement.dataset.audioLabPresetCount = '4'",
+  "document.documentElement.dataset.audioLabRenderer = 'five-core-v1'",
+  "document.documentElement.dataset.audioLabPresetCount = '5'",
+  "mode === 'bass-fracture' ? 1.05",
   "mode === 'pulse-reactor' ? 1.1",
   'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)'
 ]) assert.ok(live.includes(required), `Audio Lab integration is missing ${required}.`);
@@ -66,13 +69,32 @@ for (const required of [
   'const ringCount = mobile ? 3 : 5',
   'const segmentCount = mobile ? 18 : 32',
   'const spokeCount = mobile ? 16 : 30',
+  'const shardCount = mobile ? 6 : 10',
   'const drift = time * activity * .075',
   'const impact = clamp(',
+  'const fracture = clamp(',
+  'fractureLift',
   'sampleAt(data, progress',
   'sampleAt(data, .46 + progress * .54)'
 ]) assert.ok(reactor.includes(required), `Pulse Reactor signal/mobile contract is missing ${required}.`);
 assert.ok(!reactor.includes('setInterval('));
 assert.ok(!reactor.includes('Math.random('));
+
+const fracture = read('js/features/visual/bass-fracture.js');
+for (const required of [
+  'export function drawBassFractureMode(',
+  'const layerCount = mobile ? 2 : 3',
+  'const sectorCount = mobile ? 12 : 20',
+  'const crackCount = mobile ? 10 : 18',
+  'const drift = time * activity * .038',
+  'const fracture = clamp(',
+  'const rupture = clamp(',
+  'localImpact',
+  'radialOffset',
+  'sampleAt(data, .5 + progress * .5)'
+]) assert.ok(fracture.includes(required), `Bass Fracture signal/mobile contract is missing ${required}.`);
+assert.ok(!fracture.includes('setInterval('));
+assert.ok(!fracture.includes('Math.random('));
 
 const base = read('js/features/visual/visual-engine-v2.js');
 for (const required of [
@@ -117,8 +139,9 @@ assert.ok(worker.includes("'./js/features/visual/audio-reactivity.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-registry.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-sanctuary.js'"));
 assert.ok(worker.includes("'./js/features/visual/pulse-reactor.js'"));
+assert.ok(worker.includes("'./js/features/visual/bass-fracture.js'"));
 
 const build = assertCurrentBuild('Audio Lab current build');
 assert.match(build.display, /^\d{4}\.\d{2}\.\d{2}\.\d+$/);
 assert.ok(build.release, 'Current build release must be present.');
-console.log(`Audio Lab exposes Neon Shatter, Spectrum, Liquid Chrome and Pulse Reactor under ${build.display}.`);
+console.log(`Audio Lab exposes Neon Shatter, Spectrum, Liquid Chrome, Pulse Reactor and Bass Fracture under ${build.display}.`);
