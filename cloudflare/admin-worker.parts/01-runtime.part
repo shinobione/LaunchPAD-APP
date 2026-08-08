@@ -126,7 +126,10 @@ export default {
 
       const mediaMatch = url.pathname.match(/^\/api\/media\/([a-z0-9][a-z0-9-]{0,119})\/(cover|thumbnail|audio|video|lyrics)$/);
       if (mediaMatch && request.method === "GET") {
-        return getProtectedMedia(request, mediaMatch[1], mediaMatch[2], env);
+        const response = await getProtectedMedia(request, mediaMatch[1], mediaMatch[2], env);
+        return request.headers.get("origin") === STUDIO_ALLOWED_ORIGIN
+          ? withStudioCors(request, response)
+          : response;
       }
 
       const thumbnailMatch = url.pathname.match(/^\/api\/tracks\/([a-z0-9][a-z0-9-]{0,119})\/thumbnail$/);

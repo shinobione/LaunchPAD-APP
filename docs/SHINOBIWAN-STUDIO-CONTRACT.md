@@ -4,7 +4,7 @@
 > LaunchPAD reference build: `2026.08.08.66`  
 > LaunchPAD reference release: `studio-metadata-validation-20260808`
 
-Status: **Phase 0–4A proven; Phase 4B.1A metadata validation defined.** This contract defines shared identity, data ownership and safe integration boundaries for LaunchPAD, Track Manager, SonicTrace, LRC Maker and SHINOBIWAN Studio.
+Status: **Phases 0–4 proven; Phase 5 SonicTrace sidecar contract implemented in the v5.14/v1.6 source candidate.** This contract defines shared identity, data ownership and safe integration boundaries for LaunchPAD, Track Manager, SonicTrace, LRC Maker and SHINOBIWAN Studio.
 
 ## 1. Product boundary
 
@@ -197,7 +197,7 @@ This rule avoids maintaining two near-duplicate lyric files that can drift apart
 
 SonicTrace computes analysis. R2 stores catalog-linked analysis. SonicTrace must not become an independent authoritative track database.
 
-### Planned R2 layout
+### Phase 5 R2 layout
 
 ```text
 tracks/<trackId>/analysis/sonictrace/latest.json
@@ -210,7 +210,7 @@ Rules:
 - history is append-only except explicit maintenance cleanup.
 - the analyzed WAV/MP3 is **not duplicated** in the analysis directory.
 
-No SonicTrace persistence is introduced by Build 66; that remains Phase 5 work.
+Public LaunchPAD Build 66 remains unchanged. Private SonicTrace persistence is introduced only by the Track Manager v5.14 / bridge v1.6 candidate.
 
 ## 7. `SonicTraceAnalysis` contract
 
@@ -221,7 +221,7 @@ Minimum envelope:
   "schemaVersion": 1,
   "analysisId": "unique-analysis-id",
   "trackId": "ghost-signal",
-  "sourceFingerprint": {
+  "sourceVersion": {
     "kind": "r2-revision",
     "value": "stable-source-revision",
     "sizeBytes": null
@@ -289,7 +289,7 @@ Persistence principles:
 
 Studio must detect when the canonical audio changed after the latest SonicTrace scan.
 
-Each saved analysis therefore stores a `sourceFingerprint` tied only to the R2 audio revision.
+Each saved analysis therefore stores a `sourceVersion` tied only to the R2 audio revision.
 
 Requirements:
 
@@ -303,7 +303,7 @@ Preferred implementation order:
 1. R2 object revision/ETag + size exposed by the private API;
 2. optional SHA-256 later if useful.
 
-If the current source fingerprint differs from `latest.json.sourceFingerprint`:
+If the current source version differs from `latest.json.sourceVersion`:
 
 ```text
 audioIntelligence.outdated = true

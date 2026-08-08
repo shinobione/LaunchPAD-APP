@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const guard = fs.readFileSync('js/visual-card-export-guard.js', 'utf8');
-const build = fs.readFileSync('js/build-config.js', 'utf8');
-const worker = fs.readFileSync('sw.js', 'utf8');
-const visualCard = fs.readFileSync('js/features/visual-card.js', 'utf8');
+const read = path => fs.readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
+const guard = read('js/visual-card-export-guard.js');
+const build = read('js/build-config.js');
+const worker = read('sw.js');
+const visualCard = read('js/features/visual-card.js');
 
 assert.ok(guard.includes("image.crossOrigin = 'anonymous'"), 'Visual Card images must request anonymous CORS before canvas rendering.');
 assert.ok(guard.indexOf("image.crossOrigin = 'anonymous'") < guard.indexOf('return image'), 'CORS mode must be applied before the Image instance is returned.');

@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import { assertCurrentBuild } from './lib/build-metadata.mjs';
 
-const read = path => fs.readFileSync(path, 'utf8');
+const read = path => fs.readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
 const bridge = read('js/features/visual/visual-engine.js').trim();
 assert.equal(bridge, "export { createVisualController } from './visual-engine-live.js';");
 
