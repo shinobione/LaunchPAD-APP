@@ -1,6 +1,6 @@
 # LaunchPAD roadmap
 
-> Current application build: `2026.08.08.63` — release `sonictrace-admin-link-20260808`.
+> Current application build: `2026.08.08.64` — release `sonictrace-badge-fix-20260808`.
 
 The repository cleanup/reconciliation phase is complete. This roadmap now tracks product/runtime work rather than historical migration chores.
 
@@ -31,6 +31,7 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Build 61 adds Creep Signal as the ninth preset and establishes a deliberately non-radial, screen-traversing motion language.
 - [x] Build 62/62.1 polishes Studio/Audio Lab/mobile-player layout and advances the visible build/cache marker correctly.
 - [x] Build 63 adds SonicTrace to the persistent desktop admin shortcut strip with the same shared admin gate as LRC Maker and Track Manager.
+- [x] Build 64 corrects SonicTrace's live PWA styling so the cyan/teal `ST` control uses the same pill geometry and behavior as the two existing admin tools.
 - [x] All Markdown documentation is version-coupled to `js/build-config.js` through CI.
 
 ## P0 — real-device validation
