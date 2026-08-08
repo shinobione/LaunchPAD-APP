@@ -12,12 +12,13 @@ for (const required of [
   "{ id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode }",
   "{ id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }",
   "{ id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }",
+  "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
   'base.readSpectrum?.(raw)',
   'reading = readAudioLabSpectrum(raw)',
   'boostLiveFeatures(features)',
-  "mode === 'bass-fracture' || mode === 'gravity-lens' ? 1.05",
-  "document.documentElement.dataset.audioLabRenderer = 'six-core-v1'",
-  "document.documentElement.dataset.audioLabPresetCount = '6'",
+  "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' ? 1.05",
+  "document.documentElement.dataset.audioLabRenderer = 'seven-core-v1'",
+  "document.documentElement.dataset.audioLabPresetCount = '7'",
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ]) assert.ok(live.includes(required), `Live Audio Lab integration is missing ${required}.`);
 
@@ -31,44 +32,44 @@ for (const required of ['drawNeonShatterV2Mode', 'drawLiquidChromeV2Mode', 'cons
   assert.ok(core.includes(required), `Validated baseline renderer is missing ${required}.`);
 }
 
+const motion = read('js/features/visual/motion-spring.js');
+for (const required of ['const FRAME_STATES = new WeakMap()', 'export function beginMotionFrame(', 'export function springChannel(', 'export function motionPhase(', 'channel.velocity']) {
+  assert.ok(motion.includes(required), `Shared motion helper is missing ${required}.`);
+}
+
 const reactor = read('js/features/visual/pulse-reactor.js');
 for (const required of [
-  'drawPulseReactorMode',
-  'const ringCount = mobile ? 3 : 4',
-  'const segmentCount = mobile ? 14 : 24',
-  'const spokeCount = mobile ? 10 : 18',
-  'const shardCount = mobile ? 4 : 7',
-  'const breakMask = clamp(',
-  'const segmentFracture = fracture * breakMask',
-  'const visible = clamp((drive - .2) * 1.45)',
-  'const drift = time * activity * .055'
-]) assert.ok(reactor.includes(required), `Pulse Reactor readability contract is missing ${required}.`);
+  "from './motion-spring.js'", 'beginMotionFrame(context, time)', "springChannel(motion, 'impact'", 'motionPhase(time, activity, .31)',
+  'const ringCount = mobile ? 3 : 4', 'const segmentCount = mobile ? 14 : 24',
+  'const spokeCount = mobile ? 10 : 18', 'const shardCount = mobile ? 4 : 7',
+  'const elasticWobble = Math.sin(', 'const spokeSway = Math.sin('
+]) assert.ok(reactor.includes(required), `Pulse Reactor elasticity contract is missing ${required}.`);
 
 const fracture = read('js/features/visual/bass-fracture.js');
 for (const required of [
-  'drawBassFractureMode',
-  'const motionScale = mobile ? 1.42 : 1.08',
-  'const layerCount = mobile ? 2 : 3',
-  'const sectorCount = mobile ? 12 : 16',
-  'const crackCount = mobile ? 8 : 12',
-  'const baseRadius = minSide * (mobile ? .305 : .305)',
-  'const drift = time * activity * .03'
-]) assert.ok(fracture.includes(required), `Bass Fracture readability/mobile contract is missing ${required}.`);
+  "from './motion-spring.js'", 'beginMotionFrame(context, time)', "springChannel(motion, 'rupture'", 'motionPhase(time, activity, .22)',
+  'const motionScale = mobile ? 1.58 : 1.18', 'const layerCount = mobile ? 2 : 3',
+  'const sectorCount = mobile ? 12 : 16', 'const crackCount = mobile ? 8 : 12',
+  'const crackPropagation = clamp(', 'const sway = Math.sin('
+]) assert.ok(fracture.includes(required), `Bass Fracture elasticity/mobile contract is missing ${required}.`);
 
 const lens = read('js/features/visual/gravity-lens.js');
 for (const required of [
-  'export function drawGravityLensMode(',
-  'const warp = clamp(',
-  'const caustic = clamp(',
-  'const bandCount = mobile ? 4 : 6',
-  'const arcCount = mobile ? 12 : 20',
-  'const streamCount = mobile ? 8 : 14',
-  'const drift = time * activity * .032',
-  'context.quadraticCurveTo(',
-  'const einsteinRadius ='
-]) assert.ok(lens.includes(required), `Gravity Lens FFT/mobile contract is missing ${required}.`);
+  "from './motion-spring.js'", 'beginMotionFrame(context, time)', "springChannel(motion, 'warp'", 'motionPhase(time, activity, .17)',
+  'const bandCount = mobile ? 4 : 6', 'const arcCount = mobile ? 12 : 20',
+  'const streamCount = mobile ? 8 : 14', 'const breathing = Math.sin(', 'const streamDrift = Math.sin(',
+  'context.quadraticCurveTo('
+]) assert.ok(lens.includes(required), `Gravity Lens elasticity contract is missing ${required}.`);
 
-for (const isolated of [reactor, fracture, lens]) {
+const bio = read('js/features/visual/bio-structure.js');
+for (const required of [
+  'export function drawBioStructureMode(', "from './motion-spring.js'", 'beginMotionFrame(context, time)',
+  "springChannel(motion, 'breath'", 'motionPhase(time, activity, .24)',
+  'const ribCount = mobile ? 5 : 8', 'const veinCount = mobile ? 8 : 14',
+  'const nodeCount = mobile ? 6 : 9', 'context.quadraticCurveTo(', 'const membranePulse = Math.sin('
+]) assert.ok(bio.includes(required), `Bio Structure FFT/mobile contract is missing ${required}.`);
+
+for (const isolated of [reactor, fracture, lens, bio]) {
   assert.ok(!isolated.includes('requestAnimationFrame('));
   assert.ok(!isolated.includes('setInterval('));
   assert.ok(!isolated.includes('Math.random('));
@@ -81,4 +82,4 @@ for (const required of ['function readSpectrum(target)', 'analyser.getByteFreque
 
 const bridge = read('js/features/visual/visual-engine.js').trim();
 assert.equal(bridge, "export { createVisualController } from './visual-engine-live.js';");
-console.log('Build 54 Audio Lab visuals share Spectrum FFT; Pulse/Bass are clearer and Gravity Lens is mobile-budgeted.');
+console.log('Build 55 Audio Lab keeps Spectrum-shared FFT, adds spring elasticity and introduces mobile-budgeted Bio Structure.');
