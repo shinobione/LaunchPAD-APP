@@ -1,6 +1,6 @@
 # LaunchPAD Cloudflare services
 
-> Current application build: `2026.08.08.61` — release `creep-signal-20260808`.
+> Current application build: `2026.08.08.62` — release `ui-polish-62-1-20260808`.
 
 Current backend contracts: public media Worker **v2.6**, private Track Manager **v5.7**.
 
@@ -30,7 +30,7 @@ Output:
 dist/cloudflare-pages
 ```
 
-The builder copies the runtime verbatim. A Pages deployment must never contain a host-only patch missing from `main`. Build 61 keeps the validated kinetic/onset/direct-impact Audio Lab architecture, adds `creep-signal.js` as the ninth isolated renderer, and advances the cache namespace to `shinobi-launchpad-v61`.
+The builder copies the runtime verbatim. A Pages deployment must never contain a host-only patch missing from `main`. Build 62.1 keeps the validated Audio Lab architecture and advances the PWA cache namespace to `shinobi-launchpad-v62` after the Studio/Audio Lab/mobile-player UI polish.
 
 ## Public media Worker
 

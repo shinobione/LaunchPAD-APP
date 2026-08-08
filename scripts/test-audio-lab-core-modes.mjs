@@ -138,6 +138,5 @@ for (const required of [
 ]) assert.ok(worker.includes(required), `PWA shell is missing ${required}.`);
 
 const build = assertCurrentBuild('Audio Lab current build');
-assert.equal(build.display, '2026.08.08.61');
-assert.equal(build.release, 'creep-signal-20260808');
+assert.ok(build.number >= 61, `Audio Lab nine-preset baseline requires Build 61 or newer, got ${build.display}.`);
 console.log(`Audio Lab exposes nine shared-FFT presets with kinetic flow, adaptive onset detection and direct visual impact under ${build.display}.`);

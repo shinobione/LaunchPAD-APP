@@ -1,6 +1,6 @@
 # LaunchPAD release checklist
 
-> Current application build: `2026.08.08.61` — release `creep-signal-20260808`.
+> Current application build: `2026.08.08.62` — release `ui-polish-62-1-20260808`.
 
 This checklist separates four independent states: **source merge**, **web-host deployment**, **Worker deployment**, and **R2 catalog/media publication**.
 

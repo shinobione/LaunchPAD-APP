@@ -1,8 +1,14 @@
 # Changelog
 
-> Current application build: `2026.08.08.61` — release `creep-signal-20260808`.
+> Current application build: `2026.08.08.62` — release `ui-polish-62-1-20260808`.
 
 This file intentionally tracks the recent stabilized release line. Older milestone-by-milestone history remains available in Git history and merged pull requests.
+
+## Build 62.1 — UI microfix
+
+- Correct the visible Build/Release marker after the Build 62/62.1 UI polish so the About/build panel no longer reports Build 61.
+- Advance the PWA cache namespace to `shinobi-launchpad-v62` so installed clients refresh the current shell/assets.
+- Keep the Build 62.1 UI scope unchanged: Studio Canvas spacing, mobile Audio Lab center-cover removal, and mobile mini-player seek-thumb alignment.
 
 ## Build 61 — Creep Signal
 
