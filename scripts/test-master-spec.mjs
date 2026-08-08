@@ -24,12 +24,12 @@ includesAll(read('js/features/home-editorial.js'), ["const DEFAULT_VISUAL_MODE =
 const registry = read('js/features/visual/audio-lab-registry.js');
 includesAll(registry, [
   "AUDIO_LAB_DEFAULT_MODE = 'neon-shatter'", "id: 'neon-shatter'", "id: 'spectrum'", "id: 'liquid-chrome'",
-  "id: 'pulse-reactor'", "id: 'bass-fracture'", "id: 'gravity-lens'", "id: 'bio-structure'",
+  "id: 'pulse-reactor'", "id: 'bass-fracture'", "id: 'gravity-lens'", "id: 'bio-structure'", "id: 'void-bloom'",
   "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum'])"
 ], 'Audio Lab registry');
 for (const retired of ['aurora-glass', 'nebula', 'singularity']) assert.ok(!registry.includes(retired), `Retired Audio Lab preset returned: ${retired}.`);
 const presetCount = (registry.match(/Object\.freeze\(\{ id:/g) || []).length;
-assert.equal(presetCount, 7, 'Audio Lab must expose exactly seven sanctioned presets.');
+assert.equal(presetCount, 8, 'Audio Lab must expose exactly eight sanctioned presets.');
 
 const visualBase = read('js/features/visual/visual-engine-v2.js');
 function extractFunction(source, name) {
@@ -51,7 +51,7 @@ includesAll(visualBase, ["{ id: 'spectrum', label: 'Spectrum' }", 'function read
 const coreModes = read('js/features/visual/visual-engine-core-modes.js');
 includesAll(coreModes, ['drawNeonShatterV2Mode', 'drawLiquidChromeV2Mode', 'const gatedDrift = time * activity * .16', 'const phase = time * activity * .2'], 'Validated baseline FFT modes');
 
-// Build 57 kinetic-flow system retained in Build 59.
+// Build 57 kinetic-flow system retained through Build 60.
 const motion = read('js/features/visual/motion-spring.js');
 includesAll(motion, [
   'const FRAME_STATES = new WeakMap()', 'phases: new Map()', 'export function beginMotionFrame(', 'export function springChannel(',
@@ -79,26 +79,33 @@ includesAll(bio, [
   'shapeAudioDrive(', "advanceMotionPhase(motion, 'bio-flow'", 'const driftRadius =', 'const bodyTilt =',
   'const ribCount = mobile ? 5 : 8', 'const veinCount = mobile ? 8 : 14'
 ], 'Bio Structure kinetic flow');
-for (const isolated of [pulse, fracture, lens, bio]) {
+const bloom = read('js/features/visual/void-bloom.js');
+includesAll(bloom, [
+  'export function drawVoidBloomMode(', 'shapeAudioDrive(', "advanceMotionPhase(motion, 'void-bloom-flow'",
+  'const petalCount = mobile ? 7 : 11', 'const veinCount = mobile ? 7 : 16',
+  "springChannel(motion, 'open'", 'context.bezierCurveTo(', 'context.quadraticCurveTo('
+], 'Void Bloom kinetic flow');
+for (const isolated of [pulse, fracture, lens, bio, bloom]) {
   assert.ok(!isolated.includes('requestAnimationFrame('), 'Isolated visual must use the shared renderer scheduler.');
   assert.ok(!isolated.includes('setInterval('), 'Isolated visual must not self-schedule an autonomous loop.');
   assert.ok(!isolated.includes('Math.random('), 'Isolated visual geometry must remain deterministic.');
   assert.ok(!isolated.includes('shapeMotionTarget('), 'Build 56 soft-knee compression must not remain in kinetic renderers.');
 }
 
-// Build 59 direct-impact lane keeps Build 58 onset detection but reserves post-pose headroom.
+// Build 59 direct-impact lane remains the transient contract for Build 60.
 const live = read('js/features/visual/visual-engine-live.js');
 includesAll(live, [
   "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
+  "{ id: 'void-bloom', label: 'Void Bloom', renderer: drawVoidBloomMode }",
   'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)',
-  "const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure'])",
+  "const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure', 'void-bloom'])",
   'function createAdaptiveLowPunchTracker()', 'relativeContrast', 'relativeFlux', 'relativeRise', 'subLift',
   'function createDirectVisualImpactTracker()', 'punchRise * 3.8', 'kickRise * 2.25', 'contrastRise * 6.5',
-  'function applyDirectKineticImpact(context, width, height, mode, features)',
+  'function applyDirectKineticImpact(context, width, height, mode, features)', "mode === 'void-bloom'",
   'features.visualImpact = visualImpactTracker.update(features)', 'data.audioLabVisualImpact = values[6]',
   'function kineticImpactFeatures(mode, features)', 'features.punch = adaptivePunch.punch',
-  "dataset.audioLabRenderer = 'seven-core-v4'", `dataset.audioLabPresetCount = '${presetCount}'`,
-  "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' ? 1.05",
+  "dataset.audioLabRenderer = 'eight-core-v1'", `dataset.audioLabPresetCount = '${presetCount}'`,
+  "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' || mode === 'void-bloom' ? 1.05",
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ], 'Live Audio Lab visuals');
 for (const retired of ['aurora-glass', 'nebula', 'singularity', 'synthesizePlaybackSpectrum', "'bars'"]) assert.ok(!live.includes(retired), `Retired Audio Lab path returned: ${retired}.`);
@@ -112,13 +119,13 @@ assert.ok(!signal.includes('createMediaStreamSource('));
 includesAll(read('js/features/lyrics-studio.js'), ["video.setAttribute('webkit-playsinline', '')", "routeToHash({ type: 'studio', id: trackId })", "canvasVideo.addEventListener('canplay'"], 'Mobile Lyrics Studio');
 includesAll(read('js/features/admin-access.js'), ['resolveLrcMakerAccess', 'https://shinobione.github.io/lrc-maker/', "label: 'LRC Maker'"], 'Admin access');
 const worker = read('sw.js');
-includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'"], 'PWA shell');
+includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260808-direct-impact-v59');
-assert.equal(build.cache, 'shinobi-launchpad-v59');
-assert.equal(build.display, '2026.08.08.59');
-assert.equal(build.release, 'direct-impact-20260808');
-assert.equal(build.revision, 'direct-impact-1');
+assert.equal(build.id, '20260808-void-bloom-v60');
+assert.equal(build.cache, 'shinobi-launchpad-v60');
+assert.equal(build.display, '2026.08.08.60');
+assert.equal(build.release, 'void-bloom-20260808');
+assert.equal(build.revision, 'void-bloom-1');
 
 console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}) with ${presetCount} sanctioned Audio Lab presets.`);

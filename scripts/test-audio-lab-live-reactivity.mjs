@@ -13,18 +13,19 @@ for (const required of [
   "{ id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }",
   "{ id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }",
   "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
-  "const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure'])",
+  "{ id: 'void-bloom', label: 'Void Bloom', renderer: drawVoidBloomMode }",
+  "const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure', 'void-bloom'])",
   'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)', 'boostLiveFeatures(features)',
   'function createAdaptiveLowPunchTracker()', 'relativeContrast', 'relativeFlux', 'relativeRise',
   'function createDirectVisualImpactTracker()', 'punchRise * 3.8', 'kickRise * 2.25', 'contrastRise * 6.5',
   'function applyDirectKineticImpact(context, width, height, mode, features)',
-  "mode === 'pulse-reactor'", "mode === 'bass-fracture'", "mode === 'gravity-lens'", "mode === 'bio-structure'",
+  "mode === 'pulse-reactor'", "mode === 'bass-fracture'", "mode === 'gravity-lens'", "mode === 'bio-structure'", "mode === 'void-bloom'",
   'function kineticImpactFeatures(mode, features)', 'punch * 1.08', 'punch * .92',
   'features.punch = adaptivePunch.punch', 'features.visualImpact = visualImpactTracker.update(features)',
   'data.audioLabPunch = values[5]', 'data.audioLabVisualImpact = values[6]',
-  "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' ? 1.05",
-  "document.documentElement.dataset.audioLabRenderer = 'seven-core-v4'",
-  "document.documentElement.dataset.audioLabPresetCount = '7'",
+  "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' || mode === 'void-bloom' ? 1.05",
+  "document.documentElement.dataset.audioLabRenderer = 'eight-core-v1'",
+  "document.documentElement.dataset.audioLabPresetCount = '8'",
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ]) assert.ok(live.includes(required), `Live Audio Lab integration is missing ${required}.`);
 
@@ -74,7 +75,15 @@ for (const required of [
   'context.quadraticCurveTo(', 'const membranePulse = Math.sin('
 ]) assert.ok(bio.includes(required), `Bio Structure kinetic/mobile contract is missing ${required}.`);
 
-for (const isolated of [reactor, fracture, lens, bio]) {
+const bloom = read('js/features/visual/void-bloom.js');
+for (const required of [
+  'export function drawVoidBloomMode(', 'shapeAudioDrive(', 'beginMotionFrame(context, time)',
+  "springChannel(motion, 'open'", "advanceMotionPhase(motion, 'void-bloom-flow'", 'const driftRadius =', 'const globalTilt =',
+  'const petalCount = mobile ? 7 : 11', 'const veinCount = mobile ? 7 : 16',
+  'context.bezierCurveTo(', 'context.quadraticCurveTo('
+]) assert.ok(bloom.includes(required), `Void Bloom kinetic/mobile contract is missing ${required}.`);
+
+for (const isolated of [reactor, fracture, lens, bio, bloom]) {
   assert.ok(!isolated.includes('requestAnimationFrame('));
   assert.ok(!isolated.includes('setInterval('));
   assert.ok(!isolated.includes('Math.random('));
@@ -88,4 +97,4 @@ for (const required of ['function readSpectrum(target)', 'analyser.getByteFreque
 
 const bridge = read('js/features/visual/visual-engine.js').trim();
 assert.equal(bridge, "export { createVisualController } from './visual-engine-live.js';");
-console.log('Build 59 keeps kinetic flow and adaptive onset detection, then applies a separate post-pose visual impact lane to the four kinetic modes.');
+console.log('Build 60 keeps direct-impact kinetic flow and adds Void Bloom with a mobile-first geometry budget.');

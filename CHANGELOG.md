@@ -1,8 +1,19 @@
 # Changelog
 
-> Current application build: `2026.08.08.59` — release `direct-impact-20260808`.
+> Current application build: `2026.08.08.60` — release `void-bloom-20260808`.
 
 This file intentionally tracks the recent stabilized release line. Older milestone-by-milestone history remains available in Git history and merged pull requests.
+
+## Build 60 — Void Bloom
+
+- Add **Void Bloom** as the eighth sanctioned Audio Lab preset, isolated in `js/features/visual/void-bloom.js`.
+- Keep the validated Build 57 kinetic motion, Build 58 adaptive low-frequency onset detection and Build 59 direct post-pose visual impact lane intact.
+- Drive Void Bloom from Spectrum's shared FFT: bass opens/deepens the bloom, mids twist individual petals, highs/transients drive luminous edge veins and integrated phase keeps the whole form breathing/drifting/rotating.
+- Give Void Bloom a dedicated Build 59 direct-impact gesture: whole-bloom expansion plus rotation snap on detected low-frequency attacks, outside ordinary renderer target clamps.
+- Define a mobile-first budget of 7 petals / 7 veins / DPR 1.05; desktop uses 11 petals / 16 veins / DPR up to 2.
+- Keep **Spectrum**, **Neon Shatter** and **Liquid Chrome** unchanged.
+- Add no private RAF/timers, random motion or particle field.
+- Cache the new renderer in the PWA shell and advance the namespace to Build 60 / cache v60.
 
 ## Build 59 — Direct impact
 
@@ -137,7 +148,7 @@ This file intentionally tracks the recent stabilized release line. Older milesto
 ## Build 43 — Admin tool persistence
 
 - Style LRC Maker as a LaunchPAD admin control.
-- Persist admin mode for installed desktop PWA launches after a deliberate `?admin=1` opt-in; `?admin=0` clears it.
+- Persist admin mode for the installed desktop PWA launches after a deliberate `?admin=1` opt-in; `?admin=0` clears it.
 
 ## Build 42 — Audio/Admin integration
 

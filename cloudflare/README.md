@@ -1,6 +1,6 @@
 # LaunchPAD Cloudflare services
 
-> Current application build: `2026.08.08.59` — release `direct-impact-20260808`.
+> Current application build: `2026.08.08.60` — release `void-bloom-20260808`.
 
 Current backend contracts: public media Worker **v2.6**, private Track Manager **v5.7**.
 
@@ -30,7 +30,7 @@ Output:
 dist/cloudflare-pages
 ```
 
-The builder copies the runtime verbatim. A Pages deployment must never contain a host-only patch missing from `main`. Build 59 keeps Build 57 kinetic motion and Build 58 onset detection, adds the direct post-pose visual-impact lane in `visual-engine-live.js`, and advances the cache namespace to `shinobi-launchpad-v59`.
+The builder copies the runtime verbatim. A Pages deployment must never contain a host-only patch missing from `main`. Build 60 keeps the validated kinetic/onset/direct-impact Audio Lab architecture, adds `void-bloom.js` as the eighth isolated renderer, and advances the cache namespace to `shinobi-launchpad-v60`.
 
 ## Public media Worker
 

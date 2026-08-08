@@ -9,6 +9,7 @@ import { drawPulseReactorMode } from './pulse-reactor.js';
 import { drawBassFractureMode } from './bass-fracture.js';
 import { drawGravityLensMode } from './gravity-lens.js';
 import { drawBioStructureMode } from './bio-structure.js';
+import { drawVoidBloomMode } from './void-bloom.js';
 
 const DEFAULT_MODE = 'neon-shatter';
 const CUSTOM_MODES = [
@@ -17,7 +18,8 @@ const CUSTOM_MODES = [
   { id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode },
   { id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode },
   { id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode },
-  { id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }
+  { id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode },
+  { id: 'void-bloom', label: 'Void Bloom', renderer: drawVoidBloomMode }
 ];
 const CONTROL_MODES = [
   { id: 'neon-shatter', label: 'Neon Shatter' },
@@ -26,11 +28,12 @@ const CONTROL_MODES = [
   { id: 'pulse-reactor', label: 'Pulse Reactor' },
   { id: 'bass-fracture', label: 'Bass Fracture' },
   { id: 'gravity-lens', label: 'Gravity Lens' },
-  { id: 'bio-structure', label: 'Bio Structure' }
+  { id: 'bio-structure', label: 'Bio Structure' },
+  { id: 'void-bloom', label: 'Void Bloom' }
 ];
 const CUSTOM_RENDERERS = new Map(CUSTOM_MODES.map(mode => [mode.id, mode.renderer]));
 const CUSTOM_MODE_IDS = CUSTOM_MODES.map(mode => mode.id);
-const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure']);
+const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure', 'void-bloom']);
 const CUSTOM_FRAME_INTERVAL = 1000 / 60;
 const TELEMETRY_INTERVAL = 120;
 
@@ -50,7 +53,7 @@ function prepareCanvas(canvas, mode) {
   const mobile = mobileVisualDevice(rect.width);
   const dprCap = mobile
     ? mode === 'neon-shatter' ? 1
-      : mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' ? 1.05
+      : mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' || mode === 'void-bloom' ? 1.05
         : mode === 'pulse-reactor' ? 1.1
           : 1.35
     : 2;
@@ -139,6 +142,10 @@ function applyDirectKineticImpact(context, width, height, mode, features) {
       1 + impact * (mobile ? .16 : .22),
       1 - impact * (mobile ? .11 : .16)
     );
+  } else if (mode === 'void-bloom') {
+    const scale = 1 + impact * (mobile ? .22 : .3);
+    context.rotate(impact * (mobile ? .055 : .08));
+    context.scale(scale, scale);
   }
 
   context.translate(-width / 2, -height / 2);
@@ -173,16 +180,6 @@ function boostLiveFeatures(features) {
   return features;
 }
 
-/**
- * Adaptive low-frequency onset detector.
- *
- * The ordinary bass envelope is intentionally smooth and useful for motion,
- * but once a dense section starts it stops distinguishing one kick from the
- * next. This detector keeps a slow local bass baseline plus a fast envelope
- * and low-bin spectral flux. A kick/bass hit therefore remains visible when it
- * rises relative to the immediately preceding groove, not only when absolute
- * bass level is low.
- */
 function createAdaptiveLowPunchTracker() {
   let slowBass = 0;
   let fastBass = 0;
@@ -245,15 +242,6 @@ function createAdaptiveLowPunchTracker() {
   };
 }
 
-/**
- * Converts detected low-frequency attacks into a short visual-only impulse.
- *
- * This intentionally does NOT feed back into the ordinary bass/kick spring
- * targets. It measures the rising edge of punch/kick/low-band contrast and
- * creates reserved headroom after the normal renderer pose has been computed.
- * Dense passages can therefore still produce a visible hit even when their
- * ordinary audio targets are already near their clamp ceiling.
- */
 function createDirectVisualImpactTracker() {
   let previousPunch = 0;
   let previousKick = 0;
@@ -361,9 +349,9 @@ export function createVisualController(options) {
   });
   applyMode(DEFAULT_MODE, defaultButton);
 
-  document.documentElement.dataset.audioLabRenderer = 'seven-core-v4';
+  document.documentElement.dataset.audioLabRenderer = 'eight-core-v1';
   document.documentElement.dataset.audioLabFeed = 'spectrum-shared';
-  document.documentElement.dataset.audioLabPresetCount = '7';
+  document.documentElement.dataset.audioLabPresetCount = '8';
 
   function readReactiveFrame() {
     if (audio.paused || audio.ended) {

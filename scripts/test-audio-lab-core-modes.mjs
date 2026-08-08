@@ -18,10 +18,11 @@ for (const required of [
   "id: 'neon-shatter', label: 'Neon Shatter'", "id: 'spectrum', label: 'Spectrum'",
   "id: 'liquid-chrome', label: 'Liquid Chrome'", "id: 'pulse-reactor', label: 'Pulse Reactor'",
   "id: 'bass-fracture', label: 'Bass Fracture'", "id: 'gravity-lens', label: 'Gravity Lens'",
-  "id: 'bio-structure', label: 'Bio Structure'", "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum'])"
+  "id: 'bio-structure', label: 'Bio Structure'", "id: 'void-bloom', label: 'Void Bloom'",
+  "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum'])"
 ]) assert.ok(registry.includes(required), `Audio Lab registry is missing ${required}.`);
 for (const forbidden of retiredIds) assert.ok(!registry.includes(forbidden), `Retired preset leaked into registry: ${forbidden}.`);
-assert.equal((registry.match(/Object\.freeze\(\{ id:/g) || []).length, 7, 'Audio Lab must expose exactly seven validated presets.');
+assert.equal((registry.match(/Object\.freeze\(\{ id:/g) || []).length, 8, 'Audio Lab must expose exactly eight validated presets.');
 
 const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
@@ -31,15 +32,16 @@ for (const required of [
   "{ id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }",
   "{ id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }",
   "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
+  "{ id: 'void-bloom', label: 'Void Bloom', renderer: drawVoidBloomMode }",
   "{ id: 'spectrum', label: 'Spectrum' }", 'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)',
-  "const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure'])",
+  "const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure', 'void-bloom'])",
   'function createAdaptiveLowPunchTracker()', 'relativeContrast', 'relativeFlux', 'relativeRise',
   'function createDirectVisualImpactTracker()', 'function applyDirectKineticImpact(context, width, height, mode, features)',
   'features.visualImpact = visualImpactTracker.update(features)', 'data.audioLabVisualImpact = values[6]',
   'function kineticImpactFeatures(mode, features)', 'features.punch = adaptivePunch.punch',
-  "document.documentElement.dataset.audioLabRenderer = 'seven-core-v4'",
-  "document.documentElement.dataset.audioLabPresetCount = '7'",
-  "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' ? 1.05"
+  "document.documentElement.dataset.audioLabRenderer = 'eight-core-v1'",
+  "document.documentElement.dataset.audioLabPresetCount = '8'",
+  "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' || mode === 'void-bloom' ? 1.05"
 ]) assert.ok(live.includes(required), `Audio Lab integration is missing ${required}.`);
 
 const core = read('js/features/visual/visual-engine-core-modes.js');
@@ -81,7 +83,14 @@ for (const required of [
   "springChannel(motion, 'breath'", "advanceMotionPhase(motion, 'bio-flow'", 'const driftRadius =', 'context.quadraticCurveTo('
 ]) assert.ok(bio.includes(required), `Bio Structure contract is missing ${required}.`);
 
-for (const isolated of [reactor, fracture, lens, bio]) {
+const bloom = read('js/features/visual/void-bloom.js');
+for (const required of [
+  'export function drawVoidBloomMode(', 'shapeAudioDrive(', 'const petalCount = mobile ? 7 : 11',
+  'const veinCount = mobile ? 7 : 16', "springChannel(motion, 'open'", "advanceMotionPhase(motion, 'void-bloom-flow'",
+  'const driftRadius =', 'const globalTilt =', 'context.bezierCurveTo(', 'context.quadraticCurveTo('
+]) assert.ok(bloom.includes(required), `Void Bloom contract is missing ${required}.`);
+
+for (const isolated of [reactor, fracture, lens, bio, bloom]) {
   assert.ok(!isolated.includes('setInterval('));
   assert.ok(!isolated.includes('requestAnimationFrame('));
   assert.ok(!isolated.includes('Math.random('));
@@ -116,10 +125,10 @@ for (const required of [
   "'./js/features/visual/audio-reactivity.js'", "'./js/features/visual/audio-lab-registry.js'",
   "'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'",
   "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'",
-  "'./js/features/visual/bio-structure.js'"
+  "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'"
 ]) assert.ok(worker.includes(required), `PWA shell is missing ${required}.`);
 
 const build = assertCurrentBuild('Audio Lab current build');
-assert.equal(build.display, '2026.08.08.59');
-assert.equal(build.release, 'direct-impact-20260808');
-console.log(`Audio Lab exposes seven shared-FFT presets with kinetic flow, adaptive onset detection and a separate direct visual impact lane under ${build.display}.`);
+assert.equal(build.display, '2026.08.08.60');
+assert.equal(build.release, 'void-bloom-20260808');
+console.log(`Audio Lab exposes eight shared-FFT presets with kinetic flow, adaptive onset detection and direct visual impact under ${build.display}.`);

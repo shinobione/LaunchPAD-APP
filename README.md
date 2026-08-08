@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.08.59` — release `direct-impact-20260808`.
+> Current application build: `2026.08.08.60` — release `void-bloom-20260808`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -36,19 +36,19 @@ GitHub main
 
 See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the authoritative hosting map.
 
-## Build 59 highlights
+## Build 60 highlights
 
-Build 59 fixes the remaining transient-impact failure exposed by real-device testing: Build 58 detected low-frequency onsets correctly but fed them back into already-clamped renderer targets, so dense passages could still look flat.
+Build 60 expands the validated Build 59 motion/reactivity model with **Void Bloom**, an isolated eighth Audio Lab preset designed to feel alive before the kick and still preserve a separate kick/bass hit.
 
 - **Spectrum**, **Neon Shatter** and **Liquid Chrome** remain untouched as the trusted baseline.
 - Build 57's integrated phase still owns continuous travel, rotation, breathing and groove motion.
-- Build 58's adaptive low-frequency tracker still compares fast bass, slow local baseline, low-bin positive flux and short-term bass rise.
-- A new `createDirectVisualImpactTracker()` converts rising punch/kick/low-band contrast into a short visual-only impulse with its own decay.
-- The impulse is applied **after** the normal renderer pose through `applyDirectKineticImpact()`, preserving visual headroom even when bass/kick spring targets are already near their clamp ceiling.
-- Pulse Reactor gets a whole-reactor expansion/twist hit; Bass Fracture gets a horizontal rupture/compression hit; Gravity Lens gets an anisotropic snap/rotation; Bio Structure gets an organic contraction/expansion hit.
-- Audio Lab telemetry now exposes both `audioLabPunch` and `audioLabVisualImpact`, making detector activity and actual visual impulse separately observable.
-- No new primitives, private RAF/timer, random motion or higher mobile DPR budget is introduced; the extra movement is a cheap canvas transform.
-- The PWA cache advances to v59 so Build 58 renderer/controller code cannot remain hidden in an installed PWA cache.
+- Build 58's adaptive onset detector and Build 59's post-pose `visualImpact` lane remain unchanged.
+- **Void Bloom** uses FFT-sampled petals: bass opens/deepens the bloom, mids twist individual petals, highs drive luminous veins and edge motion.
+- The new renderer uses the same integrated kinetic phase as the validated modes so the bloom drifts, breathes and rotates continuously while real audio exists.
+- The existing direct-impact lane gives Void Bloom a reserved whole-bloom expansion/twist on kick/bass transients after the normal pose is computed.
+- Mobile budget is fixed at 7 petals / 7 veins / DPR 1.05; desktop uses 11 petals / 16 veins / DPR up to 2.
+- Void Bloom owns no private RAF/timer, uses no `Math.random()` motion and adds no particle field.
+- The PWA cache advances to v60 so installed clients cannot remain on Build 59 visual runtime code.
 
 ## Canonical media model
 

@@ -1,6 +1,6 @@
 # LaunchPAD deployment topology
 
-> Current application build: `2026.08.08.59` — release `direct-impact-20260808`.
+> Current application build: `2026.08.08.60` — release `void-bloom-20260808`.
 
 ## One source of truth
 
@@ -10,7 +10,7 @@
                          GitHub repository
                               main
                                |
-                      validated Build 59
+                      validated Build 60
                                |
                 +--------------+--------------+
                 |                             |
@@ -34,18 +34,18 @@
                       shinobiwan-media
 ```
 
-## Canonical Build 59
+## Canonical Build 60
 
 The current application release is defined only in `js/build-config.js`:
 
 ```text
-id       20260808-direct-impact-v59
-cache    shinobi-launchpad-v59
-display  2026.08.08.59
-release  direct-impact-20260808
+id       20260808-void-bloom-v60
+cache    shinobi-launchpad-v60
+display  2026.08.08.60
+release  void-bloom-20260808
 ```
 
-Every Markdown document must carry the same display/release markers; CI rejects stale documentation. The cache namespace advances with Build 59 so the post-pose direct-impact controller cannot be hidden by stale Build 58 shell assets.
+Every Markdown document must carry the same display/release markers; CI rejects stale documentation. The cache namespace advances with Build 60 so the new Void Bloom renderer and eight-preset controller cannot be hidden by stale Build 59 shell assets.
 
 ## Web hosting
 
