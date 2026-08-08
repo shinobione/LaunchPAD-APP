@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD architecture
 
-> Current application build: `2026.08.08.59` — release `direct-impact-20260808`.
+> Current application build: `2026.08.08.60` — release `void-bloom-20260808`.
 
 LaunchPAD is a modular static PWA whose application source lives in GitHub `main`. The web shell is mirrored to GitHub Pages and Cloudflare Pages; production catalog/media state lives in Cloudflare R2 and is exposed through public/private Workers.
 
@@ -65,6 +65,7 @@ js/
       bass-fracture.js        Isolated kinetic tectonic renderer
       gravity-lens.js         Isolated kinetic space-warp renderer
       bio-structure.js        Isolated kinetic living spine/rib renderer
+      void-bloom.js           Isolated kinetic petal/void renderer
       audio-lab-registry.js   Sanctioned preset list
     track-detail.js           Dedicated #track= route renderer
     track-videos.js           Canvas/video behavior
@@ -124,7 +125,7 @@ fallback:  track URL --> fetch/decode --> AnalyserNode --> shared FFT readers
 
 ### Motion / kinetic layer
 
-Build 57 introduced two independent concepts and Build 59 keeps them unchanged:
+Build 57 introduced two independent concepts and Build 60 keeps them unchanged:
 
 ```text
 raw FFT + smoothed features --> shapeAudioDrive() --> amplitude/spring targets
@@ -135,7 +136,7 @@ real audio activity ---------> advanceMotionPhase() --> integrated forward phase
 
 ### Adaptive onset + direct impact
 
-Build 58 introduced a low-frequency onset detector. Real-device testing then exposed a second problem: the detected punch was re-injected into renderer targets that were already near their clamp ceiling during loud sections. Build 59 keeps the detector but reserves a separate post-pose impact lane:
+Build 58 introduced a low-frequency onset detector. Real-device testing then exposed a second problem: the detected punch was re-injected into renderer targets that were already near their clamp ceiling during loud sections. Build 59 reserved a separate post-pose impact lane, retained unchanged in Build 60:
 
 ```text
 low FFT bins
@@ -157,11 +158,11 @@ low FFT bins
 
 `createDirectVisualImpactTracker()` watches the rising edge of adaptive punch, kick and fast-vs-baseline low-band contrast. Its envelope decays independently and is not mixed back into the normal bass/kick clamp. `applyDirectKineticImpact()` runs after the renderer pose is prepared, so transient movement retains headroom even when normal targets are already high.
 
-The direct impact remains scoped to **Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure**. **Neon Shatter, Spectrum and Liquid Chrome** keep their existing calibration.
+The direct impact is scoped to **Pulse Reactor, Bass Fracture, Gravity Lens, Bio Structure and Void Bloom**. **Neon Shatter, Spectrum and Liquid Chrome** keep their existing calibration.
 
 ### Audio Lab rendering contract
 
-Build 59 exposes seven sanctioned presets:
+Build 60 exposes eight sanctioned presets:
 
 - **Spectrum** — protected reference renderer and owner of the primary analyser contract.
 - **Neon Shatter** — unchanged baseline FFT-driven shard renderer.
@@ -170,18 +171,20 @@ Build 59 exposes seven sanctioned presets:
 - **Bass Fracture** — tectonic glide plus horizontal rupture/compression and mass kick on direct impact.
 - **Gravity Lens** — precession/field drift plus anisotropic stretch/rotation snap on direct impact.
 - **Bio Structure** — organism motion plus whole-body contraction/expansion on direct impact.
+- **Void Bloom** — FFT-sampled breathing petals: bass opens the bloom, mids twist petals, highs drive edge veins, integrated phase keeps the form alive, and direct impact expands/twists the whole bloom on low-frequency transients.
 
 All custom effects read Spectrum's analyser through `readSpectrum()` first. Paused/silent playback must settle. Isolated renderers must not own their own RAF/timer loop or use random motion as a substitute for signal reactivity.
 
 ### Mobile visual budget
 
-Performance limits remain unchanged in Build 59:
+Performance limits in Build 60:
 
 - Neon Shatter: DPR cap 1.0 on mobile.
 - Pulse Reactor: DPR cap 1.1, 3 rings, 14 segments/ring, 10 spokes and 4 peak-only core shards on mobile; desktop uses 4 / 24 / 18 / 7.
 - Bass Fracture: DPR cap 1.05, 2 plate layers, 12 sectors and 8 crack spokes on mobile; desktop uses 3 / 16 / 12. Mobile movement keeps the `1.66` travel scale.
 - Gravity Lens: DPR cap 1.05, 4 bands, 12 arc segments and 8 curved streams on mobile; desktop uses 6 / 20 / 14.
 - Bio Structure: DPR cap 1.05, 5 paired ribs, 8 nerve impulses and 6 spine subdivisions on mobile; desktop uses 8 / 14 / 9.
+- Void Bloom: DPR cap 1.05, 7 petals and 7 luminous veins on mobile; desktop uses 11 petals and 16 veins.
 - Liquid Chrome: DPR cap 1.35 on mobile.
 - Direct impact adds no primitives and uses only a cheap canvas transform around existing geometry.
 - All custom modes target the same 60 Hz render scheduler; when performance needs reduction, reduce primitive density before reducing motion travel.
@@ -204,7 +207,7 @@ tracks/<slug>/video.<ext>     # optional
 
 ## PWA / Canvas / Studio
 
-The service worker caches same-origin application assets while audio/video media remain network-oriented. Build 59 advances the cache namespace so the direct-impact controller cannot be hidden behind Build 58 assets. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
+The service worker caches same-origin application assets while audio/video media remain network-oriented. Build 60 advances the cache namespace so Void Bloom and its eight-preset controller cannot be hidden behind Build 59 assets. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
 
 ## Deployment artifact
 
