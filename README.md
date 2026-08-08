@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.08.52` — release `pulse-reactor-20260808`.
+> Current application build: `2026.08.08.53` — release `bass-fracture-20260808`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -36,17 +36,18 @@ GitHub main
 
 See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the authoritative hosting map.
 
-## Build 52 highlights
+## Build 53 highlights
 
-Build 52 keeps the stable Build 51 Audio Lab foundation and adds **one** new effect at a time:
+Build 53 keeps the signal-first Build 52 architecture and adds one deliberately different visual:
 
-- **Neon Shatter**, **Spectrum** and **Liquid Chrome** remain unchanged as the validated baseline.
-- **Pulse Reactor** is the fourth sanctioned preset and consumes the exact same Spectrum analyser feed.
-- Pulse Reactor is signal-first: bass/kicks compress and expand the core, mids drive segmented orbital rings, and highs/transients fire radial needles.
-- Time contributes only a tiny energy-gated drift; pause/silence produces a stable reactor rather than a looping animation.
-- Mobile uses a dedicated performance budget: 3 rings / 18 segments / 16 spokes and DPR capped at 1.1, while desktop uses 5 / 32 / 30 with full DPR up to 2.
-- The new renderer lives in its own `pulse-reactor.js` module so adding/removing it cannot destabilize the three validated renderers.
-- The PWA cache advances to v52, preventing stale Build 51 visual modules from masking the new preset.
+- **Neon Shatter**, **Spectrum** and **Liquid Chrome** remain the validated baseline.
+- **Pulse Reactor** keeps its Build 52 geometry budget but now de-coheres on strong bass peaks: ring segments separate and a small number of deterministic core shards travel outward before settling.
+- **Bass Fracture** becomes the fifth sanctioned preset. It renders a tectonic disc of annular plates rather than a particle cloud: bass/kicks physically separate plates, mids twist them and highs illuminate fault lines.
+- Pulse Reactor and Bass Fracture both consume the exact shared Spectrum analyser feed; decoded analysis remains fallback-only.
+- Both renderers have no private animation loop, no `Math.random()` motion and settle when the signal disappears.
+- Bass Fracture mobile budget is intentionally coarse and readable: 2 plate layers / 12 sectors / 10 crack spokes at DPR 1.05. Desktop uses 3 / 20 / 18.
+- Pulse Reactor remains at 3 rings / 18 segments / 16 spokes and DPR 1.1 on mobile.
+- The PWA cache advances to v53 and includes `bass-fracture.js`, preventing stale Build 52 visual code from masking the new preset.
 
 Recent releases also restored mobile Lyrics → Studio routing, persistent mobile navigation in Studio, resilient Canvas looping, CORS-safe Visual Card export and single-owner track routing.
 
@@ -133,4 +134,5 @@ Useful documents:
 6. Keep Worker deployment, web deployment and R2 catalog rebuild as separate explicit states.
 7. Spectrum remains the Audio Lab reference path; every visual effect must consume the real FFT feed rather than independent loop animation.
 8. Add Audio Lab presets one at a time, with desktop and mobile budgets defined before merge.
-9. Historical-looking compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.
+9. Prefer deterministic, signal-derived geometry over random particles when a visual must remain cheap on mobile.
+10. Historical-looking compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.
