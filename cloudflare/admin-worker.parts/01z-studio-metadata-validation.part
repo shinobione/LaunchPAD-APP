@@ -1,0 +1,153 @@
+
+const STUDIO_METADATA_VALIDATION_INTENT = "metadata-validate-v1";
+const STUDIO_METADATA_MAX_BYTES = 64 * 1024;
+const STUDIO_METADATA_FIELDS = Object.freeze([
+  "title",
+  "status",
+  "type",
+  "year",
+  "releaseDate",
+  "album",
+  "genres",
+  "tags",
+  "moods",
+  "themes",
+  "era",
+  "energy",
+  "languages",
+  "bpm",
+  "key",
+  "keyConfidence",
+  "explicit",
+  "accent",
+  "accent2",
+]);
+const STUDIO_METADATA_FIELD_SET = new Set(STUDIO_METADATA_FIELDS);
+
+function studioMetadataValidationMatch(pathname) {
+  return String(pathname || "").match(/^\/api\/studio\/tracks\/([a-z0-9][a-z0-9-]{0,119})\/metadata\/validate$/);
+}
+
+function studioRequestedHeaders(request) {
+  return String(request.headers.get("access-control-request-headers") || "")
+    .toLowerCase()
+    .split(",")
+    .map(value => value.trim())
+    .filter(Boolean);
+}
+
+function studioCorsHeadersV11(request) {
+  const origin = request.headers.get("origin");
+  if (origin !== STUDIO_ALLOWED_ORIGIN) return {};
+  return {
+    "Access-Control-Allow-Origin": STUDIO_ALLOWED_ORIGIN,
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, X-Shinobiwan-Studio-Intent",
+    "Access-Control-Max-Age": "600",
+    "Vary": "Origin",
+  };
+}
+
+function studioCorsPreflightV11(request) {
+  const url = new URL(request.url);
+  const origin = request.headers.get("origin");
+  const requestedMethod = String(request.headers.get("access-control-request-method") || "").toUpperCase();
+  const requestedHeaders = studioRequestedHeaders(request);
+  const allowedHeaders = new Set(["content-type", "x-shinobiwan-studio-intent"]);
+  const headersAllowed = requestedHeaders.every(header => allowedHeaders.has(header));
+  const metadataValidation = Boolean(studioMetadataValidationMatch(url.pathname));
+  const methodAllowed = requestedMethod === "GET" || (requestedMethod === "POST" && metadataValidation);
+
+  if (origin !== STUDIO_ALLOWED_ORIGIN || !methodAllowed || !headersAllowed) {
+    return jsonResponse({ ok: false, error: "Accès refusé." }, 403);
+  }
+  return new Response(null, { status: 204, headers: studioCorsHeadersV11(request) });
+}
+
+studioCorsHeaders = studioCorsHeadersV11;
+studioCorsPreflight = studioCorsPreflightV11;
+
+function assertStudioMetadataValidationRequest(request) {
+  const origin = request.headers.get("origin");
+  if (origin !== STUDIO_ALLOWED_ORIGIN) throw new Error("AUTH_Origine Studio refusée.");
+  if (request.headers.get("x-shinobiwan-studio-intent") !== STUDIO_METADATA_VALIDATION_INTENT) {
+    throw new Error("AUTH_Intention Studio invalide.");
+  }
+  const contentType = String(request.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+  if (contentType !== "application/json") throw new Error("INPUT_Le validateur Studio attend du JSON.");
+}
+
+function normalizeStudioMetadataPatch(input) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    throw new Error("INPUT_Métadonnées Studio invalides.");
+  }
+  const unknown = Object.keys(input).filter(key => !STUDIO_METADATA_FIELD_SET.has(key));
+  if (unknown.length) throw new Error("INPUT_Champs metadata non autorisés: " + unknown.join(", ") + ".");
+
+  const patch = {};
+  for (const field of STUDIO_METADATA_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(input, field)) patch[field] = input[field];
+  }
+  return patch;
+}
+
+function studioMetadataChangedFields(existing, proposed) {
+  return STUDIO_METADATA_FIELDS.filter(field => JSON.stringify(existing?.[field] ?? null) !== JSON.stringify(proposed?.[field] ?? null));
+}
+
+async function validateStudioTrackMetadata(slug, request, env, user) {
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (contentLength && contentLength > STUDIO_METADATA_MAX_BYTES) {
+    throw new Error("INPUT_Payload metadata trop volumineux.");
+  }
+
+  let payload;
+  try { payload = await request.json(); }
+  catch { throw new Error("INPUT_JSON metadata invalide."); }
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("INPUT_Payload metadata invalide.");
+  }
+
+  const existing = await readManifest(env.MEDIA_BUCKET, slug);
+  if (!existing) return jsonResponse({ ok: false, error: "Titre introuvable." }, 404);
+
+  const expectedUpdatedAt = String(payload.expectedUpdatedAt || "").trim();
+  if (!expectedUpdatedAt) throw new Error("INPUT_expectedUpdatedAt est requis.");
+  if (expectedUpdatedAt !== String(existing.updatedAt || "")) {
+    return jsonResponse({
+      ok: false,
+      error: "Le morceau a changé depuis son chargement.",
+      code: "STALE_MANIFEST",
+      currentUpdatedAt: existing.updatedAt || null,
+    }, 409);
+  }
+
+  const patch = normalizeStudioMetadataPatch(payload.metadata);
+  const proposed = normalizeManifest({
+    ...existing,
+    ...patch,
+    slug: existing.slug,
+    assets: existing.assets,
+    migration: existing.migration,
+    createdAt: existing.createdAt,
+    updatedAt: existing.updatedAt,
+    updatedBy: existing.updatedBy,
+  });
+
+  const objects = await listAllObjects(env.MEDIA_BUCKET, trackPrefix(slug));
+  const quality = await inspectTrackQuality(env.MEDIA_BUCKET, proposed, objects);
+  const valid = proposed.status !== "published" || quality.publishable === true;
+
+  return jsonResponse({
+    ok: true,
+    validationOnly: true,
+    valid,
+    trackId: slug,
+    expectedUpdatedAt,
+    changedFields: studioMetadataChangedFields(existing, proposed),
+    proposed,
+    quality,
+    authenticatedEmail: user.email || null,
+  });
+}
