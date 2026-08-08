@@ -32,11 +32,11 @@ if (injections.length) {
   source = source.replace(marker, `\n${injected}${marker}`);
 }
 
-const staleVersions = ['4.5','4.6','4.7','4.8','4.9','5.0','5.1','5.2','5.3','5.4','5.5','5.6'];
+const staleVersions = ['4.5','4.6','4.7','4.8','4.9','5.0','5.1','5.2','5.3','5.4','5.5','5.6','5.7'];
 for (const stale of staleVersions) {
-  source = source.replaceAll(`version: "${stale}"`, 'version: "5.7"');
-  source = source.replaceAll(`<span class="version-pill">v${stale}</span>`, '<span class="version-pill">v5.7</span>');
-  source = source.replaceAll(`version.textContent='v${stale}'`, "version.textContent='v5.7'");
+  source = source.replaceAll(`version: "${stale}"`, 'version: "5.8"');
+  source = source.replaceAll(`<span class="version-pill">v${stale}</span>`, '<span class="version-pill">v5.8</span>');
+  source = source.replaceAll(`version.textContent='v${stale}'`, "version.textContent='v5.8'");
 }
 source = source.replace(":' sans timestamps.'))}catch(error)", ":' sans timestamps.')))}catch(error)");
 
@@ -60,8 +60,8 @@ for (const serverOnlySymbol of ['buildCanonicalTrackSummaries', 'readManifest', 
 }
 
 for (const required of [
-  'version: "5.7"',
-  '<span class="version-pill">v5.7</span>',
+  'version: "5.8"',
+  '<span class="version-pill">v5.8</span>',
   'const ADMIN_HTML = String.raw`',
   'function parseLyricsTxtMetadata(text)',
   'async function inspectTrackQuality(',
@@ -81,7 +81,13 @@ for (const required of [
   'Sans lyrics',
   'Lyrics non timestampées',
   "modal.id='batchImportModal'",
-  'thumbnail.webp'
+  'thumbnail.webp',
+  'const STUDIO_ALLOWED_ORIGIN = "https://shinobione.github.io"',
+  'const STUDIO_BRIDGE_VERSION = "1.0"',
+  'url.pathname === "/api/studio/health"',
+  'url.pathname === "/api/studio/tracks"',
+  'Access-Control-Allow-Methods": "GET, OPTIONS"',
+  'write: []'
 ]) {
   if (!source.includes(required)) throw new Error(`Built Track Manager Worker is missing ${required}.`);
 }
@@ -91,8 +97,8 @@ for (const forbidden of [
   'id="migrateLegacy"',
   'id="migrationModal"',
   'id="legacyPanel"',
-  '<span class="version-pill">v5.6</span>',
-  'version: "5.6"'
+  '<span class="version-pill">v5.7</span>',
+  'version: "5.7"'
 ]) {
   if (source.includes(forbidden)) throw new Error(`Built Track Manager Worker still exposes obsolete content: ${forbidden}.`);
 }
