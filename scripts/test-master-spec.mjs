@@ -126,10 +126,10 @@ const worker = read('sw.js');
 includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260808-creep-signal-v61');
-assert.equal(build.cache, 'shinobi-launchpad-v61');
-assert.equal(build.display, '2026.08.08.61');
-assert.equal(build.release, 'creep-signal-20260808');
-assert.equal(build.revision, 'creep-signal-1');
+assert.equal(build.id, '20260808-ui-polish-v62-1');
+assert.equal(build.cache, 'shinobi-launchpad-v62');
+assert.equal(build.display, '2026.08.08.62');
+assert.equal(build.release, 'ui-polish-62-1-20260808');
+assert.equal(build.revision, 'ui-polish-62-1');
 
 console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}) with ${presetCount} sanctioned Audio Lab presets.`);
