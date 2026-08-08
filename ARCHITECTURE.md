@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD architecture
 
-> Current application build: `2026.08.08.52` — release `pulse-reactor-20260808`.
+> Current application build: `2026.08.08.53` — release `bass-fracture-20260808`.
 
 LaunchPAD is a modular static PWA whose application source lives in GitHub `main`. The web shell is mirrored to GitHub Pages and Cloudflare Pages; production catalog/media state lives in Cloudflare R2 and is exposed through public/private Workers.
 
@@ -61,6 +61,7 @@ js/
       visual-engine-core-modes.js
                               Neon Shatter + Liquid Chrome
       pulse-reactor.js        Isolated Pulse Reactor renderer
+      bass-fracture.js        Isolated tectonic plate renderer
       audio-lab-registry.js   Sanctioned preset list
     track-detail.js           Dedicated #track= route renderer
     track-videos.js           Canvas/video behavior
@@ -122,21 +123,23 @@ fallback:  track URL --> fetch/decode --> AnalyserNode --> shared FFT readers
 
 ### Audio Lab rendering contract
 
-Build 52 exposes four sanctioned presets:
+Build 53 exposes five sanctioned presets:
 
 - **Spectrum** — protected reference renderer and owner of the primary analyser contract.
 - **Neon Shatter** — FFT/local-delta shard displacement, scaling, rotation, cracks and bass/kick impact rings.
 - **Liquid Chrome** — FFT-deformed metallic contour; bass controls pulse, mids fluidity and highs local/specular detail.
-- **Pulse Reactor** — isolated renderer: bass/kicks drive the reactor core, mids drive segmented orbital rings, highs/transients drive radial needles.
+- **Pulse Reactor** — segmented reactor whose core/rings now temporarily de-cohere on strong bass peaks while mids/highs keep their orbital/needle roles.
+- **Bass Fracture** — deterministic tectonic disc: bass/kicks separate annular plates, mids twist them and highs/transients illuminate cracks/fault edges.
 
-All custom effects read Spectrum's analyser through `readSpectrum()` first. Time may add only a tiny signal-gated drift; paused/silent playback must settle instead of continuing an autonomous loop.
+All custom effects read Spectrum's analyser through `readSpectrum()` first. Time may add only a tiny signal-gated drift; paused/silent playback must settle instead of continuing an autonomous loop. Isolated renderers must not own their own RAF/timer loop or use random motion as a substitute for signal reactivity.
 
 ### Mobile visual budget
 
 Performance limits are part of each preset contract rather than an afterthought:
 
 - Neon Shatter: DPR cap 1.0 on mobile.
-- Pulse Reactor: DPR cap 1.1, 3 rings, 18 segments/ring and 16 spokes on mobile; desktop uses 5 rings, 32 segments and 30 spokes.
+- Pulse Reactor: DPR cap 1.1, 3 rings, 18 segments/ring, 16 spokes and 6 peak-only core shards on mobile; desktop uses 5 / 32 / 30 / 10.
+- Bass Fracture: DPR cap 1.05, 2 plate layers, 12 sectors and 10 crack spokes on mobile; desktop uses 3 / 20 / 18.
 - Liquid Chrome: DPR cap 1.35 on mobile.
 - All custom modes target the same 60 Hz render scheduler, with geometry reduced before visual reactivity is reduced.
 
@@ -158,7 +161,7 @@ tracks/<slug>/video.<ext>     # optional
 
 ## PWA / Canvas / Studio
 
-The service worker caches same-origin application assets while audio/video media remain network-oriented. Build 52 advances the cache namespace and includes `pulse-reactor.js` in the application shell. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
+The service worker caches same-origin application assets while audio/video media remain network-oriented. Build 53 advances the cache namespace and includes both isolated Audio Lab modules (`pulse-reactor.js` and `bass-fracture.js`) in the application shell. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
 
 ## Deployment artifact
 
@@ -186,7 +189,8 @@ Every new application build must update every Markdown file to the exact `displa
 12. Lovable remains external prototyping unless a deliberate migration lands back in `main`.
 13. Audio Lab visuals must prove reactivity against the live FFT feed rather than merely animate while playback is active.
 14. Audio Lab presets are added one at a time with explicit mobile geometry/DPR budgets.
-15. Historical-looking compatibility files that remain wired into boot/deployment are removed only through dedicated regression-tested refactors.
+15. Peak violence should come from signal-derived deformation/fracture, not permanently higher particle counts.
+16. Historical-looking compatibility files that remain wired into boot/deployment are removed only through dedicated regression-tested refactors.
 
 ## Validation
 
