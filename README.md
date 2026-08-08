@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.08.64` — release `sonictrace-badge-fix-20260808`.
+> Current application build: `2026.08.08.65` — release `studio-private-read-bridge-20260808`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -35,6 +35,19 @@ GitHub main
 ```
 
 See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the authoritative hosting map.
+
+## Build 65 highlights
+
+Build 65 prepares the private Track Manager for **SHINOBIWAN Studio Phase 4A** without opening production write access.
+
+- Track Manager contract advances to **v5.8**.
+- A new authenticated namespace `/api/studio/*` exposes GET-only health, track-list and track-detail projections for Studio.
+- CORS is allowlisted to the exact GitHub Pages origin `https://shinobione.github.io`; it is not wildcarded.
+- Cloudflare Access JWT verification remains mandatory for Studio data reads.
+- Existing `POST`, `PUT`, `PATCH` and `DELETE` routes remain protected by the unchanged same-origin write guard.
+- The bridge advertises `write: []` and supports only `GET, OPTIONS`; CI contains a dedicated regression guard for this contract.
+- No R2 migration, catalog rebuild, asset rewrite or public Worker behavior is part of Build 65.
+- The synchronized-lyrics contract is corrected: timestamped canonical `lyrics.txt` is already synchronized; a second `.lrc` file is optional compatibility/export data, not a mandatory source of truth.
 
 ## Build 64 highlights
 
@@ -80,7 +93,7 @@ tracks/<slug>/manifest.json
 tracks/<slug>/audio.<ext>
 tracks/<slug>/cover.<ext>
 tracks/<slug>/thumbnail.webp
-tracks/<slug>/lyrics.txt      # optional
+tracks/<slug>/lyrics.txt      # optional; may contain synchronization timestamps
 tracks/<slug>/video.<ext>     # optional
 ```
 
@@ -106,7 +119,7 @@ npm run validate
 npm run check:wrangler
 ```
 
-CI checks browser navigation, PWA/service-worker behavior, Audio Lab signal contracts, catalog contracts, Cloudflare bundles, repository cleanliness, documentation/build coherence and desktop overflow regressions.
+CI checks browser navigation, PWA/service-worker behavior, Audio Lab signal contracts, catalog contracts, Cloudflare bundles, repository cleanliness, documentation/build coherence, the Studio private-read security boundary and desktop overflow regressions.
 
 ## Release discipline
 
@@ -139,6 +152,7 @@ Useful documents:
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — runtime/module structure
 - [`CHANGELOG.md`](CHANGELOG.md) — recent build history
 - [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) — canonical hosting/deployment topology
+- [`docs/SHINOBIWAN-STUDIO-CONTRACT.md`](docs/SHINOBIWAN-STUDIO-CONTRACT.md) — Studio integration contract
 - [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) — safe release procedure
 - [`ROADMAP.md`](ROADMAP.md) — remaining consolidation/product work
 - [`cloudflare/README.md`](cloudflare/README.md) — Workers/R2 operations
@@ -147,7 +161,7 @@ Useful documents:
 
 1. `main` is the only source of truth.
 2. Do not edit production code only in Cloudflare, GitHub Pages, Lovable or generated `dist/` output.
-3. Temporary feature/fix branches are disposable and automatically deleted after merge.
+3. Temporary feature/fix branches are disposable and automatically deleted after merge; named `safety/*` restoration snapshots created for Studio integration are rollback references and must not be developed on.
 4. Advance application versions only in `js/build-config.js`.
 5. Update every `.md` file for every new build; CI validates the build/release markers.
 6. Keep Worker deployment, web deployment and R2 catalog rebuild as separate explicit states.
@@ -158,3 +172,4 @@ Useful documents:
 11. Motion memory/kinetic phase must stop when the real audio target disappears and must never become an autonomous screensaver.
 12. New visual families should prefer distinct composition/motion language rather than repeating radial center-object patterns.
 13. Historical-looking compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.
+14. Studio integration must remain additive and reversible: do not weaken existing Track Manager write protections while the read bridge is being proven.
