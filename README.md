@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.07.50` — release `audiolab-signal-first-20260807`.
+> Current application build: `2026.08.08.51` — release `audiolab-three-core-20260808`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -36,15 +36,18 @@ GitHub main
 
 See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the authoritative hosting map.
 
-## Build 50 highlights
+## Build 51 highlights
 
-Build 50 makes Audio Lab **signal-first**:
+Build 51 resets Audio Lab to a deliberately small, testable core:
 
-- Spectrum remains the reference visualizer and consumes the decoded FFT feed.
-- Neon Shatter and Aurora Glass now use the same raw FFT bins as their primary geometry input; autonomous time-based motion is reduced to a tiny energy-gated drift.
-- Liquid Chrome and Singularity use the same live FFT path with a deliberately moderate increase in footprint/reactive range.
-- The audible player remains the native HTML5 audio element. Audio Lab analyzes a separately fetched/decoded copy so visualization cannot sit in the audible playback graph.
-- When playback is paused, signal-first renderers settle instead of continuing a fake loop.
+- **Neon Shatter**, **Spectrum** and **Liquid Chrome** are the only sanctioned presets.
+- Spectrum remains the protected reference renderer and exposes the analyser feed used by the two custom effects.
+- Neon Shatter was rebuilt around FFT-driven shard distance, size, rotation, cracks and impact rings.
+- Liquid Chrome was rebuilt around an FFT-deformed metallic contour with bass pulse, mid-band fluidity and high-frequency specular detail.
+- Aurora Glass, Nebula and Singularity are removed from the active registry/render paths instead of being kept as half-working presets.
+- Custom effects use Spectrum's analyser first; the decoded analysis bridge is fallback-only.
+- Time-based motion is gated by real signal activity so paused/silent playback settles instead of looking like a looping animation.
+- Build 51 advances the PWA cache namespace so clients cannot keep serving the Build 50 Audio Lab bundle as the current runtime.
 
 Recent releases also restored mobile Lyrics → Studio routing, persistent mobile navigation in Studio, resilient Canvas looping, CORS-safe Visual Card export and single-owner track routing.
 
