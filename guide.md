@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD — catalog guide
 
-> Current application build: `2026.08.08.58` — release `adaptive-punch-20260808`.
+> Current application build: `2026.08.08.59` — release `direct-impact-20260808`.
 
 The production catalog is managed in Cloudflare R2 through the private LaunchPAD Track Manager. `js/catalog.js` contains album/editorial presentation data only; production track metadata and media are not maintained by hand in the PWA.
 
@@ -95,7 +95,7 @@ Review every detected group before confirmation, especially audio/cover/lyrics/v
 
 ## Audio Lab note
 
-Audio Lab is not a catalog-authoring feature, but media changes should still be smoke-tested there. Build 58 exposes **Neon Shatter, Spectrum, Liquid Chrome, Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure**. Spectrum remains the protected reference FFT view; every custom visual consumes Spectrum's analyser first. Build 57's integrated kinetic phase still owns continuous travel. Build 58 adds a separate adaptive low-frequency punch detector for Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure, comparing fast bass, a slow local baseline, low-bin spectral flux and short-term bass rise so kicks remain distinct after the full mix becomes dense. `audioLabPunch` telemetry is available for diagnosis. Neon Shatter and Liquid Chrome keep their prior calibration. Pause still drives targets toward zero and stops kinetic phase speed. The separately fetched/decoded analysis copy remains fallback-only while the audible HTML5 player stays outside the analysis graph.
+Audio Lab is not a catalog-authoring feature, but media changes should still be smoke-tested there. Build 59 exposes **Neon Shatter, Spectrum, Liquid Chrome, Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure**. Spectrum remains the protected reference FFT view; every custom visual consumes Spectrum's analyser first. Build 57's integrated kinetic phase still owns continuous travel. Build 58's adaptive detector still identifies low-frequency onsets relative to a local baseline. Build 59 adds a separate post-pose visual-impact envelope so those detected onsets are no longer folded back into renderer targets that may already be clamped high. `audioLabPunch` shows onset detection while `audioLabVisualImpact` shows the actual short visual impulse. Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure receive distinct cheap impact transforms; Neon Shatter and Liquid Chrome remain baseline-protected. Pause resets the onset/impact trackers and stops kinetic phase speed. The separately fetched/decoded analysis copy remains fallback-only while the audible HTML5 player stays outside the analysis graph.
 
 ## Repository validation
 
