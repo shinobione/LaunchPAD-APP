@@ -35,8 +35,10 @@ const lens = read('js/features/visual/gravity-lens.js');
 requireAll(lens, ['shapeAudioDrive(', "advanceMotionPhase(motion, 'gravity-flow'", 'const centerTravel =', 'const bandCount = mobile ? 4 : 6', 'context.quadraticCurveTo('], 'Gravity Lens');
 const bio = read('js/features/visual/bio-structure.js');
 requireAll(bio, ['shapeAudioDrive(', "advanceMotionPhase(motion, 'bio-flow'", 'const driftRadius =', 'const ribCount = mobile ? 5 : 8', 'context.quadraticCurveTo('], 'Bio Structure');
+const bloom = read('js/features/visual/void-bloom.js');
+requireAll(bloom, ['shapeAudioDrive(', "advanceMotionPhase(motion, 'void-bloom-flow'", 'const petalCount = mobile ? 7 : 11', 'const veinCount = mobile ? 7 : 16', 'context.bezierCurveTo('], 'Void Bloom');
 
-for (const isolated of [reactor, fracture, lens, bio]) {
+for (const isolated of [reactor, fracture, lens, bio, bloom]) {
   assert.ok(!isolated.includes('Math.random('));
   assert.ok(!isolated.includes('requestAnimationFrame('));
   assert.ok(!isolated.includes('setInterval('));
@@ -45,18 +47,19 @@ for (const isolated of [reactor, fracture, lens, bio]) {
 
 const registry = read('js/features/visual/audio-lab-registry.js');
 const presetCount = (registry.match(/Object\.freeze\(\{ id:/g) || []).length;
-assert.equal(presetCount, 7, 'Audio Lab must keep seven sanctioned presets.');
+assert.equal(presetCount, 8, 'Audio Lab must keep eight sanctioned presets.');
 
 const live = read('js/features/visual/visual-engine-live.js');
 requireAll(live, [
   "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
+  "{ id: 'void-bloom', label: 'Void Bloom', renderer: drawVoidBloomMode }",
   'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)',
   'function createAdaptiveLowPunchTracker()', 'relativeContrast', 'relativeFlux', 'relativeRise',
   'function createDirectVisualImpactTracker()', 'function applyDirectKineticImpact(context, width, height, mode, features)',
   'features.visualImpact = visualImpactTracker.update(features)',
   'function kineticImpactFeatures(mode, features)', 'features.punch = adaptivePunch.punch',
-  "dataset.audioLabRenderer = 'seven-core-v4'", "dataset.audioLabPresetCount = '7'",
-  "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' ? 1.05",
+  "dataset.audioLabRenderer = 'eight-core-v1'", "dataset.audioLabPresetCount = '8'",
+  "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' || mode === 'void-bloom' ? 1.05",
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ], 'Live Audio Lab');
 
@@ -66,11 +69,11 @@ assert.ok(!signal.includes('captureStream('));
 assert.ok(!signal.includes('createMediaStreamSource('));
 
 const worker = read('sw.js');
-requireAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/bio-structure.js'", "event.data?.type === 'GET_RELEASE'"], 'PWA shell');
+requireAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "event.data?.type === 'GET_RELEASE'"], 'PWA shell');
 
 const build = assertCurrentBuild('Phase 13/current release');
-assert.ok(build.number >= 59, `Unexpected pre-Build-59 release ${build.display}.`);
-assert.equal(build.release, 'direct-impact-20260808');
+assert.ok(build.number >= 60, `Unexpected pre-Build-60 release ${build.display}.`);
+assert.equal(build.release, 'void-bloom-20260808');
 
 await import('./test-milestone-4.mjs');
 await import('./test-milestone-6.mjs');
