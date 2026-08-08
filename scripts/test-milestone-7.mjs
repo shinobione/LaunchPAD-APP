@@ -14,10 +14,10 @@ import {
 const read = file => fs.readFileSync(file, 'utf8');
 
 assert.equal(AUDIO_LAB_DEFAULT_MODE, 'neon-shatter');
-for (const required of ['neon-shatter', 'spectrum', 'liquid-chrome', 'pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure', 'void-bloom']) {
+for (const required of ['neon-shatter', 'spectrum', 'liquid-chrome', 'pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure', 'void-bloom', 'creep-signal']) {
   assert.ok(AUDIO_LAB_PRESET_IDS.includes(required), `Sanctioned Audio Lab registry is missing ${required}.`);
 }
-assert.equal(AUDIO_LAB_PRESET_IDS.length, 8);
+assert.equal(AUDIO_LAB_PRESET_IDS.length, 9);
 assert.equal(new Set(AUDIO_LAB_PRESET_IDS).size, AUDIO_LAB_PRESET_IDS.length, 'Audio Lab preset ids must remain unique.');
 assert.deepEqual(AUDIO_LAB_SANCTUARY_IDS, ['spectrum']);
 for (const mode of AUDIO_LAB_PRESET_IDS) assert.equal(isSanctionedAudioLabMode(mode), true);
@@ -110,7 +110,14 @@ for (const required of [
   'const driftRadius =', 'context.bezierCurveTo(', 'context.quadraticCurveTo('
 ]) assert.ok(bloom.includes(required), `Void Bloom contract is missing ${required}.`);
 
-for (const isolated of [reactor, fracture, lens, bio, bloom]) {
+const creep = read('js/features/visual/creep-signal.js');
+for (const required of [
+  'export function drawCreepSignalMode(', 'shapeAudioDrive(', 'const nodeCount = mobile ? 9 : 14',
+  'const branchCount = mobile ? 6 : 10', 'const pulseCount = mobile ? 7 : 12',
+  "springChannel(motion, 'mass'", "advanceMotionPhase(motion, 'creep-flow'", 'const forwardDrift =', 'context.quadraticCurveTo('
+]) assert.ok(creep.includes(required), `Creep Signal contract is missing ${required}.`);
+
+for (const isolated of [reactor, fracture, lens, bio, bloom, creep]) {
   assert.ok(!isolated.includes('Math.random('));
   assert.ok(!isolated.includes('requestAnimationFrame('));
   assert.ok(!isolated.includes('setInterval('));
@@ -126,14 +133,15 @@ for (const required of [
   "{ id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }",
   "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
   "{ id: 'void-bloom', label: 'Void Bloom', renderer: drawVoidBloomMode }",
+  "{ id: 'creep-signal', label: 'Creep Signal', renderer: drawCreepSignalMode }",
   'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)',
-  "const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure', 'void-bloom'])",
+  "const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure', 'void-bloom', 'creep-signal'])",
   'function createAdaptiveLowPunchTracker()', 'relativeContrast', 'relativeFlux', 'relativeRise',
   'function createDirectVisualImpactTracker()', 'function applyDirectKineticImpact(context, width, height, mode, features)',
   'features.visualImpact = visualImpactTracker.update(features)',
   'function kineticImpactFeatures(mode, features)', 'features.punch = adaptivePunch.punch',
-  "dataset.audioLabRenderer = 'eight-core-v1'", "dataset.audioLabPresetCount = '8'",
-  "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' || mode === 'void-bloom' ? 1.05",
+  "dataset.audioLabRenderer = 'nine-core-v1'", "dataset.audioLabPresetCount = '9'",
+  "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' || mode === 'void-bloom' || mode === 'creep-signal' ? 1.05",
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ]) assert.ok(live.includes(required), `Live Audio Lab integration is missing ${required}.`);
 
@@ -147,10 +155,10 @@ for (const required of [
   "'./js/features/visual/audio-lab-registry.js'", "'./js/features/visual/audio-lab-sanctuary.js'",
   "'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'",
   "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'",
-  "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'"
+  "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'"
 ]) assert.ok(worker.includes(required));
 
 const build = assertCurrentBuild('Milestone 7/current release');
-assert.equal(build.display, '2026.08.08.60');
-assert.equal(build.release, 'void-bloom-20260808');
+assert.equal(build.display, '2026.08.08.61');
+assert.equal(build.release, 'creep-signal-20260808');
 console.log(`Milestone 7 protects ${AUDIO_LAB_PRESET_IDS.length} sanctioned Audio Lab presets with shared FFT + kinetic flow + adaptive onset + direct impact under Build ${build.number}.`);
