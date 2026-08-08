@@ -1,6 +1,6 @@
 # LaunchPAD release checklist
 
-> Current application build: `2026.08.08.64` — release `sonictrace-badge-fix-20260808`.
+> Current application build: `2026.08.08.65` — release `studio-private-read-bridge-20260808`.
 
 This checklist separates four independent states: **source merge**, **web-host deployment**, **Worker deployment**, and **R2 catalog/media publication**.
 
@@ -31,99 +31,106 @@ npm run check:wrangler
 16. For integrated motion phase, confirm phase advances by frame delta while real audio exists and stops when audio activity disappears.
 17. For PWA changes, confirm update activation still results in one prompt / one reload.
 18. For admin-tool changes, confirm `?admin=1` exposes SonicTrace, LRC Maker and Track Manager only on desktop, `?admin=0` removes all three, and all three render as the same pill family; SonicTrace must visibly carry the cyan/teal `ST` treatment.
+19. For Studio bridge changes, run `npm run check:studio-private-read-bridge` and verify `/api/studio/*` remains **GET/OPTIONS only**, exact-origin allowlisted and behind Cloudflare Access for data reads.
+20. Confirm the legacy Track Manager write guard still applies to `POST`, `PUT`, `PATCH` and `DELETE`; never weaken it merely to make Studio browser fetches work.
 
 ## 2. Pull request / merge
 
-19. Open a PR into `main`.
-20. Require green **Validate Launchpad**, **Validate Cloudflare Workers**, and **Validate Horizontal Overflow**.
-21. Review regressions rather than weakening tests to match a bug.
-22. Merge only when the PR represents the complete intended source state.
-23. Confirm GitHub auto-deletes the merged head branch.
+21. Open a PR into `main`.
+22. Require green **Validate Launchpad**, **Validate Cloudflare Workers**, and **Validate Horizontal Overflow**.
+23. Review regressions rather than weakening tests to match a bug.
+24. Merge only when the PR represents the complete intended source state.
+25. Confirm GitHub auto-deletes the merged head branch.
 
 ## 3. Web deployment
 
 ### GitHub Pages
 
-24. A push to `main` triggers **Deploy LaunchPAD to GitHub Pages**.
-25. Confirm the artifact build/validation and Pages deployment succeed.
-26. Hard-refresh `https://shinobione.github.io/LaunchPAD-APP/` and confirm Build/Release in About.
+26. A push to `main` triggers **Deploy LaunchPAD to GitHub Pages**.
+27. Confirm the artifact build/validation and Pages deployment succeed.
+28. Hard-refresh `https://shinobione.github.io/LaunchPAD-APP/` and confirm Build/Release in About.
 
 ### Cloudflare Pages staging
 
-27. Confirm staging tracked the same `main` merge SHA.
-28. Its compatibility command remains:
+29. Confirm staging tracked the same `main` merge SHA.
+30. Its compatibility command remains:
 
 ```bash
 node scripts/build-cloudflare-pages.mjs && node scripts/validate-cloudflare-pages-build.mjs
 ```
 
-29. Confirm `https://shinobiwan-launchpad-staging.pages.dev/` reports the same Build/Release.
+31. Confirm `https://shinobiwan-launchpad-staging.pages.dev/` reports the same Build/Release.
 
 ## 4. Audio / Audio Lab release checks
 
-30. Verify clean playback with Audio Lab closed.
-31. Verify clean playback with Audio Lab open and while switching presets.
-32. Verify background playback after leaving/minimizing the PWA.
-33. Verify track A → B → C while staying in Audio Lab.
-34. Spectrum must track the current song immediately after its analyser is live.
-35. Neon Shatter must visibly move/deform from real FFT/kick activity and settle when paused.
-36. Liquid Chrome must visibly pulse/deform with bass/mid/high activity and settle when paused.
-37. Pulse Reactor must keep continuous drift/ring travel and visibly expand/twist on low-frequency impact in already-dense sections.
-38. Bass Fracture must keep body roll/plate glide and visibly rupture/compress on low-frequency impact; mobile keeps 12 sectors and gains no extra geometry.
-39. Gravity Lens must keep continuous precession/stream sweep and visibly snap into stretch/rotation on low-frequency impact.
-40. Bio Structure must keep continuous organism motion and visibly contract/expand as a whole body on low-frequency impact.
-41. Void Bloom must continuously breathe/orbit/flex while real audio exists; bass opens/deepens the bloom, mids twist petals and highs light/travel along the veins.
-42. Void Bloom direct impact must visibly expand and twist the whole bloom on kick/bass onsets even inside dense sections.
-43. Creep Signal must continuously travel across the canvas; its body must undulate, alternating branches must whip independently and highs/transients must visibly travel through the network.
-44. Creep Signal direct impact must produce a distinct lateral lunge/shear/compression on kick/bass onsets rather than merely increasing the ordinary body amplitude.
-45. During a dense section, `audioLabPunch` should rise/fall around kick or bass onsets even if `audioLabBass` stays relatively high.
-46. `audioLabVisualImpact` must produce short spikes derived from rising punch/kick/low-band contrast and must not remain pinned high through a loud passage.
-47. Direct impact must be applied after normal renderer pose computation rather than being folded back into saturated bass/kick spring targets.
-48. Neon Shatter and Liquid Chrome must not receive the direct-impact transform; their calibration is baseline-protected.
-49. All kinetic modes must stop integrated phase speed and settle their spring/impact envelopes after pause/silence.
-50. Audio Lab must expose exactly nine controls: Neon Shatter, Spectrum, Liquid Chrome, Pulse Reactor, Bass Fracture, Gravity Lens, Bio Structure, Void Bloom and Creep Signal.
-51. Mobile budgets: Pulse Reactor 3 rings / 14 segments / 10 spokes / DPR 1.1; Bass Fracture 2 layers / 12 sectors / 8 cracks / DPR 1.05; Gravity Lens 4 bands / 12 arcs / 8 streams / DPR 1.05; Bio Structure 5 ribs / 8 nerve impulses / 6 spine nodes / DPR 1.05; Void Bloom 7 petals / 7 veins / DPR 1.05; Creep Signal 9 body nodes / 6 branches / 7 pulses / DPR 1.05.
-52. Re-test Android and desktop separately because media/visibility lifecycles differ.
+32. Verify clean playback with Audio Lab closed.
+33. Verify clean playback with Audio Lab open and while switching presets.
+34. Verify background playback after leaving/minimizing the PWA.
+35. Verify track A → B → C while staying in Audio Lab.
+36. Spectrum must track the current song immediately after its analyser is live.
+37. Neon Shatter must visibly move/deform from real FFT/kick activity and settle when paused.
+38. Liquid Chrome must visibly pulse/deform with bass/mid/high activity and settle when paused.
+39. Pulse Reactor must keep continuous drift/ring travel and visibly expand/twist on low-frequency impact in already-dense sections.
+40. Bass Fracture must keep body roll/plate glide and visibly rupture/compress on low-frequency impact; mobile keeps 12 sectors and gains no extra geometry.
+41. Gravity Lens must keep continuous precession/stream sweep and visibly snap into stretch/rotation on low-frequency impact.
+42. Bio Structure must keep continuous organism motion and visibly contract/expand as a whole body on low-frequency impact.
+43. Void Bloom must continuously breathe/orbit/flex while real audio exists; bass opens/deepens the bloom, mids twist petals and highs light/travel along the veins.
+44. Void Bloom direct impact must visibly expand and twist the whole bloom on kick/bass onsets even inside dense sections.
+45. Creep Signal must continuously travel across the canvas; its body must undulate, alternating branches must whip independently and highs/transients must visibly travel through the network.
+46. Creep Signal direct impact must produce a distinct lateral lunge/shear/compression on kick/bass onsets rather than merely increasing the ordinary body amplitude.
+47. During a dense section, `audioLabPunch` should rise/fall around kick or bass onsets even if `audioLabBass` stays relatively high.
+48. `audioLabVisualImpact` must produce short spikes derived from rising punch/kick/low-band contrast and must not remain pinned high through a loud passage.
+49. Direct impact must be applied after normal renderer pose computation rather than being folded back into saturated bass/kick spring targets.
+50. Neon Shatter and Liquid Chrome must not receive the direct-impact transform; their calibration is baseline-protected.
+51. All kinetic modes must stop integrated phase speed and settle their spring/impact envelopes after pause/silence.
+52. Audio Lab must expose exactly nine controls: Neon Shatter, Spectrum, Liquid Chrome, Pulse Reactor, Bass Fracture, Gravity Lens, Bio Structure, Void Bloom and Creep Signal.
+53. Mobile budgets: Pulse Reactor 3 rings / 14 segments / 10 spokes / DPR 1.1; Bass Fracture 2 layers / 12 sectors / 8 cracks / DPR 1.05; Gravity Lens 4 bands / 12 arcs / 8 streams / DPR 1.05; Bio Structure 5 ribs / 8 nerve impulses / 6 spine nodes / DPR 1.05; Void Bloom 7 petals / 7 veins / DPR 1.05; Creep Signal 9 body nodes / 6 branches / 7 pulses / DPR 1.05.
+54. Re-test Android and desktop separately because media/visibility lifecycles differ.
 
 ## 5. Lyrics / Studio / Canvas checks
 
-53. On mobile, Track Detail → Lyrics should open that track's Studio when synchronized lyrics exist.
-54. Mobile bottom navigation remains visible in Studio.
-55. The global mini-player stays above the bottom navigation.
-56. Canvas should be muted, `playsinline`, loop reliably and resume after visibility/lifecycle interruptions when allowed.
-57. Lyrics auto-scroll stays inside its reader and does not fight page scrolling.
+55. On mobile, Track Detail → Lyrics should open that track's Studio when synchronized lyrics exist.
+56. Treat timestamped canonical `lyrics.txt` as synchronized content; do not require a duplicate `.lrc` file for completeness.
+57. Mobile bottom navigation remains visible in Studio.
+58. The global mini-player stays above the bottom navigation.
+59. Canvas should be muted, `playsinline`, loop reliably and resume after visibility/lifecycle interruptions when allowed.
+60. Lyrics auto-scroll stays inside its reader and does not fight page scrolling.
 
 ## 6. Track Manager / R2 publication
 
-58. Use the private Track Manager behind Cloudflare Access.
-59. Create/edit canonical manifests and upload audio/cover/optional lyrics/Canvas.
-60. Confirm thumbnail, metadata, content rating and publishability.
-61. Rebuild `catalog/index.json` only when manifest/derived metadata needs refreshing.
-62. Verify one full `/tracks/<slug>` response after parser/index changes.
+61. Use the private Track Manager behind Cloudflare Access.
+62. Create/edit canonical manifests and upload audio/cover/optional lyrics/Canvas.
+63. Confirm thumbnail, metadata, content rating and publishability.
+64. Rebuild `catalog/index.json` only when manifest/derived metadata needs refreshing.
+65. Verify one full `/tracks/<slug>` response after parser/index changes.
 
 ## 7. Worker deployment
 
-63. Worker deployment is **not** implied by a PWA merge.
-64. From `main`, dispatch **Deploy Cloudflare Workers** for `public`, `admin` or `both`.
-65. Approve the protected environment and verify health/Access/Range checks.
-66. Record source SHA and deployed Worker version IDs.
+66. Worker deployment is **not** implied by a PWA merge.
+67. From `main`, dispatch **Deploy Cloudflare Workers** for `public`, `admin` or `both`.
+68. For Build 65, deploy **admin only**; the public Worker has no contract change.
+69. Approve the protected environment and verify health/Access/Range checks.
+70. Verify `/api/studio/health` from the allowed Studio origin after Access authentication, and confirm a non-allowed Origin is rejected.
+71. Verify existing Track Manager create/edit/delete still works from its own origin before connecting Studio to the bridge.
+72. Record source SHA and deployed Worker version IDs.
 
 ## 8. Rollback
 
-67. Web rollback is a revert/fix in `main` followed by canonical redeployment, never a host-only patch.
-68. Worker rollback uses the protected rollback workflow.
-69. Worker rollback does not restore R2 objects or catalog state.
+73. Web rollback is a revert/fix in `main` followed by canonical redeployment, never a host-only patch.
+74. Worker rollback uses the protected rollback workflow.
+75. Worker rollback does not restore R2 objects or catalog state.
+76. The pre-Studio integration restoration branch is `safety/pre-studio-integration-20260808-1048`; prefer a normal PR revert first and use the snapshot only if necessary.
 
 ## 9. Repository hygiene
 
-70. `main` remains the only persistent branch/source of truth.
-71. Keep auto-delete merged-head branches enabled.
-72. Keep documentation synchronized with the active build; CI enforces the exact markers.
-73. Keep Lovable prototype-only unless deliberately promoted through GitHub.
-74. Do not delete compatibility files just because their names contain an old version; first prove they are no longer wired into runtime/CI/deployment.
-75. Add Audio Lab effects one at a time and isolate new renderers when practical.
-76. Keep continuous movement, onset detection and direct visual impact as separate contracts; do not solve missing kick impact by adding permanent geometry or autonomous animation.
-77. Prefer genuinely different composition/motion languages for new visual families rather than repeating the same centered radial object.
-78. Report merged/deployed states separately: source, GitHub Pages, Cloudflare Pages, public Worker, private Worker, R2 catalog/media.
+77. `main` remains the only normal persistent source-of-truth branch; named `safety/*` branches are rollback references only.
+78. Keep auto-delete merged-head branches enabled.
+79. Keep documentation synchronized with the active build; CI enforces the exact markers.
+80. Keep Lovable prototype-only unless deliberately promoted through GitHub.
+81. Do not delete compatibility files just because their names contain an old version; first prove they are no longer wired into runtime/CI/deployment.
+82. Add Audio Lab effects one at a time and isolate new renderers when practical.
+83. Keep continuous movement, onset detection and direct visual impact as separate contracts; do not solve missing kick impact by adding permanent geometry or autonomous animation.
+84. Prefer genuinely different composition/motion languages for new visual families rather than repeating the same centered radial object.
+85. Report merged/deployed states separately: source, GitHub Pages, Cloudflare Pages, public Worker, private Worker, R2 catalog/media.
 
 See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the canonical map.
