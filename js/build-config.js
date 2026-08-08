@@ -1,9 +1,9 @@
 (() => {
   const config = Object.freeze({
     id: '20260808-ui-polish-v62-1',
-    cache: 'shinobi-launchpad-v62-1',
+    cache: 'shinobi-launchpad-v62',
     revision: 'ui-polish-62-1',
-    display: '2026.08.08.62.1',
+    display: '2026.08.08.62',
     release: 'ui-polish-62-1-20260808'
   });
 
