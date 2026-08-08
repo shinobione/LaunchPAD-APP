@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.08.63` — release `sonictrace-admin-link-20260808`.
+> Current application build: `2026.08.08.64` — release `sonictrace-badge-fix-20260808`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -35,6 +35,16 @@ GitHub main
 ```
 
 See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the authoritative hosting map.
+
+## Build 64 highlights
+
+Build 64 fixes the visual integration of the new **SonicTrace** admin shortcut in the stylesheet actually used by the live PWA shell.
+
+- SonicTrace now uses the exact same pill geometry, spacing, typography and hover behavior as LRC Maker and Track Manager.
+- Its `ST` disc uses a cyan/teal gradient and the surrounding pill uses matching cyan border, text and arrow accents.
+- The active `css/pwa.css` contract now includes SonicTrace in every shared admin-tool selector instead of leaving it as an unstyled anchor.
+- CI explicitly guards the SonicTrace pill styling so this mismatch cannot silently return.
+- The PWA cache advances to v64 so installed clients cannot stay on the visually broken Build 63 shell.
 
 ## Build 63 highlights
 

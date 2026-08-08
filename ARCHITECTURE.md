@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD architecture
 
-> Current application build: `2026.08.08.63` — release `sonictrace-admin-link-20260808`.
+> Current application build: `2026.08.08.64` — release `sonictrace-badge-fix-20260808`.
 
 LaunchPAD is a modular static PWA whose application source lives in GitHub `main`. The web shell is mirrored to GitHub Pages and Cloudflare Pages; production catalog/media state lives in Cloudflare R2 and is exposed through public/private Workers.
 
@@ -104,7 +104,7 @@ Stable routes include:
 
 ## Admin tool access
 
-Desktop admin shortcuts are gated by one persisted `shinobiLaunchpadAdmin` state. `?admin=1` enables the strip; `?admin=0` clears it. Build 63 exposes three shortcuts through that same gate: SonicTrace, LRC Maker and Track Manager. SonicTrace opens the GitHub Pages frontend and uses an `ST` cyan/teal badge derived from its own green-to-cyan visual identity.
+Desktop admin shortcuts are gated by one persisted `shinobiLaunchpadAdmin` state. `?admin=1` enables the strip; `?admin=0` clears it. Build 63 introduced three shortcuts through that same gate: SonicTrace, LRC Maker and Track Manager. Build 64 fixes SonicTrace's live-shell presentation by adding it to the shared admin-tool selectors in `css/pwa.css`, so the `ST` control now uses the same pill geometry/spacing as its neighbors with a cyan/teal identity.
 
 ## Player and page theme separation
 
@@ -215,7 +215,7 @@ tracks/<slug>/video.<ext>     # optional
 
 ## PWA / Canvas / Studio
 
-The service worker caches same-origin application assets while audio/video media remain network-oriented. Build 63 advances the cache namespace after the SonicTrace admin-link integration so installed clients cannot remain on the Build 62 shell. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
+The service worker caches same-origin application assets while audio/video media remain network-oriented. Build 64 advances the cache namespace to `shinobi-launchpad-v64` after correcting SonicTrace's active PWA stylesheet integration, so installed clients cannot remain on the visually broken Build 63 shell. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
 
 ## Deployment artifact
 

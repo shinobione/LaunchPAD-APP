@@ -1,6 +1,6 @@
 # LaunchPAD Cloudflare services
 
-> Current application build: `2026.08.08.63` — release `sonictrace-admin-link-20260808`.
+> Current application build: `2026.08.08.64` — release `sonictrace-badge-fix-20260808`.
 
 Current backend contracts: public media Worker **v2.6**, private Track Manager **v5.7**.
 
@@ -30,7 +30,7 @@ Output:
 dist/cloudflare-pages
 ```
 
-The builder copies the runtime verbatim. A Pages deployment must never contain a host-only patch missing from `main`. Build 63 keeps the validated Audio Lab architecture and advances the PWA cache namespace to `shinobi-launchpad-v63` for the SonicTrace desktop admin shortcut.
+The builder copies the runtime verbatim. A Pages deployment must never contain a host-only patch missing from `main`. Build 64 keeps the validated Audio Lab architecture and advances the PWA cache namespace to `shinobi-launchpad-v64` so the corrected cyan/teal SonicTrace admin pill replaces the visually broken Build 63 shell.
 
 ## Public media Worker
 

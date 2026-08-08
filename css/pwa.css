@@ -1,5 +1,6 @@
 .track-manager-access,
-.lrc-maker-access{
+.lrc-maker-access,
+.sonic-trace-access{
   display:flex;
   align-items:center;
   gap:7px;
@@ -17,18 +18,26 @@
 .track-manager-access:hover{background:rgba(84,230,155,.13);border-color:rgba(84,230,155,.42)}
 .lrc-maker-access{border:1px solid rgba(210,108,255,.28);background:rgba(190,80,255,.075);color:#f0d6ff}
 .lrc-maker-access:hover{background:rgba(190,80,255,.14);border-color:rgba(226,148,255,.5)}
+.sonic-trace-access{border:1px solid rgba(0,224,255,.28);background:rgba(0,224,255,.075);color:#c9faff}
+.sonic-trace-access:hover{background:rgba(0,224,255,.14);border-color:rgba(76,236,255,.5)}
 .track-manager-access:hover,
-.lrc-maker-access:hover{transform:translateY(-1px);box-shadow:0 9px 24px rgba(0,0,0,.2)}
+.lrc-maker-access:hover,
+.sonic-trace-access:hover{transform:translateY(-1px);box-shadow:0 9px 24px rgba(0,0,0,.2)}
 .track-manager-access>span,
-.lrc-maker-access>span{width:25px;height:25px;display:grid;place-items:center;border-radius:50%;font-size:8px;font-weight:950;line-height:1;letter-spacing:-.03em}
+.lrc-maker-access>span,
+.sonic-trace-access>span{width:25px;height:25px;display:grid;place-items:center;border-radius:50%;font-size:8px;font-weight:950;line-height:1;letter-spacing:-.03em}
 .track-manager-access>span{background:#54e69b;color:#07120c}
 .lrc-maker-access>span{background:#d76cff;color:#130719}
+.sonic-trace-access>span{background:linear-gradient(135deg,#28dcb8,#00e5ff);color:#041416;box-shadow:0 0 16px rgba(0,229,255,.16)}
 .track-manager-access>strong,
-.lrc-maker-access>strong{color:inherit;font-size:9px;font-weight:850;line-height:1;letter-spacing:.015em}
+.lrc-maker-access>strong,
+.sonic-trace-access>strong{color:inherit;font-size:9px;font-weight:850;line-height:1;letter-spacing:.015em}
 .track-manager-access>b,
-.lrc-maker-access>b{margin-left:1px;font-size:10px;font-weight:800;line-height:1;opacity:.9}
+.lrc-maker-access>b,
+.sonic-trace-access>b{margin-left:1px;font-size:10px;font-weight:800;line-height:1;opacity:.9}
 .track-manager-access>b{color:#78edaa}
 .lrc-maker-access>b{color:#df94ff}
+.sonic-trace-access>b{color:#66efff}
 
 .pwa-update-banner[hidden],
 .pwa-install-banner[hidden]{display:none!important}

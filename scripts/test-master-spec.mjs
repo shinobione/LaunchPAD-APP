@@ -125,14 +125,18 @@ includesAll(read('js/features/admin-access.js'), [
   'resolveLrcMakerAccess', 'https://shinobione.github.io/lrc-maker/', "label: 'LRC Maker'",
   'resolveSonicTraceAccess', 'https://shinobione.github.io/LM-IA-Analayse/', "label: 'SonicTrace'", "initials: 'ST'"
 ], 'Admin access');
+includesAll(read('css/pwa.css'), [
+  '.sonic-trace-access{', '.sonic-trace-access:hover{', '.sonic-trace-access>span{',
+  'linear-gradient(135deg,#28dcb8,#00e5ff)', '.sonic-trace-access>strong{', '.sonic-trace-access>b{color:#66efff}'
+], 'SonicTrace admin badge');
 const worker = read('sw.js');
 includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260808-sonictrace-admin-v63');
-assert.equal(build.cache, 'shinobi-launchpad-v63');
-assert.equal(build.display, '2026.08.08.63');
-assert.equal(build.release, 'sonictrace-admin-link-20260808');
-assert.equal(build.revision, 'sonictrace-admin-1');
+assert.equal(build.id, '20260808-sonictrace-badge-v64');
+assert.equal(build.cache, 'shinobi-launchpad-v64');
+assert.equal(build.display, '2026.08.08.64');
+assert.equal(build.release, 'sonictrace-badge-fix-20260808');
+assert.equal(build.revision, 'sonictrace-badge-1');
 
 console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}) with ${presetCount} sanctioned Audio Lab presets.`);
