@@ -23,23 +23,24 @@ requireAll(core, ['drawNeonShatterV2Mode(', 'drawLiquidChromeV2Mode(', 'const ga
 
 const motion = read('js/features/visual/motion-spring.js');
 requireAll(motion, [
-  'beginMotionFrame', 'springChannel', 'shapeMotionTarget', 'motionPhase',
-  'const knee = clamp(', 'const ceiling = clamp(', 'Math.pow(clamp(Number(activity) || 0, 0, 1.2), .62)'
-], 'Dynamic motion helper');
+  'beginMotionFrame', 'springChannel', 'shapeAudioDrive', 'advanceMotionPhase',
+  'phases: new Map()', 'state.phase += state.speed * frame.dt'
+], 'Kinetic motion helper');
 
 const reactor = read('js/features/visual/pulse-reactor.js');
-requireAll(reactor, ['shapeMotionTarget', 'motionPhase(time, activity, .34)', 'const bassMomentum = clamp(', 'const impactMomentum = clamp(', 'const ringCount = mobile ? 3 : 4'], 'Pulse Reactor');
+requireAll(reactor, ['shapeAudioDrive(', "advanceMotionPhase(motion, 'reactor-flow'", 'const centerTravel =', 'const driftX =', 'const ringCount = mobile ? 3 : 4'], 'Pulse Reactor');
 const fracture = read('js/features/visual/bass-fracture.js');
-requireAll(fracture, ['shapeMotionTarget', 'motionPhase(time, activity, .28)', 'const ruptureMomentum = clamp(', 'const motionScale = mobile ? 1.48 : 1.12', 'const sectorCount = mobile ? 12 : 16'], 'Bass Fracture');
+requireAll(fracture, ['shapeAudioDrive(', "advanceMotionPhase(motion, 'tectonic-flow'", 'const bodyTravel =', 'const motionScale = mobile ? 1.66 : 1.34', 'const sectorCount = mobile ? 12 : 16'], 'Bass Fracture');
 const lens = read('js/features/visual/gravity-lens.js');
-requireAll(lens, ['shapeMotionTarget', 'motionPhase(time, activity, .25)', 'const warpMomentum = clamp(', 'const bandCount = mobile ? 4 : 6', 'context.quadraticCurveTo('], 'Gravity Lens');
+requireAll(lens, ['shapeAudioDrive(', "advanceMotionPhase(motion, 'gravity-flow'", 'const centerTravel =', 'const bandCount = mobile ? 4 : 6', 'context.quadraticCurveTo('], 'Gravity Lens');
 const bio = read('js/features/visual/bio-structure.js');
-requireAll(bio, ['shapeMotionTarget', 'motionPhase(time, activity, .31)', 'const breathMomentum = clamp(', 'const ribCount = mobile ? 5 : 8', 'context.quadraticCurveTo('], 'Bio Structure');
+requireAll(bio, ['shapeAudioDrive(', "advanceMotionPhase(motion, 'bio-flow'", 'const driftRadius =', 'const ribCount = mobile ? 5 : 8', 'context.quadraticCurveTo('], 'Bio Structure');
 
 for (const isolated of [reactor, fracture, lens, bio]) {
   assert.ok(!isolated.includes('Math.random('));
   assert.ok(!isolated.includes('requestAnimationFrame('));
   assert.ok(!isolated.includes('setInterval('));
+  assert.ok(!isolated.includes('shapeMotionTarget('));
 }
 
 const registry = read('js/features/visual/audio-lab-registry.js');
@@ -64,9 +65,9 @@ const worker = read('sw.js');
 requireAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/bio-structure.js'", "event.data?.type === 'GET_RELEASE'"], 'PWA shell');
 
 const build = assertCurrentBuild('Phase 13/current release');
-assert.ok(build.number >= 56, `Unexpected pre-Build-56 release ${build.display}.`);
-assert.equal(build.release, 'dynamic-breathing-20260808');
+assert.ok(build.number >= 57, `Unexpected pre-Build-57 release ${build.display}.`);
+assert.equal(build.release, 'kinetic-flow-20260808');
 
 await import('./test-milestone-4.mjs');
 await import('./test-milestone-6.mjs');
-console.log(`Phase 13 remains valid with the shared-FFT ${presetCount}-preset dynamic Audio Lab under ${build.display}.`);
+console.log(`Phase 13 remains valid with the shared-FFT ${presetCount}-preset kinetic Audio Lab under ${build.display}.`);

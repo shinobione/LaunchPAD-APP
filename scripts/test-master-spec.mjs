@@ -51,26 +51,39 @@ includesAll(visualBase, ["{ id: 'spectrum', label: 'Spectrum' }", 'function read
 const coreModes = read('js/features/visual/visual-engine-core-modes.js');
 includesAll(coreModes, ['drawNeonShatterV2Mode', 'drawLiquidChromeV2Mode', 'const gatedDrift = time * activity * .16', 'const phase = time * activity * .2'], 'Validated baseline FFT modes');
 
-// Build 56 dynamic-range system.
+// Build 57 kinetic-flow system.
 const motion = read('js/features/visual/motion-spring.js');
 includesAll(motion, [
-  'const FRAME_STATES = new WeakMap()', 'export function beginMotionFrame(', 'export function springChannel(',
-  'export function shapeMotionTarget(', 'const knee = clamp(', 'const ceiling = clamp(',
-  'export function motionPhase(', 'Math.pow(clamp(Number(activity) || 0, 0, 1.2), .62)', 'channel.velocity'
-], 'Shared dynamic motion');
+  'const FRAME_STATES = new WeakMap()', 'phases: new Map()', 'export function beginMotionFrame(', 'export function springChannel(',
+  'export function shapeAudioDrive(', 'export function advanceMotionPhase(', 'state.phase += state.speed * frame.dt',
+  'const targetSpeed = drive > gate', 'channel.velocity'
+], 'Shared kinetic motion');
 
 const pulse = read('js/features/visual/pulse-reactor.js');
-includesAll(pulse, ['shapeMotionTarget', 'motionPhase(time, activity, .34)', 'const bassMomentum = clamp(', 'const impactMomentum = clamp(', 'const ringCount = mobile ? 3 : 4', 'const segmentCount = mobile ? 14 : 24'], 'Pulse Reactor dynamic breathing');
+includesAll(pulse, [
+  'shapeAudioDrive(', "advanceMotionPhase(motion, 'reactor-flow'", 'const centerTravel =', 'const driftX =',
+  'const ringCount = mobile ? 3 : 4', 'const segmentCount = mobile ? 14 : 24', 'const spokeCount = mobile ? 10 : 18'
+], 'Pulse Reactor kinetic flow');
 const fracture = read('js/features/visual/bass-fracture.js');
-includesAll(fracture, ['shapeMotionTarget', 'motionPhase(time, activity, .28)', 'const ruptureMomentum = clamp(', 'const motionScale = mobile ? 1.48 : 1.12', 'const sectorCount = mobile ? 12 : 16', 'const crackCount = mobile ? 8 : 12'], 'Bass Fracture dynamic breathing');
+includesAll(fracture, [
+  'shapeAudioDrive(', "advanceMotionPhase(motion, 'tectonic-flow'", 'const bodyTravel =', 'const bodyRotation =',
+  'const motionScale = mobile ? 1.66 : 1.34', 'const sectorCount = mobile ? 12 : 16', 'const crackCount = mobile ? 8 : 12'
+], 'Bass Fracture kinetic flow');
 const lens = read('js/features/visual/gravity-lens.js');
-includesAll(lens, ['shapeMotionTarget', 'motionPhase(time, activity, .25)', 'const warpMomentum = clamp(', 'const shearMomentum = clamp(', 'const bandCount = mobile ? 4 : 6', 'const streamCount = mobile ? 8 : 14'], 'Gravity Lens dynamic breathing');
+includesAll(lens, [
+  'shapeAudioDrive(', "advanceMotionPhase(motion, 'gravity-flow'", 'const centerTravel =', 'const globalTilt =',
+  'const bandCount = mobile ? 4 : 6', 'const streamCount = mobile ? 8 : 14'
+], 'Gravity Lens kinetic flow');
 const bio = read('js/features/visual/bio-structure.js');
-includesAll(bio, ['shapeMotionTarget', 'motionPhase(time, activity, .31)', 'const breathMomentum = clamp(', 'const flexMomentum = clamp(', 'const ribCount = mobile ? 5 : 8', 'const veinCount = mobile ? 8 : 14'], 'Bio Structure dynamic breathing');
+includesAll(bio, [
+  'shapeAudioDrive(', "advanceMotionPhase(motion, 'bio-flow'", 'const driftRadius =', 'const bodyTilt =',
+  'const ribCount = mobile ? 5 : 8', 'const veinCount = mobile ? 8 : 14'
+], 'Bio Structure kinetic flow');
 for (const isolated of [pulse, fracture, lens, bio]) {
   assert.ok(!isolated.includes('requestAnimationFrame('), 'Isolated visual must use the shared renderer scheduler.');
   assert.ok(!isolated.includes('setInterval('), 'Isolated visual must not self-schedule an autonomous loop.');
   assert.ok(!isolated.includes('Math.random('), 'Isolated visual geometry must remain deterministic.');
+  assert.ok(!isolated.includes('shapeMotionTarget('), 'Build 56 soft-knee compression must not remain in kinetic renderers.');
 }
 
 const live = read('js/features/visual/visual-engine-live.js');
@@ -95,10 +108,10 @@ const worker = read('sw.js');
 includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260808-dynamic-breathing-v56');
-assert.equal(build.cache, 'shinobi-launchpad-v56');
-assert.equal(build.display, '2026.08.08.56');
-assert.equal(build.release, 'dynamic-breathing-20260808');
-assert.equal(build.revision, 'dynamic-breathing-1');
+assert.equal(build.id, '20260808-kinetic-flow-v57');
+assert.equal(build.cache, 'shinobi-launchpad-v57');
+assert.equal(build.display, '2026.08.08.57');
+assert.equal(build.release, 'kinetic-flow-20260808');
+assert.equal(build.revision, 'kinetic-flow-1');
 
 console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}) with ${presetCount} sanctioned Audio Lab presets.`);

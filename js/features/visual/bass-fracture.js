@@ -1,22 +1,13 @@
-import { beginMotionFrame, motionPhase, shapeMotionTarget, springChannel } from './motion-spring.js';
+import { advanceMotionPhase, beginMotionFrame, shapeAudioDrive, springChannel } from './motion-spring.js';
 
-function clamp(value, minimum = 0, maximum = 1) {
-  return Math.max(minimum, Math.min(maximum, value));
-}
+const clamp = (value, minimum = 0, maximum = 1) => Math.max(minimum, Math.min(maximum, value));
 
 function colorWithAlpha(color, alpha) {
   const value = clamp(alpha);
   const six = /^#([0-9a-f]{6})$/i.exec(color);
-  if (six) {
-    const number = Number.parseInt(six[1], 16);
-    return `rgba(${number >> 16},${number >> 8 & 255},${number & 255},${value})`;
-  }
-  const three = /^#([0-9a-f]{3})$/i.exec(color);
-  if (three) {
-    const [red, green, blue] = three[1].split('').map(part => Number.parseInt(part + part, 16));
-    return `rgba(${red},${green},${blue},${value})`;
-  }
-  return color;
+  if (!six) return color;
+  const number = Number.parseInt(six[1], 16);
+  return `rgba(${number >> 16},${number >> 8 & 255},${number & 255},${value})`;
 }
 
 function average(data, start, end) {
@@ -55,11 +46,11 @@ function point(angle, radius) {
 }
 
 /**
- * Bass Fracture — dynamic-breathing pass.
+ * Bass Fracture — Build 57 kinetic-flow pass.
  *
- * The plate system keeps the same sparse geometry but no longer lives close to
- * maximum rupture. Soft-knee targets reserve headroom and signed spring
- * velocity produces glide/recoil, so the disc feels alive between impacts.
+ * Plates no longer wait for a peak to become interesting. A signal-driven
+ * integrated phase keeps the tectonic body sliding and twisting through steady
+ * grooves; bass/kicks then add large rupture travel on top.
  */
 export function drawBassFractureMode(context, width, height, data, accent, accent2, time, features = {}) {
   const mobile = mobileVisualDevice(width);
@@ -72,53 +63,66 @@ export function drawBassFractureMode(context, width, height, data, accent, accen
   const rawHigh = average(data, data.length * .6, data.length);
   const rawEnergy = average(data, 0, data.length);
 
-  const bass = shapeMotionTarget(Math.max(feature(features, 'bass'), Math.pow(rawBass, .68) * 1.16), { ceiling: .86 });
-  const mid = shapeMotionTarget(Math.max(feature(features, 'mid'), Math.pow(rawMid, .76) * 1.1), { ceiling: .84 });
-  const high = shapeMotionTarget(Math.max(feature(features, 'high'), Math.pow(rawHigh, .7) * 1.12), { ceiling: .86 });
-  const energy = shapeMotionTarget(Math.max(feature(features, 'energy'), Math.pow(rawEnergy, .76) * 1.1), { ceiling: .84 });
-  const kick = shapeMotionTarget(feature(features, 'kick'), { knee: .5, ceiling: .9, lowExponent: .88 });
-  const peak = shapeMotionTarget(feature(features, 'peak'), { knee: .58, ceiling: .88 });
-  const dynamics = shapeMotionTarget(feature(features, 'dynamics'), { ceiling: .86 });
+  const bass = shapeAudioDrive(rawBass, feature(features, 'bass'), { rawGain: 1.55, featureWeight: .28, exponent: .66 });
+  const mid = shapeAudioDrive(rawMid, feature(features, 'mid'), { rawGain: 1.45, featureWeight: .3, exponent: .7 });
+  const high = shapeAudioDrive(rawHigh, feature(features, 'high'), { rawGain: 1.5, featureWeight: .28, exponent: .68 });
+  const energy = shapeAudioDrive(rawEnergy, feature(features, 'energy'), { rawGain: 1.62, featureWeight: .24, exponent: .64 });
+  const kick = feature(features, 'kick');
+  const peak = feature(features, 'peak');
+  const dynamics = feature(features, 'dynamics');
 
-  const activityTarget = shapeMotionTarget(energy * .6 + bass * .26 + mid * .08 + high * .08 + kick * .12, { ceiling: .82 });
-  const fractureTarget = shapeMotionTarget(Math.pow(bass, .7) * .43 + kick * .55 + Math.max(0, peak - .45) * .32 + dynamics * .12, { knee: .5, ceiling: .84 });
-  const motionScale = mobile ? 1.48 : 1.12;
-  const ruptureTarget = shapeMotionTarget(Math.max(0, fractureTarget - .4) * 1.42 + kick * .28 + peak * .08, { knee: .46, ceiling: .82 });
-  const twistTarget = shapeMotionTarget(mid * .72 + high * .12 + dynamics * .12, { ceiling: .8 });
+  const grooveTarget = clamp(energy * .5 + mid * .25 + bass * .25 + high * .08);
+  const fractureTarget = clamp(bass * .42 + kick * .7 + peak * .14 + dynamics * .12);
+  const ruptureTarget = clamp(Math.max(0, fractureTarget - .34) * 1.55 + kick * .34 + bass * .18);
+  const twistTarget = clamp(mid * .62 + high * .18 + dynamics * .16 + bass * .12);
 
   const motion = beginMotionFrame(context, time);
-  const activitySpring = springChannel(motion, 'activity', activityTarget, { stiffness: 23, damping: 7.1, maximum: 1 });
-  const fractureSpring = springChannel(motion, 'fracture', fractureTarget, { stiffness: 36, damping: 7.2, maximum: 1.02 });
-  const ruptureSpring = springChannel(motion, 'rupture', ruptureTarget, { stiffness: 42, damping: 6.7, maximum: 1.08 });
-  const twistSpring = springChannel(motion, 'twist', twistTarget, { stiffness: 27, damping: 7.7, maximum: .98 });
-  const highSpring = springChannel(motion, 'high', high, { stiffness: 34, damping: 8.2, maximum: 1 });
+  const grooveSpring = springChannel(motion, 'groove', grooveTarget, { stiffness: 30, damping: 6.5, maximum: 1.1 });
+  const fractureSpring = springChannel(motion, 'fracture', fractureTarget, { stiffness: 48, damping: 6.9, maximum: 1.22 });
+  const ruptureSpring = springChannel(motion, 'rupture', ruptureTarget, { stiffness: 62, damping: 6.8, maximum: 1.38 });
+  const twistSpring = springChannel(motion, 'twist', twistTarget, { stiffness: 34, damping: 7.2, maximum: 1.15 });
+  const highSpring = springChannel(motion, 'high', high, { stiffness: 42, damping: 7.8, maximum: 1.12 });
 
-  const activity = clamp(activitySpring.value, 0, 1);
-  const fractureMomentum = clamp(fractureSpring.velocity * .007, -.1, .1);
-  const ruptureMomentum = clamp(ruptureSpring.velocity * .0085, -.14, .14);
-  const twistMomentum = clamp(twistSpring.velocity * .008, -.09, .09);
-  const fracture = clamp(fractureSpring.value + fractureMomentum, 0, 1.02);
-  const rupture = clamp(ruptureSpring.value + ruptureMomentum, 0, 1.08);
-  const elasticTwist = clamp(twistSpring.value + twistMomentum, 0, .98);
-  const elasticHigh = clamp(highSpring.value, 0, 1);
-  const phase = motionPhase(time, activity, .28);
+  const groove = clamp(grooveSpring.value, 0, 1.08);
+  const fracture = clamp(fractureSpring.value + fractureSpring.velocity * .01, 0, 1.2);
+  const rupture = clamp(ruptureSpring.value + ruptureSpring.velocity * .014, 0, 1.42);
+  const twist = clamp(twistSpring.value + twistSpring.velocity * .006, 0, 1.16);
+  const elasticHigh = clamp(highSpring.value, 0, 1.1);
+  const flow = advanceMotionPhase(motion, 'tectonic-flow', clamp(groove * .8 + mid * .18 + high * .08), {
+    baseSpeed: .5,
+    dynamicSpeed: 1.9,
+    response: 5.6,
+    release: 9
+  });
+  const phase = flow.phase;
 
   const layerCount = mobile ? 2 : 3;
   const sectorCount = mobile ? 12 : 16;
   const crackCount = mobile ? 8 : 12;
   const shadowCap = mobile ? 4 : 9;
+  const motionScale = mobile ? 1.66 : 1.34;
   const baseRadius = minSide * (mobile ? .32 : .315);
 
-  const atmosphereRadius = baseRadius * (1.8 + fracture * .24);
-  const atmosphere = context.createRadialGradient(cx, cy, 0, cx, cy, atmosphereRadius);
-  atmosphere.addColorStop(0, colorWithAlpha(accent2, .04 + fracture * .095));
-  atmosphere.addColorStop(.42, colorWithAlpha(accent, .016 + bass * .055));
+  // The complete tectonic mass rolls slightly rather than sitting perfectly
+  // centred. It remains cheap: this is one transform, not more geometry.
+  const bodyTravel = baseRadius * (.025 + groove * .07);
+  const bodyX = Math.sin(phase * .62) * bodyTravel * groove;
+  const bodyY = Math.cos(phase * .47 + .7) * bodyTravel * .65 * groove;
+  const bodyRotation = Math.sin(phase * .34) * groove * .13 + ruptureSpring.velocity * .002;
+  const breathingScale = 1 + Math.sin(phase * 1.28) * groove * .035 + fracture * .025;
+
+  const atmosphereRadius = baseRadius * (1.75 + groove * .18 + fracture * .34);
+  const atmosphere = context.createRadialGradient(cx + bodyX, cy + bodyY, 0, cx + bodyX, cy + bodyY, atmosphereRadius);
+  atmosphere.addColorStop(0, colorWithAlpha(accent2, .04 + groove * .055 + fracture * .13));
+  atmosphere.addColorStop(.44, colorWithAlpha(accent, .018 + bass * .08));
   atmosphere.addColorStop(1, 'rgba(0,0,0,0)');
   context.fillStyle = atmosphere;
   context.fillRect(0, 0, width, height);
 
   context.save();
-  context.translate(cx, cy);
+  context.translate(cx + bodyX, cy + bodyY);
+  context.rotate(bodyRotation);
+  context.scale(breathingScale, 2 - breathingScale);
   context.globalCompositeOperation = 'lighter';
 
   const sectorSpan = Math.PI * 2 / sectorCount;
@@ -126,42 +130,40 @@ export function drawBassFractureMode(context, width, height, data, accent, accen
     const layerProgress = layer / Math.max(1, layerCount - 1);
     const innerBase = baseRadius * (.14 + layerProgress * .3);
     const outerBase = baseRadius * (.5 + layerProgress * .32);
-    const layerBreath = Math.sin(phase * 1.72 - layer * .76) * Math.pow(activity, .66) * baseRadius * (.017 + layerProgress * .007);
-    const layerRotation = (layer % 2 ? -1 : 1) * (
-      phase * (.18 + layerProgress * .065)
-      + elasticTwist * .06 * (layer + 1)
-      + ruptureMomentum * .48
-    );
-    const layerWeight = 1 - layerProgress * .2;
+    const direction = layer % 2 ? -1 : 1;
+    const layerWave = Math.sin(phase * (1.32 + layerProgress * .22) - layer * 1.05);
+    const layerBreath = layerWave * groove * baseRadius * (.025 + layerProgress * .012);
+    const layerRotation = direction * (phase * (.22 + layerProgress * .1) + twist * .11 * (layer + 1))
+      + ruptureSpring.velocity * .0018;
+    const layerWeight = 1 - layerProgress * .16;
 
     for (let sector = 0; sector < sectorCount; sector += 1) {
       const progress = (sector + .5) / sectorCount;
-      const spectral = Math.pow(sampleAt(data, progress * .8 + layerProgress * .14), .7);
-      const lowBias = Math.pow(sampleAt(data, progress * .22), .7);
+      const spectral = Math.pow(sampleAt(data, progress * .82 + layerProgress * .12), .6);
+      const lowBias = Math.pow(sampleAt(data, progress * .24), .58);
       const personality = hash(sector, layer + 1) * 2 - 1;
-      const plateDrive = clamp(fracture * .34 + rupture * .5 + spectral * .22 + lowBias * bass * .2);
-      const sway = Math.sin(phase * 2.15 + sector * .68 + layer * .8) * Math.pow(activity, .64) * baseRadius * .018 * personality;
-      const recoil = ruptureMomentum * baseRadius * (.12 + Math.abs(personality) * .1);
+      const localWave = Math.sin(phase * (1.8 + hash(sector, 9) * .65) + sector * .64 + layer * .9);
+      const plateDrive = clamp(fracture * .38 + rupture * .6 + spectral * .32 + groove * .16);
       const separation = baseRadius * motionScale * (
-        fracture * (.014 + layerProgress * .014)
-        + rupture * (.024 + Math.abs(personality) * .03)
-        + spectral * .008
+        fracture * (.025 + layerProgress * .02)
+        + rupture * (.045 + Math.abs(personality) * .05)
+        + spectral * .012
       );
-      const radialOffset = (separation * (.58 + Math.abs(personality) * .72) + layerBreath + sway + recoil * personality) * layerWeight;
-      const tangential = personality * rupture * baseRadius * .025 * motionScale
-        + Math.cos(phase * 1.82 + sector * .54) * Math.pow(activity, .65) * baseRadius * .014
-        + ruptureMomentum * baseRadius * .12;
+      const livingTravel = localWave * groove * baseRadius * motionScale * (.018 + Math.abs(personality) * .014);
+      const radialOffset = (separation * (.62 + Math.abs(personality) * .86) + layerBreath + livingTravel) * layerWeight;
+      const tangential = personality * rupture * baseRadius * .043 * motionScale
+        + Math.cos(phase * 1.45 + sector * .52) * groove * baseRadius * .03 * motionScale;
       const angleCenter = sector * sectorSpan + layerRotation;
-      const gapScale = .055 + rupture * .06;
+      const gapScale = .055 + rupture * .09;
       const start = angleCenter + sectorSpan * gapScale;
-      const end = angleCenter + sectorSpan * (.945 - gapScale);
-      const inner = innerBase + radialOffset * (.28 + layerProgress * .14);
+      const end = angleCenter + sectorSpan * (.95 - gapScale);
+      const inner = innerBase + radialOffset * (.26 + layerProgress * .14);
       const outer = outerBase + radialOffset;
 
       const [x1, y1] = point(start, inner);
-      const [x2, y2] = point(end, inner + personality * rupture * baseRadius * .01);
-      const [x3, y3] = point(end + personality * elasticHigh * .005, outer);
-      const [x4, y4] = point(start - personality * elasticHigh * .005, outer + personality * rupture * baseRadius * .01);
+      const [x2, y2] = point(end, inner + personality * rupture * baseRadius * .016);
+      const [x3, y3] = point(end + personality * elasticHigh * .009, outer);
+      const [x4, y4] = point(start - personality * elasticHigh * .009, outer + personality * rupture * baseRadius * .017);
       const tx = -Math.sin(angleCenter) * tangential;
       const ty = Math.cos(angleCenter) * tangential;
 
@@ -173,88 +175,87 @@ export function drawBassFractureMode(context, width, height, data, accent, accen
       context.closePath();
 
       const plateColor = (sector + layer) % 3 === 0 ? accent2 : accent;
-      context.fillStyle = colorWithAlpha(plateColor, .02 + plateDrive * .075);
+      context.fillStyle = colorWithAlpha(plateColor, .025 + plateDrive * .105);
       context.fill();
       context.strokeStyle = colorWithAlpha((sector + layer) % 5 === 0 ? '#ffffff' : plateColor,
-        .07 + spectral * .22 + elasticHigh * .09 + rupture * .18);
-      context.lineWidth = .55 + spectral * .78 + rupture * .58;
+        .075 + spectral * .3 + elasticHigh * .12 + rupture * .27 + groove * .06);
+      context.lineWidth = .6 + spectral * 1 + rupture * .82;
       context.shadowColor = plateColor;
-      context.shadowBlur = Math.min(shadowCap, elasticHigh * shadowCap * .5 + rupture * shadowCap * .28);
+      context.shadowBlur = Math.min(shadowCap, elasticHigh * shadowCap * .55 + rupture * shadowCap * .4);
       context.stroke();
     }
   }
 
   context.shadowBlur = 0;
-  const crackPropagation = clamp(rupture * .68 + Math.abs(ruptureMomentum) * 2.2 + elasticHigh * .16, 0, 1);
   for (let crack = 0; crack < crackCount; crack += 1) {
     const progress = (crack + .5) / crackCount;
-    const spectral = Math.pow(sampleAt(data, .5 + progress * .5), .64);
+    const spectral = Math.pow(sampleAt(data, .48 + progress * .5), .56);
     const personality = hash(crack, 17) * 2 - 1;
-    const drive = clamp(elasticHigh * .3 + spectral * .54 + rupture * .34 + dynamics * .08);
-    if (drive < .06) continue;
-    const crawling = Math.sin(phase * 2.45 - crack * .52) * Math.pow(activity, .64);
-    const angle = progress * Math.PI * 2 + phase * .09 + personality * elasticTwist * .028 + crawling * .026 + ruptureMomentum * .22;
-    const inner = baseRadius * (.09 + hash(crack, 5) * .11);
-    const middle = baseRadius * (.34 + hash(crack, 8) * .11 + rupture * .055);
-    const outer = baseRadius * (.74 + drive * .23 + crackPropagation * .18 * motionScale);
-    const bend = personality * (.04 + drive * .05 + crawling * .03) + ruptureMomentum * .12;
+    const drive = clamp(elasticHigh * .35 + spectral * .62 + rupture * .48 + groove * .14 + dynamics * .08);
+    if (drive < .055) continue;
+    const crawl = Math.sin(phase * (2.05 + hash(crack, 4) * .5) - crack * .58);
+    const angle = progress * Math.PI * 2 + phase * .11 + personality * twist * .05 + crawl * groove * .055;
+    const inner = baseRadius * (.08 + hash(crack, 5) * .12);
+    const middle = baseRadius * (.34 + hash(crack, 8) * .13 + rupture * .08 + crawl * groove * .03);
+    const outer = baseRadius * (.74 + drive * .32 + rupture * .24 * motionScale + Math.abs(crawl) * groove * .08);
+    const bend = personality * (.05 + drive * .075) + crawl * groove * .06;
 
     const [x1, y1] = point(angle, inner);
     const [x2, y2] = point(angle + bend, middle);
-    const [x3, y3] = point(angle - bend * .55, outer);
+    const [x3, y3] = point(angle - bend * .6, outer);
     context.beginPath();
     context.moveTo(x1, y1);
     context.lineTo(x2, y2);
     context.lineTo(x3, y3);
-    context.strokeStyle = colorWithAlpha(crack % 3 ? accent2 : '#ffffff', .02 + drive * .35);
-    context.lineWidth = .35 + drive * .9;
+    context.strokeStyle = colorWithAlpha(crack % 3 ? accent2 : '#ffffff', .025 + drive * .46);
+    context.lineWidth = .4 + drive * 1.12;
     context.stroke();
   }
 
-  const faultRadius = baseRadius * (.2 + fracture * .07 + Math.sin(phase * 1.95) * Math.pow(activity, .66) * .017 + fractureMomentum * .06);
-  const fault = context.createRadialGradient(0, 0, 0, 0, 0, Math.max(1, faultRadius));
-  fault.addColorStop(0, colorWithAlpha('#ffffff', .12 + peak * .28));
-  fault.addColorStop(.22, colorWithAlpha(accent2, .15 + fracture * .23));
-  fault.addColorStop(.68, colorWithAlpha(accent, .035 + bass * .09));
+  const faultRadius = baseRadius * (.18 + fracture * .12 + groove * .03 + Math.sin(phase * 1.7) * groove * .025);
+  const fault = context.createRadialGradient(0, 0, 0, 0, 0, faultRadius);
+  fault.addColorStop(0, colorWithAlpha('#ffffff', .12 + peak * .4));
+  fault.addColorStop(.22, colorWithAlpha(accent2, .18 + fracture * .32));
+  fault.addColorStop(.68, colorWithAlpha(accent, .04 + bass * .14));
   fault.addColorStop(1, 'rgba(0,0,0,0)');
   context.fillStyle = fault;
   context.beginPath();
-  context.arc(0, 0, Math.max(1, faultRadius), 0, Math.PI * 2);
+  context.arc(0, 0, faultRadius, 0, Math.PI * 2);
   context.fill();
 
-  if (rupture > .18) {
+  if (rupture > .14) {
     const shardCount = mobile ? 5 : 7;
     for (let shard = 0; shard < shardCount; shard += 1) {
       const progress = (shard + .5) / shardCount;
       const personality = hash(shard, 31) * 2 - 1;
-      const angle = progress * Math.PI * 2 + personality * .08 + phase * personality * .035 + ruptureMomentum * .28;
-      const travel = baseRadius * rupture * motionScale * (.11 + hash(shard, 4) * .12) + ruptureMomentum * baseRadius * .16;
+      const angle = progress * Math.PI * 2 + personality * .1 + phase * personality * .08;
+      const travel = baseRadius * rupture * motionScale * (.18 + hash(shard, 4) * .2);
       const centerRadius = baseRadius * (.18 + hash(shard, 9) * .16) + travel;
-      const size = baseRadius * (.026 + hash(shard, 12) * .03) * (.48 + rupture * .65);
+      const size = baseRadius * (.028 + hash(shard, 12) * .034) * (.5 + rupture * .88);
       const [sx, sy] = point(angle, centerRadius);
       context.save();
       context.translate(sx, sy);
-      context.rotate(angle + personality * rupture * .45 + ruptureMomentum * .7);
+      context.rotate(angle + personality * rupture * .72 + ruptureSpring.velocity * .003);
       context.beginPath();
       context.moveTo(-size, size * .34);
       context.lineTo(size * .72, -size * .52);
       context.lineTo(size * .44, size * .6);
       context.closePath();
-      context.fillStyle = colorWithAlpha(shard % 2 ? accent : accent2, .03 + rupture * .1);
+      context.fillStyle = colorWithAlpha(shard % 2 ? accent : accent2, .035 + rupture * .15);
       context.fill();
-      context.strokeStyle = colorWithAlpha(shard % 3 ? accent2 : '#ffffff', .07 + rupture * .3);
-      context.lineWidth = .4 + rupture * .5;
+      context.strokeStyle = colorWithAlpha(shard % 3 ? accent2 : '#ffffff', .08 + rupture * .42);
+      context.lineWidth = .4 + rupture * .68;
       context.stroke();
       context.restore();
     }
   }
 
-  if (rupture > .48) {
-    const frontRadius = baseRadius * (.68 + rupture * .24 + Math.sin(phase * 1.55) * Math.pow(activity, .66) * .024 + ruptureMomentum * .12);
+  if (rupture > .46) {
+    const frontRadius = baseRadius * (.68 + rupture * .4 + Math.sin(phase * 1.3) * groove * .04);
     context.beginPath();
-    context.arc(0, 0, Math.max(1, frontRadius), 0, Math.PI * 2);
-    context.strokeStyle = colorWithAlpha(accent2, (rupture - .48) * .27);
-    context.lineWidth = .65 + rupture * .78;
+    context.arc(0, 0, frontRadius, 0, Math.PI * 2);
+    context.strokeStyle = colorWithAlpha(accent2, (rupture - .46) * .42);
+    context.lineWidth = .75 + rupture * 1.1;
     context.stroke();
   }
 

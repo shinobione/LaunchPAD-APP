@@ -31,8 +31,7 @@ for (const required of [
   "{ id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }",
   "{ id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }",
   "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
-  "{ id: 'spectrum', label: 'Spectrum' }",
-  'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)',
+  "{ id: 'spectrum', label: 'Spectrum' }", 'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)',
   "document.documentElement.dataset.audioLabRenderer = 'seven-core-v2'",
   "document.documentElement.dataset.audioLabPresetCount = '7'",
   "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' ? 1.05"
@@ -45,43 +44,43 @@ for (const required of ['export function drawNeonShatterV2Mode(', 'export functi
 
 const motion = read('js/features/visual/motion-spring.js');
 for (const required of [
-  'export function beginMotionFrame(', 'export function springChannel(', 'export function shapeMotionTarget(',
-  'const knee = clamp(', 'const ceiling = clamp(', 'export function motionPhase(',
-  'Math.pow(clamp(Number(activity) || 0, 0, 1.2), .62)'
+  'export function beginMotionFrame(', 'export function springChannel(', 'export function shapeAudioDrive(',
+  'export function advanceMotionPhase(', 'phases: new Map()', 'state.phase += state.speed * frame.dt'
 ]) assert.ok(motion.includes(required), `Motion helper is missing ${required}.`);
 
 const reactor = read('js/features/visual/pulse-reactor.js');
 for (const required of [
-  'export function drawPulseReactorMode(', 'shapeMotionTarget', 'const ringCount = mobile ? 3 : 4',
+  'export function drawPulseReactorMode(', 'shapeAudioDrive(', 'const ringCount = mobile ? 3 : 4',
   'const segmentCount = mobile ? 14 : 24', "springChannel(motion, 'impact'",
-  'const bassMomentum = clamp(', 'const impactMomentum = clamp(', 'const elasticWobble = Math.sin('
+  "advanceMotionPhase(motion, 'reactor-flow'", 'const centerTravel =', 'const driftX ='
 ]) assert.ok(reactor.includes(required), `Pulse Reactor contract is missing ${required}.`);
 
 const fracture = read('js/features/visual/bass-fracture.js');
 for (const required of [
-  'export function drawBassFractureMode(', 'shapeMotionTarget', 'const motionScale = mobile ? 1.48 : 1.12',
+  'export function drawBassFractureMode(', 'shapeAudioDrive(', 'const motionScale = mobile ? 1.66 : 1.34',
   'const layerCount = mobile ? 2 : 3', 'const sectorCount = mobile ? 12 : 16', 'const crackCount = mobile ? 8 : 12',
-  "springChannel(motion, 'rupture'", 'const ruptureMomentum = clamp('
+  "springChannel(motion, 'rupture'", "advanceMotionPhase(motion, 'tectonic-flow'", 'const bodyTravel ='
 ]) assert.ok(fracture.includes(required), `Bass Fracture contract is missing ${required}.`);
 
 const lens = read('js/features/visual/gravity-lens.js');
 for (const required of [
-  'export function drawGravityLensMode(', 'shapeMotionTarget', 'const bandCount = mobile ? 4 : 6',
+  'export function drawGravityLensMode(', 'shapeAudioDrive(', 'const bandCount = mobile ? 4 : 6',
   'const arcCount = mobile ? 12 : 20', 'const streamCount = mobile ? 8 : 14',
-  "springChannel(motion, 'warp'", 'const warpMomentum = clamp(', 'const streamDrift = Math.sin('
+  "springChannel(motion, 'warp'", "advanceMotionPhase(motion, 'gravity-flow'", 'const centerTravel =', 'context.quadraticCurveTo('
 ]) assert.ok(lens.includes(required), `Gravity Lens contract is missing ${required}.`);
 
 const bio = read('js/features/visual/bio-structure.js');
 for (const required of [
-  'export function drawBioStructureMode(', 'shapeMotionTarget', 'const ribCount = mobile ? 5 : 8',
+  'export function drawBioStructureMode(', 'shapeAudioDrive(', 'const ribCount = mobile ? 5 : 8',
   'const veinCount = mobile ? 8 : 14', 'const nodeCount = mobile ? 6 : 9',
-  "springChannel(motion, 'breath'", 'const breathMomentum = clamp(', 'context.quadraticCurveTo('
+  "springChannel(motion, 'breath'", "advanceMotionPhase(motion, 'bio-flow'", 'const driftRadius =', 'context.quadraticCurveTo('
 ]) assert.ok(bio.includes(required), `Bio Structure contract is missing ${required}.`);
 
 for (const isolated of [reactor, fracture, lens, bio]) {
   assert.ok(!isolated.includes('setInterval('));
   assert.ok(!isolated.includes('requestAnimationFrame('));
   assert.ok(!isolated.includes('Math.random('));
+  assert.ok(!isolated.includes('shapeMotionTarget('));
 }
 
 const base = read('js/features/visual/visual-engine-v2.js');
@@ -116,6 +115,6 @@ for (const required of [
 ]) assert.ok(worker.includes(required), `PWA shell is missing ${required}.`);
 
 const build = assertCurrentBuild('Audio Lab current build');
-assert.equal(build.display, '2026.08.08.56');
-assert.equal(build.release, 'dynamic-breathing-20260808');
-console.log(`Audio Lab exposes seven shared-FFT presets with dynamic motion headroom under ${build.display}.`);
+assert.equal(build.display, '2026.08.08.57');
+assert.equal(build.release, 'kinetic-flow-20260808');
+console.log(`Audio Lab exposes seven shared-FFT presets with integrated kinetic motion under ${build.display}.`);

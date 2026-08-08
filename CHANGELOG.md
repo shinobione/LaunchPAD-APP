@@ -1,8 +1,21 @@
 # Changelog
 
-> Current application build: `2026.08.08.56` — release `dynamic-breathing-20260808`.
+> Current application build: `2026.08.08.57` — release `kinetic-flow-20260808`.
 
 This file intentionally tracks the recent stabilized release line. Older milestone-by-milestone history remains available in Git history and merged pull requests.
+
+## Build 57 — Kinetic flow
+
+- Remove Build 56 `shapeMotionTarget()` soft-knee pose compression from Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure after real-device feedback showed it reduced visible travel and made the effects feel more static.
+- Add `shapeAudioDrive()` to blend raw FFT energy with the smoothed feature stream without pinning the renderer at a permanently-open pose.
+- Add `advanceMotionPhase()` with per-canvas integrated phase/speed state. Motion now advances frame by frame while audio activity exists instead of multiplying absolute time by a changing activity value.
+- **Pulse Reactor** gains whole-reactor drift, larger breathing travel, continuously rotating rings, travelling radial waves and groove-level spoke motion; kicks still add impact/fracture on top.
+- **Bass Fracture** gains whole-body roll/translation, continuous plate sliding and twisting, wider crack crawl and a mobile motion scale of `1.66` without increasing primitive counts.
+- **Gravity Lens** gains continuous precession, lens-centre drift, wider orbital breathing and sweeping curved streams while preserving the central horizon as the visual anchor.
+- **Bio Structure** gains whole-body drift/tilt, larger travelling spine waves, wider rib sweeps, stronger membrane deformation and clearly travelling nerve impulses.
+- Keep **Spectrum**, **Neon Shatter** and **Liquid Chrome** untouched.
+- Keep every isolated renderer deterministic, on Spectrum's shared analyser feed, without private RAF/timer loops or `Math.random()` motion.
+- Keep mobile geometry/DPR budgets unchanged and advance the PWA namespace to Build 57 / cache v57.
 
 ## Build 56 — Dynamic breathing
 
