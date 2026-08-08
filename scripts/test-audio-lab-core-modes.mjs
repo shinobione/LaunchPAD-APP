@@ -8,58 +8,66 @@ const bridge = read('js/features/visual/visual-engine.js').trim();
 assert.equal(bridge, "export { createVisualController } from './visual-engine-live.js';");
 
 const retiredIds = [
-  ['prism', 'tunnel'], ['cyber', 'rain'], ['quantum', 'grid'], ['tesla', 'veins'],
-  ['hyper', 'drive'], ['wave', 'cathedral'], ['hex', 'reactor']
-].map(parts => parts.join('-'));
+  'aurora-glass', 'nebula', 'singularity', 'prism-tunnel', 'cyber-rain',
+  'quantum-grid', 'tesla-veins', 'hyperdrive', 'wave-cathedral', 'hex-reactor'
+];
+
+const registry = read('js/features/visual/audio-lab-registry.js');
+for (const required of [
+  "const AUDIO_LAB_DEFAULT_MODE = 'neon-shatter'",
+  "id: 'neon-shatter', label: 'Neon Shatter'",
+  "id: 'spectrum', label: 'Spectrum'",
+  "id: 'liquid-chrome', label: 'Liquid Chrome'",
+  "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum'])"
+]) assert.ok(registry.includes(required), `Audio Lab registry is missing ${required}.`);
+for (const forbidden of retiredIds) {
+  assert.ok(!registry.includes(forbidden), `Retired Audio Lab preset ${forbidden} leaked into the registry.`);
+}
+assert.equal((registry.match(/Object\.freeze\(\{ id:/g) || []).length, 3, 'Audio Lab must expose exactly three presets.');
 
 const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
   "const DEFAULT_MODE = 'neon-shatter'",
+  "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode }",
+  "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
   "{ id: 'spectrum', label: 'Spectrum' }",
-  "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterAdaptiveMode }",
-  "{ id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }",
-  "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeLiveMode }",
-  "{ id: 'singularity', label: 'Singularity', renderer: drawSingularityLiveMode }",
-  "document.documentElement.dataset.audioLabRenderer = 'signal-first-v9'",
-  'function boostLiveFeatures(features)',
-  'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)',
-  'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60',
-  'const TELEMETRY_INTERVAL = 120'
-]) assert.ok(live.includes(required), `Live Audio Lab renderer is missing ${required}.`);
-for (const forbidden of [...retiredIds, "'bars'", "id: 'circle'", 'drawOrbitMode', 'drawWaveCathedralMode', 'drawHexReactorMode', 'shapeReactiveSpectrum(raw, shaped, features)']) {
-  assert.ok(!live.includes(forbidden), `Retired/over-smoothed Audio Lab path ${forbidden} leaked into the live registry.`);
+  'base.readSpectrum?.(raw)',
+  'reading = readAudioLabSpectrum(raw)',
+  "document.documentElement.dataset.audioLabRenderer = 'three-core-v1'",
+  "document.documentElement.dataset.audioLabPresetCount = '3'",
+  'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)'
+]) assert.ok(live.includes(required), `Three-core Audio Lab integration is missing ${required}.`);
+for (const forbidden of [...retiredIds, "'bars'", "id: 'circle'", 'synthesizePlaybackSpectrum', 'readAudioLabAmplitude']) {
+  assert.ok(!live.includes(forbidden), `Retired or parallel Audio Lab path ${forbidden} leaked into live integration.`);
 }
 
 const core = read('js/features/visual/visual-engine-core-modes.js');
 for (const required of [
-  'export function drawAuroraGlassMode(',
-  'export function drawNeonShatterAdaptiveMode(',
-  'export function drawLiquidChromeLiveMode(',
-  'export function drawSingularityLiveMode(',
-  'const rawBass = bandAverage(',
-  'const rawMiddle = bandAverage(',
-  'const rawHigh = bandAverage(',
-  'const beatDrive = clamp(',
-  'const radialDrive = .72 + value * .82',
-  'const spectralLift = (spectral - bandValue * .36)',
-  'const fragments = mobile ? 22 : 54',
-  'const cracks = mobile ? 10 : 18',
-  'const baseRadius = .247',
-  'const outerReach = minSide * .37'
-]) assert.ok(core.includes(required), `Signal-first Audio Lab renderer is missing ${required}.`);
-assert.ok(core.includes('const tinyDrift = Math.sin(time * .31) * energy * .025'));
-assert.ok(core.includes('const microDrift = Math.sin(time * .23) * energy * .018'));
-assert.ok(!fs.existsSync('js/features/visual/visual-engine-hex-reactor.js'));
+  'export function drawNeonShatterV2Mode(',
+  'export function drawLiquidChromeV2Mode(',
+  'const impact = clamp(',
+  'const gatedDrift = time * activity * .16',
+  'const distance = baseDistance * (.58 + impact * 1.48 + localDrive * .92)',
+  'const pulse = clamp(',
+  'const phase = time * activity * .2',
+  'spectralDeform = spectral * .092 + neighbour * .032',
+  'traceLiquidContour(context, minSide, data'
+]) assert.ok(core.includes(required), `Rebuilt Audio Lab renderer is missing ${required}.`);
+for (const forbidden of ['drawAuroraGlassMode', 'drawSingularityLiveMode', 'drawNeonShatterAdaptiveMode', 'drawLiquidChromeLiveMode']) {
+  assert.ok(!core.includes(forbidden), `Retired renderer ${forbidden} remains in core modes.`);
+}
 
 const base = read('js/features/visual/visual-engine-v2.js');
 for (const required of [
-  "{ id: 'singularity', label: 'Singularity' }",
-  "{ id: 'neon-shatter', label: 'Neon Shatter' }",
-  "{ id: 'liquid-chrome', label: 'Liquid Chrome' }",
-  "{ id: 'nebula', label: 'Nebula' }",
+  "{ id: 'spectrum', label: 'Spectrum' }",
+  "let mode = 'spectrum'",
   'function drawSpectrum(',
-  'function drawLiquidChrome('
-]) assert.ok(base.includes(required), `Base Audio Lab renderer is missing ${required}.`);
+  'function readSpectrum(target)',
+  'return { resume, setMode, readSpectrum }'
+]) assert.ok(base.includes(required), `Spectrum reference engine is missing ${required}.`);
+for (const forbidden of ['drawNebula(', 'drawSingularity(', 'drawNeonShatter(', 'drawLiquidChrome(']) {
+  assert.ok(!base.includes(forbidden), `Legacy base renderer ${forbidden} must be removed.`);
+}
 
 function extractFunction(source, name) {
   const start = source.indexOf(`  function ${name}(`);
@@ -72,39 +80,27 @@ function extractFunction(source, name) {
   }
   throw new Error(`Protected renderer ${name} is malformed.`);
 }
-const protectedHashes = {
-  drawLiquidChrome: 'bc171075042d4fe881a781ba0206482d721f8e1de6fada4357c7b2d944a23967',
-  drawSpectrum: '25a86e3763b668fc69734d48439a2c93745ef927a3fcbdddaf2d0f29e0371813'
-};
-for (const [name, expected] of Object.entries(protectedHashes)) {
-  const actual = crypto.createHash('sha256').update(extractFunction(base, name)).digest('hex');
-  assert.equal(actual, expected, `${name} is sanctuary-protected and must not change.`);
-}
+const spectrumHash = '25a86e3763b668fc69734d48439a2c93745ef927a3fcbdddaf2d0f29e0371813';
+const actualSpectrumHash = crypto.createHash('sha256').update(extractFunction(base, 'drawSpectrum')).digest('hex');
+assert.equal(actualSpectrumHash, spectrumHash, 'Spectrum is the known-good reference renderer and must remain unchanged.');
 
 const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
   'function createDecodedSourceProxy(context, audio)',
   'context.decodeAudioData(bytes.slice(0))',
   'context.createBufferSource()',
-  "document.documentElement.dataset.audioGraph = 'html5-direct-plus-decoded-buffer-metering'",
   "audio.dataset.audioPlaybackPath = 'html5-direct'",
-  "audio.dataset.audioAnalysisPath = 'decoded-buffer'",
-  "window.addEventListener('shinobi:route-change'",
-  "document.addEventListener('pointerdown'",
-  'async function suspendContexts()',
-  'export function readAudioLabAmplitude('
+  "audio.dataset.audioAnalysisPath = 'decoded-buffer'"
 ]) assert.ok(signal.includes(required), `Decoded-buffer isolation layer is missing ${required}.`);
 assert.ok(!signal.includes('captureStream('));
 assert.ok(!signal.includes('createMediaStreamSource('));
-assert.ok(!signal.includes('createMirrorSourceProxy'));
 
 const worker = read('sw.js');
 assert.ok(worker.includes("'./js/features/visual/audio-reactivity.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-registry.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-sanctuary.js'"));
-assert.ok(!worker.includes('visual-engine-hex-reactor.js'));
 
 const build = assertCurrentBuild('Audio Lab current build');
 assert.match(build.display, /^\d{4}\.\d{2}\.\d{2}\.\d+$/);
 assert.ok(build.release, 'Current build release must be present.');
-console.log(`Audio Lab protected renderers and signal-first decoded-FFT contract are valid under ${build.display}.`);
+console.log(`Audio Lab is reduced to Neon Shatter, Spectrum and Liquid Chrome under ${build.display}.`);
