@@ -1,6 +1,7 @@
 const ADMIN_MODE_KEY = 'shinobiLaunchpadAdmin';
 const TRACK_MANAGER_URL = 'https://launchpad-r2-api.jerryquinet.workers.dev/';
 const LRC_MAKER_URL = 'https://shinobione.github.io/lrc-maker/';
+const SONIC_TRACE_URL = 'https://shinobione.github.io/LM-IA-Analayse/';
 
 export function resolveAdminAccess({ search = '', storage, desktop = false } = {}) {
   const mode = new URLSearchParams(search).get('admin');
@@ -18,9 +19,10 @@ export function resolveAdminAccess({ search = '', storage, desktop = false } = {
 }
 
 export function resolveLrcMakerAccess({ search = '', storage, desktop = false } = {}) {
-  // The installed desktop PWA normally launches without the browser query string.
-  // Share the same persisted admin gate as Track Manager so ?admin=1 activates
-  // both private tools across browser and standalone app sessions.
+  return resolveAdminAccess({ search, storage, desktop });
+}
+
+export function resolveSonicTraceAccess({ search = '', storage, desktop = false } = {}) {
   return resolveAdminAccess({ search, storage, desktop });
 }
 
@@ -47,10 +49,13 @@ export function initAdminAccess({
   const render = () => {
     const trackManagerEnabled = resolveAdminAccess({ search, storage, desktop: media.matches });
     const lrcMakerEnabled = resolveLrcMakerAccess({ search, storage, desktop: media.matches });
+    const sonicTraceEnabled = resolveSonicTraceAccess({ search, storage, desktop: media.matches });
 
     let trackManager = actions.querySelector('[data-track-manager-access]');
-    if (!trackManagerEnabled) trackManager?.remove();
-    else if (!trackManager) {
+    if (!trackManagerEnabled) {
+      trackManager?.remove();
+      trackManager = null;
+    } else if (!trackManager) {
       trackManager = adminToolLink({
         className: 'track-manager-access',
         datasetKey: 'trackManagerAccess',
@@ -65,9 +70,8 @@ export function initAdminAccess({
     let lrcMaker = actions.querySelector('[data-lrc-maker-access]');
     if (!lrcMakerEnabled) {
       lrcMaker?.remove();
-      return;
-    }
-    if (!lrcMaker) {
+      lrcMaker = null;
+    } else if (!lrcMaker) {
       lrcMaker = adminToolLink({
         className: 'lrc-maker-access',
         datasetKey: 'lrcMakerAccess',
@@ -78,9 +82,27 @@ export function initAdminAccess({
       });
     }
 
-    // Match the admin sketch: LRC Maker immediately before Track Manager.
-    if (trackManager?.isConnected) actions.insertBefore(lrcMaker, trackManager);
-    else actions.prepend(lrcMaker);
+    let sonicTrace = actions.querySelector('[data-sonic-trace-access]');
+    if (!sonicTraceEnabled) {
+      sonicTrace?.remove();
+      sonicTrace = null;
+    } else if (!sonicTrace) {
+      sonicTrace = adminToolLink({
+        className: 'sonic-trace-access',
+        datasetKey: 'sonicTraceAccess',
+        href: SONIC_TRACE_URL,
+        label: 'SonicTrace',
+        initials: 'ST',
+        ariaLabel: 'Open SonicTrace in a new tab'
+      });
+    }
+
+    if (trackManager?.isConnected && lrcMaker) actions.insertBefore(lrcMaker, trackManager);
+    else if (lrcMaker) actions.prepend(lrcMaker);
+
+    if (lrcMaker?.isConnected && sonicTrace) actions.insertBefore(sonicTrace, lrcMaker);
+    else if (trackManager?.isConnected && sonicTrace) actions.insertBefore(sonicTrace, trackManager);
+    else if (sonicTrace) actions.prepend(sonicTrace);
   };
 
   render();

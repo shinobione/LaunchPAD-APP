@@ -1,6 +1,6 @@
 # Reproducible Cloudflare Worker deployments
 
-> Current application build: `2026.08.08.62` — release `ui-polish-62-1-20260808`.
+> Current application build: `2026.08.08.63` — release `sonictrace-admin-link-20260808`.
 
 Current repository backend contracts: public media Worker **v2.6**, private Track Manager **v5.7**. Web-host deployment is documented separately in [`../docs/DEPLOYMENT-TOPOLOGY.md`](../docs/DEPLOYMENT-TOPOLOGY.md).
 

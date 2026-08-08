@@ -1,8 +1,17 @@
 # Changelog
 
-> Current application build: `2026.08.08.62` — release `ui-polish-62-1-20260808`.
+> Current application build: `2026.08.08.63` — release `sonictrace-admin-link-20260808`.
 
 This file intentionally tracks the recent stabilized release line. Older milestone-by-milestone history remains available in Git history and merged pull requests.
+
+## Build 63 — SonicTrace admin shortcut
+
+- Add **SonicTrace** to LaunchPAD's desktop admin shortcut strip beside LRC Maker and Track Manager.
+- Reuse the same persisted `?admin=1` gate and `?admin=0` opt-out so no separate access mode is introduced.
+- Open `https://shinobione.github.io/LM-IA-Analayse/` in a new tab with the existing `noopener noreferrer` external-tool behavior.
+- Add an `ST` badge with a cyan/teal treatment inspired by SonicTrace's green-to-cyan favicon identity while preserving LaunchPAD's existing pill geometry.
+- Extend admin-access validation and master-spec guards to cover the SonicTrace URL, label, initials and shared persistence behavior.
+- Advance the PWA cache namespace to `shinobi-launchpad-v63` so installed desktop clients receive the new shortcut without stale Build 62 assets.
 
 ## Build 62.1 — UI microfix
 

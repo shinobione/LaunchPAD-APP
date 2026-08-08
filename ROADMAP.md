@@ -1,6 +1,6 @@
 # LaunchPAD roadmap
 
-> Current application build: `2026.08.08.62` — release `ui-polish-62-1-20260808`.
+> Current application build: `2026.08.08.63` — release `sonictrace-admin-link-20260808`.
 
 The repository cleanup/reconciliation phase is complete. This roadmap now tracks product/runtime work rather than historical migration chores.
 
@@ -30,6 +30,7 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Build 60 adds Void Bloom as the eighth isolated preset using the same shared FFT + kinetic phase + direct-impact architecture.
 - [x] Build 61 adds Creep Signal as the ninth preset and establishes a deliberately non-radial, screen-traversing motion language.
 - [x] Build 62/62.1 polishes Studio/Audio Lab/mobile-player layout and advances the visible build/cache marker correctly.
+- [x] Build 63 adds SonicTrace to the persistent desktop admin shortcut strip with the same shared admin gate as LRC Maker and Track Manager.
 - [x] All Markdown documentation is version-coupled to `js/build-config.js` through CI.
 
 ## P0 — real-device validation
