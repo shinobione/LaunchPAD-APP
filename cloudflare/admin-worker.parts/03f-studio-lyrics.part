@@ -1,0 +1,396 @@
+
+const STUDIO_LYRICS_VALIDATION_INTENT = "lyrics-validate-v1";
+const STUDIO_LYRICS_SAVE_INTENT = "lyrics-save-v1";
+const STUDIO_LYRICS_PAYLOAD_MAX_BYTES = MAX_LYRICS_BYTES * 2 + 64 * 1024;
+const STUDIO_CANONICAL_LYRICS_FILENAME = "lyrics.txt";
+
+function studioLyricsReadMatch(pathname) {
+  return String(pathname || "").match(/^\/api\/studio\/tracks\/([a-z0-9][a-z0-9-]{0,119})\/lyrics$/);
+}
+
+function studioLyricsValidationMatch(pathname) {
+  return String(pathname || "").match(/^\/api\/studio\/tracks\/([a-z0-9][a-z0-9-]{0,119})\/lyrics\/validate$/);
+}
+
+function studioLyricsSaveMatch(pathname) {
+  return String(pathname || "").match(/^\/api\/studio\/tracks\/([a-z0-9][a-z0-9-]{0,119})\/lyrics\/save$/);
+}
+
+function assertStudioLyricsPostRequest(request) {
+  const origin = request.headers.get("origin");
+  if (origin !== STUDIO_ALLOWED_ORIGIN) throw new Error("AUTH_Origine Studio refusée.");
+  if (studioMetadataContentType(request) !== "text/plain") {
+    throw new Error("INPUT_Le bridge lyrics Studio attend text/plain JSON.");
+  }
+}
+
+async function readStudioLyricsPayload(request, expectedIntent) {
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (contentLength && contentLength > STUDIO_LYRICS_PAYLOAD_MAX_BYTES) {
+    throw new Error("INPUT_Payload lyrics trop volumineux.");
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(await request.text());
+  } catch {
+    throw new Error("INPUT_JSON lyrics invalide.");
+  }
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("INPUT_Payload lyrics invalide.");
+  }
+  if (payload.intent !== expectedIntent) {
+    throw new Error("AUTH_Intention Studio invalide.");
+  }
+  return payload;
+}
+
+function studioLyricsByteLength(text) {
+  return new TextEncoder().encode(String(text ?? "")).byteLength;
+}
+
+function studioLyricsObjectEtag(object) {
+  return String(object?.httpEtag || object?.etag || "").trim();
+}
+
+function studioLyricsQuality(text, manifest) {
+  const lyricsText = String(text ?? "");
+  const items = [];
+  const add = (level, code, label, message, details = {}) => items.push({ level, code, label, message, ...details });
+  const bytes = studioLyricsByteLength(lyricsText);
+  const timestampValues = timestampSequence(lyricsText);
+  const segments = parseTimestampedLyrics(lyricsText);
+
+  if (!lyricsText.trim()) {
+    add("error", "lyrics-empty", "Lyrics", "Le fichier de paroles proposé est vide.");
+  } else {
+    add("pass", "lyrics-readable", "Lyrics", "Paroles proposées présentes et lisibles.", { size: bytes });
+  }
+
+  if (bytes > MAX_LYRICS_BYTES) {
+    add("error", "lyrics-too-large", "Lyrics", "Le fichier de paroles proposé dépasse 1 Mo.", { size: bytes });
+  }
+
+  if (!timestampValues.length) {
+    add("info", "lyrics-unsynced", "Synchronisation", "Paroles non timestampées ; elles restent valides mais non synchronisées.");
+  } else {
+    const outOfOrder = timestampValues.some((value, index) => index > 0 && value < timestampValues[index - 1]);
+    if (outOfOrder) {
+      add("error", "timestamps-order", "Synchronisation", "Les timestamps proposés ne sont pas triés dans l’ordre chronologique.", { count: timestampValues.length });
+    } else {
+      add("pass", "timestamps-present", "Synchronisation", timestampValues.length + " timestamp(s) trié(s).", { count: timestampValues.length });
+    }
+
+    const lastTimestamp = timestampValues[timestampValues.length - 1];
+    const referenceDuration = Number.isFinite(Number(manifest?.duration)) ? Number(manifest.duration) : null;
+    if (referenceDuration != null && lastTimestamp > referenceDuration + 2) {
+      add("error", "timestamps-after-audio", "Synchronisation", "Le dernier timestamp dépasse la fin du morceau.", { lastTimestamp, duration: referenceDuration });
+    } else if (referenceDuration != null) {
+      add("pass", "timestamps-within-audio", "Synchronisation", "Le dernier timestamp reste dans la durée du morceau.", { lastTimestamp, duration: referenceDuration });
+    }
+  }
+
+  const counts = items.reduce((acc, item) => {
+    acc[item.level] = (acc[item.level] || 0) + 1;
+    return acc;
+  }, { error: 0, warning: 0, info: 0, pass: 0 });
+
+  return {
+    items,
+    counts,
+    publishable: counts.error === 0,
+    state: counts.error ? "blocked" : counts.warning ? "review" : "ready",
+    bytes,
+    timestampsAvailable: timestampValues.length > 0,
+    timestampCount: timestampValues.length,
+    segmentCount: segments.length,
+    lastTimestamp: timestampValues.length ? timestampValues[timestampValues.length - 1] : null,
+  };
+}
+
+async function readStudioLyricsSnapshot(slug, env) {
+  const manifest = await readManifest(env.MEDIA_BUCKET, slug);
+  if (!manifest) return { errorResponse: jsonResponse({ ok: false, error: "Titre introuvable." }, 404) };
+
+  const filename = manifest.assets?.lyrics || null;
+  if (!filename) {
+    return { errorResponse: jsonResponse({
+      ok: false,
+      error: "Aucun lyrics.txt canonique existant pour ce morceau.",
+      code: "LYRICS_MISSING",
+      currentUpdatedAt: manifest.updatedAt || null,
+    }, 409) };
+  }
+  if (filename !== STUDIO_CANONICAL_LYRICS_FILENAME) {
+    return { errorResponse: jsonResponse({
+      ok: false,
+      error: "Le bridge Phase 4B.2 ne modifie que le fichier canonique lyrics.txt existant.",
+      code: "LYRICS_NON_CANONICAL",
+      filename,
+      currentUpdatedAt: manifest.updatedAt || null,
+    }, 409) };
+  }
+
+  const key = trackPrefix(slug) + filename;
+  const object = await env.MEDIA_BUCKET.get(key);
+  if (!object) {
+    return { errorResponse: jsonResponse({
+      ok: false,
+      error: "Le manifest référence lyrics.txt mais l’objet R2 est absent.",
+      code: "LYRICS_R2_MISSING",
+      currentUpdatedAt: manifest.updatedAt || null,
+    }, 409) };
+  }
+  if (object.size > MAX_LYRICS_BYTES) {
+    return { errorResponse: jsonResponse({
+      ok: false,
+      error: "Le lyrics.txt canonique dépasse 1 Mo.",
+      code: "LYRICS_TOO_LARGE",
+      currentUpdatedAt: manifest.updatedAt || null,
+    }, 409) };
+  }
+
+  const body = await object.arrayBuffer();
+  const text = new TextDecoder("utf-8", { fatal: false }).decode(body);
+  const etag = studioLyricsObjectEtag(object);
+  if (!etag) throw new Error("INPUT_ETag lyrics R2 indisponible.");
+
+  return { manifest, filename, key, object, body, text, etag };
+}
+
+function studioLyricsStaleResponse(snapshot, payload) {
+  const expectedUpdatedAt = String(payload.expectedUpdatedAt || "").trim();
+  const expectedLyricsEtag = String(payload.expectedLyricsEtag || "").trim();
+  if (!expectedUpdatedAt) throw new Error("INPUT_expectedUpdatedAt est requis.");
+  if (!expectedLyricsEtag) throw new Error("INPUT_expectedLyricsEtag est requis.");
+
+  if (expectedUpdatedAt !== String(snapshot.manifest.updatedAt || "")) {
+    return jsonResponse({
+      ok: false,
+      error: "Le manifest du morceau a changé depuis son chargement.",
+      code: "STALE_MANIFEST",
+      currentUpdatedAt: snapshot.manifest.updatedAt || null,
+      currentLyricsEtag: snapshot.etag,
+    }, 409);
+  }
+  if (expectedLyricsEtag !== snapshot.etag) {
+    return jsonResponse({
+      ok: false,
+      error: "Le fichier lyrics.txt a changé depuis son chargement.",
+      code: "STALE_LYRICS",
+      currentUpdatedAt: snapshot.manifest.updatedAt || null,
+      currentLyricsEtag: snapshot.etag,
+    }, 409);
+  }
+  return null;
+}
+
+function studioLyricsProposal(payload) {
+  if (typeof payload.lyrics !== "string") throw new Error("INPUT_Le champ lyrics doit être une chaîne UTF-8.");
+  const text = payload.lyrics.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
+  if (studioLyricsByteLength(text) > MAX_LYRICS_BYTES) throw new Error("INPUT_Le lyrics.txt proposé dépasse 1 Mo.");
+  return text;
+}
+
+async function getStudioTrackLyrics(slug, env, user) {
+  const snapshot = await readStudioLyricsSnapshot(slug, env);
+  if (snapshot.errorResponse) return snapshot.errorResponse;
+  const quality = studioLyricsQuality(snapshot.text, snapshot.manifest);
+  return jsonResponse({
+    ok: true,
+    trackId: slug,
+    filename: snapshot.filename,
+    lyrics: snapshot.text,
+    lyricsEtag: snapshot.etag,
+    updatedAt: snapshot.manifest.updatedAt || null,
+    bytes: studioLyricsByteLength(snapshot.text),
+    timestampsAvailable: quality.timestampsAvailable,
+    timestampCount: quality.timestampCount,
+    segmentCount: quality.segmentCount,
+    quality,
+    authenticatedEmail: user.email || null,
+  });
+}
+
+async function validateStudioTrackLyrics(slug, request, env, user) {
+  const payload = await readStudioLyricsPayload(request, STUDIO_LYRICS_VALIDATION_INTENT);
+  const snapshot = await readStudioLyricsSnapshot(slug, env);
+  if (snapshot.errorResponse) return snapshot.errorResponse;
+  const stale = studioLyricsStaleResponse(snapshot, payload);
+  if (stale) return stale;
+
+  const proposedLyrics = studioLyricsProposal(payload);
+  const quality = studioLyricsQuality(proposedLyrics, snapshot.manifest);
+  const changed = proposedLyrics !== snapshot.text;
+
+  return jsonResponse({
+    ok: true,
+    validationOnly: true,
+    valid: quality.publishable === true,
+    trackId: slug,
+    expectedUpdatedAt: snapshot.manifest.updatedAt || null,
+    expectedLyricsEtag: snapshot.etag,
+    changed,
+    proposed: {
+      filename: snapshot.filename,
+      lyrics: proposedLyrics,
+      bytes: quality.bytes,
+      timestampsAvailable: quality.timestampsAvailable,
+      timestampCount: quality.timestampCount,
+      segmentCount: quality.segmentCount,
+    },
+    quality,
+    authenticatedEmail: user.email || null,
+  });
+}
+
+async function saveStudioTrackLyrics(slug, request, env, user) {
+  const payload = await readStudioLyricsPayload(request, STUDIO_LYRICS_SAVE_INTENT);
+  const snapshot = await readStudioLyricsSnapshot(slug, env);
+  if (snapshot.errorResponse) return snapshot.errorResponse;
+  const stale = studioLyricsStaleResponse(snapshot, payload);
+  if (stale) return stale;
+
+  const proposedLyrics = studioLyricsProposal(payload);
+  const quality = studioLyricsQuality(proposedLyrics, snapshot.manifest);
+  if (quality.publishable !== true) {
+    return jsonResponse({
+      ok: false,
+      error: "Sauvegarde lyrics bloquée par le contrôle qualité.",
+      code: "QUALITY_BLOCKED",
+      quality,
+      currentUpdatedAt: snapshot.manifest.updatedAt || null,
+      currentLyricsEtag: snapshot.etag,
+    }, 409);
+  }
+
+  if (proposedLyrics === snapshot.text) {
+    return jsonResponse({
+      ok: true,
+      saved: false,
+      noChange: true,
+      trackId: slug,
+      filename: snapshot.filename,
+      updatedAt: snapshot.manifest.updatedAt || null,
+      lyricsEtag: snapshot.etag,
+      quality,
+      catalogRebuilt: false,
+      authenticatedEmail: user.email || null,
+    });
+  }
+
+  const nextManifest = normalizeManifest({
+    ...snapshot.manifest,
+    slug: snapshot.manifest.slug,
+    assets: snapshot.manifest.assets,
+    migration: snapshot.manifest.migration,
+    createdAt: snapshot.manifest.createdAt,
+    updatedAt: new Date().toISOString(),
+    updatedBy: String(user.email || "authorized-user"),
+  });
+
+  let lyricsWritten = false;
+  let manifestWritten = false;
+  try {
+    await env.MEDIA_BUCKET.put(snapshot.key, proposedLyrics, {
+      httpMetadata: {
+        contentType: "text/plain; charset=utf-8",
+        cacheControl: "public, max-age=60, stale-while-revalidate=300",
+      },
+      customMetadata: {
+        ...(snapshot.object.customMetadata || {}),
+        kind: "lyrics",
+        slug,
+        originalName: snapshot.object.customMetadata?.originalName || snapshot.filename,
+        uploadedBy: String(user.email || "authorized-user").slice(0, 200),
+        uploadedAt: new Date().toISOString(),
+        studioIntent: STUDIO_LYRICS_SAVE_INTENT,
+      },
+    });
+    lyricsWritten = true;
+
+    await writeManifest(env.MEDIA_BUCKET, nextManifest);
+    manifestWritten = true;
+
+    const index = await writeCatalogIndex(env.MEDIA_BUCKET);
+    const rereadManifest = await readManifest(env.MEDIA_BUCKET, slug);
+    const rereadLyrics = await env.MEDIA_BUCKET.get(snapshot.key);
+    if (!rereadManifest || rereadManifest.updatedAt !== nextManifest.updatedAt) {
+      throw new Error("SAVE_VERIFY_Le manifest relu ne correspond pas à la révision lyrics sauvegardée.");
+    }
+    if (!rereadLyrics) throw new Error("SAVE_VERIFY_lyrics.txt relu absent.");
+    const rereadText = await rereadLyrics.text();
+    const rereadEtag = studioLyricsObjectEtag(rereadLyrics);
+    if (rereadText !== proposedLyrics || !rereadEtag || rereadEtag === snapshot.etag) {
+      throw new Error("SAVE_VERIFY_lyrics.txt relu ne correspond pas au contenu sauvegardé.");
+    }
+
+    return jsonResponse({
+      ok: true,
+      saved: true,
+      noChange: false,
+      trackId: slug,
+      filename: snapshot.filename,
+      previousUpdatedAt: snapshot.manifest.updatedAt || null,
+      updatedAt: rereadManifest.updatedAt || null,
+      previousLyricsEtag: snapshot.etag,
+      lyricsEtag: rereadEtag,
+      bytes: studioLyricsByteLength(rereadText),
+      timestampsAvailable: quality.timestampsAvailable,
+      timestampCount: quality.timestampCount,
+      segmentCount: quality.segmentCount,
+      quality,
+      catalogRebuilt: true,
+      catalogGeneratedAt: index.generatedAt || null,
+      catalogCount: index.count,
+      authenticatedEmail: user.email || null,
+    });
+  } catch (error) {
+    const rollback = { lyricsRestored: false, manifestRestored: false, catalogRestored: false };
+
+    if (lyricsWritten) {
+      try {
+        await env.MEDIA_BUCKET.put(snapshot.key, snapshot.body, {
+          httpMetadata: snapshot.object.httpMetadata || {
+            contentType: "text/plain; charset=utf-8",
+            cacheControl: "public, max-age=60, stale-while-revalidate=300",
+          },
+          customMetadata: snapshot.object.customMetadata || {},
+        });
+        rollback.lyricsRestored = true;
+      } catch (rollbackError) {
+        console.error("Studio lyrics object rollback failed", rollbackError);
+      }
+    }
+
+    if (manifestWritten) {
+      try {
+        await writeManifest(env.MEDIA_BUCKET, snapshot.manifest);
+        rollback.manifestRestored = true;
+      } catch (rollbackError) {
+        console.error("Studio lyrics manifest rollback failed", rollbackError);
+      }
+    } else {
+      rollback.manifestRestored = true;
+    }
+
+    if (rollback.lyricsRestored && rollback.manifestRestored) {
+      try {
+        await writeCatalogIndex(env.MEDIA_BUCKET);
+        rollback.catalogRestored = true;
+      } catch (rollbackError) {
+        console.error("Studio lyrics catalog rollback failed", rollbackError);
+      }
+    }
+
+    console.error("Studio lyrics save failed", error);
+    return jsonResponse({
+      ok: false,
+      error: lyricsWritten ? "Sauvegarde lyrics annulée après échec de publication ou vérification." : "Sauvegarde lyrics impossible.",
+      code: lyricsWritten ? "SAVE_ROLLBACK" : "SAVE_FAILED",
+      rollback,
+      currentUpdatedAt: snapshot.manifest.updatedAt || null,
+      currentLyricsEtag: snapshot.etag,
+    }, 500);
+  }
+}
