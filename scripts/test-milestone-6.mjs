@@ -40,8 +40,10 @@ for (const required of ['.launchpad-hero .launchpad-banner-rail','order: 1;','.l
 const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
   "const DEFAULT_MODE = 'neon-shatter'", 'externalHomeRenderer: false',
-  "homeTitle.textContent = 'Neon Shatter'", "new CustomEvent('shinobi:visual-mode'",
-  "dataset.audioLabRenderer = 'signal-first-v9'", 'function boostLiveFeatures(features)',
+  'const homeTitle = document.querySelector', 'if (homeTitle) homeTitle.textContent = label;',
+  "new CustomEvent('shinobi:visual-mode'",
+  "dataset.audioLabRenderer = 'three-core-v1'", "dataset.audioLabPresetCount = '3'",
+  'function boostLiveFeatures(features)', 'base.readSpectrum?.(raw)',
   'renderMode(homeCanvas, customRenderer, raw, getAccent, time, features, mode)'
 ]) assert.ok(live.includes(required), `Milestone 6 visual engine is missing ${required}.`);
 
@@ -55,4 +57,4 @@ assert.ok(worker.includes("'./css/home-editorial.css'"));
 assert.ok(worker.includes("'./js/features/home-editorial.js'"));
 
 const build = assertCurrentBuild('Milestone 6');
-console.log(`Milestone 6 Home editorial release, banner-first mobile order and signal-first visual switcher remain valid under Build ${build.number}.`);
+console.log(`Milestone 6 Home editorial release, banner-first mobile order and three-core visual switcher remain valid under Build ${build.number}.`);

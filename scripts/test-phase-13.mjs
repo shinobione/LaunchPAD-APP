@@ -19,46 +19,52 @@ for (const required of [
 
 const visuals = read('js/features/visual/visual-engine-v2.js');
 for (const required of [
-  "{ id: 'singularity', label: 'Singularity' }",
-  "{ id: 'neon-shatter', label: 'Neon Shatter' }",
-  "{ id: 'liquid-chrome', label: 'Liquid Chrome' }",
-  "{ id: 'nebula', label: 'Nebula' }",
-  'function drawSingularity(',
-  'function drawNeonShatter(',
-  'function drawLiquidChrome(',
-  'function drawNebula(',
+  "{ id: 'spectrum', label: 'Spectrum' }",
+  "let mode = 'spectrum'",
+  'function drawSpectrum(',
+  'function readSpectrum(target)',
+  'analyser.getByteFrequencyData(target)',
   'const delegatedModeSet = new Set(delegatedModes)',
   'const delegated = delegatedModeSet.has(mode);',
-  'if (homeActive && !externalHomeRenderer && !delegated)',
-  'if (labActive && !delegated)'
-]) assert.ok(visuals.includes(required), `Phase 13 Audio Lab base is missing ${required}.`);
-for (const forbidden of ['hex-reactor', 'drawHexReactor', 'hexPath']) assert.ok(!visuals.includes(forbidden));
+  "if (mode === 'spectrum' && homeActive && !externalHomeRenderer && !delegated)",
+  "if (mode === 'spectrum' && labActive && !delegated)",
+  'return { resume, setMode, readSpectrum }'
+]) assert.ok(visuals.includes(required), `Phase 13 Spectrum reference engine is missing ${required}.`);
+for (const forbidden of ['drawSingularity(', 'drawNeonShatter(', 'drawLiquidChrome(', 'drawNebula(', 'hex-reactor']) {
+  assert.ok(!visuals.includes(forbidden), `Retired base Audio Lab renderer remains: ${forbidden}`);
+}
 
 const coreVisuals = read('js/features/visual/visual-engine-core-modes.js');
 for (const required of [
-  'drawAuroraGlassMode(', 'drawNeonShatterAdaptiveMode(', 'drawLiquidChromeLiveMode(', 'drawSingularityLiveMode(',
-  'const rawBass = bandAverage(', 'const beatDrive = clamp(',
-  'const radialDrive = .72 + value * .82', 'const spectralLift = (spectral - bandValue * .36)',
-  'const fragments = mobile ? 22 : 54'
-]) assert.ok(coreVisuals.includes(required), `Audio Lab signal-first renderer is missing ${required}.`);
+  'drawNeonShatterV2Mode(', 'drawLiquidChromeV2Mode(',
+  'const impact = clamp(', 'const pulse = clamp(',
+  'const gatedDrift = time * activity * .16',
+  'const phase = time * activity * .2',
+  'const distance = baseDistance * (.58 + impact * 1.48 + localDrive * .92)',
+  'spectralDeform = spectral * .092 + neighbour * .032'
+]) assert.ok(coreVisuals.includes(required), `Audio Lab FFT renderer is missing ${required}.`);
+for (const forbidden of ['drawAuroraGlassMode', 'drawSingularityLiveMode', 'drawNeonShatterAdaptiveMode', 'drawLiquidChromeLiveMode']) {
+  assert.ok(!coreVisuals.includes(forbidden), `Retired core renderer remains: ${forbidden}`);
+}
 assert.ok(!fs.existsSync('js/features/visual/visual-engine-hex-reactor.js'));
 
 const liveVisuals = read('js/features/visual/visual-engine-live.js');
 for (const required of [
   "const DEFAULT_MODE = 'neon-shatter'",
+  "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode }",
   "{ id: 'spectrum', label: 'Spectrum' }",
-  "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterAdaptiveMode }",
-  "{ id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }",
-  "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeLiveMode }",
-  "{ id: 'singularity', label: 'Singularity', renderer: drawSingularityLiveMode }",
-  'readAudioLabSpectrum(raw)', 'readAudioLabAmplitude(waveform)',
-  'createAmplitudeDynamicsTracker',
+  "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
+  'base.readSpectrum?.(raw)',
+  'reading = readAudioLabSpectrum(raw)',
   'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)',
   'function boostLiveFeatures(features)',
-  "dataset.audioLabRenderer = 'signal-first-v9'",
-  'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60', 'const TELEMETRY_INTERVAL = 120'
+  "dataset.audioLabRenderer = 'three-core-v1'",
+  "dataset.audioLabPresetCount = '3'",
+  'const CUSTOM_FRAME_INTERVAL = 1000 / 60', 'const TELEMETRY_INTERVAL = 120'
 ]) assert.ok(liveVisuals.includes(required), `Live Audio Lab renderer is missing ${required}.`);
-for (const forbidden of ['wave-cathedral', "id: 'circle'", "'bars'", 'hex-reactor', 'drawHexReactorMode', 'shapeReactiveSpectrum(raw, shaped, features)']) assert.ok(!liveVisuals.includes(forbidden));
+for (const forbidden of ['aurora-glass', 'nebula', 'singularity', 'wave-cathedral', "id: 'circle'", "'bars'", 'hex-reactor', 'readAudioLabAmplitude', 'createAmplitudeDynamicsTracker', 'synthesizePlaybackSpectrum']) {
+  assert.ok(!liveVisuals.includes(forbidden), `Retired/parallel Audio Lab path remains: ${forbidden}`);
+}
 
 const reactivity = read('js/features/visual/audio-reactivity.js');
 for (const required of ['createAudioReactivityTracker','createAmplitudeDynamicsTracker','readFrequencyBands','shapeReactiveSpectrum','const kickTarget = clamp(','const normalizedRms = clamp(']) {
@@ -103,4 +109,4 @@ assert.ok(build.release, 'Current release metadata is required.');
 
 await import('./test-milestone-4.mjs');
 await import('./test-milestone-6.mjs');
-console.log(`Phase 13 remains valid with isolated decoded FFT and signal-first custom visuals under ${build.display}.`);
+console.log(`Phase 13 remains valid with the three-core shared-FFT Audio Lab under ${build.display}.`);
