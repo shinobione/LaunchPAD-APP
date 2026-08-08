@@ -1,0 +1,146 @@
+
+const STUDIO_METADATA_SAVE_INTENT = "metadata-save-v1";
+
+function studioMetadataSaveMatch(pathname) {
+  return String(pathname || "").match(/^\/api\/studio\/tracks\/([a-z0-9][a-z0-9-]{0,119})\/metadata\/save$/);
+}
+
+function assertStudioMetadataSaveRequest(request) {
+  const origin = request.headers.get("origin");
+  if (origin !== STUDIO_ALLOWED_ORIGIN) throw new Error("AUTH_Origine Studio refusée.");
+  if (studioMetadataContentType(request) !== "text/plain") {
+    throw new Error("INPUT_La sauvegarde metadata Studio attend text/plain JSON.");
+  }
+}
+
+async function readStudioMetadataSavePayload(request) {
+  let payload;
+  try {
+    payload = JSON.parse(await request.text());
+  } catch {
+    throw new Error("INPUT_JSON metadata invalide.");
+  }
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("INPUT_Payload metadata invalide.");
+  }
+  if (payload.intent !== STUDIO_METADATA_SAVE_INTENT) {
+    throw new Error("AUTH_Intention Studio invalide.");
+  }
+  return payload;
+}
+
+async function saveStudioTrackMetadata(slug, request, env, user) {
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (contentLength && contentLength > STUDIO_METADATA_MAX_BYTES) {
+    throw new Error("INPUT_Payload metadata trop volumineux.");
+  }
+
+  const payload = await readStudioMetadataSavePayload(request);
+  const existing = await readManifest(env.MEDIA_BUCKET, slug);
+  if (!existing) return jsonResponse({ ok: false, error: "Titre introuvable." }, 404);
+
+  const expectedUpdatedAt = String(payload.expectedUpdatedAt || "").trim();
+  if (!expectedUpdatedAt) throw new Error("INPUT_expectedUpdatedAt est requis.");
+  if (expectedUpdatedAt !== String(existing.updatedAt || "")) {
+    return jsonResponse({
+      ok: false,
+      error: "Le morceau a changé depuis son chargement.",
+      code: "STALE_MANIFEST",
+      currentUpdatedAt: existing.updatedAt || null,
+    }, 409);
+  }
+
+  const patch = normalizeStudioMetadataPatch(payload.metadata);
+  const proposed = normalizeManifest({
+    ...existing,
+    ...patch,
+    slug: existing.slug,
+    assets: existing.assets,
+    migration: existing.migration,
+    createdAt: existing.createdAt,
+    updatedAt: new Date().toISOString(),
+    updatedBy: String(user.email || "authorized-user"),
+  });
+
+  const changedFields = studioMetadataChangedFields(existing, proposed);
+  const objects = await listAllObjects(env.MEDIA_BUCKET, trackPrefix(slug));
+  const quality = await inspectTrackQuality(env.MEDIA_BUCKET, proposed, objects);
+
+  if (proposed.status === "published" && quality.publishable !== true) {
+    return jsonResponse({
+      ok: false,
+      error: "Sauvegarde bloquée par le contrôle qualité.",
+      code: "QUALITY_BLOCKED",
+      quality,
+      changedFields,
+      currentUpdatedAt: existing.updatedAt || null,
+    }, 409);
+  }
+
+  if (!changedFields.length) {
+    return jsonResponse({
+      ok: true,
+      saved: false,
+      noChange: true,
+      trackId: slug,
+      changedFields: [],
+      track: existing,
+      quality,
+      catalogRebuilt: false,
+      authenticatedEmail: user.email || null,
+    });
+  }
+
+  let manifestWritten = false;
+  try {
+    await writeManifest(env.MEDIA_BUCKET, proposed);
+    manifestWritten = true;
+    const index = await writeCatalogIndex(env.MEDIA_BUCKET);
+    const reread = await readManifest(env.MEDIA_BUCKET, slug);
+    if (!reread || reread.updatedAt !== proposed.updatedAt) {
+      throw new Error("SAVE_VERIFY_Le manifest relu ne correspond pas à la révision sauvegardée.");
+    }
+
+    return jsonResponse({
+      ok: true,
+      saved: true,
+      noChange: false,
+      trackId: slug,
+      previousUpdatedAt: existing.updatedAt || null,
+      updatedAt: reread.updatedAt || null,
+      changedFields,
+      track: reread,
+      quality,
+      catalogRebuilt: true,
+      catalogGeneratedAt: index.generatedAt || null,
+      catalogCount: index.count,
+      authenticatedEmail: user.email || null,
+    });
+  } catch (error) {
+    const rollback = { manifestRestored: false, catalogRestored: false };
+    if (manifestWritten) {
+      try {
+        await writeManifest(env.MEDIA_BUCKET, existing);
+        rollback.manifestRestored = true;
+      } catch (rollbackError) {
+        console.error("Studio metadata manifest rollback failed", rollbackError);
+      }
+      if (rollback.manifestRestored) {
+        try {
+          await writeCatalogIndex(env.MEDIA_BUCKET);
+          rollback.catalogRestored = true;
+        } catch (rollbackError) {
+          console.error("Studio metadata catalog rollback failed", rollbackError);
+        }
+      }
+    }
+    console.error("Studio metadata save failed", error);
+    return jsonResponse({
+      ok: false,
+      error: manifestWritten ? "Sauvegarde metadata annulée après échec de publication du catalogue." : "Sauvegarde metadata impossible.",
+      code: manifestWritten ? "SAVE_ROLLBACK" : "SAVE_FAILED",
+      rollback,
+      currentUpdatedAt: existing.updatedAt || null,
+    }, 500);
+  }
+}
