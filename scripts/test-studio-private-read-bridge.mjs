@@ -33,14 +33,23 @@ for (const route of [
   assert.ok(runtime.includes(route), `Missing Studio read route: ${route}`);
 }
 
-assert.ok(validationPart.includes('const STUDIO_METADATA_VALIDATION_INTENT = "metadata-validate-v1";'), 'Metadata validation intent header contract missing.');
-assert.ok(validationPart.includes('/metadata\\/validate$/'), 'Metadata validation route must be exact and suffix-scoped.');
-assert.ok(validationPart.includes('requestedMethod === "POST" && metadataValidation'), 'POST CORS must be restricted to metadata validation.');
-assert.ok(validationPart.includes('x-shinobiwan-studio-intent'), 'Custom Studio intent header must be required.');
-assert.ok(validationPart.includes('expectedUpdatedAt'), 'Stale-manifest protection must be present.');
-assert.ok(validationPart.includes('code: "STALE_MANIFEST"'), 'Stale-manifest conflict code must be stable.');
-assert.ok(validationPart.includes('validationOnly: true'), 'Validation response must explicitly declare no write.');
-assert.ok(validationPart.includes('inspectTrackQuality'), 'Validation must reuse Track Manager quality inspection.');
+for (const required of [
+  'const STUDIO_METADATA_VALIDATION_INTENT = "metadata-validate-v1";',
+  '/metadata\\/validate$/',
+  'requestedMethod === "POST" && metadataValidation',
+  'contentType !== "application/json" && contentType !== "text/plain"',
+  'contentType === "application/json" && request.headers.get("x-shinobiwan-studio-intent")',
+  'contentType === "text/plain"',
+  'payload.intent !== STUDIO_METADATA_VALIDATION_INTENT',
+  'expectedUpdatedAt',
+  'code: "STALE_MANIFEST"',
+  'validationOnly: true',
+  'inspectTrackQuality',
+  'simple-post-v1',
+  'json-preflight-v1',
+]) {
+  assert.ok(validationPart.includes(required), `Metadata validation hotfix contract missing: ${required}`);
+}
 
 for (const forbiddenMutation of [
   'writeManifest(',
@@ -58,22 +67,23 @@ for (const forbiddenMethod of ['PUT', 'PATCH', 'DELETE']) {
   assert.ok(!validationPart.includes(`request.method === "${forbiddenMethod}"`), `Studio validation part must not expose ${forbiddenMethod}.`);
 }
 
-assert.ok(built.includes('version: "5.9"'), 'Built Track Manager contract must be v5.9.');
-assert.ok(built.includes('<span class="version-pill">v5.9</span>'), 'Built Track Manager UI must report v5.9.');
-assert.ok(built.includes('const STUDIO_BRIDGE_VERSION = "1.1";'), 'Studio bridge contract must be v1.1.');
-assert.ok(built.includes('trackManagerVersion: "5.9"'), 'Studio bridge health must report Track Manager v5.9.');
+assert.ok(built.includes('version: "5.10"'), 'Built Track Manager contract must be v5.10.');
+assert.ok(built.includes('<span class="version-pill">v5.10</span>'), 'Built Track Manager UI must report v5.10.');
+assert.ok(built.includes('const STUDIO_BRIDGE_VERSION = "1.2";'), 'Studio bridge contract must be v1.2.');
+assert.ok(built.includes('trackManagerVersion: "5.10"'), 'Studio bridge health must report Track Manager v5.10.');
 assert.ok(built.includes('validate: ["metadata"]'), 'Studio health must expose metadata validation capability.');
 assert.ok(built.includes('write: []'), 'Studio health must still expose zero write capability.');
 assert.ok(built.includes('const isStudioMetadataValidation = Boolean(studioMetadataValidationRoute && request.method === "POST");'), 'Built worker must identify only the validation POST exception.');
 assert.ok(built.includes('if (isStudioMetadataValidation) assertStudioMetadataValidationRequest(request);\n        else enforceSameOrigin(request, url);'), 'All non-validation writes must retain same-origin enforcement.');
 assert.ok(built.includes('await validateStudioTrackMetadata(studioMetadataValidationRoute[1], request, env, user)'), 'Built worker must route the validation POST to the non-mutating validator.');
 assert.ok(built.includes('Access-Control-Allow-Origin'), 'Built worker lost Studio CORS headers.');
+assert.ok(built.includes('payload.intent !== STUDIO_METADATA_VALIDATION_INTENT'), 'Built worker must enforce body intent for simple POST transport.');
 
 const authIndex = built.indexOf('const user = await verifyAccessJwt(request, env);');
 const validationRouteIndex = built.indexOf('await validateStudioTrackMetadata(studioMetadataValidationRoute[1], request, env, user)');
 assert.ok(authIndex >= 0 && validationRouteIndex > authIndex, 'Metadata validation data route must remain behind Access JWT verification.');
 
 const optionsIndex = built.indexOf('request.method === "OPTIONS" && url.pathname.startsWith("/api/studio/")');
-assert.ok(optionsIndex >= 0 && optionsIndex < authIndex, 'CORS preflight must remain before Access JWT verification.');
+assert.ok(optionsIndex >= 0 && optionsIndex < authIndex, 'Legacy CORS preflight support must remain available before Access JWT verification.');
 
-console.log('Studio bridge guard passed: authenticated GETs plus one exact non-mutating metadata validation POST; production writes remain same-origin only.');
+console.log('Studio bridge guard passed: v1.2 keeps authenticated reads, backward-compatible preflight validation, no-preflight simple validation, and zero production writes.');
