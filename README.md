@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.08.62` — release `ui-polish-62-1-20260808`.
+> Current application build: `2026.08.08.63` — release `sonictrace-admin-link-20260808`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -35,6 +35,16 @@ GitHub main
 ```
 
 See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the authoritative hosting map.
+
+## Build 63 highlights
+
+Build 63 adds **SonicTrace** to the persistent desktop admin-tool strip alongside LRC Maker and Track Manager.
+
+- SonicTrace opens `https://shinobione.github.io/LM-IA-Analayse/` in a new tab.
+- It shares the exact same persisted `?admin=1` / `?admin=0` gate as the existing private-tool shortcuts.
+- The shortcut stays desktop-only, matching the current admin access contract.
+- Its `ST` badge uses a cyan/teal treatment derived from SonicTrace's visual identity while keeping LaunchPAD's existing pill geometry.
+- The PWA cache advances to v63 so installed clients pick up the new admin UI immediately.
 
 ## Build 61 highlights
 
