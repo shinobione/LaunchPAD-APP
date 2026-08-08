@@ -33,6 +33,8 @@ if (injections.length) {
 }
 
 // Historical assembler markers retained for regression-test ancestry only:
+// version: "5.10"
+// <span class="version-pill">v5.10</span>
 // trackManagerVersion: "5.11"
 // const STUDIO_BRIDGE_VERSION = "1.3";
 // write: ["metadata"]
