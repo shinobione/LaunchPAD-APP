@@ -10,7 +10,8 @@ const CRITICAL_STYLES = [
   'css/theme-scope.css',
   'css/discography-experience.css',
   'css/home-editorial.css',
-  'css/ui-polish-v62.css'
+  'css/ui-polish-v62.css',
+  'css/ui-polish-v62-1.css'
 ];
 
 const LAYOUT_STYLES = [
@@ -44,6 +45,7 @@ async function boot() {
   if (new URLSearchParams(location.search).has('visual-test')) document.documentElement.dataset.visualTest = 'true';
   installStylesheets(CRITICAL_STYLES);
   await import(versioned('./ui-polish-v62.js'));
+  await import(versioned('./ui-polish-v62-1.js'));
 
   const [
     { prepareLibraryMemoryShell },
