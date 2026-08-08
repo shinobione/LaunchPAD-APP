@@ -98,7 +98,12 @@ for (const required of [
 }
 
 const styles = read('css/pwa.css');
-for (const required of ['.pwa-update-banner','.pwa-install-banner','.pwa-install-actions','pwa-install-pulse','env(safe-area-inset-bottom)','.pwa-update-actions','@media(max-width:760px)','.lrc-maker-access{','text-decoration:none!important']) {
+for (const required of [
+  '.pwa-update-banner','.pwa-install-banner','.pwa-install-actions','pwa-install-pulse','env(safe-area-inset-bottom)',
+  '.pwa-update-actions','@media(max-width:760px)','.lrc-maker-access{','.sonic-trace-access{',
+  '.sonic-trace-access:hover{','.sonic-trace-access>span{','linear-gradient(135deg,#28dcb8,#00e5ff)',
+  '.sonic-trace-access>strong{','.sonic-trace-access>b{color:#66efff}','text-decoration:none!important'
+]) {
   if (!styles.includes(required)) fail(`Responsive PWA styling is missing ${required}.`);
 }
 
