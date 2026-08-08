@@ -10,18 +10,21 @@ for (const required of [
   "{ id: 'spectrum', label: 'Spectrum' }",
   "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
   "{ id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode }",
+  "{ id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }",
   'externalHomeRenderer: false',
   'base.readSpectrum?.(raw)',
   'reading = readAudioLabSpectrum(raw)',
   'const features = tracker.update(raw)',
   'boostLiveFeatures(features)',
   'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)',
-  "mode === 'neon-shatter' ? 1 : mode === 'pulse-reactor' ? 1.1 : 1.35",
+  "mode === 'neon-shatter' ? 1",
+  "mode === 'bass-fracture' ? 1.05",
+  "mode === 'pulse-reactor' ? 1.1",
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60',
   'const TELEMETRY_INTERVAL = 120',
   'base.setMode(mode)',
-  "document.documentElement.dataset.audioLabRenderer = 'four-core-v1'",
-  "document.documentElement.dataset.audioLabPresetCount = '4'",
+  "document.documentElement.dataset.audioLabRenderer = 'five-core-v1'",
+  "document.documentElement.dataset.audioLabPresetCount = '5'",
   'data.audioLabBass = values[1]',
   'data.audioLabMid = values[2]',
   'data.audioLabHigh = values[3]'
@@ -65,14 +68,34 @@ for (const required of [
   'drawPulseReactorMode',
   'const activity = clamp(',
   'const impact = clamp(',
+  'const fracture = clamp(',
+  'Math.max(0, impact - .48) * 1.85',
   'const drift = time * activity * .075',
   'const ringCount = mobile ? 3 : 5',
   'const segmentCount = mobile ? 18 : 32',
   'const spokeCount = mobile ? 16 : 30',
+  'const shardCount = mobile ? 6 : 10',
+  'fractureLift',
   'sampleAt(data, progress',
   'sampleAt(data, .46 + progress * .54)'
 ]) {
   assert.ok(reactor.includes(required), `Pulse Reactor FFT/mobile renderer is missing ${required}.`);
+}
+
+const fracture = read('js/features/visual/bass-fracture.js');
+for (const required of [
+  'export function drawBassFractureMode(',
+  'const fracture = clamp(',
+  'const rupture = clamp(',
+  'const drift = time * activity * .038',
+  'const layerCount = mobile ? 2 : 3',
+  'const sectorCount = mobile ? 12 : 20',
+  'const crackCount = mobile ? 10 : 18',
+  'localImpact',
+  'radialOffset',
+  'sampleAt(data, .5 + progress * .5)'
+]) {
+  assert.ok(fracture.includes(required), `Bass Fracture FFT/mobile renderer is missing ${required}.`);
 }
 
 // Time may provide tiny drift, but only when the shared audio signal has
@@ -80,10 +103,14 @@ for (const required of [
 assert.ok(core.includes('const gatedDrift = time * activity * .16'));
 assert.ok(core.includes('const phase = time * activity * .2'));
 assert.ok(reactor.includes('const drift = time * activity * .075'));
+assert.ok(fracture.includes('const drift = time * activity * .038'));
 assert.ok(!core.includes('time * .55'));
 assert.ok(!core.includes('time * .83'));
-assert.ok(!reactor.includes('requestAnimationFrame('));
-assert.ok(!reactor.includes('setInterval('));
+for (const isolated of [reactor, fracture]) {
+  assert.ok(!isolated.includes('requestAnimationFrame('));
+  assert.ok(!isolated.includes('setInterval('));
+  assert.ok(!isolated.includes('Math.random('));
+}
 
 const base = read('js/features/visual/visual-engine-v2.js');
 for (const required of [
@@ -100,4 +127,4 @@ for (const forbidden of ['drawNebula(', 'drawSingularity(', 'drawNeonShatter(', 
 
 const bridge = read('js/features/visual/visual-engine.js').trim();
 assert.equal(bridge, "export { createVisualController } from './visual-engine-live.js';");
-console.log('Audio Lab custom visuals consume Spectrum’s analyser; Pulse Reactor is mobile-budgeted and signal-first.');
+console.log('Audio Lab custom visuals consume Spectrum’s analyser; Pulse Reactor breakup and Bass Fracture are signal-first/mobile-budgeted.');
