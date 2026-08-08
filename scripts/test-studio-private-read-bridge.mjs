@@ -5,7 +5,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const runtimePath = 'cloudflare/admin-worker.parts/01-runtime.part';
-const validationPartPath = 'cloudflare/admin-worker.parts/01z-studio-metadata-validation.part';
+const validationPartPath = 'cloudflare/admin-worker.parts/03d-studio-metadata-validation.part';
 const runtime = fs.readFileSync(runtimePath, 'utf8');
 const validationPart = fs.readFileSync(validationPartPath, 'utf8');
 const builtPath = path.join(os.tmpdir(), 'launchpad-studio-bridge-test-worker.js');
