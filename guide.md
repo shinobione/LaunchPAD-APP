@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD — catalog guide
 
-> Current application build: `2026.08.08.60` — release `void-bloom-20260808`.
+> Current application build: `2026.08.08.61` — release `creep-signal-20260808`.
 
 The production catalog is managed in Cloudflare R2 through the private LaunchPAD Track Manager. `js/catalog.js` contains album/editorial presentation data only; production track metadata and media are not maintained by hand in the PWA.
 
@@ -95,7 +95,7 @@ Review every detected group before confirmation, especially audio/cover/lyrics/v
 
 ## Audio Lab note
 
-Audio Lab is not a catalog-authoring feature, but media changes should still be smoke-tested there. Build 60 exposes **Neon Shatter, Spectrum, Liquid Chrome, Pulse Reactor, Bass Fracture, Gravity Lens, Bio Structure and Void Bloom**. Spectrum remains the protected reference FFT view; every custom visual consumes Spectrum's analyser first. Build 57's integrated kinetic phase still owns continuous travel. Build 58's adaptive detector still identifies low-frequency onsets relative to a local baseline. Build 59's separate post-pose `audioLabVisualImpact` lane keeps transient headroom outside ordinary renderer clamps. Build 60 adds Void Bloom: bass opens/deepens its petals, mids twist them, highs drive luminous veins, and the same direct-impact lane expands/twists the whole bloom on kick/bass attacks. Pause resets onset/impact trackers and stops kinetic phase speed. The separately fetched/decoded analysis copy remains fallback-only while the audible HTML5 player stays outside the analysis graph.
+Audio Lab is not a catalog-authoring feature, but media changes should still be smoke-tested there. Build 61 exposes **Neon Shatter, Spectrum, Liquid Chrome, Pulse Reactor, Bass Fracture, Gravity Lens, Bio Structure, Void Bloom and Creep Signal**. Spectrum remains the protected reference FFT view; every custom visual consumes Spectrum's analyser first. Build 57's integrated kinetic phase owns continuous travel; Build 58's adaptive detector finds low-frequency onsets relative to a local baseline; Build 59's separate post-pose `audioLabVisualImpact` lane preserves transient headroom. Void Bloom keeps the radial organic family, while Build 61 adds Creep Signal as an asymmetric screen-traversing network: bass controls body mass/travel, mids whip branches, highs drive travelling pulses, and Direct Impact produces a lateral lunge/shear on kick/bass attacks. Pause resets onset/impact trackers and stops kinetic phase speed. The separately fetched/decoded analysis copy remains fallback-only while the audible HTML5 player stays outside the analysis graph.
 
 ## Repository validation
 

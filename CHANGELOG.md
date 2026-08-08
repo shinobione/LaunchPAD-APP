@@ -1,8 +1,21 @@
 # Changelog
 
-> Current application build: `2026.08.08.60` — release `void-bloom-20260808`.
+> Current application build: `2026.08.08.61` — release `creep-signal-20260808`.
 
 This file intentionally tracks the recent stabilized release line. Older milestone-by-milestone history remains available in Git history and merged pull requests.
+
+## Build 61 — Creep Signal
+
+- Add **Creep Signal** as the ninth sanctioned Audio Lab preset, isolated in `js/features/visual/creep-signal.js`.
+- Keep the validated shared Spectrum FFT, integrated kinetic phase, adaptive onset detector and post-pose Direct Impact lane intact.
+- Introduce a deliberately non-radial composition: a signal-organism traverses the canvas instead of orbiting a centered object.
+- Bass controls body mass and travel amplitude; mids whip alternating branches; highs/transients drive luminous pulses through the network.
+- Sample different FFT positions along the body/branches so the network deforms locally rather than moving as one rigid spline.
+- Give Creep Signal a dedicated Direct Impact gesture: lateral lunge, shear and compression on low-frequency attacks, after the ordinary pose is computed.
+- Define a mobile-first budget of 9 body nodes / 6 branches / 7 travelling pulses / DPR 1.05; desktop uses 14 / 10 / 12 / DPR up to 2.
+- Keep **Spectrum**, **Neon Shatter** and **Liquid Chrome** unchanged.
+- Add no private RAF/timers, random motion or particle field.
+- Cache the new renderer in the PWA shell and advance the namespace to Build 61 / cache v61.
 
 ## Build 60 — Void Bloom
 

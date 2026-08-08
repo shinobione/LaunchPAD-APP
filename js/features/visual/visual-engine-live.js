@@ -10,6 +10,7 @@ import { drawBassFractureMode } from './bass-fracture.js';
 import { drawGravityLensMode } from './gravity-lens.js';
 import { drawBioStructureMode } from './bio-structure.js';
 import { drawVoidBloomMode } from './void-bloom.js';
+import { drawCreepSignalMode } from './creep-signal.js';
 
 const DEFAULT_MODE = 'neon-shatter';
 const CUSTOM_MODES = [
@@ -19,7 +20,8 @@ const CUSTOM_MODES = [
   { id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode },
   { id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode },
   { id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode },
-  { id: 'void-bloom', label: 'Void Bloom', renderer: drawVoidBloomMode }
+  { id: 'void-bloom', label: 'Void Bloom', renderer: drawVoidBloomMode },
+  { id: 'creep-signal', label: 'Creep Signal', renderer: drawCreepSignalMode }
 ];
 const CONTROL_MODES = [
   { id: 'neon-shatter', label: 'Neon Shatter' },
@@ -29,11 +31,12 @@ const CONTROL_MODES = [
   { id: 'bass-fracture', label: 'Bass Fracture' },
   { id: 'gravity-lens', label: 'Gravity Lens' },
   { id: 'bio-structure', label: 'Bio Structure' },
-  { id: 'void-bloom', label: 'Void Bloom' }
+  { id: 'void-bloom', label: 'Void Bloom' },
+  { id: 'creep-signal', label: 'Creep Signal' }
 ];
 const CUSTOM_RENDERERS = new Map(CUSTOM_MODES.map(mode => [mode.id, mode.renderer]));
 const CUSTOM_MODE_IDS = CUSTOM_MODES.map(mode => mode.id);
-const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure', 'void-bloom']);
+const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure', 'void-bloom', 'creep-signal']);
 const CUSTOM_FRAME_INTERVAL = 1000 / 60;
 const TELEMETRY_INTERVAL = 120;
 
@@ -53,7 +56,7 @@ function prepareCanvas(canvas, mode) {
   const mobile = mobileVisualDevice(rect.width);
   const dprCap = mobile
     ? mode === 'neon-shatter' ? 1
-      : mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' || mode === 'void-bloom' ? 1.05
+      : mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' || mode === 'void-bloom' || mode === 'creep-signal' ? 1.05
         : mode === 'pulse-reactor' ? 1.1
           : 1.35
     : 2;
@@ -146,6 +149,17 @@ function applyDirectKineticImpact(context, width, height, mode, features) {
     const scale = 1 + impact * (mobile ? .22 : .3);
     context.rotate(impact * (mobile ? .055 : .08));
     context.scale(scale, scale);
+  } else if (mode === 'creep-signal') {
+    context.translate(width * impact * (mobile ? .035 : .05), -minSide * impact * (mobile ? .012 : .018));
+    context.rotate(-impact * (mobile ? .022 : .032));
+    context.transform(
+      1 + impact * (mobile ? .13 : .18),
+      impact * (mobile ? .025 : .038),
+      impact * (mobile ? .04 : .06),
+      1 - impact * (mobile ? .055 : .075),
+      0,
+      0
+    );
   }
 
   context.translate(-width / 2, -height / 2);
@@ -349,9 +363,9 @@ export function createVisualController(options) {
   });
   applyMode(DEFAULT_MODE, defaultButton);
 
-  document.documentElement.dataset.audioLabRenderer = 'eight-core-v1';
+  document.documentElement.dataset.audioLabRenderer = 'nine-core-v1';
   document.documentElement.dataset.audioLabFeed = 'spectrum-shared';
-  document.documentElement.dataset.audioLabPresetCount = '8';
+  document.documentElement.dataset.audioLabPresetCount = '9';
 
   function readReactiveFrame() {
     if (audio.paused || audio.ended) {
