@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD architecture
 
-> Current application build: `2026.08.08.62.1` — release `ui-polish-62-1-20260808`.
+> Current application build: `2026.08.08.62` — release `ui-polish-62-1-20260808`.
 
 LaunchPAD is a modular static PWA whose application source lives in GitHub `main`. The web shell is mirrored to GitHub Pages and Cloudflare Pages; production catalog/media state lives in Cloudflare R2 and is exposed through public/private Workers.
 
