@@ -48,9 +48,18 @@ assert.ok(!home.includes('wordmark-first'), 'The retired wordmark-first mobile h
 const homeStyles = read('css/home-editorial.css');
 assert.ok(homeStyles.includes('grid-template-columns:repeat(2,minmax(0,1fr))'), 'Mobile release actions must use equal-width columns.');
 
-// 7 — Audio Lab: protected reference renderers + isolated decoded-buffer FFT + signal-first custom effects.
+// 7 — Audio Lab: exactly three presets; Spectrum is the trusted analyser/reference renderer.
 const registry = read('js/features/visual/audio-lab-registry.js');
-includesAll(registry, ["AUDIO_LAB_DEFAULT_MODE = 'neon-shatter'", "id: 'spectrum'", "id: 'liquid-chrome'", "id: 'aurora-glass'", "id: 'nebula'", "id: 'singularity'", "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum', 'liquid-chrome'])"], 'Audio Lab registry');
+includesAll(registry, [
+  "AUDIO_LAB_DEFAULT_MODE = 'neon-shatter'",
+  "id: 'neon-shatter'", "id: 'spectrum'", "id: 'liquid-chrome'",
+  "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum'])"
+], 'Audio Lab registry');
+for (const retired of ['aurora-glass', 'nebula', 'singularity']) {
+  assert.ok(!registry.includes(retired), `Retired Audio Lab preset returned: ${retired}.`);
+}
+assert.equal((registry.match(/Object\.freeze\(\{ id:/g) || []).length, 3, 'Audio Lab registry must contain exactly three presets.');
+
 const visualBase = read('js/features/visual/visual-engine-v2.js');
 function extractFunction(source, name) {
   const start = source.indexOf(`  function ${name}(`);
@@ -63,38 +72,46 @@ function extractFunction(source, name) {
   }
   throw new Error(`Protected renderer ${name} is malformed.`);
 }
-const protectedHashes = {
-  drawLiquidChrome: 'bc171075042d4fe881a781ba0206482d721f8e1de6fada4357c7b2d944a23967',
-  drawSpectrum: '25a86e3763b668fc69734d48439a2c93745ef927a3fcbdddaf2d0f29e0371813'
-};
-for (const [name, expected] of Object.entries(protectedHashes)) {
-  const actual = crypto.createHash('sha256').update(extractFunction(visualBase, name)).digest('hex');
-  assert.equal(actual, expected, `${name} sanctuary hash changed.`);
+const spectrumHash = '25a86e3763b668fc69734d48439a2c93745ef927a3fcbdddaf2d0f29e0371813';
+const actualSpectrumHash = crypto.createHash('sha256').update(extractFunction(visualBase, 'drawSpectrum')).digest('hex');
+assert.equal(actualSpectrumHash, spectrumHash, 'Spectrum sanctuary hash changed.');
+includesAll(visualBase, [
+  "{ id: 'spectrum', label: 'Spectrum' }",
+  'function readSpectrum(target)', 'analyser.getByteFrequencyData(target)',
+  'return { resume, setMode, readSpectrum }'
+], 'Spectrum reference renderer');
+for (const retired of ['drawLiquidChrome(', 'drawNeonShatter(', 'drawSingularity(', 'drawNebula(']) {
+  assert.ok(!visualBase.includes(retired), `Legacy base visual returned: ${retired}.`);
 }
 
 const live = read('js/features/visual/visual-engine-live.js');
 includesAll(live, [
+  "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode }",
   "{ id: 'spectrum', label: 'Spectrum' }",
-  "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterAdaptiveMode }",
-  "{ id: 'aurora-glass', label: 'Aurora Glass', renderer: drawAuroraGlassMode }",
-  "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeLiveMode }",
-  "{ id: 'singularity', label: 'Singularity', renderer: drawSingularityLiveMode }",
-  "dataset.audioLabRenderer = 'signal-first-v9'",
+  "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
+  'base.readSpectrum?.(raw)',
+  'reading = readAudioLabSpectrum(raw)',
+  "dataset.audioLabRenderer = 'three-core-v1'",
+  "dataset.audioLabPresetCount = '3'",
   'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)',
-  'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60'
+  'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ], 'Live Audio Lab visuals');
-assert.ok(!live.includes('shapeReactiveSpectrum(raw, shaped, features)'), 'Custom effects must not return to the over-smoothed shaped-spectrum path.');
-assert.ok(!live.includes("'bars'"), 'Legacy bars alias must not replace Spectrum.');
+for (const retired of ['aurora-glass', 'nebula', 'singularity', 'readAudioLabAmplitude', 'createAmplitudeDynamicsTracker', 'synthesizePlaybackSpectrum', "'bars'"]) {
+  assert.ok(!live.includes(retired), `Retired/parallel Audio Lab path returned: ${retired}.`);
+}
 
 const coreModes = read('js/features/visual/visual-engine-core-modes.js');
 includesAll(coreModes, [
-  'drawAuroraGlassMode', 'drawNeonShatterAdaptiveMode', 'drawLiquidChromeLiveMode', 'drawSingularityLiveMode',
-  'const rawBass = bandAverage(', 'const rawMiddle = bandAverage(', 'const rawHigh = bandAverage(',
-  'const radialDrive = .72 + value * .82', 'const spectralLift = (spectral - bandValue * .36)',
-  'const tinyDrift = Math.sin(time * .31) * energy * .025',
-  'const microDrift = Math.sin(time * .23) * energy * .018',
-  'const baseRadius = .247', 'const outerReach = minSide * .37'
-], 'Signal-first custom modes');
+  'drawNeonShatterV2Mode', 'drawLiquidChromeV2Mode',
+  'const impact = clamp(', 'const pulse = clamp(',
+  'const gatedDrift = time * activity * .16',
+  'const phase = time * activity * .2',
+  'const distance = baseDistance * (.58 + impact * 1.48 + localDrive * .92)',
+  'spectralDeform = spectral * .092 + neighbour * .032'
+], 'Three-core FFT modes');
+for (const retired of ['drawAuroraGlassMode', 'drawSingularityLiveMode', 'drawNeonShatterAdaptiveMode', 'drawLiquidChromeLiveMode']) {
+  assert.ok(!coreModes.includes(retired), `Retired core visual returned: ${retired}.`);
+}
 
 const signal = read('js/features/audio-lab-signal.js');
 includesAll(signal, [
