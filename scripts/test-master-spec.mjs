@@ -48,18 +48,18 @@ assert.ok(!home.includes('wordmark-first'), 'The retired wordmark-first mobile h
 const homeStyles = read('css/home-editorial.css');
 assert.ok(homeStyles.includes('grid-template-columns:repeat(2,minmax(0,1fr))'), 'Mobile release actions must use equal-width columns.');
 
-// 7 — Audio Lab: validated baseline + registry-driven expansion; Spectrum remains trusted reference.
+// 7 — Audio Lab: validated shared-FFT expansion; Spectrum remains trusted reference.
 const registry = read('js/features/visual/audio-lab-registry.js');
 includesAll(registry, [
   "AUDIO_LAB_DEFAULT_MODE = 'neon-shatter'",
-  "id: 'neon-shatter'", "id: 'spectrum'", "id: 'liquid-chrome'", "id: 'pulse-reactor'", "id: 'bass-fracture'",
+  "id: 'neon-shatter'", "id: 'spectrum'", "id: 'liquid-chrome'", "id: 'pulse-reactor'", "id: 'bass-fracture'", "id: 'gravity-lens'",
   "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum'])"
 ], 'Audio Lab registry');
 for (const retired of ['aurora-glass', 'nebula', 'singularity']) {
   assert.ok(!registry.includes(retired), `Retired Audio Lab preset returned: ${retired}.`);
 }
 const presetCount = (registry.match(/Object\.freeze\(\{ id:/g) || []).length;
-assert.ok(presetCount >= 5, 'Audio Lab must retain the validated Build 53 five-preset baseline.');
+assert.equal(presetCount, 6, 'Audio Lab must expose exactly six validated Build 54 presets.');
 
 const visualBase = read('js/features/visual/visual-engine-v2.js');
 function extractFunction(source, name) {
@@ -92,11 +92,12 @@ includesAll(live, [
   "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
   "{ id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode }",
   "{ id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }",
+  "{ id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }",
   'base.readSpectrum?.(raw)',
   'reading = readAudioLabSpectrum(raw)',
-  'dataset.audioLabRenderer =',
+  "dataset.audioLabRenderer = 'six-core-v1'",
   `dataset.audioLabPresetCount = '${presetCount}'`,
-  "mode === 'bass-fracture' ? 1.05",
+  "mode === 'bass-fracture' || mode === 'gravity-lens' ? 1.05",
   'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)',
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ], 'Live Audio Lab visuals');
@@ -120,35 +121,45 @@ for (const retired of ['drawAuroraGlassMode', 'drawSingularityLiveMode', 'drawNe
 const pulseReactor = read('js/features/visual/pulse-reactor.js');
 includesAll(pulseReactor, [
   'export function drawPulseReactorMode(',
-  'const ringCount = mobile ? 3 : 5',
-  'const segmentCount = mobile ? 18 : 32',
-  'const spokeCount = mobile ? 16 : 30',
-  'const shardCount = mobile ? 6 : 10',
-  'const fracture = clamp(',
-  'Math.max(0, impact - .48) * 1.85',
-  'fractureLift',
-  'const drift = time * activity * .075'
-], 'Pulse Reactor');
-assert.ok(!pulseReactor.includes('requestAnimationFrame('), 'Pulse Reactor must use the shared renderer scheduler.');
-assert.ok(!pulseReactor.includes('setInterval('), 'Pulse Reactor must not self-schedule an autonomous loop.');
-assert.ok(!pulseReactor.includes('Math.random('), 'Pulse Reactor peak breakup must remain deterministic.');
+  'const ringCount = mobile ? 3 : 4',
+  'const segmentCount = mobile ? 14 : 24',
+  'const spokeCount = mobile ? 10 : 18',
+  'const shardCount = mobile ? 4 : 7',
+  'const breakMask = clamp(',
+  'const segmentFracture = fracture * breakMask',
+  'const visible = clamp((drive - .2) * 1.45)',
+  'const drift = time * activity * .055'
+], 'Pulse Reactor readability pass');
 
 const bassFracture = read('js/features/visual/bass-fracture.js');
 includesAll(bassFracture, [
   'export function drawBassFractureMode(',
+  'const motionScale = mobile ? 1.42 : 1.08',
   'const layerCount = mobile ? 2 : 3',
-  'const sectorCount = mobile ? 12 : 20',
-  'const crackCount = mobile ? 10 : 18',
-  'const fracture = clamp(',
-  'const rupture = clamp(',
-  'const drift = time * activity * .038',
-  'localImpact',
-  'radialOffset',
-  'sampleAt(data, .5 + progress * .5)'
-], 'Bass Fracture');
-assert.ok(!bassFracture.includes('requestAnimationFrame('), 'Bass Fracture must use the shared renderer scheduler.');
-assert.ok(!bassFracture.includes('setInterval('), 'Bass Fracture must not self-schedule an autonomous loop.');
-assert.ok(!bassFracture.includes('Math.random('), 'Bass Fracture geometry must remain deterministic.');
+  'const sectorCount = mobile ? 12 : 16',
+  'const crackCount = mobile ? 8 : 12',
+  'const baseRadius = minSide * (mobile ? .305 : .305)',
+  'const drift = time * activity * .03'
+], 'Bass Fracture readability/mobile pass');
+
+const gravityLens = read('js/features/visual/gravity-lens.js');
+includesAll(gravityLens, [
+  'export function drawGravityLensMode(',
+  'const warp = clamp(',
+  'const caustic = clamp(',
+  'const bandCount = mobile ? 4 : 6',
+  'const arcCount = mobile ? 12 : 20',
+  'const streamCount = mobile ? 8 : 14',
+  'const drift = time * activity * .032',
+  'context.quadraticCurveTo(',
+  'const einsteinRadius ='
+], 'Gravity Lens');
+
+for (const isolated of [pulseReactor, bassFracture, gravityLens]) {
+  assert.ok(!isolated.includes('requestAnimationFrame('), 'Isolated visual must use the shared renderer scheduler.');
+  assert.ok(!isolated.includes('setInterval('), 'Isolated visual must not self-schedule an autonomous loop.');
+  assert.ok(!isolated.includes('Math.random('), 'Isolated visual geometry must remain deterministic.');
+}
 
 const signal = read('js/features/audio-lab-signal.js');
 includesAll(signal, [
@@ -186,12 +197,18 @@ includesAll(engine, ['initThemeScoping({ audio })', 'initDiscographyExperience({
 const admin = read('js/features/admin-access.js');
 includesAll(admin, ['resolveLrcMakerAccess', 'https://shinobione.github.io/lrc-maker/', "label: 'LRC Maker'"], 'Admin access');
 const worker = read('sw.js');
-includesAll(worker, ["'./js/features/theme-scope.js'", "'./js/features/visual/audio-lab-registry.js'", "'./js/features/visual/audio-lab-sanctuary.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/visual-card-export-guard.js'"], 'PWA shell');
+includesAll(worker, [
+  "'./js/features/theme-scope.js'", "'./js/features/visual/audio-lab-registry.js'",
+  "'./js/features/visual/audio-lab-sanctuary.js'", "'./js/features/visual/pulse-reactor.js'",
+  "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'",
+  "'./js/visual-card-export-guard.js'"
+], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.match(build.id, /^\d{8}-[a-z0-9-]+$/);
-assert.match(build.cache, /^shinobi-launchpad-v\d+$/);
-assert.match(build.display, /^\d{4}\.\d{2}\.\d{2}\.\d+$/);
-assert.ok(build.revision && build.release, 'Build revision/release metadata must be present.');
+assert.equal(build.id, '20260808-gravity-lens-v54');
+assert.equal(build.cache, 'shinobi-launchpad-v54');
+assert.equal(build.display, '2026.08.08.54');
+assert.equal(build.release, 'gravity-lens-20260808');
+assert.ok(build.revision, 'Build revision metadata must be present.');
 
 console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}) with ${presetCount} sanctioned Audio Lab presets.`);
