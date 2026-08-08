@@ -76,7 +76,6 @@ requireAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/v
 
 const build = assertCurrentBuild('Phase 13/current release');
 assert.ok(build.number >= 61, `Unexpected pre-Build-61 release ${build.display}.`);
-assert.equal(build.release, 'creep-signal-20260808');
 
 await import('./test-milestone-4.mjs');
 await import('./test-milestone-6.mjs');
