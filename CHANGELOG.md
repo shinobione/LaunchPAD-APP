@@ -1,8 +1,17 @@
 # Changelog
 
-> Current application build: `2026.08.08.63` — release `sonictrace-admin-link-20260808`.
+> Current application build: `2026.08.08.64` — release `sonictrace-badge-fix-20260808`.
 
 This file intentionally tracks the recent stabilized release line. Older milestone-by-milestone history remains available in Git history and merged pull requests.
+
+## Build 64 — SonicTrace badge styling fix
+
+- Fix the SonicTrace shortcut being rendered as a raw underlined text link in the live desktop admin strip.
+- Add `.sonic-trace-access` to the active `css/pwa.css` shared selectors used by LRC Maker and Track Manager.
+- Preserve identical pill height, padding, typography, icon sizing, hover movement and external-link arrow behavior across all three admin tools.
+- Apply a deliberate cyan/teal SonicTrace identity: cyan border/text/arrow plus a green-to-cyan `ST` disc gradient.
+- Add CI guards for the SonicTrace PWA styling so a future stylesheet split cannot silently strip the pill presentation again.
+- Advance the PWA cache namespace to `shinobi-launchpad-v64` so installed clients receive the corrected stylesheet.
 
 ## Build 63 — SonicTrace admin shortcut
 
