@@ -1,6 +1,6 @@
 # LaunchPAD roadmap
 
-> Current application build: `2026.08.08.62.1` — release `ui-polish-62-1-20260808`.
+> Current application build: `2026.08.08.62` — release `ui-polish-62-1-20260808`.
 
 The repository cleanup/reconciliation phase is complete. This roadmap now tracks product/runtime work rather than historical migration chores.
 
