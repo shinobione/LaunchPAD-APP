@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.08.65` — release `studio-private-read-bridge-20260808`.
+> Current application build: `2026.08.08.66` — release `studio-metadata-validation-20260808`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -36,18 +36,33 @@ GitHub main
 
 See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the authoritative hosting map.
 
+## Build 66 highlights
+
+Build 66 advances **SHINOBIWAN Studio Phase 4B.1A** while still refusing all cross-origin production writes.
+
+- Track Manager contract advances to **v5.9** and the Studio bridge to **v1.1**.
+- Existing `/api/studio/*` private GET reads remain Cloudflare-Access-authenticated and restricted to the exact origin `https://shinobione.github.io`.
+- One exact additional endpoint is assembled: `POST /api/studio/tracks/<slug>/metadata/validate`.
+- That POST requires `Content-Type: application/json`, the custom `X-Shinobiwan-Studio-Intent: metadata-validate-v1` header and an `expectedUpdatedAt` stale-manifest guard.
+- Metadata fields are whitelist-only; assets, slug, migration/provenance fields and server-owned timestamps cannot be supplied through the Studio patch.
+- The endpoint normalizes the proposed manifest and runs Track Manager quality inspection, but performs **no** `writeManifest`, `writeCatalogIndex`, R2 `put/delete`, upload, delete, publish or rebuild operation.
+- Studio bridge health advertises `validate: ["metadata"]` while `write: []` remains explicit.
+- Every other `POST`, `PUT`, `PATCH` and `DELETE` route keeps the existing Track Manager `enforceSameOrigin()` boundary.
+- CI fails if the validation module gains a production mutation primitive or if the assembled worker loses the exact validation-only exception.
+- The public Worker stays **v2.6** and is not part of this change.
+
 ## Build 65 highlights
 
-Build 65 prepares the private Track Manager for **SHINOBIWAN Studio Phase 4A** without opening production write access.
+Build 65 prepared the private Track Manager for **SHINOBIWAN Studio Phase 4A** without opening production write access.
 
-- Track Manager contract advances to **v5.8**.
-- A new authenticated namespace `/api/studio/*` exposes GET-only health, track-list and track-detail projections for Studio.
-- CORS is allowlisted to the exact GitHub Pages origin `https://shinobione.github.io`; it is not wildcarded.
-- Cloudflare Access JWT verification remains mandatory for Studio data reads.
-- Existing `POST`, `PUT`, `PATCH` and `DELETE` routes remain protected by the unchanged same-origin write guard.
-- The bridge advertises `write: []` and supports only `GET, OPTIONS`; CI contains a dedicated regression guard for this contract.
-- No R2 migration, catalog rebuild, asset rewrite or public Worker behavior is part of Build 65.
-- The synchronized-lyrics contract is corrected: timestamped canonical `lyrics.txt` is already synchronized; a second `.lrc` file is optional compatibility/export data, not a mandatory source of truth.
+- Track Manager contract advanced to **v5.8**.
+- A new authenticated namespace `/api/studio/*` exposed GET-only health, track-list and track-detail projections for Studio.
+- CORS was allowlisted to the exact GitHub Pages origin `https://shinobione.github.io`; it was not wildcarded.
+- Cloudflare Access JWT verification remained mandatory for Studio data reads.
+- Existing `POST`, `PUT`, `PATCH` and `DELETE` routes remained protected by the unchanged same-origin write guard.
+- The bridge advertised `write: []` and supported only `GET, OPTIONS`; CI added a dedicated regression guard for this contract.
+- No R2 migration, catalog rebuild, asset rewrite or public Worker behavior was part of Build 65.
+- The synchronized-lyrics contract was corrected: timestamped canonical `lyrics.txt` is already synchronized; a second `.lrc` file is optional compatibility/export data, not a mandatory source of truth.
 
 ## Build 64 highlights
 
@@ -119,7 +134,7 @@ npm run validate
 npm run check:wrangler
 ```
 
-CI checks browser navigation, PWA/service-worker behavior, Audio Lab signal contracts, catalog contracts, Cloudflare bundles, repository cleanliness, documentation/build coherence, the Studio private-read security boundary and desktop overflow regressions.
+CI checks browser navigation, PWA/service-worker behavior, Audio Lab signal contracts, catalog contracts, Cloudflare bundles, repository cleanliness, documentation/build coherence, the Studio bridge security boundary and desktop overflow regressions. Build 66 additionally proves that Studio metadata validation is non-mutating and that real writes remain same-origin-only.
 
 ## Release discipline
 
@@ -172,4 +187,4 @@ Useful documents:
 11. Motion memory/kinetic phase must stop when the real audio target disappears and must never become an autonomous screensaver.
 12. New visual families should prefer distinct composition/motion language rather than repeating radial center-object patterns.
 13. Historical-looking compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.
-14. Studio integration must remain additive and reversible: do not weaken existing Track Manager write protections while the read bridge is being proven.
+14. Studio integration must remain additive and reversible: validation-only cross-origin capabilities may be introduced before writes, but production mutation remains forbidden until separately versioned, reviewed and tested.
