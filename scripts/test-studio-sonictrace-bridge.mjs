@@ -25,8 +25,9 @@ for (const required of [
 ]) assert.ok(source.includes(required), `Built Worker is missing SonicTrace contract fragment: ${required}`);
 
 assert.ok(!source.includes('manifest.assets.sonictrace'), 'SonicTrace must not be written into manifest schema v1.');
+assert.ok(!source.includes('Ã'), 'Built Worker must preserve UTF-8 user-facing text and reject mojibake.');
 assert.ok(source.indexOf('await env.MEDIA_BUCKET.put(historyKey') < source.indexOf('await env.MEDIA_BUCKET.put(latestKey'), 'History must be persisted before latest.');
 assert.ok(source.includes('rollback.latestRestored = true'), 'Latest rollback verification is required.');
 assert.ok(deployWorkflow.includes("EXPECTED_ADMIN_VERSION: '5.14'"), 'Protected deployment must verify Track Manager v5.14.');
 
-console.log('Studio SonicTrace bridge contract is trackId-bound, versioned, append-only and rollback guarded.');
+console.log('Studio SonicTrace bridge contract is trackId-bound, UTF-8 clean, versioned, append-only and rollback guarded.');
