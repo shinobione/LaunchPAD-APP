@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD architecture
 
-> Current application build: `2026.08.08.55` — release `motion-bio-20260808`.
+> Current application build: `2026.08.08.56` — release `dynamic-breathing-20260808`.
 
 LaunchPAD is a modular static PWA whose application source lives in GitHub `main`. The web shell is mirrored to GitHub Pages and Cloudflare Pages; production catalog/media state lives in Cloudflare R2 and is exposed through public/private Workers.
 
@@ -60,7 +60,7 @@ js/
       visual-engine-live.js   Shared live FFT controller
       visual-engine-core-modes.js
                               Neon Shatter + Liquid Chrome
-      motion-spring.js        Per-canvas spring memory / overshoot helper
+      motion-spring.js        Per-canvas spring memory / soft-knee motion helper
       pulse-reactor.js        Isolated elastic reactor renderer
       bass-fracture.js        Isolated elastic tectonic renderer
       gravity-lens.js         Isolated elastic space-warp renderer
@@ -122,43 +122,45 @@ primary:   Spectrum AnalyserNode --> shared 128-bin FFT --> custom renderers
 fallback:  track URL --> fetch/decode --> AnalyserNode --> shared FFT readers
 ```
 
-### Motion / elasticity layer
+### Motion / dynamic-range layer
 
-Build 55 adds a deterministic state layer **after** FFT feature extraction, not a second audio path:
+Build 56 keeps the Build 55 short-memory spring architecture but adds a soft-knee map before spring targets:
 
 ```text
-FFT/features --> spring target --> short-memory value + velocity --> renderer geometry
+FFT/features --> soft-knee target --> spring value + signed velocity --> renderer geometry
 ```
 
-`motion-spring.js` keeps per-canvas state in a `WeakMap`, clamps frame delta and exposes spring channels plus signal-gated phase. The spring target still comes from real FFT/features. When playback pauses, the target drops to zero and residual movement decays naturally. The helper owns no RAF, timer or audio node.
+Upstream Audio Lab features remain intentionally boosted for weak tracks. `shapeMotionTarget()` expands low/mid detail slightly and compresses the top of the visual range so strong tracks do not pin custom renderers near 1.0. Signed velocity may briefly push geometry forward or backward; it is no longer converted only into positive expansion. `motionPhase()` uses a sub-linear activity gate so moderate signal produces visible movement while zero signal still produces zero phase progression.
+
+The helper owns no RAF, timer or audio node. When playback pauses, targets drop to zero and residual velocity decays naturally.
 
 ### Audio Lab rendering contract
 
-Build 55 exposes seven sanctioned presets:
+Build 56 exposes seven sanctioned presets:
 
 - **Spectrum** — protected reference renderer and owner of the primary analyser contract.
-- **Neon Shatter** — FFT/local-delta shard displacement, scaling, rotation, cracks and bass/kick impact rings.
-- **Liquid Chrome** — FFT-deformed metallic contour; bass controls pulse, mids fluidity and highs local/specular detail.
-- **Pulse Reactor** — sparse reactor with spring-driven core breathing, delayed ring propagation, elastic segment wobble and bass-peak breakup.
-- **Bass Fracture** — deterministic tectonic disc with spring rupture, plate travel/sway, recoil and short-lived crack propagation; mobile gains amplitude rather than primitive count.
-- **Gravity Lens** — spatial distortion field with spring warp/shear, orbital precession, breathing bands, drifting curved streams and a stable central horizon.
-- **Bio Structure** — living semi-mechanical spine/rib mesh: bass inflates the organism, mids flex paired branches, highs/transients travel through luminous nerve impulses.
+- **Neon Shatter** — FFT/local-delta shard displacement, scaling, rotation, cracks and bass/kick impact rings; unchanged in Build 56.
+- **Liquid Chrome** — FFT-deformed metallic contour; unchanged in Build 56.
+- **Pulse Reactor** — same sparse geometry, now with reserved peak headroom, signed recoil, stronger low-level breathing and less permanent full expansion.
+- **Bass Fracture** — same tectonic plate budget, with compressed rupture peaks plus signed plate glide/recoil and more continuous crack motion.
+- **Gravity Lens** — same spatial field budget, with compressed warp/shear/caustic peaks and more visible moderate-energy precession/breathing/stream drift.
+- **Bio Structure** — same living spine/rib budget, with less peak-dominated inflation and more continuous spine/rib/membrane/nerve motion.
 
 All custom effects read Spectrum's analyser through `readSpectrum()` first. Time may only contribute through real-signal-gated phase/memory; paused/silent playback must settle. Isolated renderers must not own their own RAF/timer loop or use random motion as a substitute for signal reactivity.
 
 ### Mobile visual budget
 
-Performance limits are part of each preset contract rather than an afterthought:
+Performance limits remain unchanged in Build 56:
 
 - Neon Shatter: DPR cap 1.0 on mobile.
 - Pulse Reactor: DPR cap 1.1, 3 rings, 14 segments/ring, 10 spokes and 4 peak-only core shards on mobile; desktop uses 4 / 24 / 18 / 7.
-- Bass Fracture: DPR cap 1.05, 2 plate layers, 12 sectors and 8 crack spokes on mobile; desktop uses 3 / 16 / 12. Mobile motion scale is 1.58 rather than adding geometry.
+- Bass Fracture: DPR cap 1.05, 2 plate layers, 12 sectors and 8 crack spokes on mobile; desktop uses 3 / 16 / 12.
 - Gravity Lens: DPR cap 1.05, 4 bands, 12 arc segments and 8 curved streams on mobile; desktop uses 6 / 20 / 14.
 - Bio Structure: DPR cap 1.05, 5 paired ribs, 8 nerve impulses and 6 spine subdivisions on mobile; desktop uses 8 / 14 / 9.
 - Liquid Chrome: DPR cap 1.35 on mobile.
-- All custom modes target the same 60 Hz render scheduler, with geometry reduced before visual reactivity or movement amplitude is reduced.
+- All custom modes target the same 60 Hz render scheduler, with geometry reduced before visual movement is reduced.
 
-New effects should be isolated in their own module when practical and added one at a time after desktop + Android validation. When a visual becomes cluttered, reduce simultaneous primitives before reducing signal amplitude or motion travel.
+New effects should be isolated in their own module when practical and added one at a time after desktop + Android validation. When a visual feels static despite correct reactivity, inspect saturation/headroom before increasing peak gain or primitive count.
 
 ## Canonical R2 structure
 
@@ -176,7 +178,7 @@ tracks/<slug>/video.<ext>     # optional
 
 ## PWA / Canvas / Studio
 
-The service worker caches same-origin application assets while audio/video media remain network-oriented. Build 55 advances the cache namespace and includes `motion-spring.js`, `pulse-reactor.js`, `bass-fracture.js`, `gravity-lens.js` and `bio-structure.js` in the application shell. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
+The service worker caches same-origin application assets while audio/video media remain network-oriented. Build 56 advances the cache namespace while keeping `motion-spring.js`, `pulse-reactor.js`, `bass-fracture.js`, `gravity-lens.js` and `bio-structure.js` in the application shell. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
 
 ## Deployment artifact
 
@@ -204,7 +206,7 @@ Every new application build must update every Markdown file to the exact `displa
 12. Lovable remains external prototyping unless a deliberate migration lands back in `main`.
 13. Audio Lab visuals must prove reactivity against the live FFT feed rather than merely animate while playback is active.
 14. Audio Lab presets are added one at a time with explicit mobile geometry/DPR budgets.
-15. Peak violence should come from signal-derived deformation/fracture, not permanently higher particle counts.
+15. Peak violence must retain dynamic headroom; boosted features must not pin a visual permanently at its maximum pose.
 16. Readability is a first-class visual contract: fewer stronger gestures beat dense always-on detail.
 17. Spring/inertia state is allowed only as short memory of real audio targets and must decay to rest on pause/silence.
 18. Historical-looking compatibility files that remain wired into boot/deployment are removed only through dedicated regression-tested refactors.
