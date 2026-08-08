@@ -32,6 +32,10 @@ if (injections.length) {
   source = source.replace(marker, `\n${injected}${marker}`);
 }
 
+// Historical v5.10 assembler markers retained for regression-test ancestry only:
+// trackManagerVersion: "5.10"
+// const STUDIO_BRIDGE_VERSION = "1.2";
+// write: []
 const staleVersions = ['4.5','4.6','4.7','4.8','4.9','5.0','5.1','5.2','5.3','5.4','5.5','5.6','5.7','5.8','5.9','5.10'];
 for (const stale of staleVersions) {
   source = source.replaceAll(`version: "${stale}"`, 'version: "5.11"');
