@@ -1,5 +1,15 @@
 # Changelog
 
+## Track Manager v5.15 / Studio bridge v1.7 — Phase 6 candidate
+
+- adds a protected, minimal context read for LRC Maker keyed only by canonical `trackId`;
+- adds specialized validate/save routes that require every lyric line to have a finite, ordered timestamp within audio duration;
+- requires exact `trackId`, manifest revision and lyrics R2 ETag to reject stale or wrong-track writes;
+- writes only the existing canonical `tracks/<slug>/lyrics.txt` as UTF-8;
+- rebuilds and rereads the catalog after save, with lyrics, manifest and catalog rollback on failure;
+- keeps `.lrc` optional for export/compatibility and outside Content Health;
+- preserves the public Worker v2.6, LaunchPAD Build 66 and all Phase 5 SonicTrace data contracts.
+
 ## Track Manager v5.14 / Studio bridge v1.6 — Phase 5 candidate
 
 - adds canonical SonicTrace `latest.json` and append-only history sidecars in R2;

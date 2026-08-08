@@ -324,8 +324,8 @@ function timestampSeconds(minutes, seconds, fraction = "0") {
 
 function parseTimestampedLyrics(raw) {
   const lines = stripLyricsMetadata(raw).split("\n");
-  const bracketed = /\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\]/g;
-  const naked = /^(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?(?:\s+(.+))?$/;
+  const bracketed = /\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?\]/g;
+  const naked = /^(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?(?:\s+(.+))?$/;
   const segments = [];
   let pendingTime = null;
 

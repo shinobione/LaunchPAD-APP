@@ -57,6 +57,8 @@ for (const forbiddenMutation of ['.put(', '.delete(', 'saveTrack(', 'saveThumbna
 for (const required of [
   'const STUDIO_LYRICS_VALIDATION_INTENT = "lyrics-validate-v1";',
   'const STUDIO_LYRICS_SAVE_INTENT = "lyrics-save-v1";',
+  'const STUDIO_LYRICS_SYNC_VALIDATION_INTENT = "lyrics-sync-validate-v1";',
+  'const STUDIO_LYRICS_SYNC_SAVE_INTENT = "lyrics-sync-save-v1";',
   'const STUDIO_CANONICAL_LYRICS_FILENAME = "lyrics.txt";',
   'expectedUpdatedAt',
   'expectedLyricsEtag',
@@ -117,19 +119,22 @@ for (const forbiddenLiteral of ['LM-IA-Analayse', 'SonicTrace', 'analysis/sonict
   assert.ok(!phase4Part.includes(forbiddenLiteral), `Phase 4 operations must not leak Phase 5/duplicate lyrics concerns: ${forbiddenLiteral}`);
 }
 
-assert.ok(built.includes('version: "5.14"'), 'Built Track Manager contract must be v5.14.');
-assert.ok(built.includes('<span class="version-pill">v5.14</span>'), 'Built Track Manager UI must report v5.14.');
-assert.ok(built.includes('const STUDIO_BRIDGE_VERSION = "1.6";'), 'Studio bridge contract must be v1.6.');
-assert.ok(built.includes('trackManagerVersion: "5.14"'), 'Studio bridge health must report Track Manager v5.14.');
-assert.ok(built.includes('read: ["tracks", "track", "lyrics", "sonictrace-analysis", "sonictrace-catalog"]'), 'Studio health must retain private reads and add scoped SonicTrace reads.');
-assert.ok(built.includes('validate: ["metadata", "lyrics"]'), 'Studio health must retain validation capabilities.');
-assert.ok(built.includes('write: ["metadata", "lyrics", "sonictrace-analysis"]'), 'Studio health write list must add only the guarded SonicTrace sidecar capability.');
+assert.ok(built.includes('version: "5.15"'), 'Built Track Manager contract must be v5.15.');
+assert.ok(built.includes('<span class="version-pill">v5.15</span>'), 'Built Track Manager UI must report v5.15.');
+assert.ok(built.includes('const STUDIO_BRIDGE_VERSION = "1.7";'), 'Studio bridge contract must be v1.7.');
+assert.ok(built.includes('trackManagerVersion: "5.15"'), 'Studio bridge health must report Track Manager v5.15.');
+assert.ok(built.includes('read: ["tracks", "track", "lyrics", "lyrics-context", "sonictrace-analysis", "sonictrace-catalog"]'), 'Studio health must expose the guarded Lyrics context read.');
+assert.ok(built.includes('validate: ["metadata", "lyrics", "lyrics-sync"]'), 'Studio health must expose specialized Lyrics synchronization validation.');
+assert.ok(built.includes('write: ["metadata", "lyrics", "lyrics-sync", "sonictrace-analysis"]'), 'Studio health must expose the guarded Lyrics synchronization save.');
 assert.ok(built.includes('manage: ["track-create", "assets", "catalog-rebuild"]'), 'Studio health must expose the final Phase 4 manage capabilities separately.');
 
 for (const routeCall of [
   'await getStudioTrackLyrics(studioLyricsReadRoute[1], env, user)',
+  'await getStudioLyricsContext(studioLyricsContextRoute[1], env, user)',
   'await validateStudioTrackLyrics(studioLyricsValidationRoute[1], request, env, user)',
   'await saveStudioTrackLyrics(studioLyricsSaveRoute[1], request, env, user)',
+  'await validateStudioTrackLyrics(studioLyricsSyncValidationRoute[1], request, env, user, { expectedIntent: STUDIO_LYRICS_SYNC_VALIDATION_INTENT, requireSynchronized: true })',
+  'await saveStudioTrackLyrics(studioLyricsSyncSaveRoute[1], request, env, user, { expectedIntent: STUDIO_LYRICS_SYNC_SAVE_INTENT, requireSynchronized: true })',
   'await validateStudioTrackMetadata(studioMetadataValidationRoute[1], request, env, user)',
   'await saveStudioTrackMetadata(studioMetadataSaveRoute[1], request, env, user)',
   'await createStudioTrack(request, env, user)',
@@ -159,4 +164,4 @@ assert.ok(
   'Protected canonical media must opt into the exact credentialed Studio CORS response.',
 );
 
-console.log('Studio bridge guard passed: v1.6 preserves Phase 4 capabilities and adds only guarded SonicTrace sidecar read/write routes while legacy Track Manager remains same-origin protected.');
+console.log('Studio bridge guard passed: v1.7 preserves existing capabilities and adds guarded Lyrics synchronization routes while legacy Track Manager remains same-origin protected.');

@@ -21,13 +21,13 @@ for (const required of [
   'audioStored: false',
   'embedding.dimension !== 512',
   'getStudioSonicTraceCatalog',
-  'write: ["metadata", "lyrics", "sonictrace-analysis"]',
+  'write: ["metadata", "lyrics", "lyrics-sync", "sonictrace-analysis"]',
 ]) assert.ok(source.includes(required), `Built Worker is missing SonicTrace contract fragment: ${required}`);
 
 assert.ok(!source.includes('manifest.assets.sonictrace'), 'SonicTrace must not be written into manifest schema v1.');
 assert.ok(!source.includes('Ã'), 'Built Worker must preserve UTF-8 user-facing text and reject mojibake.');
 assert.ok(source.indexOf('await env.MEDIA_BUCKET.put(historyKey') < source.indexOf('await env.MEDIA_BUCKET.put(latestKey'), 'History must be persisted before latest.');
 assert.ok(source.includes('rollback.latestRestored = true'), 'Latest rollback verification is required.');
-assert.ok(deployWorkflow.includes("EXPECTED_ADMIN_VERSION: '5.14'"), 'Protected deployment must verify Track Manager v5.14.');
+assert.ok(deployWorkflow.includes("EXPECTED_ADMIN_VERSION: '5.15'"), 'Protected deployment must verify Track Manager v5.15.');
 
 console.log('Studio SonicTrace bridge contract is trackId-bound, UTF-8 clean, versioned, append-only and rollback guarded.');
