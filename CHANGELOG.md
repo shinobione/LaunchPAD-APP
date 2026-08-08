@@ -1,8 +1,20 @@
 # Changelog
 
-> Current application build: `2026.08.08.58` — release `adaptive-punch-20260808`.
+> Current application build: `2026.08.08.59` — release `direct-impact-20260808`.
 
 This file intentionally tracks the recent stabilized release line. Older milestone-by-milestone history remains available in Git history and merged pull requests.
+
+## Build 59 — Direct impact
+
+- Keep Build 57's integrated kinetic travel and Build 58's adaptive low-frequency onset detector intact.
+- Fix the remaining transient-impact architecture bug: detected punch was previously re-injected into ordinary clamped spring targets, so loud/dense passages could still flatten visual kick response.
+- Add `createDirectVisualImpactTracker()` to derive a short visual-only impulse from rising adaptive punch, kick and fast-vs-baseline low-band contrast.
+- Add `applyDirectKineticImpact()` after normal renderer pose computation so transient movement retains reserved headroom independently from already-high bass/kick targets.
+- Give each kinetic preset a distinct cheap transform: Pulse Reactor expands/twists, Bass Fracture ruptures/compresses, Gravity Lens snaps into anisotropic stretch/rotation, Bio Structure contracts/expands as a whole organism.
+- Expose `audioLabVisualImpact` telemetry separately from `audioLabPunch` so detector activity and actual visual impulse can be diagnosed independently.
+- Keep **Spectrum**, **Neon Shatter** and **Liquid Chrome** unchanged.
+- Add no new primitives, private RAF/timer loops, random motion or higher mobile DPR budgets.
+- Advance the PWA namespace to Build 59 / cache v59.
 
 ## Build 58 — Adaptive punch
 
