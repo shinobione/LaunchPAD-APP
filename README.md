@@ -173,7 +173,10 @@ Before merging application or infrastructure changes:
 ```bash
 npm run validate
 npm run check:wrangler
+npm run check:build-docs
 ```
+
+`check:build-docs` enforces build-synchronized Markdown validation: every Markdown document must mention the active public build display and release marker.
 
 CI checks browser navigation, PWA/service-worker behavior, Audio Lab signal contracts, catalog contracts, Cloudflare bundles, repository cleanliness, documentation/build coherence, Studio bridge security boundaries and desktop overflow regressions.
 
