@@ -1,6 +1,6 @@
 # LaunchPAD deployment topology
 
-> Current application build: `2026.08.08.57` — release `kinetic-flow-20260808`.
+> Current application build: `2026.08.08.58` — release `adaptive-punch-20260808`.
 
 ## One source of truth
 
@@ -10,7 +10,7 @@
                          GitHub repository
                               main
                                |
-                      validated Build 57
+                      validated Build 58
                                |
                 +--------------+--------------+
                 |                             |
@@ -34,18 +34,18 @@
                       shinobiwan-media
 ```
 
-## Canonical Build 57
+## Canonical Build 58
 
 The current application release is defined only in `js/build-config.js`:
 
 ```text
-id       20260808-kinetic-flow-v57
-cache    shinobi-launchpad-v57
-display  2026.08.08.57
-release  kinetic-flow-20260808
+id       20260808-adaptive-punch-v58
+cache    shinobi-launchpad-v58
+display  2026.08.08.58
+release  adaptive-punch-20260808
 ```
 
-Every Markdown document must carry the same display/release markers; CI rejects stale documentation. The cache namespace advances with Build 57 so the integrated kinetic-phase helper and rewritten Pulse Reactor/Bass Fracture/Gravity Lens/Bio Structure renderers cannot be hidden by stale Build 56 shell assets.
+Every Markdown document must carry the same display/release markers; CI rejects stale documentation. The cache namespace advances with Build 58 so the adaptive low-frequency punch controller cannot be hidden by stale Build 57 shell assets.
 
 ## Web hosting
 
