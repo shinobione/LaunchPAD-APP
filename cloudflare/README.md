@@ -1,6 +1,6 @@
 # LaunchPAD Cloudflare services
 
-> Current application build: `2026.08.08.51` — release `audiolab-three-core-20260808`.
+> Current application build: `2026.08.08.52` — release `pulse-reactor-20260808`.
 
 Current backend contracts: public media Worker **v2.6**, private Track Manager **v5.7**.
 
@@ -30,7 +30,7 @@ Output:
 dist/cloudflare-pages
 ```
 
-The builder copies the runtime verbatim. A Pages deployment must never contain a host-only patch missing from `main`.
+The builder copies the runtime verbatim. A Pages deployment must never contain a host-only patch missing from `main`. Build 52 includes the isolated `pulse-reactor.js` Audio Lab module and cache namespace `shinobi-launchpad-v52` in the canonical static shell.
 
 ## Public media Worker
 
