@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD architecture
 
-> Current application build: `2026.08.08.51` — release `audiolab-three-core-20260808`.
+> Current application build: `2026.08.08.52` — release `pulse-reactor-20260808`.
 
 LaunchPAD is a modular static PWA whose application source lives in GitHub `main`. The web shell is mirrored to GitHub Pages and Cloudflare Pages; production catalog/media state lives in Cloudflare R2 and is exposed through public/private Workers.
 
@@ -53,9 +53,15 @@ js/
   app-main.js                 Playback, routing and app composition
   core/                       Shared catalog/router/player/theme state
   features/
-    audio-lab-signal.js       Decoded analysis-copy pipeline
+    audio-lab-signal.js       Decoded analysis-copy fallback
     lyrics/                   Lyrics reader/synchronization
-    visual/                   Audio Lab renderers and registry
+    visual/
+      visual-engine-v2.js     Spectrum reference renderer/analyser
+      visual-engine-live.js   Shared live FFT controller
+      visual-engine-core-modes.js
+                              Neon Shatter + Liquid Chrome
+      pulse-reactor.js        Isolated Pulse Reactor renderer
+      audio-lab-registry.js   Sanctioned preset list
     track-detail.js           Dedicated #track= route renderer
     track-videos.js           Canvas/video behavior
     pwa.js                    Install/update orchestration
@@ -107,36 +113,34 @@ Audio Lab must not become part of this audible graph.
 
 ### Analysis path
 
-The independent decoded analysis copy remains available as the resilient analysis bridge:
+The live custom renderers request the same analyser that powers Spectrum. The independent decoded analysis copy remains available only as a resilient fallback:
 
 ```text
-track URL
-   |
-   +--> fetch + decodeAudioData
-          |
-          v
-      AudioBufferSourceNode
-          |
-          v
-       AnalyserNode --> FFT/time-domain readers --> visual renderers
-          |
-          v
-      zero-gain sink
+primary:   Spectrum AnalyserNode --> shared 128-bin FFT --> custom renderers
+fallback:  track URL --> fetch/decode --> AnalyserNode --> shared FFT readers
 ```
-
-The decoded analysis source is synchronized to the main player's track, `currentTime` and playback rate. It is stopped when analysis is not needed and recreated after source changes.
 
 ### Audio Lab rendering contract
 
-Build 51 deliberately reduces Audio Lab to three presets:
+Build 52 exposes four sanctioned presets:
 
-- **Spectrum** — protected reference renderer and source of the primary analyser contract.
-- **Neon Shatter** — rebuilt from scratch around per-bin FFT/local-delta shard displacement, scaling, rotation, cracks and bass/kick impact rings.
-- **Liquid Chrome** — rebuilt from scratch around an FFT-deformed metallic contour; bass controls pulse, mids control fluidity and highs sharpen local deformation/specular detail.
+- **Spectrum** — protected reference renderer and owner of the primary analyser contract.
+- **Neon Shatter** — FFT/local-delta shard displacement, scaling, rotation, cracks and bass/kick impact rings.
+- **Liquid Chrome** — FFT-deformed metallic contour; bass controls pulse, mids fluidity and highs local/specular detail.
+- **Pulse Reactor** — isolated renderer: bass/kicks drive the reactor core, mids drive segmented orbital rings, highs/transients drive radial needles.
 
-Neon Shatter and Liquid Chrome request Spectrum's analyser through `readSpectrum()` first. The decoded analysis bridge is fallback-only for those custom effects. Aurora Glass, Nebula and Singularity are no longer sanctioned presets or active render paths.
+All custom effects read Spectrum's analyser through `readSpectrum()` first. Time may add only a tiny signal-gated drift; paused/silent playback must settle instead of continuing an autonomous loop.
 
-Time may add a small fluid drift only after real signal activity gates it. Paused/silent playback therefore settles instead of continuing an autonomous loop.
+### Mobile visual budget
+
+Performance limits are part of each preset contract rather than an afterthought:
+
+- Neon Shatter: DPR cap 1.0 on mobile.
+- Pulse Reactor: DPR cap 1.1, 3 rings, 18 segments/ring and 16 spokes on mobile; desktop uses 5 rings, 32 segments and 30 spokes.
+- Liquid Chrome: DPR cap 1.35 on mobile.
+- All custom modes target the same 60 Hz render scheduler, with geometry reduced before visual reactivity is reduced.
+
+New effects should be isolated in their own module when practical and added one at a time after desktop + Android validation.
 
 ## Canonical R2 structure
 
@@ -154,7 +158,7 @@ tracks/<slug>/video.<ext>     # optional
 
 ## PWA / Canvas / Studio
 
-The service worker caches same-origin application assets while audio/video media remain network-oriented. Build 51 advances the PWA cache namespace so the three-core Audio Lab cannot be masked by cached Build 50 JavaScript. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
+The service worker caches same-origin application assets while audio/video media remain network-oriented. Build 52 advances the cache namespace and includes `pulse-reactor.js` in the application shell. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
 
 ## Deployment artifact
 
@@ -181,7 +185,8 @@ Every new application build must update every Markdown file to the exact `displa
 11. Deployment builders may copy/validate runtime files but may not patch production runtime code.
 12. Lovable remains external prototyping unless a deliberate migration lands back in `main`.
 13. Audio Lab visuals must prove reactivity against the live FFT feed rather than merely animate while playback is active.
-14. Historical-looking compatibility files that remain wired into boot/deployment are removed only through dedicated regression-tested refactors.
+14. Audio Lab presets are added one at a time with explicit mobile geometry/DPR budgets.
+15. Historical-looking compatibility files that remain wired into boot/deployment are removed only through dedicated regression-tested refactors.
 
 ## Validation
 
