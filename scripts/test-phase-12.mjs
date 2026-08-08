@@ -54,7 +54,7 @@ assert.ok(serviceWorker.includes("'./css/feature-12.css'"));
 assert.ok(serviceWorker.includes("'./js/features/feature-12.js'"));
 
 const deployment = read('.github/workflows/deploy-cloudflare.yml');
-assert.ok(deployment.includes("EXPECTED_ADMIN_VERSION: '5.7'"));
+assert.ok(deployment.includes("EXPECTED_ADMIN_VERSION: '5.8'"));
 assert.ok(deployment.includes("EXPECTED_PUBLIC_VERSION: '2.6'"));
 assert.ok(deployment.includes('workflow_dispatch:'));
 assert.ok(!deployment.includes('\n  push:'), 'Production Worker deployment must remain manual-only.');
@@ -62,4 +62,4 @@ assert.ok(!deployment.includes('\n  push:'), 'Production Worker deployment must 
 await import('./test-milestone-5.mjs');
 
 const build = assertCurrentBuild('Phase 12');
-console.log(`Phase 12 filtering, manual cover colors, Studio cleanup, local themes, metadata layout and Discography order remain valid under Build ${build.number}.`);
+console.log(`Phase 12 filtering, manual cover colors, Studio cleanup, local themes, metadata layout and Discography order remain valid under current Track Manager v5.8 / Build ${build.number}.`);
