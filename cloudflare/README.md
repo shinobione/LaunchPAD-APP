@@ -2,7 +2,7 @@
 
 > Current application build: `2026.08.08.66` — release `studio-metadata-validation-20260808`.
 
-Public media Worker remains **v2.6**. This branch prepares private Track Manager **v5.13** / Studio bridge **v1.5** as the final backend capability set required by SHINOBIWAN Studio roadmap Phase 4.
+Public media Worker remains **v2.6**. Private Track Manager **v5.13** / Studio bridge **v1.5** is now deployed as the final backend capability set required by SHINOBIWAN Studio roadmap Phase 4.
 
 Cloudflare provides three separate LaunchPAD concerns:
 
@@ -24,9 +24,14 @@ Cloudflare is not an alternate application source repository. See [`../docs/DEPL
 ## Private Track Manager Worker
 
 - service: `launchpad-r2-api`
-- candidate repository contract: **v5.13**
-- candidate Studio bridge: **v1.5**
-- protected by Cloudflare Access
+- deployed repository contract: **v5.13**
+- deployed Studio bridge: **v1.5**
+- source SHA: `df75509d89b1ed1477d4b249fab63a6bd41db311`
+- protected workflow run: `31272655808`
+- deployment target: `admin`
+- Cloudflare Worker Version ID: `781f75f9-776c-4e39-90a7-5cdf34854599`
+- Cloudflare Access post-deploy verification: protected, HTTP `302`
+- public Worker deploy/record/verify steps: skipped
 - binding: `MEDIA_BUCKET` → `shinobiwan-media`
 - existing same-origin Track Manager UI remains the operational fallback
 - public LaunchPAD application remains Build 66
@@ -189,11 +194,18 @@ The Studio bridge regression guard verifies:
 - no whole-track deletion or legacy all-in-one `saveTrack()` route becomes cross-origin;
 - v5.13 bundle remains behind Access and legacy unrelated writes remain same-origin.
 
-## Deployment discipline
+## Deployment proof
 
-Worker deployment changes code only. Deploying v5.13 itself does **not** create a track, upload/delete an asset or rebuild the catalog.
+Production deployment succeeded from exact source SHA `df75509d89b1ed1477d4b249fab63a6bd41db311` using protected workflow run `31272655808` with `target=admin`.
 
-After source merge and green CI, deploy **admin only** through the protected `Deploy Cloudflare Workers` workflow. Do not select `both`; public Worker behavior did not change.
+The workflow:
+
+- rebuilt and revalidated Track Manager v5.13 / bridge v1.5;
+- deployed only `launchpad-r2-api`;
+- recorded Worker Version ID `781f75f9-776c-4e39-90a7-5cdf34854599`;
+- verified Cloudflare Access remains protected (`302` unauthenticated);
+- skipped all public Worker deployment/verification steps;
+- did not rebuild `catalog/index.json` or mutate R2 media merely by deploying Worker code.
 
 Immediate rollback checkpoint before v5.13 work:
 
@@ -201,7 +213,7 @@ Immediate rollback checkpoint before v5.13 work:
 safety/pre-v5.13-phase4-ops-20260808-1948
 ```
 
-Last deployed backend before v5.13:
+Previous deployed backend:
 
 - Track Manager v5.12 / bridge v1.4;
 - merge `98504263dac8a5f284337fe7e26fa6c808ad75e3`;
