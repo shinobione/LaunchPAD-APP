@@ -1,0 +1,82 @@
+/* Build 62.1 — micro UI corrections
+   - desktop Studio Canvas breathing room
+   - Audio Lab cover removed on mobile too
+   - mobile mini-player seek thumb centered and reduced
+*/
+
+@media (min-width:761px){
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-track-panel{
+    padding:18px!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-studio-canvas{
+    margin:12px auto 16px!important;
+  }
+}
+
+@media (max-width:760px){
+  body #view-lab .lab-center #lab-cover{
+    display:none!important;
+  }
+
+  body footer.player-bar #seek{
+    --seek-progress:0%;
+    -webkit-appearance:none!important;
+    appearance:none!important;
+    width:100%!important;
+    height:12px!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    outline:0!important;
+    background:transparent!important;
+  }
+
+  body footer.player-bar #seek::-webkit-slider-runnable-track{
+    height:3px!important;
+    border:0!important;
+    border-radius:999px!important;
+    background:linear-gradient(
+      90deg,
+      var(--accent) 0%,
+      var(--accent2) var(--seek-progress),
+      rgba(255,255,255,.2) var(--seek-progress),
+      rgba(255,255,255,.2) 100%
+    )!important;
+  }
+
+  body footer.player-bar #seek::-webkit-slider-thumb{
+    -webkit-appearance:none!important;
+    appearance:none!important;
+    width:9px!important;
+    height:9px!important;
+    margin-top:-3px!important;
+    border:0!important;
+    border-radius:50%!important;
+    background:color-mix(in srgb,var(--accent2) 58%,#fff)!important;
+    box-shadow:0 0 0 1px rgba(0,0,0,.22),0 0 9px color-mix(in srgb,var(--accent) 38%,transparent)!important;
+  }
+
+  body footer.player-bar #seek::-moz-range-track{
+    height:3px!important;
+    border:0!important;
+    border-radius:999px!important;
+    background:rgba(255,255,255,.2)!important;
+  }
+
+  body footer.player-bar #seek::-moz-range-progress{
+    height:3px!important;
+    border:0!important;
+    border-radius:999px!important;
+    background:linear-gradient(90deg,var(--accent),var(--accent2))!important;
+  }
+
+  body footer.player-bar #seek::-moz-range-thumb{
+    width:9px!important;
+    height:9px!important;
+    border:0!important;
+    border-radius:50%!important;
+    background:color-mix(in srgb,var(--accent2) 58%,#fff)!important;
+    box-shadow:0 0 0 1px rgba(0,0,0,.22),0 0 9px color-mix(in srgb,var(--accent) 38%,transparent)!important;
+  }
+}
