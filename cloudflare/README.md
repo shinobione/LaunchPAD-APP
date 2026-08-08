@@ -1,6 +1,6 @@
 # LaunchPAD Cloudflare services
 
-> Current application build: `2026.08.07.50` — release `audiolab-signal-first-20260807`.
+> Current application build: `2026.08.08.51` — release `audiolab-three-core-20260808`.
 
 Current backend contracts: public media Worker **v2.6**, private Track Manager **v5.7**.
 
