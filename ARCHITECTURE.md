@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD architecture
 
-> Current application build: `2026.08.07.50` — release `audiolab-signal-first-20260807`.
+> Current application build: `2026.08.08.51` — release `audiolab-three-core-20260808`.
 
 LaunchPAD is a modular static PWA whose application source lives in GitHub `main`. The web shell is mirrored to GitHub Pages and Cloudflare Pages; production catalog/media state lives in Cloudflare R2 and is exposed through public/private Workers.
 
@@ -107,7 +107,7 @@ Audio Lab must not become part of this audible graph.
 
 ### Analysis path
 
-Build 50 uses an independent analysis copy:
+The independent decoded analysis copy remains available as the resilient analysis bridge:
 
 ```text
 track URL
@@ -128,17 +128,15 @@ The decoded analysis source is synchronized to the main player's track, `current
 
 ### Audio Lab rendering contract
 
-Spectrum is the reference visualizer because it reads the same FFT feed directly.
+Build 51 deliberately reduces Audio Lab to three presets:
 
-Build 50 makes the remaining reactive effects **signal-first**:
+- **Spectrum** — protected reference renderer and source of the primary analyser contract.
+- **Neon Shatter** — rebuilt from scratch around per-bin FFT/local-delta shard displacement, scaling, rotation, cracks and bass/kick impact rings.
+- **Liquid Chrome** — rebuilt from scratch around an FFT-deformed metallic contour; bass controls pulse, mids control fluidity and highs sharpen local deformation/specular detail.
 
-- **Neon Shatter** — fragment radius, size, angle offsets and cracks are driven primarily by per-bin FFT values/local spectral deltas and transient features. Time contributes only a tiny energy-gated drift.
-- **Aurora Glass** — ribbon geometry is driven primarily by per-position spectral lift/delta plus bass/mid/high features. Autonomous loop-like phase motion was removed.
-- **Liquid Chrome** — delegated to the live FFT pipeline with a modestly larger base radius and slightly stronger per-bin deformation.
-- **Singularity** — delegated to the live FFT pipeline with a modestly wider event horizon/ring reach and slightly stronger per-bin arcs.
-- **Nebula** — remains a base visual mode.
+Neon Shatter and Liquid Chrome request Spectrum's analyser through `readSpectrum()` first. The decoded analysis bridge is fallback-only for those custom effects. Aurora Glass, Nebula and Singularity are no longer sanctioned presets or active render paths.
 
-When playback is paused, signal-first effects receive zeroed input and settle rather than continuing a fake video-like loop.
+Time may add a small fluid drift only after real signal activity gates it. Paused/silent playback therefore settles instead of continuing an autonomous loop.
 
 ## Canonical R2 structure
 
@@ -156,7 +154,7 @@ tracks/<slug>/video.<ext>     # optional
 
 ## PWA / Canvas / Studio
 
-The service worker caches same-origin application assets while audio/video media remain network-oriented. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
+The service worker caches same-origin application assets while audio/video media remain network-oriented. Build 51 advances the PWA cache namespace so the three-core Audio Lab cannot be masked by cached Build 50 JavaScript. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
 
 ## Deployment artifact
 
