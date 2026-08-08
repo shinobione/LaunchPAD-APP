@@ -1,10 +1,10 @@
 # SHINOBIWAN Studio — integration contract
 
 > Integration contract updated: 2026-08-08  
-> LaunchPAD reference build: `2026.08.08.65`  
-> LaunchPAD reference release: `studio-private-read-bridge-20260808`
+> LaunchPAD reference build: `2026.08.08.66`  
+> LaunchPAD reference release: `studio-metadata-validation-20260808`
 
-Status: **Phase 0–3 established; Phase 4A private-read bridge defined.** This contract defines shared identity, data ownership and safe integration boundaries for LaunchPAD, Track Manager, SonicTrace, LRC Maker and SHINOBIWAN Studio.
+Status: **Phase 0–4A proven; Phase 4B.1A metadata validation defined.** This contract defines shared identity, data ownership and safe integration boundaries for LaunchPAD, Track Manager, SonicTrace, LRC Maker and SHINOBIWAN Studio.
 
 ## 1. Product boundary
 
@@ -12,7 +12,7 @@ SHINOBIWAN Studio is the private, track-centric orchestration UI.
 
 - **LaunchPAD** remains the public listening product.
 - **LaunchPAD / Cloudflare R2** remains the canonical production catalog and media store.
-- **Track Manager Worker** remains the write/admin backend during migration.
+- **Track Manager Worker** remains the production write/admin backend during migration.
 - **SonicTrace** remains the audio-intelligence engine. It computes results but does not own a competing music catalog.
 - **LRC Maker** remains the lyrics editing/synchronization engine during the integration stages.
 - **SHINOBIWAN Studio** selects one track once and reuses that context across metadata, assets, audio intelligence, lyrics and publishing.
@@ -163,11 +163,11 @@ Projection rules:
 - `timestampsAvailable` is content-derived and may also be inferred from parsed timestamp segments returned by the API.
 - `lyricsLrc` remains an optional compatibility field only; its absence does not mean lyrics are unsynchronized.
 - SonicTrace availability is derived from SonicTrace persistence, never guessed.
-- Public catalog data populates the first read layer; the private manifest/quality projection is the richer admin read source.
+- Public catalog data is the safe fallback read layer; the private manifest/quality projection is the richer admin read source.
 
 ## 5. Lyrics storage and synchronization
 
-### Canonical rule — corrected in Build 65
+### Canonical rule
 
 The canonical authoring object remains:
 
@@ -210,7 +210,7 @@ Rules:
 - history is append-only except explicit maintenance cleanup.
 - the analyzed WAV/MP3 is **not duplicated** in the analysis directory.
 
-No SonicTrace persistence is introduced by Build 65; that remains Phase 5 work.
+No SonicTrace persistence is introduced by Build 66; that remains Phase 5 work.
 
 ## 7. `SonicTraceAnalysis` contract
 
@@ -325,11 +325,11 @@ Properties:
 
 - public and read-only;
 - CORS enabled;
-- `/tracks` powers Studio's public catalog layer;
+- `/tracks` powers Studio's public fallback catalog layer;
 - `/tracks/{trackId}` can include lyrics and parsed timestamp data;
 - only published tracks are exposed.
 
-The public Worker remains contract v2.6 and is unchanged by Build 65.
+The public Worker remains contract v2.6 and is unchanged by Build 66.
 
 ## 10. Track Manager private API
 
@@ -350,7 +350,7 @@ POST   /api/import/legacy/{trackId}
 POST   /api/import/legacy
 ```
 
-Build 65 advances the private Worker to **Track Manager v5.8** and adds this separate Phase 4A namespace:
+Build 65 established Track Manager v5.8 / Studio bridge v1.0 with:
 
 ```text
 OPTIONS /api/studio/*
@@ -359,39 +359,123 @@ GET     /api/studio/tracks
 GET     /api/studio/tracks/{trackId}
 ```
 
-The list/detail bridge reuses the existing private read implementations rather than creating a competing data projection.
+That bridge was deployed admin-only and then proven from SHINOBIWAN Studio 0.4.0 / Build 5 in a real authenticated Chrome session. Studio displayed `PRIVATE READ` both globally and inside Track Workspace.
 
-### Phase 4A security contract
-
-- Cloudflare Access JWT verification remains mandatory for Studio data GETs.
-- CORS is allowlisted to the exact browser Origin `https://shinobione.github.io`.
-- CORS advertises only `GET, OPTIONS`.
-- `/api/studio/health` reports read capabilities and `write: []`.
-- Existing historical write methods still pass through `enforceSameOrigin(request, url)`.
-- No permanent Access service token, secret or API key is embedded in GitHub Pages.
-- Phase 4A is **read-only**; cross-origin Studio writes are not solved by Build 65.
-
-### Private capabilities reserved for later Studio phases
-
-Possible additive contracts include:
+Build 66 advances the private Worker to **Track Manager v5.9 / Studio bridge v1.1** and adds exactly:
 
 ```text
-GET/POST /api/studio/tracks/{trackId}/analysis/sonictrace
-GET      /api/studio/tracks/{trackId}/analysis/sonictrace/history
-GET      /api/studio/tracks/{trackId}/revision
+POST /api/studio/tracks/{trackId}/metadata/validate
 ```
 
-Any write route requires a separately reviewed authentication/authorization design. Do not simply add PUT/POST to CORS or weaken `enforceSameOrigin()`.
+The list/detail bridge still reuses the existing private read implementations rather than creating a competing data projection.
+
+### Phase 4B.1A metadata validation contract
+
+The validation request envelope is logically:
+
+```json
+{
+  "expectedUpdatedAt": "current-manifest-updatedAt",
+  "metadata": {
+    "title": "Ghost Signal",
+    "status": "published"
+  }
+}
+```
+
+Required transport/security:
+
+```text
+Origin: https://shinobione.github.io
+Content-Type: application/json
+X-Shinobiwan-Studio-Intent: metadata-validate-v1
+Cloudflare Access session/JWT: required
+```
+
+Editable whitelist:
+
+```text
+title
+status
+type
+year
+releaseDate
+album
+genres
+tags
+moods
+themes
+era
+energy
+languages
+bpm
+key
+keyConfidence
+explicit
+accent
+accent2
+```
+
+Not editable through this validation contract:
+
+```text
+slug / trackId
+schemaVersion
+assets.*
+migration
+createdAt
+updatedAt
+updatedBy
+duration
+unknown fields
+```
+
+`duration` stays server/audio-derived during this stage rather than becoming an ordinary Studio form field.
+
+Validation behavior:
+
+1. reject non-exact Studio origin;
+2. reject missing/wrong Studio intent header;
+3. reject non-JSON body;
+4. reject missing `expectedUpdatedAt`;
+5. return `409` / `STALE_MANIFEST` if canonical `updatedAt` changed since Studio loaded it;
+6. reject unknown metadata fields;
+7. preserve canonical slug/assets/provenance/server timestamps;
+8. normalize the proposal through Track Manager's existing `normalizeManifest()`;
+9. run existing `inspectTrackQuality()` against current R2 objects;
+10. return the proposed normalized manifest, quality, changed fields and `validationOnly: true`.
+
+Non-mutation guarantee:
+
+```text
+NO writeManifest
+NO writeCatalogIndex
+NO R2 put/delete
+NO media upload/replace/delete
+NO publication/rebuild
+```
+
+The Studio health capability remains explicit:
+
+```json
+{
+  "read": ["tracks", "track"],
+  "validate": ["metadata"],
+  "write": []
+}
+```
+
+POST preflight is allowed only for the exact `/metadata/validate` route. Every other `POST`, `PUT`, `PATCH` and `DELETE` method remains behind Track Manager's existing same-origin enforcement.
 
 ## 11. Current private write security constraint
 
-The historical Track Manager Worker enforces this for `POST`, `PUT`, `PATCH` and `DELETE`:
+The historical Track Manager Worker protects real mutations with:
 
 ```text
 Origin == private Worker origin
 ```
 
-Build 65 **preserves this rule**.
+Build 66 **preserves this rule for production writes**.
 
 A Studio UI hosted at:
 
@@ -399,13 +483,15 @@ A Studio UI hosted at:
 https://shinobione.github.io/shinobiwan-studio/
 ```
 
-can now perform the new private **GET-only** bridge reads after Cloudflare Access authentication, but cannot directly use current write routes.
+can perform private reads and the one validation-only POST after Cloudflare Access authentication, but it still cannot directly use the production save/delete/upload/rebuild routes.
 
 Consequences:
 
-- Phase 4A proves authenticated private reads first.
+- Phase 4A private reads are proven.
+- Phase 4B.1A proves authenticated cross-origin validation before mutation.
 - Legacy Track Manager remains the write fallback and production publishing interface.
-- Phase 4B must be designed separately with explicit authorization, destructive-action guards and no browser secrets.
+- Phase 4B.1B real metadata save must be separately versioned/reviewed and cannot be smuggled into `/metadata/validate`.
+- Real write design requires exact-origin CORS, Access authorization, explicit intent, stale-write protection, confirmation UI and rollback.
 - Studio integration failure must not take Track Manager offline.
 
 ## 12. Current SonicTrace local API
@@ -438,7 +524,7 @@ Initial Studio rule: Studio may wrap an existing SonicTrace response inside `Son
 | Data | Canonical owner | Readers | Writer |
 |---|---|---|---|
 | Track identity / slug | R2 manifest | LaunchPAD, Studio, SonicTrace/LRC context | Track Manager/admin API |
-| Metadata | R2 manifest | LaunchPAD, Studio | Track Manager/admin API |
+| Metadata | R2 manifest | LaunchPAD, Studio | Track Manager/admin API; Studio validation does not write |
 | Audio / cover / video | R2 | LaunchPAD, Studio, SonicTrace input | Track Manager/admin API |
 | Lyrics TXT, plain or synchronized | R2 `lyrics.txt` | LaunchPAD, Studio, LRC Maker | Track Manager/admin API |
 | Optional LRC compatibility artifact | optional sidecar/export | Studio/LRC compatibility workflows | future private lyrics workflow |
@@ -499,30 +585,51 @@ but `versionId` never replaces the canonical `trackId`.
 - [x] Content Health;
 - [x] synchronized lyrics semantics corrected to content-driven detection.
 
-### Phase 4A — Build 65 source gate
+### Phase 4A — complete and proven
 
 - [x] pre-integration restoration branches created;
-- [x] GET-only Studio private namespace implemented on a dedicated branch;
+- [x] GET-only Studio private namespace implemented and guarded;
 - [x] exact allowed Origin defined;
 - [x] Access-authenticated data reads retained;
 - [x] write capability explicitly empty;
 - [x] legacy same-origin write guard retained;
-- [x] dedicated regression test added;
+- [x] LaunchPAD Build 65 / Track Manager v5.8 CI green and merged;
+- [x] admin Worker deployed through protected workflow; public Worker skipped;
+- [x] Studio 0.4.0 / Build 5 private-first/public-fallback consumer merged/deployed;
+- [x] real Chrome session confirmed `PRIVATE READ` on Dashboard and Track Workspace.
+
+### Phase 4B.1A — Build 66 validation gate
+
+- [x] new pre-4B.1A safety snapshots created for LaunchPAD/Track Manager and Studio;
+- [x] exact metadata validation route defined;
+- [x] Access + exact Origin + intent header + JSON contract defined;
+- [x] `expectedUpdatedAt` stale protection defined;
+- [x] metadata whitelist defined;
+- [x] validator reuses normalize/quality code without mutation primitives;
+- [x] bridge health remains `write: []` and gains `validate: ["metadata"]`;
+- [x] CI guard extended to fail on validation-module mutation primitives;
 - [ ] all LaunchPAD CI/check:wrangler green;
-- [ ] reviewed PR merged;
-- [ ] admin Worker deployed through protected workflow;
-- [ ] standalone Track Manager revalidated after deployment;
-- [ ] Studio private-health consumer added in a separate Studio PR.
+- [ ] reviewed Build 66 PR merged;
+- [ ] admin Worker v5.9 deployed through protected workflow;
+- [ ] real-browser no-change validation proves `updatedAt` and R2/catalog state unchanged;
+- [ ] Studio 0.4.1 / Build 6 validation-preview editor added separately;
+- [ ] stale validation path verified in Studio;
+- [ ] Phase 4B.1B real save designed only after validation gate is proven.
 
 ## 17. Rollback / repository safety
 
-Before Phase 4 integration, restoration references were created:
+Restoration references:
 
 ```text
+Global pre-integration:
 LaunchPAD + Track Manager: safety/pre-studio-integration-20260808-1048
 SonicTrace:               safety/pre-studio-integration-20260808-1048
 LRC Maker:                safety/pre-studio-integration-20260808-1048
 Studio:                   safety/pre-integration-20260808-1048
+
+Immediate pre-4B.1A:
+LaunchPAD + Track Manager: safety/pre-phase-4b1a-20260808-1452
+Studio:                    safety/pre-phase-4b1a-20260808-1452
 ```
 
 Rules:
@@ -532,6 +639,8 @@ Rules:
 3. Verify the affected standalone tool independently after rollback.
 4. Use safety branches only if a normal revert is insufficient.
 5. Cross-repository features use separate PRs; do not merge breaking coordinated changes simultaneously.
+6. Deploy only the affected Worker target; Build 66 is admin-only.
+7. Do not rebuild R2/catalog as part of a validation-only release.
 
 ## 18. Non-negotiable rules carried forward
 
@@ -546,4 +655,6 @@ Rules:
 9. No destructive Track Manager replacement before Studio write flows are proven.
 10. Timestamped canonical TXT is synchronized lyrics; do not require a duplicate `.lrc` source.
 11. Integrate progressively; never copy/paste the three applications into one monorepo.
-12. Phase 4A is read-only. Write integration is a separate security problem and must remain separately reviewable/reversible.
+12. Phase 4A private reads remain reversible with public fallback.
+13. Phase 4B.1A is validation-only; `/metadata/validate` must never silently become a save route.
+14. Real cross-origin writes require a separately versioned security review and must preserve Track Manager as fallback until proven.
