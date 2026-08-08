@@ -12,12 +12,13 @@ includesAll(read('js/features/about/about-controller.js'), ['new Date().getFullY
 includesAll(read('js/core/catalog-schema.js'), ['normalizeCatalogTrack', 'releaseDate', 'createdAt', 'updatedAt'], 'Catalog schema');
 includesAll(read('js/core/catalog-ordering.js'), ['latestActiveTrackEntries', 'recentlyAddedTrackEntries', 'releaseDateUnavailable'], 'Catalog ordering');
 const deploy = read('.github/workflows/deploy-cloudflare.yml');
-includesAll(deploy, ['workflow_dispatch:', "if: github.ref == 'refs/heads/main'", "test \"${{ inputs.confirm }}\" = 'DEPLOY'", "EXPECTED_PUBLIC_VERSION: '2.6'", "EXPECTED_ADMIN_VERSION: '5.9'"], 'Cloudflare deployment');
+includesAll(deploy, ['workflow_dispatch:', "if: github.ref == 'refs/heads/main'", "test \"${{ inputs.confirm }}\" = 'DEPLOY'", "EXPECTED_PUBLIC_VERSION: '2.6'", "EXPECTED_ADMIN_VERSION: '5.10'"], 'Cloudflare deployment');
 assert.ok(!deploy.includes('\n  push:'), 'Production Cloudflare Worker deployment must remain manual-only.');
 includesAll(read('js/features/theme-scope.js'), ['trackFromRoute', 'playingTrack(audio)', 'applyPagePalette(viewed, played)', 'applyPlayerPalette(played)'], 'Theme scoping');
 
 // Studio integration boundary. The base runtime remains the proven Phase 4A read-only source;
-// Build 66 adds the exact validation-only POST through a separately guarded source part + assembler.
+// Build 66 added validation-only POST. Track Manager v5.10 / bridge v1.2 keeps that boundary
+// and adds a backward-compatible no-preflight transport for real-browser Cloudflare Access.
 const adminRuntime = read('cloudflare/admin-worker.parts/01-runtime.part');
 includesAll(adminRuntime, [
   'const STUDIO_ALLOWED_ORIGIN = "https://shinobione.github.io"',
@@ -37,9 +38,14 @@ includesAll(studioValidation, [
   '/metadata\\/validate$/',
   'requestedMethod === "POST" && metadataValidation',
   'x-shinobiwan-studio-intent',
+  'contentType !== "application/json" && contentType !== "text/plain"',
+  'contentType === "text/plain"',
+  'payload.intent !== STUDIO_METADATA_VALIDATION_INTENT',
   'expectedUpdatedAt',
   'code: "STALE_MANIFEST"',
   'validationOnly: true',
+  'simple-post-v1',
+  'json-preflight-v1',
   'inspectTrackQuality'
 ], 'Studio Phase 4B.1A metadata validation');
 for (const forbiddenMutation of ['writeManifest(', 'writeCatalogIndex(', '.put(', '.delete(', 'saveTrack(', 'saveThumbnail(', 'deleteTrack(']) {
@@ -48,18 +54,18 @@ for (const forbiddenMutation of ['writeManifest(', 'writeCatalogIndex(', '.put('
 
 const adminBuilder = read('scripts/build-admin-worker.mjs');
 includesAll(adminBuilder, [
-  "'5.8'",
-  'version: "5.9"',
-  '<span class="version-pill">v5.9</span>',
-  'trackManagerVersion: "5.9"',
-  'const STUDIO_BRIDGE_VERSION = "1.1";',
+  "'5.9'",
+  'version: "5.10"',
+  '<span class="version-pill">v5.10</span>',
+  'trackManagerVersion: "5.10"',
+  'const STUDIO_BRIDGE_VERSION = "1.2";',
   'validate: ["metadata"]',
   'write: []',
   'isStudioMetadataValidation',
   'assertStudioMetadataValidationRequest(request)',
   'else enforceSameOrigin(request, url)',
   'validateStudioTrackMetadata(studioMetadataValidationRoute[1], request, env, user)'
-], 'Track Manager v5.9 assembler');
+], 'Track Manager v5.10 assembler');
 
 // Discography/Home contracts.
 includesAll(read('js/features/discography-experience.js'), ["const FILTER_GROUP_ORDER = ['genre', 'language', 'content', 'energy', 'era', 'type', 'media', 'year', 'mood']", 'mini-equalizer', 'track-card-loader'], 'Discography');
@@ -184,4 +190,4 @@ assert.equal(build.display, '2026.08.08.66');
 assert.equal(build.release, 'studio-metadata-validation-20260808');
 assert.equal(build.revision, 'studio-metadata-validation-1');
 
-console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}) with current Track Manager v5.9, Studio metadata validation-only bridge and ${presetCount} sanctioned Audio Lab presets.`);
+console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}) with current Track Manager v5.10, Studio metadata validation-only bridge v1.2 and ${presetCount} sanctioned Audio Lab presets.`);
