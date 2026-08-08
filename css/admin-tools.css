@@ -75,6 +75,17 @@
   --admin-tool-arrow:#df94ff;
 }
 
+.top-actions .sonic-trace-access{
+  --admin-tool-bg:rgba(0,224,255,.065);
+  --admin-tool-bg-hover:rgba(0,224,255,.125);
+  --admin-tool-border:rgba(0,224,255,.24);
+  --admin-tool-border-hover:rgba(76,236,255,.46);
+  --admin-tool-fg:#c9faff;
+  --admin-tool-disc:linear-gradient(135deg,#28dcb8,#00e5ff);
+  --admin-tool-disc-fg:#041416;
+  --admin-tool-arrow:#66efff;
+}
+
 .top-actions .track-manager-access{
   --admin-tool-bg:rgba(84,230,155,.07);
   --admin-tool-bg-hover:rgba(84,230,155,.13);
