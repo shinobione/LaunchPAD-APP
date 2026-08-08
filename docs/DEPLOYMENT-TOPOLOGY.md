@@ -4,7 +4,7 @@
 
 ## One source of truth
 
-`main` is the only authoritative normal application source. No deployment branch, hosted editor, dashboard copy or generated bundle may become a second source of truth. Named `safety/*` branches are rollback snapshots only and are never development sources.
+`main` is the only authoritative application source. No deployment branch, hosted editor, dashboard copy or generated bundle may become a second source of truth. Named `safety/*` branches are rollback snapshots only and are never development sources.
 
 ```text
                          GitHub repository
