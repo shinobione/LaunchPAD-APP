@@ -52,8 +52,10 @@ export function initAdminAccess({
     const sonicTraceEnabled = resolveSonicTraceAccess({ search, storage, desktop: media.matches });
 
     let trackManager = actions.querySelector('[data-track-manager-access]');
-    if (!trackManagerEnabled) trackManager?.remove();
-    else if (!trackManager) {
+    if (!trackManagerEnabled) {
+      trackManager?.remove();
+      trackManager = null;
+    } else if (!trackManager) {
       trackManager = adminToolLink({
         className: 'track-manager-access',
         datasetKey: 'trackManagerAccess',
@@ -66,8 +68,10 @@ export function initAdminAccess({
     }
 
     let lrcMaker = actions.querySelector('[data-lrc-maker-access]');
-    if (!lrcMakerEnabled) lrcMaker?.remove();
-    else if (!lrcMaker) {
+    if (!lrcMakerEnabled) {
+      lrcMaker?.remove();
+      lrcMaker = null;
+    } else if (!lrcMaker) {
       lrcMaker = adminToolLink({
         className: 'lrc-maker-access',
         datasetKey: 'lrcMakerAccess',
@@ -79,8 +83,10 @@ export function initAdminAccess({
     }
 
     let sonicTrace = actions.querySelector('[data-sonic-trace-access]');
-    if (!sonicTraceEnabled) sonicTrace?.remove();
-    else if (!sonicTrace) {
+    if (!sonicTraceEnabled) {
+      sonicTrace?.remove();
+      sonicTrace = null;
+    } else if (!sonicTrace) {
       sonicTrace = adminToolLink({
         className: 'sonic-trace-access',
         datasetKey: 'sonicTraceAccess',
