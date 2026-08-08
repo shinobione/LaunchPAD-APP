@@ -14,7 +14,10 @@ import {
 const read = file => fs.readFileSync(file, 'utf8');
 
 assert.equal(AUDIO_LAB_DEFAULT_MODE, 'neon-shatter');
-assert.deepEqual(AUDIO_LAB_PRESET_IDS, ['neon-shatter', 'spectrum', 'liquid-chrome']);
+for (const required of ['neon-shatter', 'spectrum', 'liquid-chrome', 'pulse-reactor']) {
+  assert.ok(AUDIO_LAB_PRESET_IDS.includes(required), `Sanctioned Audio Lab registry is missing ${required}.`);
+}
+assert.equal(new Set(AUDIO_LAB_PRESET_IDS).size, AUDIO_LAB_PRESET_IDS.length, 'Audio Lab preset ids must remain unique.');
 assert.deepEqual(AUDIO_LAB_SANCTUARY_IDS, ['spectrum']);
 for (const mode of AUDIO_LAB_PRESET_IDS) assert.equal(isSanctionedAudioLabMode(mode), true);
 for (const mode of ['aurora-glass', 'nebula', 'singularity', 'retired-mode']) assert.equal(isSanctionedAudioLabMode(mode), false);
@@ -82,10 +85,19 @@ for (const required of [
   'const phase = time * activity * .2',
   'localDrive * .92',
   'spectralDeform = spectral * .092'
-]) assert.ok(core.includes(required), `Three-core visual calibration is missing ${required}.`);
+]) assert.ok(core.includes(required), `Validated core visual calibration is missing ${required}.`);
 for (const forbidden of ['drawAuroraGlassMode', 'drawSingularityLiveMode', 'drawNeonShatterAdaptiveMode', 'drawLiquidChromeLiveMode']) {
   assert.ok(!core.includes(forbidden), `Retired core renderer remains: ${forbidden}`);
 }
+
+const reactor = read('js/features/visual/pulse-reactor.js');
+for (const required of [
+  'export function drawPulseReactorMode(',
+  'const ringCount = mobile ? 3 : 5',
+  'const segmentCount = mobile ? 18 : 32',
+  'const spokeCount = mobile ? 16 : 30',
+  'const drift = time * activity * .075'
+]) assert.ok(reactor.includes(required), `Pulse Reactor contract is missing ${required}.`);
 
 const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
@@ -93,11 +105,12 @@ for (const required of [
   "{ id: 'spectrum', label: 'Spectrum' }",
   "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode }",
   "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
+  "{ id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode }",
   'base.readSpectrum?.(raw)',
   'reading = readAudioLabSpectrum(raw)',
   'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)',
-  "dataset.audioLabRenderer = 'three-core-v1'",
-  "dataset.audioLabPresetCount = '3'",
+  'dataset.audioLabRenderer =',
+  `dataset.audioLabPresetCount = '${AUDIO_LAB_PRESET_IDS.length}'`,
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ]) assert.ok(live.includes(required), `Live Audio Lab integration is missing ${required}.`);
 for (const forbidden of ['aurora-glass', 'nebula', 'singularity', "'bars'", 'readAudioLabAmplitude', 'createAmplitudeDynamicsTracker', 'synthesizePlaybackSpectrum']) {
@@ -119,6 +132,7 @@ assert.ok(engine.includes('initAudioLabSanctuary({ audio })'));
 const worker = read('sw.js');
 assert.ok(worker.includes("'./js/features/visual/audio-lab-registry.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-sanctuary.js'"));
+assert.ok(worker.includes("'./js/features/visual/pulse-reactor.js'"));
 
 const build = assertCurrentBuild('Milestone 7/current release');
-console.log(`Milestone 7 now protects the three-preset Audio Lab and shared Spectrum FFT under Build ${build.number}.`);
+console.log(`Milestone 7 protects ${AUDIO_LAB_PRESET_IDS.length} sanctioned Audio Lab presets on the shared Spectrum FFT under Build ${build.number}.`);
