@@ -1,6 +1,6 @@
 # LaunchPAD release checklist
 
-> Current application build: `2026.08.08.63` — release `sonictrace-admin-link-20260808`.
+> Current application build: `2026.08.08.64` — release `sonictrace-badge-fix-20260808`.
 
 This checklist separates four independent states: **source merge**, **web-host deployment**, **Worker deployment**, and **R2 catalog/media publication**.
 
@@ -30,7 +30,7 @@ npm run check:wrangler
 15. Confirm transient impact has reserved headroom outside normal clamped spring targets; detector values alone are not sufficient.
 16. For integrated motion phase, confirm phase advances by frame delta while real audio exists and stops when audio activity disappears.
 17. For PWA changes, confirm update activation still results in one prompt / one reload.
-18. For admin-tool changes, confirm `?admin=1` exposes SonicTrace, LRC Maker and Track Manager only on desktop and `?admin=0` removes all three.
+18. For admin-tool changes, confirm `?admin=1` exposes SonicTrace, LRC Maker and Track Manager only on desktop, `?admin=0` removes all three, and all three render as the same pill family; SonicTrace must visibly carry the cyan/teal `ST` treatment.
 
 ## 2. Pull request / merge
 
