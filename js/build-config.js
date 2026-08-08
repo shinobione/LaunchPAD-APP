@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260808-void-bloom-v60',
-    cache: 'shinobi-launchpad-v60',
-    revision: 'void-bloom-1',
-    display: '2026.08.08.60',
-    release: 'void-bloom-20260808'
+    id: '20260808-creep-signal-v61',
+    cache: 'shinobi-launchpad-v61',
+    revision: 'creep-signal-1',
+    display: '2026.08.08.61',
+    release: 'creep-signal-20260808'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
