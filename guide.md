@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD — catalog guide
 
-> Current application build: `2026.08.08.55` — release `motion-bio-20260808`.
+> Current application build: `2026.08.08.56` — release `dynamic-breathing-20260808`.
 
 The production catalog is managed in Cloudflare R2 through the private LaunchPAD Track Manager. `js/catalog.js` contains album/editorial presentation data only; production track metadata and media are not maintained by hand in the PWA.
 
@@ -95,7 +95,7 @@ Review every detected group before confirmation, especially audio/cover/lyrics/v
 
 ## Audio Lab note
 
-Audio Lab is not a catalog-authoring feature, but media changes should still be smoke-tested there. Build 55 exposes **Neon Shatter, Spectrum, Liquid Chrome, Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure**. Spectrum remains the protected reference FFT view; every custom visual consumes Spectrum's analyser first. Pulse Reactor, Bass Fracture and Gravity Lens now use deterministic spring memory for more amplitude/inertia without extra geometry; spring targets fall back to zero on pause. Bio Structure adds a sparse living spine/rib mesh driven by bass/mids/highs with a mobile-first budget. The separately fetched/decoded analysis copy remains fallback-only while the audible HTML5 player stays outside the analysis graph.
+Audio Lab is not a catalog-authoring feature, but media changes should still be smoke-tested there. Build 56 exposes **Neon Shatter, Spectrum, Liquid Chrome, Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure**. Spectrum remains the protected reference FFT view; every custom visual consumes Spectrum's analyser first. Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure now soft-compress boosted peak targets before spring motion, preserving visible movement in quiet/mid passages while reserving headroom for genuine impacts. Signed spring velocity gives short recoil instead of only positive expansion. Pause still drives all targets to zero. The separately fetched/decoded analysis copy remains fallback-only while the audible HTML5 player stays outside the analysis graph.
 
 ## Repository validation
 
