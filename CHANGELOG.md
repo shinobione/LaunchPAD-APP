@@ -1,8 +1,18 @@
 # Changelog
 
-> Current application build: `2026.08.07.50` — release `audiolab-signal-first-20260807`.
+> Current application build: `2026.08.08.51` — release `audiolab-three-core-20260808`.
 
 This file intentionally tracks the recent stabilized release line. Older milestone-by-milestone history remains available in Git history and merged pull requests.
+
+## Build 51 — Audio Lab three-core reset
+
+- Reduce Audio Lab to Neon Shatter, Spectrum and Liquid Chrome only; retire Aurora Glass, Nebula and Singularity from the sanctioned runtime.
+- Preserve Spectrum as the known-good reference renderer and expose its analyser feed to custom effects.
+- Rebuild Neon Shatter from scratch with FFT-driven shard geometry, cracks and bass/kick impact rings.
+- Rebuild Liquid Chrome from scratch with an FFT-deformed metallic contour, bass pulse, mid fluidity and high-frequency specular response.
+- Remove custom-effect synthetic playback-spectrum and separate amplitude paths; Spectrum's analyser is primary and the decoded bridge is fallback-only.
+- Gate residual time drift by real signal energy so silence/paused playback settles.
+- Advance the PWA cache namespace to v51 so cached Build 50 Audio Lab JavaScript cannot mask the new runtime.
 
 ## Build 50 — Audio Lab signal-first
 

@@ -1,6 +1,6 @@
 # LaunchPAD roadmap
 
-> Current application build: `2026.08.07.50` — release `audiolab-signal-first-20260807`.
+> Current application build: `2026.08.08.51` — release `audiolab-three-core-20260808`.
 
 The repository cleanup/reconciliation phase is complete. This roadmap now tracks product/runtime work rather than historical migration chores.
 
@@ -15,19 +15,27 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Track routing is single-owner; no Home/Track DNA detour.
 - [x] Visual Card PNG export is CORS-safe.
 - [x] Mobile Lyrics can enter the selected track's Studio directly and the bottom navigation remains available.
-- [x] Audio Lab's audible player is isolated from the analysis graph.
-- [x] Audio Lab analysis uses a separately fetched/decoded copy synchronized to playback.
-- [x] Build 50 moves Neon Shatter/Aurora Glass to raw-FFT-first geometry and gives Liquid Chrome/Singularity a moderate footprint gain.
+- [x] Audio Lab's audible player is isolated from the decoded fallback analysis graph.
+- [x] Audio Lab is reduced to Neon Shatter, Spectrum and Liquid Chrome only.
+- [x] Spectrum is the protected reference analyser/render path for custom effects.
+- [x] Neon Shatter and Liquid Chrome were rebuilt around real FFT-driven geometry.
+- [x] Build 51 advances the PWA cache namespace so Build 50 visual code cannot mask the new runtime.
 - [x] All Markdown documentation is version-coupled to `js/build-config.js` through CI.
 
 ## P0 — real-device validation
 
-- [ ] Validate Build 50 Neon Shatter on desktop and Android: paused = settled, playing = visibly driven by kicks/bins, no autonomous loop feel.
-- [ ] Validate Build 50 Aurora Glass on desktop and Android with the same criteria.
-- [ ] Confirm Liquid Chrome's moderate enlargement is enough without becoming visually oversized.
-- [ ] Confirm Singularity's wider rings/horizon make real reactions legible without dominating the canvas.
+- [ ] Validate Build 51 Neon Shatter on desktop and Android: paused = settled, playing = visibly driven by kicks/bins, no autonomous loop feel.
+- [ ] Validate Build 51 Liquid Chrome on desktop and Android: bass = obvious pulse, mids = fluid deformation, highs = detail/specular response.
+- [ ] Confirm Spectrum still reacts exactly as before and remains the stable reference.
+- [ ] Verify switching Neon Shatter → Spectrum → Liquid Chrome repeatedly does not lose analyser data.
 - [ ] Continue background-playback testing for artefacts with Audio Lab open/closed.
-- [ ] Verify multi-track switching keeps decoded FFT analysis synchronized across several tracks.
+- [ ] Verify multi-track switching keeps the shared/fallback FFT analysis synchronized across several tracks.
+
+## P1 — Audio Lab expansion
+
+- [ ] Add future visual presets one at a time only after each new effect proves real FFT reactivity and pause settling.
+- [ ] Do not restore Aurora Glass, Nebula or Singularity by name unless they are deliberately rebuilt and pass the same three-core contract.
+- [ ] Keep Spectrum untouched as the reference renderer while new effects are developed.
 
 ## P1 — compatibility debt
 

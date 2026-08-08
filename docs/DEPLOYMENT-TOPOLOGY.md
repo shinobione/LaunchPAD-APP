@@ -1,6 +1,6 @@
 # LaunchPAD deployment topology
 
-> Current application build: `2026.08.07.50` — release `audiolab-signal-first-20260807`.
+> Current application build: `2026.08.08.51` — release `audiolab-three-core-20260808`.
 
 ## One source of truth
 
@@ -10,7 +10,7 @@
                          GitHub repository
                               main
                                |
-                      validated Build 50
+                      validated Build 51
                                |
                 +--------------+--------------+
                 |                             |
@@ -34,18 +34,18 @@
                       shinobiwan-media
 ```
 
-## Canonical Build 50
+## Canonical Build 51
 
 The current application release is defined only in `js/build-config.js`:
 
 ```text
-id       20260807-audiolab-signal-first-v50
-cache    shinobi-launchpad-v50
-display  2026.08.07.50
-release  audiolab-signal-first-20260807
+id       20260808-audiolab-three-core-v51
+cache    shinobi-launchpad-v51
+display  2026.08.08.51
+release  audiolab-three-core-20260808
 ```
 
-Every Markdown document must carry the same display/release markers; CI rejects stale documentation.
+Every Markdown document must carry the same display/release markers; CI rejects stale documentation. The new cache namespace is intentional: it prevents the prior Build 50 Audio Lab bundle from being served as the current visual runtime.
 
 ## Web hosting
 
