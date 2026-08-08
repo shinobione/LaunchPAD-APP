@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD architecture
 
-> Current application build: `2026.08.08.65` — release `studio-private-read-bridge-20260808`.
+> Current application build: `2026.08.08.66` — release `studio-metadata-validation-20260808`.
 
 LaunchPAD is a modular static PWA whose application source lives in GitHub `main`. The web shell is mirrored to GitHub Pages and Cloudflare Pages; production catalog/media state lives in Cloudflare R2 and is exposed through public/private Workers.
 
@@ -27,8 +27,8 @@ For the operational hosting map, see [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOY
               |                               |
               v                               v
       launchpad-media Worker          launchpad-r2-api Worker
-      public GET/HEAD API             private Track Manager v5.8
-              |                       + GET-only Studio bridge
+      public GET/HEAD API             private Track Manager v5.9
+              |                       + Studio bridge v1.1
               +---------------+---------------+
                               |
                        shinobiwan-media R2
@@ -106,11 +106,42 @@ Stable routes include:
 
 Desktop admin shortcuts are gated by one persisted `shinobiLaunchpadAdmin` state. `?admin=1` enables the strip; `?admin=0` clears it. Build 63 introduced three shortcuts through that same gate: SonicTrace, LRC Maker and Track Manager. Build 64 fixes SonicTrace's live-shell presentation by adding it to the shared admin-tool selectors in `css/pwa.css`, so the `ST` control now uses the same pill geometry/spacing as its neighbors with a cyan/teal identity.
 
+## Build 66 — Studio metadata validation boundary
+
+Build 66 advances the existing additive Studio bridge from read-only Phase 4A to **Phase 4B.1A validation**, while still exposing no cross-origin production mutation.
+
+Bridge contract:
+
+```text
+OPTIONS /api/studio/*
+GET     /api/studio/health
+GET     /api/studio/tracks
+GET     /api/studio/tracks/<trackId>
+POST    /api/studio/tracks/<trackId>/metadata/validate
+```
+
+The POST route is intentionally not a save route. It accepts a whitelist-only JSON metadata proposal and returns the normalized proposed manifest plus Track Manager quality inspection.
+
+Security contract:
+
+1. Studio data remains behind Cloudflare Access JWT verification.
+2. Browser CORS remains allowlisted to the exact origin `https://shinobione.github.io`.
+3. POST preflight is accepted only for the exact `/metadata/validate` suffix; POST to other Studio routes is rejected.
+4. The request must include `X-Shinobiwan-Studio-Intent: metadata-validate-v1` and `Content-Type: application/json`.
+5. The caller must supply `expectedUpdatedAt`; a changed manifest returns `409` with `STALE_MANIFEST`.
+6. Studio can propose only the explicit metadata whitelist. Slug, assets, migration/provenance and server-owned timestamps are preserved from the canonical manifest.
+7. The validator calls `normalizeManifest()` and `inspectTrackQuality()` against current R2 objects but does not call `writeManifest`, `writeCatalogIndex`, R2 `put/delete`, upload/delete or publication mutation paths.
+8. Health advertises `validate: ["metadata"]` and still advertises `write: []`.
+9. All other `POST`, `PUT`, `PATCH` and `DELETE` methods remain behind the existing `enforceSameOrigin()` Track Manager guard.
+10. No permanent browser token/service secret is introduced.
+
+The private Worker contract advances to **Track Manager v5.9 / Studio bridge v1.1**. The public `launchpad-media` Worker remains **v2.6** and unchanged.
+
+The validation implementation lives in `cloudflare/admin-worker.parts/01z-studio-metadata-validation.part`; `scripts/build-admin-worker.mjs` assembles the one exact POST exception into the generated Worker. `scripts/test-studio-private-read-bridge.mjs` verifies the assembled behavior and fails if the validation module gains a production mutation primitive.
+
 ## Build 65 — Studio private read boundary
 
-Build 65 adds an **additive read-only integration surface** to the existing private Track Manager Worker; it does not replace Track Manager or change its historical write routes.
-
-New namespace:
+Build 65 introduced an **additive read-only integration surface** to the existing private Track Manager Worker; it did not replace Track Manager or change its historical write routes.
 
 ```text
 OPTIONS /api/studio/*
@@ -119,19 +150,7 @@ GET     /api/studio/tracks
 GET     /api/studio/tracks/<trackId>
 ```
 
-Security contract:
-
-1. Studio data GETs remain behind Cloudflare Access JWT verification.
-2. Browser CORS is allowlisted to the exact origin `https://shinobione.github.io`.
-3. Preflight allows only `GET, OPTIONS`.
-4. The bridge explicitly advertises `write: []`.
-5. Existing `POST`, `PUT`, `PATCH` and `DELETE` operations remain behind the unchanged `enforceSameOrigin()` guard.
-6. No permanent token/service secret is exposed to GitHub Pages.
-7. Build 65 introduces no R2 schema migration, no media rewrite and no automatic catalog rebuild.
-
-The private Worker contract advances from v5.7 to **v5.8**. The public `launchpad-media` Worker remains v2.6 and unchanged.
-
-A dedicated `scripts/test-studio-private-read-bridge.mjs` regression guard builds the assembled Worker and verifies exact origin, Access ordering, GET-only capabilities and preservation of the legacy write guard.
+Its core guarantees remain the foundation for Build 66: exact GitHub Pages origin, Cloudflare Access-authenticated data reads, no browser secret and preservation of the legacy same-origin write guard.
 
 ## Lyrics synchronization contract
 
@@ -252,7 +271,7 @@ tracks/<slug>/video.<ext>     # optional
 
 ## PWA / Canvas / Studio
 
-The service worker caches same-origin application assets while audio/video media remain network-oriented. Build 65 advances the cache namespace to `shinobi-launchpad-v65`. The shell itself has no visual feature change in Build 65; the cache bump keeps application release metadata coherent while the private backend contract advances. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
+The service worker caches same-origin application assets while audio/video media remain network-oriented. Build 66 advances the cache namespace to `shinobi-launchpad-v66`. The public shell itself has no feature-level behavior change in Build 66; the cache/build bump keeps release metadata coherent while the private Track Manager validation contract advances. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
 
 ## Deployment artifact
 
@@ -276,7 +295,7 @@ Every new application build must update every Markdown file to the exact `displa
 8. Feature code belongs in `js/features/`; shared state/helpers belong in `js/core/`.
 9. Shell-changing releases advance `js/build-config.js` and the service-worker namespace through that metadata.
 10. Web-host deployment, Worker deployment and R2 catalog rebuild are separate release states.
-11. Deployment builders may copy/validate runtime files but may not patch production runtime code.
+11. Deployment builders may copy/validate runtime files but may not patch production web runtime code. The private Track Manager assembler may inject explicitly tested server contract glue from versioned source parts.
 12. Lovable remains external prototyping unless a deliberate migration lands back in `main`.
 13. Audio Lab visuals must prove reactivity against the live FFT feed rather than merely animate while playback is active.
 14. Audio Lab presets are added one at a time with explicit mobile geometry/DPR budgets.
@@ -288,7 +307,8 @@ Every new application build must update every Markdown file to the exact `displa
 20. New visual families should prefer distinct composition/motion language instead of repeatedly centering a radial object.
 21. Historical-looking compatibility files that remain wired into boot/deployment are removed only through dedicated regression-tested refactors.
 22. Studio integration is additive and reversible: new `/api/studio/*` routes must not alter legacy Track Manager behavior.
-23. Cross-origin Studio writes remain forbidden until a separately reviewed Phase 4B design proves authentication and authorization without browser secrets.
+23. Validation-only cross-origin endpoints may be introduced before writes, but must be incapable of mutating R2/catalog state and must be guarded by CI.
+24. Real cross-origin Studio writes remain forbidden until a separately reviewed Phase 4B.1B design proves authentication, authorization, stale-write safety and rollback without browser secrets.
 
 ## Validation
 
