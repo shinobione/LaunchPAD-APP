@@ -1,6 +1,6 @@
 # LaunchPAD roadmap
 
-> Current application build: `2026.08.08.55` — release `motion-bio-20260808`.
+> Current application build: `2026.08.08.56` — release `dynamic-breathing-20260808`.
 
 The repository cleanup/reconciliation phase is complete. This roadmap now tracks product/runtime work rather than historical migration chores.
 
@@ -22,8 +22,8 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Build 52 proved the incremental expansion model with Pulse Reactor.
 - [x] Build 53 added Bass Fracture and stronger Pulse Reactor peak breakup.
 - [x] Build 54 established readability as a first-class visual contract and added Gravity Lens.
-- [x] Build 55 adds deterministic spring memory/overshoot to Pulse Reactor, Bass Fracture and Gravity Lens without increasing their geometry budgets.
-- [x] Build 55 adds Bio Structure as the seventh isolated shared-FFT preset with a dedicated mobile budget.
+- [x] Build 55 added deterministic spring memory/overshoot and Bio Structure without raising geometry budgets.
+- [x] Build 56 adds soft-knee motion targets and signed recoil so custom visuals retain visible movement at quiet/mid energy without spending entire passages near maximum deformation.
 - [x] All Markdown documentation is version-coupled to `js/build-config.js` through CI.
 
 ## P0 — real-device validation
@@ -34,10 +34,11 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Validate Build 52 Pulse Reactor baseline on desktop and Android: shared-FFT reaction and mobile smoothness confirmed.
 - [x] Validate Build 53 Pulse Reactor breakup and Bass Fracture shared-FFT behavior on desktop/mobile.
 - [x] Validate Build 54 Pulse Reactor/Bass Fracture/Gravity Lens readability and baseline performance on desktop/mobile.
-- [ ] Validate Build 55 Pulse Reactor elasticity: core/rings move with visible inertia and propagation while staying readable.
-- [ ] Validate Build 55 Bass Fracture elasticity: plates travel/recoil more strongly on mobile and cracks propagate briefly without clutter.
-- [ ] Validate Build 55 Gravity Lens elasticity: precession/breathing/stream drift are clearly visible but remain tied to real signal activity.
-- [ ] Validate Bio Structure on desktop and Android: bass = body inflation, mids = rib flex, highs/transients = travelling nerve light.
+- [x] Validate Build 55 signal reactivity and spring motion on Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure.
+- [ ] Validate Build 56 **dynamic range** on Pulse Reactor: quiet/groove passages visibly breathe, large kicks still stand out and the reactor no longer stays fully open.
+- [ ] Validate Build 56 Bass Fracture: plates glide/recoil between impacts and mobile remains forceful without looking permanently ruptured.
+- [ ] Validate Build 56 Gravity Lens: precession/breathing/stream drift remain visible at moderate energy while strong peaks retain extra headroom.
+- [ ] Validate Build 56 Bio Structure: organism remains alive between peaks without excessive body inflation.
 - [ ] Confirm all spring-driven modes settle naturally after pause instead of continuing autonomous motion.
 - [ ] Verify switching all seven presets repeatedly does not lose analyser data.
 - [ ] Continue background-playback testing for artefacts with Audio Lab open/closed.
@@ -50,7 +51,8 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Give every isolated effect an explicit mobile geometry/DPR budget before merge.
 - [x] Establish the readability rule: reduce simultaneous primitives before reducing reaction amplitude.
 - [x] Establish spring-memory rule: inertia/overshoot may preserve short motion history, but must be driven by FFT targets and decay to rest.
-- [ ] After Bio Structure is validated on real devices, add the next effect against the same Spectrum-shared feed.
+- [x] Establish the dynamic-headroom rule: do not let boosted features pin custom renderers at their maximum pose; use soft-knee shaping before adding more peak gain.
+- [ ] After Build 56 real-device validation, add the next effect against the same Spectrum-shared feed.
 - [ ] Prefer amplitude, travel and elastic lag over permanently increasing particle/segment counts.
 - [ ] Do not restore Aurora Glass, Nebula or Singularity by name unless they are deliberately rebuilt and pass the current contract.
 - [ ] Keep Spectrum untouched as the reference renderer while new effects are developed.
@@ -93,4 +95,5 @@ The repo is considered structurally healthy when:
 6. Audio Lab effects are validated against real FFT behavior, not merely visual motion;
 7. each new Audio Lab effect has a deliberate mobile performance budget;
 8. visual intensity does not come at the cost of readability or mobile smoothness;
-9. spring/inertia motion decays to rest when the real audio target disappears.
+9. spring/inertia motion decays to rest when the real audio target disappears;
+10. strong input retains visual headroom instead of pinning custom renderers near their maximum pose.

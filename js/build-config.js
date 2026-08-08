@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260808-motion-bio-v55',
-    cache: 'shinobi-launchpad-v55',
-    revision: 'motion-bio-1',
-    display: '2026.08.08.55',
-    release: 'motion-bio-20260808'
+    id: '20260808-dynamic-breathing-v56',
+    cache: 'shinobi-launchpad-v56',
+    revision: 'dynamic-breathing-1',
+    display: '2026.08.08.56',
+    release: 'dynamic-breathing-20260808'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;

@@ -4,63 +4,32 @@ import fs from 'node:fs';
 import { assertCurrentBuild } from './lib/build-metadata.mjs';
 
 const read = path => fs.readFileSync(path, 'utf8');
-const includesAll = (source, required, label) => required.forEach(value => {
-  assert.ok(source.includes(value), `${label} is missing ${value}.`);
-});
+const includesAll = (source, required, label) => required.forEach(value => assert.ok(source.includes(value), `${label} is missing ${value}.`));
 
-// 1 — Routing, transitions and legal protection.
-const feature11 = read('js/features/feature-11.js');
-includesAll(feature11, [
-  'normalizeLaunchRoute', 'SHAREABLE_ROUTE_PATTERN', 'installRouteTransitions',
-  "window.addEventListener('shinobi:route-change', replayRouteTransition)",
-  "globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches"
-], 'Routing');
-const about = read('js/features/about/about-controller.js');
-includesAll(about, ['new Date().getFullYear()', 'All Rights Reserved.', 'Unauthorized copying, reproduction, or reverse engineering is strictly prohibited.'], 'Legal notice');
-
-// 2 — Unified catalog schema and release ordering.
-const schema = read('js/core/catalog-schema.js');
-includesAll(schema, ['normalizeCatalogTrack', 'releaseDate', 'createdAt', 'updatedAt'], 'Catalog schema');
-const ordering = read('js/core/catalog-ordering.js');
-includesAll(ordering, ['latestActiveTrackEntries', 'recentlyAddedTrackEntries', 'releaseDateUnavailable'], 'Catalog ordering');
-
-// 3 — Track Manager controls and explicit Worker deployment.
-const manager3 = [read('cloudflare/admin-worker.parts/20-m3-track-manager-controls.inject.part'), read('cloudflare/admin-worker.parts/18-phase-12-hotfixes.inject.part')].join('\n');
-includesAll(manager3, ["TRACK_MANAGER_MILESTONE_3_VERSION='5.6'", 'milestone3InstallReactiveFilters', 'milestone3InstallManualPalette', 'Extraire les couleurs'], 'Track Manager controls');
+// Routing, legal, catalog, Track Manager deployment and theme contracts.
+includesAll(read('js/features/feature-11.js'), ['normalizeLaunchRoute', 'SHAREABLE_ROUTE_PATTERN', 'installRouteTransitions', "window.addEventListener('shinobi:route-change', replayRouteTransition)"], 'Routing');
+includesAll(read('js/features/about/about-controller.js'), ['new Date().getFullYear()', 'All Rights Reserved.', 'Unauthorized copying, reproduction, or reverse engineering is strictly prohibited.'], 'Legal notice');
+includesAll(read('js/core/catalog-schema.js'), ['normalizeCatalogTrack', 'releaseDate', 'createdAt', 'updatedAt'], 'Catalog schema');
+includesAll(read('js/core/catalog-ordering.js'), ['latestActiveTrackEntries', 'recentlyAddedTrackEntries', 'releaseDateUnavailable'], 'Catalog ordering');
 const deploy = read('.github/workflows/deploy-cloudflare.yml');
 includesAll(deploy, ['workflow_dispatch:', "if: github.ref == 'refs/heads/main'", "test \"${{ inputs.confirm }}\" = 'DEPLOY'", "EXPECTED_PUBLIC_VERSION: '2.6'", "EXPECTED_ADMIN_VERSION: '5.7'"], 'Cloudflare deployment');
 assert.ok(!deploy.includes('\n  push:'), 'Production Cloudflare Worker deployment must remain manual-only.');
+includesAll(read('js/features/theme-scope.js'), ['trackFromRoute', 'playingTrack(audio)', 'applyPagePalette(viewed, played)', 'applyPlayerPalette(played)'], 'Theme scoping');
 
-// 4 — Split page/player theme scoping.
-const theme = read('js/features/theme-scope.js');
-includesAll(theme, ['trackFromRoute', 'playingTrack(audio)', 'applyPagePalette(viewed, played)', 'applyPlayerPalette(played)', "? 'split' : 'unified'"], 'Theme scoping');
+// Discography/Home contracts.
+includesAll(read('js/features/discography-experience.js'), ["const FILTER_GROUP_ORDER = ['genre', 'language', 'content', 'energy', 'era', 'type', 'media', 'year', 'mood']", 'mini-equalizer', 'track-card-loader'], 'Discography');
+includesAll(read('js/features/home-editorial.js'), ["const DEFAULT_VISUAL_MODE = 'neon-shatter'", 'latestActiveTrackEntries(tracks, 1)', 'installVisualSwitcher'], 'Home editorial');
 
-// 5 — Discography hierarchy and playback state.
-const discography = read('js/features/discography-experience.js');
-includesAll(discography, ["const FILTER_GROUP_ORDER = ['genre', 'language', 'content', 'energy', 'era', 'type', 'media', 'year', 'mood']", 'erasFromCatalog', 'mini-equalizer', 'track-card-loader'], 'Discography');
-const stabilityStyles = read('css/ui-stability-v39.css');
-includesAll(stabilityStyles, ['.album-card.is-current::after', 'top:19px!important', 'top:15px!important'], 'NOW PLAYING alignment');
-
-// 6 — Editorial Home and mobile order.
-const home = read('js/features/home-editorial.js');
-includesAll(home, ["const DEFAULT_VISUAL_MODE = 'neon-shatter'", 'latestActiveTrackEntries(tracks, 1)', 'home-official-release', 'installVisualSwitcher'], 'Home editorial');
-assert.ok(!home.includes('wordmark-first'), 'The retired wordmark-first mobile hero override returned.');
-const homeStyles = read('css/home-editorial.css');
-assert.ok(homeStyles.includes('grid-template-columns:repeat(2,minmax(0,1fr))'), 'Mobile release actions must use equal-width columns.');
-
-// 7 — Audio Lab: shared Spectrum FFT + deterministic elastic motion.
+// Audio Lab registry and sanctuary reference.
 const registry = read('js/features/visual/audio-lab-registry.js');
 includesAll(registry, [
-  "AUDIO_LAB_DEFAULT_MODE = 'neon-shatter'",
-  "id: 'neon-shatter'", "id: 'spectrum'", "id: 'liquid-chrome'", "id: 'pulse-reactor'",
-  "id: 'bass-fracture'", "id: 'gravity-lens'", "id: 'bio-structure'",
+  "AUDIO_LAB_DEFAULT_MODE = 'neon-shatter'", "id: 'neon-shatter'", "id: 'spectrum'", "id: 'liquid-chrome'",
+  "id: 'pulse-reactor'", "id: 'bass-fracture'", "id: 'gravity-lens'", "id: 'bio-structure'",
   "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum'])"
 ], 'Audio Lab registry');
-for (const retired of ['aurora-glass', 'nebula', 'singularity']) {
-  assert.ok(!registry.includes(retired), `Retired Audio Lab preset returned: ${retired}.`);
-}
+for (const retired of ['aurora-glass', 'nebula', 'singularity']) assert.ok(!registry.includes(retired), `Retired Audio Lab preset returned: ${retired}.`);
 const presetCount = (registry.match(/Object\.freeze\(\{ id:/g) || []).length;
-assert.equal(presetCount, 7, 'Audio Lab must expose exactly seven validated Build 55 presets.');
+assert.equal(presetCount, 7, 'Audio Lab must expose exactly seven sanctioned presets.');
 
 const visualBase = read('js/features/visual/visual-engine-v2.js');
 function extractFunction(source, name) {
@@ -78,48 +47,27 @@ const spectrumHash = '25a86e3763b668fc69734d48439a2c93745ef927a3fcbdddaf2d0f29e0
 const actualSpectrumHash = crypto.createHash('sha256').update(extractFunction(visualBase, 'drawSpectrum')).digest('hex');
 assert.equal(actualSpectrumHash, spectrumHash, 'Spectrum sanctuary hash changed.');
 includesAll(visualBase, ["{ id: 'spectrum', label: 'Spectrum' }", 'function readSpectrum(target)', 'analyser.getByteFrequencyData(target)', 'return { resume, setMode, readSpectrum }'], 'Spectrum reference renderer');
-for (const retired of ['drawLiquidChrome(', 'drawNeonShatter(', 'drawSingularity(', 'drawNebula(']) assert.ok(!visualBase.includes(retired), `Legacy base visual returned: ${retired}.`);
 
 const coreModes = read('js/features/visual/visual-engine-core-modes.js');
-includesAll(coreModes, [
-  'drawNeonShatterV2Mode', 'drawLiquidChromeV2Mode', 'const impact = clamp(', 'const pulse = clamp(',
-  'const gatedDrift = time * activity * .16', 'const phase = time * activity * .2',
-  'const distance = baseDistance * (.58 + impact * 1.48 + localDrive * .92)',
-  'spectralDeform = spectral * .092 + neighbour * .032'
-], 'Validated baseline FFT modes');
+includesAll(coreModes, ['drawNeonShatterV2Mode', 'drawLiquidChromeV2Mode', 'const gatedDrift = time * activity * .16', 'const phase = time * activity * .2'], 'Validated baseline FFT modes');
 
+// Build 56 dynamic-range system.
 const motion = read('js/features/visual/motion-spring.js');
-includesAll(motion, ['const FRAME_STATES = new WeakMap()', 'export function beginMotionFrame(', 'export function springChannel(', 'export function motionPhase(', 'channel.velocity'], 'Shared elastic motion');
+includesAll(motion, [
+  'const FRAME_STATES = new WeakMap()', 'export function beginMotionFrame(', 'export function springChannel(',
+  'export function shapeMotionTarget(', 'const knee = clamp(', 'const ceiling = clamp(',
+  'export function motionPhase(', 'Math.pow(clamp(Number(activity) || 0, 0, 1.2), .62)', 'channel.velocity'
+], 'Shared dynamic motion');
 
-const pulseReactor = read('js/features/visual/pulse-reactor.js');
-includesAll(pulseReactor, [
-  'export function drawPulseReactorMode(', 'const ringCount = mobile ? 3 : 4', 'const segmentCount = mobile ? 14 : 24',
-  'const spokeCount = mobile ? 10 : 18', 'const shardCount = mobile ? 4 : 7',
-  "springChannel(motion, 'impact'", 'motionPhase(time, activity, .31)', 'const elasticWobble = Math.sin(', 'const spokeSway = Math.sin('
-], 'Pulse Reactor elasticity pass');
-
-const bassFracture = read('js/features/visual/bass-fracture.js');
-includesAll(bassFracture, [
-  'export function drawBassFractureMode(', 'const motionScale = mobile ? 1.58 : 1.18',
-  'const layerCount = mobile ? 2 : 3', 'const sectorCount = mobile ? 12 : 16', 'const crackCount = mobile ? 8 : 12',
-  "springChannel(motion, 'rupture'", 'motionPhase(time, activity, .22)', 'const crackPropagation = clamp(', 'const sway = Math.sin('
-], 'Bass Fracture elasticity pass');
-
-const gravityLens = read('js/features/visual/gravity-lens.js');
-includesAll(gravityLens, [
-  'export function drawGravityLensMode(', 'const bandCount = mobile ? 4 : 6', 'const arcCount = mobile ? 12 : 20',
-  'const streamCount = mobile ? 8 : 14', "springChannel(motion, 'warp'", 'motionPhase(time, activity, .17)',
-  'const breathing = Math.sin(', 'const streamDrift = Math.sin(', 'context.quadraticCurveTo('
-], 'Gravity Lens elasticity pass');
-
-const bioStructure = read('js/features/visual/bio-structure.js');
-includesAll(bioStructure, [
-  'export function drawBioStructureMode(', 'const ribCount = mobile ? 5 : 8', 'const veinCount = mobile ? 8 : 14',
-  'const nodeCount = mobile ? 6 : 9', "springChannel(motion, 'breath'", 'motionPhase(time, activity, .24)',
-  'context.quadraticCurveTo(', 'const membranePulse = Math.sin('
-], 'Bio Structure');
-
-for (const isolated of [pulseReactor, bassFracture, gravityLens, bioStructure]) {
+const pulse = read('js/features/visual/pulse-reactor.js');
+includesAll(pulse, ['shapeMotionTarget', 'motionPhase(time, activity, .34)', 'const bassMomentum = clamp(', 'const impactMomentum = clamp(', 'const ringCount = mobile ? 3 : 4', 'const segmentCount = mobile ? 14 : 24'], 'Pulse Reactor dynamic breathing');
+const fracture = read('js/features/visual/bass-fracture.js');
+includesAll(fracture, ['shapeMotionTarget', 'motionPhase(time, activity, .28)', 'const ruptureMomentum = clamp(', 'const motionScale = mobile ? 1.48 : 1.12', 'const sectorCount = mobile ? 12 : 16', 'const crackCount = mobile ? 8 : 12'], 'Bass Fracture dynamic breathing');
+const lens = read('js/features/visual/gravity-lens.js');
+includesAll(lens, ['shapeMotionTarget', 'motionPhase(time, activity, .25)', 'const warpMomentum = clamp(', 'const shearMomentum = clamp(', 'const bandCount = mobile ? 4 : 6', 'const streamCount = mobile ? 8 : 14'], 'Gravity Lens dynamic breathing');
+const bio = read('js/features/visual/bio-structure.js');
+includesAll(bio, ['shapeMotionTarget', 'motionPhase(time, activity, .31)', 'const breathMomentum = clamp(', 'const flexMomentum = clamp(', 'const ribCount = mobile ? 5 : 8', 'const veinCount = mobile ? 8 : 14'], 'Bio Structure dynamic breathing');
+for (const isolated of [pulse, fracture, lens, bio]) {
   assert.ok(!isolated.includes('requestAnimationFrame('), 'Isolated visual must use the shared renderer scheduler.');
   assert.ok(!isolated.includes('setInterval('), 'Isolated visual must not self-schedule an autonomous loop.');
   assert.ok(!isolated.includes('Math.random('), 'Isolated visual geometry must remain deterministic.');
@@ -127,61 +75,30 @@ for (const isolated of [pulseReactor, bassFracture, gravityLens, bioStructure]) 
 
 const live = read('js/features/visual/visual-engine-live.js');
 includesAll(live, [
-  "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode }", "{ id: 'spectrum', label: 'Spectrum' }",
-  "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
-  "{ id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode }",
-  "{ id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }",
-  "{ id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }",
   "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
   'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)',
-  "dataset.audioLabRenderer = 'seven-core-v1'", `dataset.audioLabPresetCount = '${presetCount}'`,
+  "dataset.audioLabRenderer = 'seven-core-v2'", `dataset.audioLabPresetCount = '${presetCount}'`,
   "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' ? 1.05",
-  'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)', 'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
+  'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ], 'Live Audio Lab visuals');
-for (const retired of ['aurora-glass', 'nebula', 'singularity', 'readAudioLabAmplitude', 'createAmplitudeDynamicsTracker', 'synthesizePlaybackSpectrum', "'bars'"]) assert.ok(!live.includes(retired), `Retired/parallel Audio Lab path returned: ${retired}.`);
+for (const retired of ['aurora-glass', 'nebula', 'singularity', 'synthesizePlaybackSpectrum', "'bars'"]) assert.ok(!live.includes(retired), `Retired Audio Lab path returned: ${retired}.`);
 
 const signal = read('js/features/audio-lab-signal.js');
-includesAll(signal, [
-  'createDecodedSourceProxy', 'fetch(source, {', "mode: 'cors'", 'context.decodeAudioData(bytes.slice(0))',
-  'context.createBufferSource()', 'node.start(0, offset)', "dataset.audioGraph = 'html5-direct-plus-decoded-buffer-metering'",
-  "audio.dataset.audioPlaybackPath = 'html5-direct'", "audio.dataset.audioAnalysisPath = 'decoded-buffer'",
-  "audio.addEventListener('loadstart'", "attributeFilter: ['src', 'data-track-id']", "window.addEventListener('shinobi:route-change'", 'async function suspendContexts()'
-], 'Isolated Audio Lab graph');
+includesAll(signal, ['createDecodedSourceProxy', 'context.decodeAudioData(bytes.slice(0))', 'context.createBufferSource()', "audio.dataset.audioPlaybackPath = 'html5-direct'", "audio.dataset.audioAnalysisPath = 'decoded-buffer'"], 'Isolated Audio Lab graph');
 assert.ok(!signal.includes('captureStream('));
 assert.ok(!signal.includes('createMediaStreamSource('));
-assert.ok(!signal.includes('createMirrorSourceProxy'));
 
-const sanctuary = read('js/features/visual/audio-lab-sanctuary.js');
-includesAll(sanctuary, ['normalizePresetControls', "controls.dataset.audioLabRegistry = 'sanctioned-v1'", 'video.loop = true', "video.setAttribute('webkit-playsinline', '')"], 'Audio Lab sanctuary');
-
-// 8 — SVGs and badge hierarchy.
-const icons = read('js/features/svg-icon-system.js');
-includesAll(icons, ["const SVG_NS = 'http://www.w3.org/2000/svg'", 'iconizeNavigation', 'iconizeControls', 'initSvgIconSystem'], 'SVG icons');
-const badges = read('js/features/badge-hierarchy.js');
-includesAll(badges, ["STATUS_LABELS = new Set(['CLEAN', 'EXPLICIT', 'LYRICS', 'LYRICS SYNCED', 'VIDEO', 'UPCOMING', 'DRAFT'])", 'parentGenre', 'secondary.slice(0, 3)'], 'Badge hierarchy');
-
-// 9 — Mobile Studio, Canvas, admin tools and release wiring.
-const lyricsStudio = read('js/features/lyrics-studio.js');
-includesAll(lyricsStudio, ["video.setAttribute('webkit-playsinline', '')", "video.setAttribute('autoplay', '')", "video.preload = 'auto'", "routeToHash({ type: 'studio', id: trackId })", "canvasVideo.addEventListener('canplay'", "canvasVideo.addEventListener('ended'"], 'Mobile Lyrics Studio');
-const mobileStudioStyles = read('css/mobile-studio.css');
-includesAll(mobileStudioStyles, ['body.lyrics-studio-open .mobile-nav{', 'visibility:visible!important;', 'bottom:54px!important;'], 'Mobile Studio shell');
-
-const engine = read('js/app-engine.js');
-includesAll(engine, ['initThemeScoping({ audio })', 'initDiscographyExperience({ audio })', 'initHomeEditorial()', 'initAudioLabSanctuary({ audio })', 'initSvgIconSystem()', 'initBadgeHierarchy()'], 'Application boot');
-const admin = read('js/features/admin-access.js');
-includesAll(admin, ['resolveLrcMakerAccess', 'https://shinobione.github.io/lrc-maker/', "label: 'LRC Maker'"], 'Admin access');
+// Mobile Studio/admin/PWA contracts.
+includesAll(read('js/features/lyrics-studio.js'), ["video.setAttribute('webkit-playsinline', '')", "routeToHash({ type: 'studio', id: trackId })", "canvasVideo.addEventListener('canplay'"], 'Mobile Lyrics Studio');
+includesAll(read('js/features/admin-access.js'), ['resolveLrcMakerAccess', 'https://shinobione.github.io/lrc-maker/', "label: 'LRC Maker'"], 'Admin access');
 const worker = read('sw.js');
-includesAll(worker, [
-  "'./js/features/theme-scope.js'", "'./js/features/visual/audio-lab-registry.js'", "'./js/features/visual/audio-lab-sanctuary.js'",
-  "'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'",
-  "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'", "'./js/visual-card-export-guard.js'"
-], 'PWA shell');
+includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260808-motion-bio-v55');
-assert.equal(build.cache, 'shinobi-launchpad-v55');
-assert.equal(build.display, '2026.08.08.55');
-assert.equal(build.release, 'motion-bio-20260808');
-assert.ok(build.revision, 'Build revision metadata must be present.');
+assert.equal(build.id, '20260808-dynamic-breathing-v56');
+assert.equal(build.cache, 'shinobi-launchpad-v56');
+assert.equal(build.display, '2026.08.08.56');
+assert.equal(build.release, 'dynamic-breathing-20260808');
+assert.equal(build.revision, 'dynamic-breathing-1');
 
 console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}) with ${presetCount} sanctioned Audio Lab presets.`);

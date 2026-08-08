@@ -178,7 +178,7 @@ export function createVisualController(options) {
   });
   applyMode(DEFAULT_MODE, defaultButton);
 
-  document.documentElement.dataset.audioLabRenderer = 'seven-core-v1';
+  document.documentElement.dataset.audioLabRenderer = 'seven-core-v2';
   document.documentElement.dataset.audioLabFeed = 'spectrum-shared';
   document.documentElement.dataset.audioLabPresetCount = '7';
 

@@ -1,6 +1,6 @@
 # LaunchPAD deployment topology
 
-> Current application build: `2026.08.08.55` — release `motion-bio-20260808`.
+> Current application build: `2026.08.08.56` — release `dynamic-breathing-20260808`.
 
 ## One source of truth
 
@@ -10,7 +10,7 @@
                          GitHub repository
                               main
                                |
-                      validated Build 55
+                      validated Build 56
                                |
                 +--------------+--------------+
                 |                             |
@@ -34,18 +34,18 @@
                       shinobiwan-media
 ```
 
-## Canonical Build 55
+## Canonical Build 56
 
 The current application release is defined only in `js/build-config.js`:
 
 ```text
-id       20260808-motion-bio-v55
-cache    shinobi-launchpad-v55
-display  2026.08.08.55
-release  motion-bio-20260808
+id       20260808-dynamic-breathing-v56
+cache    shinobi-launchpad-v56
+display  2026.08.08.56
+release  dynamic-breathing-20260808
 ```
 
-Every Markdown document must carry the same display/release markers; CI rejects stale documentation. The cache namespace advances with Build 55 so the spring-motion helper, elastic Pulse Reactor/Bass Fracture/Gravity Lens renderers, Bio Structure module and seven-preset Audio Lab registry cannot be hidden by stale Build 54 shell assets.
+Every Markdown document must carry the same display/release markers; CI rejects stale documentation. The cache namespace advances with Build 56 so the new soft-knee motion calibration, signed recoil and dynamic-range tuning cannot be hidden by stale Build 55 shell assets.
 
 ## Web hosting
 

@@ -1,6 +1,6 @@
 # LaunchPAD Cloudflare services
 
-> Current application build: `2026.08.08.55` — release `motion-bio-20260808`.
+> Current application build: `2026.08.08.56` — release `dynamic-breathing-20260808`.
 
 Current backend contracts: public media Worker **v2.6**, private Track Manager **v5.7**.
 
@@ -30,7 +30,7 @@ Output:
 dist/cloudflare-pages
 ```
 
-The builder copies the runtime verbatim. A Pages deployment must never contain a host-only patch missing from `main`. Build 55 includes the shared `motion-spring.js` layer plus `pulse-reactor.js`, `bass-fracture.js`, `gravity-lens.js` and `bio-structure.js` in the canonical static shell and advances the cache namespace to `shinobi-launchpad-v55`.
+The builder copies the runtime verbatim. A Pages deployment must never contain a host-only patch missing from `main`. Build 56 keeps `motion-spring.js`, `pulse-reactor.js`, `bass-fracture.js`, `gravity-lens.js` and `bio-structure.js` in the canonical static shell, adds the dynamic-headroom calibration inside those modules, and advances the cache namespace to `shinobi-launchpad-v56`.
 
 ## Public media Worker
 

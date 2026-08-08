@@ -37,6 +37,27 @@ export function springChannel(frame, key, target, options = {}) {
   return channel;
 }
 
+/**
+ * Expand small/mid signal movement while compressing the top end.
+ *
+ * Audio Lab features are intentionally boosted upstream so weak tracks remain
+ * readable. Visuals that consume those values directly can therefore spend too
+ * much time near 1.0 and look stuck in a permanently "fully open" pose. This
+ * soft-knee map preserves low/mid detail and reserves headroom for real peaks.
+ */
+export function shapeMotionTarget(value, options = {}) {
+  const knee = clamp(options.knee ?? .56, .2, .9);
+  const ceiling = clamp(options.ceiling ?? .9, knee + .02, 1.2);
+  const lowExponent = clamp(options.lowExponent ?? .84, .55, 1);
+  const input = clamp(Number(value) || 0, 0, 1);
+  if (input <= 0) return 0;
+  if (input <= knee) return knee * Math.pow(input / knee, lowExponent);
+  const progress = (input - knee) / Math.max(.001, 1 - knee);
+  const curve = (1 - Math.exp(-2.15 * progress)) / (1 - Math.exp(-2.15));
+  return knee + (ceiling - knee) * curve;
+}
+
 export function motionPhase(time, activity, speed = 1) {
-  return time * Math.max(0, activity) * speed;
+  const gated = Math.pow(clamp(Number(activity) || 0, 0, 1.2), .62);
+  return time * gated * speed;
 }
