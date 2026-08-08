@@ -1,0 +1,321 @@
+/* Build 62 — focused UI polish
+   - desktop Lyrics Studio: larger Canvas, track details anchored lower
+   - desktop Audio Lab: animation gets the center back
+   - mobile Lyrics Studio: visible cover fallback until Canvas really plays
+   - mobile global player: seek slider is always available
+*/
+
+/* --------------------------------------------------------------------------
+   DESKTOP
+   -------------------------------------------------------------------------- */
+@media (min-width:761px){
+  /* Audio Lab: keep the visualization completely unobstructed. */
+  body #view-lab .lab-center #lab-cover{
+    display:none!important;
+  }
+
+  body #view-lab .lab-center #lab-title{
+    top:auto!important;
+    bottom:14px!important;
+    left:50%!important;
+    width:max-content!important;
+    max-width:76%!important;
+    padding:6px 10px!important;
+    border:1px solid rgba(255,255,255,.07)!important;
+    border-radius:999px!important;
+    color:rgba(240,235,249,.64)!important;
+    background:rgba(5,3,11,.34)!important;
+    backdrop-filter:blur(8px)!important;
+    font-size:10px!important;
+    font-weight:600!important;
+    letter-spacing:.04em!important;
+    transform:translateX(-50%)!important;
+  }
+
+  /* Lyrics Studio: give the portrait Canvas noticeably more presence. */
+  body #view-lyrics.lyrics-studio-mode .lyrics-stage{
+    grid-template-columns:minmax(300px,350px) minmax(0,1fr)!important;
+    min-height:calc(100dvh - 48px)!important;
+    height:calc(100dvh - 48px)!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode .lyrics-track-panel{
+    min-height:0!important;
+    padding:18px 20px 20px!important;
+    overflow:hidden!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-track-panel{
+    padding:12px 18px 18px!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active .lyrics-studio-canvas{
+    flex:0 1 auto!important;
+    width:min(100%,270px)!important;
+    max-height:min(56dvh,480px)!important;
+    margin:0 auto 16px!important;
+    border-radius:22px!important;
+    box-shadow:0 26px 80px rgba(0,0,0,.5),0 0 38px color-mix(in srgb,var(--accent) 12%,transparent)!important;
+  }
+
+  /* The details/player group sits against the lower part of the left rail. */
+  body #view-lyrics.lyrics-studio-mode .lyrics-track-panel>.eyebrow{
+    margin-top:auto!important;
+    padding-top:10px!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode .lyrics-track-panel h2{
+    margin:6px 0 3px!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode .lyrics-track-panel>p{
+    margin:3px 0 10px!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode .lyrics-transport{
+    margin:4px 0 10px!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode .lyrics-track-select-label{
+    margin-top:14px!important;
+    padding-top:0!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode .lyrics-reader-shell{
+    min-height:0!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode .lyrics-reader{
+    flex:1 1 auto!important;
+    height:auto!important;
+    min-height:0!important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   MOBILE PLAYER + MOBILE STUDIO
+   -------------------------------------------------------------------------- */
+@media (max-width:760px){
+  /* Two-row mini player: metadata/transport above, scrubber below. */
+  body footer.player-bar{
+    height:80px!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    grid-template-rows:minmax(0,1fr) 14px!important;
+    column-gap:8px!important;
+    row-gap:3px!important;
+    padding:6px 12px 5px!important;
+  }
+
+  body footer.player-bar .current-track{
+    grid-column:1!important;
+    grid-row:1!important;
+    align-self:center!important;
+    min-width:0!important;
+  }
+
+  body footer.player-bar .current-track img{
+    width:44px!important;
+    height:44px!important;
+  }
+
+  body footer.player-bar .transport{
+    display:contents!important;
+  }
+
+  body footer.player-bar .transport-buttons{
+    grid-column:2!important;
+    grid-row:1!important;
+    align-self:center!important;
+    justify-self:end!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:7px!important;
+  }
+
+  body footer.player-bar .transport .timeline{
+    display:grid!important;
+    grid-column:1/-1!important;
+    grid-row:2!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    align-items:center!important;
+    gap:0!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+  }
+
+  body footer.player-bar .transport .timeline>span{
+    display:none!important;
+  }
+
+  body footer.player-bar #seek{
+    display:block!important;
+    width:100%!important;
+    height:14px!important;
+    margin:0!important;
+    padding:0!important;
+    accent-color:var(--accent)!important;
+    cursor:pointer;
+    touch-action:manipulation;
+  }
+
+  body footer.player-bar #seek::-webkit-slider-runnable-track{
+    height:3px;
+    border-radius:999px;
+    background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 78%,#fff),color-mix(in srgb,var(--accent2) 78%,#fff));
+  }
+
+  body footer.player-bar #seek::-webkit-slider-thumb{
+    width:12px;
+    height:12px;
+    margin-top:-4.5px;
+  }
+
+  body footer.player-bar #seek::-moz-range-track{
+    height:3px;
+    border-radius:999px;
+  }
+
+  body footer.player-bar #seek::-moz-range-thumb{
+    width:12px;
+    height:12px;
+    border:0;
+    border-radius:50%;
+  }
+
+  /* Studio reserves the slightly taller player instead of covering content. */
+  body.lyrics-studio-open footer.player-bar{
+    bottom:54px!important;
+    height:80px!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode{
+    padding-bottom:calc(150px + env(safe-area-inset-bottom,0px))!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode .lyrics-stage{
+    gap:12px!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode .lyrics-track-panel{
+    border-radius:19px!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode .lyrics-reader-shell{
+    border-radius:19px!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode .lyrics-reader-head{
+    padding:8px 9px!important;
+  }
+
+  /*
+    Canvas fallback: the current cover occupies the exact same portrait cell.
+    The video is revealed only after its "playing" event. This prevents the
+    black/empty rectangle seen during mobile autoplay/loading races.
+  */
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active
+  .lyrics-track-panel:not(.lyrics-track-panel-collapsed){
+    grid-template-columns:minmax(98px,118px) minmax(0,1fr)!important;
+    column-gap:14px!important;
+    row-gap:7px!important;
+    padding:15px 50px 15px 15px!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active
+  .lyrics-track-panel:not(.lyrics-track-panel-collapsed) .lyrics-cover-wrap{
+    position:relative!important;
+    z-index:1!important;
+    display:block!important;
+    grid-column:1!important;
+    grid-row:1/6!important;
+    align-self:start!important;
+    width:100%!important;
+    max-width:118px!important;
+    height:auto!important;
+    aspect-ratio:9/16!important;
+    margin:0!important;
+    overflow:hidden!important;
+    border:1px solid color-mix(in srgb,var(--accent) 28%,rgba(255,255,255,.1))!important;
+    border-radius:14px!important;
+    background:#020105!important;
+    box-shadow:0 18px 50px rgba(0,0,0,.38)!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active
+  .lyrics-track-panel:not(.lyrics-track-panel-collapsed) .lyrics-cover-glow{
+    display:none!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active
+  .lyrics-track-panel:not(.lyrics-track-panel-collapsed) .lyrics-cover-wrap img{
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    height:100%!important;
+    border:0!important;
+    border-radius:inherit!important;
+    object-fit:cover!important;
+    box-shadow:none!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active
+  .lyrics-track-panel:not(.lyrics-track-panel-collapsed) .lyrics-studio-canvas{
+    position:relative!important;
+    z-index:2!important;
+    grid-column:1!important;
+    grid-row:1/6!important;
+    align-self:start!important;
+    width:100%!important;
+    max-width:118px!important;
+    height:auto!important;
+    aspect-ratio:9/16!important;
+    margin:0!important;
+    border-radius:14px!important;
+    background:transparent!important;
+    box-shadow:none!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active
+  .lyrics-track-panel:not(.lyrics-track-panel-collapsed) .lyrics-studio-canvas-video{
+    opacity:0!important;
+    transition:opacity .22s ease!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active
+  .lyrics-track-panel:not(.lyrics-track-panel-collapsed) .lyrics-studio-canvas[data-playback="playing"] .lyrics-studio-canvas-video{
+    opacity:1!important;
+  }
+}
+
+@media (max-width:760px) and (orientation:landscape){
+  body.lyrics-studio-open footer.player-bar{
+    height:72px!important;
+  }
+
+  body footer.player-bar{
+    height:72px!important;
+    grid-template-rows:minmax(0,1fr) 12px!important;
+    padding-top:4px!important;
+    padding-bottom:4px!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode{
+    padding-bottom:calc(142px + env(safe-area-inset-bottom,0px))!important;
+  }
+}
+
+@media (max-width:380px){
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active
+  .lyrics-track-panel:not(.lyrics-track-panel-collapsed){
+    grid-template-columns:86px minmax(0,1fr)!important;
+    column-gap:10px!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active
+  .lyrics-track-panel:not(.lyrics-track-panel-collapsed) .lyrics-cover-wrap,
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active
+  .lyrics-track-panel:not(.lyrics-track-panel-collapsed) .lyrics-studio-canvas{
+    max-width:86px!important;
+  }
+}
