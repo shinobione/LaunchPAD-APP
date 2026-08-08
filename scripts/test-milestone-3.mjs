@@ -26,8 +26,10 @@ assert.ok(!/feature10ExtractCoverColors\([^)]*\).*addEventListener\(['"]change/s
 const builder = read('scripts/build-admin-worker.mjs');
 for (const required of [
   "'5.5'",
-  'version: "5.6"',
-  '<span class="version-pill">v5.6</span>',
+  "'5.6'",
+  "'5.7'",
+  'version: "5.8"',
+  '<span class="version-pill">v5.8</span>',
   "TRACK_MANAGER_MILESTONE_3_VERSION='5.6'",
   'function milestone3InstallReactiveFilters()',
   'function milestone3InstallManualPalette()'
@@ -46,4 +48,4 @@ for (const required of [
 assert.ok(!workflow.includes('\n  push:'), 'Production Worker deployment must remain manual-only.');
 
 const build = assertCurrentBuild('Milestone 3');
-console.log(`Milestone 3 Track Manager filters and manual palette extraction remain valid with explicit current v5.8 Worker deployment under Build ${build.number}.`);
+console.log(`Milestone 3 historical v5.6 filters/manual-palette layer remains intact while the current Track Manager assembles/deploys as v5.8 under Build ${build.number}.`);
