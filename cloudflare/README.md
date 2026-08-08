@@ -1,6 +1,6 @@
 # LaunchPAD Cloudflare services
 
-> Current application build: `2026.08.08.53` — release `bass-fracture-20260808`.
+> Current application build: `2026.08.08.54` — release `gravity-lens-20260808`.
 
 Current backend contracts: public media Worker **v2.6**, private Track Manager **v5.7**.
 
@@ -30,7 +30,7 @@ Output:
 dist/cloudflare-pages
 ```
 
-The builder copies the runtime verbatim. A Pages deployment must never contain a host-only patch missing from `main`. Build 53 includes the isolated `pulse-reactor.js` and `bass-fracture.js` Audio Lab modules and cache namespace `shinobi-launchpad-v53` in the canonical static shell.
+The builder copies the runtime verbatim. A Pages deployment must never contain a host-only patch missing from `main`. Build 54 includes `pulse-reactor.js`, `bass-fracture.js` and `gravity-lens.js` in the canonical static shell and advances the cache namespace to `shinobi-launchpad-v54`.
 
 ## Public media Worker
 

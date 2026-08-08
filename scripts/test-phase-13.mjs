@@ -51,27 +51,37 @@ assert.ok(!fs.existsSync('js/features/visual/visual-engine-hex-reactor.js'));
 const reactor = read('js/features/visual/pulse-reactor.js');
 for (const required of [
   'export function drawPulseReactorMode(',
-  'const ringCount = mobile ? 3 : 5',
-  'const segmentCount = mobile ? 18 : 32',
-  'const spokeCount = mobile ? 16 : 30',
-  'const fracture = clamp(',
-  'const shardCount = mobile ? 6 : 10',
-  'const drift = time * activity * .075'
+  'const ringCount = mobile ? 3 : 4',
+  'const segmentCount = mobile ? 14 : 24',
+  'const spokeCount = mobile ? 10 : 18',
+  'const shardCount = mobile ? 4 : 7',
+  'const breakMask = clamp(',
+  'const drift = time * activity * .055'
 ]) assert.ok(reactor.includes(required), `Pulse Reactor renderer is missing ${required}.`);
 
 const fracture = read('js/features/visual/bass-fracture.js');
 for (const required of [
   'export function drawBassFractureMode(',
+  'const motionScale = mobile ? 1.42 : 1.08',
   'const layerCount = mobile ? 2 : 3',
-  'const sectorCount = mobile ? 12 : 20',
-  'const crackCount = mobile ? 10 : 18',
-  'const rupture = clamp(',
-  'const drift = time * activity * .038'
+  'const sectorCount = mobile ? 12 : 16',
+  'const crackCount = mobile ? 8 : 12',
+  'const drift = time * activity * .03'
 ]) assert.ok(fracture.includes(required), `Bass Fracture renderer is missing ${required}.`);
+
+const lens = read('js/features/visual/gravity-lens.js');
+for (const required of [
+  'export function drawGravityLensMode(',
+  'const bandCount = mobile ? 4 : 6',
+  'const arcCount = mobile ? 12 : 20',
+  'const streamCount = mobile ? 8 : 14',
+  'const drift = time * activity * .032',
+  'context.quadraticCurveTo('
+]) assert.ok(lens.includes(required), `Gravity Lens renderer is missing ${required}.`);
 
 const registry = read('js/features/visual/audio-lab-registry.js');
 const presetCount = (registry.match(/Object\.freeze\(\{ id:/g) || []).length;
-assert.ok(presetCount >= 5, 'Phase 13 Audio Lab unexpectedly lost the Build 53 five-preset baseline.');
+assert.equal(presetCount, 6, 'Phase 13 Audio Lab must expose the Build 54 six-preset set.');
 
 const liveVisuals = read('js/features/visual/visual-engine-live.js');
 for (const required of [
@@ -81,14 +91,14 @@ for (const required of [
   "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
   "{ id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode }",
   "{ id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }",
+  "{ id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }",
   'base.readSpectrum?.(raw)',
   'reading = readAudioLabSpectrum(raw)',
   'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)',
   'function boostLiveFeatures(features)',
-  'dataset.audioLabRenderer =',
-  `dataset.audioLabPresetCount = '${presetCount}'`,
-  "mode === 'bass-fracture' ? 1.05",
-  "mode === 'pulse-reactor' ? 1.1",
+  "dataset.audioLabRenderer = 'six-core-v1'",
+  "dataset.audioLabPresetCount = '6'",
+  "mode === 'bass-fracture' || mode === 'gravity-lens' ? 1.05",
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60', 'const TELEMETRY_INTERVAL = 120'
 ]) assert.ok(liveVisuals.includes(required), `Live Audio Lab renderer is missing ${required}.`);
 for (const forbidden of ['aurora-glass', 'nebula', 'singularity', 'wave-cathedral', "id: 'circle'", "'bars'", 'hex-reactor', 'readAudioLabAmplitude', 'createAmplitudeDynamicsTracker', 'synthesizePlaybackSpectrum']) {
@@ -130,11 +140,17 @@ assert.ok(engine.includes("import(versioned('./features/feature-13.js'))"));
 assert.ok(engine.includes('initPhase13({ audio });'));
 
 const worker = read('sw.js');
-for (const required of ["'./js/features/audio-lab-signal.js'","'./js/features/feature-13.js'","'./js/features/visual/audio-reactivity.js'","'./js/features/visual/visual-engine-v2.js'","'./js/features/visual/visual-engine-core-modes.js'","'./js/features/visual/pulse-reactor.js'","'./js/features/visual/bass-fracture.js'","'./js/features/visual/visual-engine-live.js'","event.data?.type === 'GET_RELEASE'"]) assert.ok(worker.includes(required));
+for (const required of [
+  "'./js/features/audio-lab-signal.js'", "'./js/features/feature-13.js'",
+  "'./js/features/visual/audio-reactivity.js'", "'./js/features/visual/visual-engine-v2.js'",
+  "'./js/features/visual/visual-engine-core-modes.js'", "'./js/features/visual/pulse-reactor.js'",
+  "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'",
+  "'./js/features/visual/visual-engine-live.js'", "event.data?.type === 'GET_RELEASE'"
+]) assert.ok(worker.includes(required));
 
 const build = assertCurrentBuild('Phase 13/current release');
-assert.ok(build.number >= 49, `Unexpected pre-Phase-13 build ${build.display}.`);
-assert.ok(build.release, 'Current release metadata is required.');
+assert.ok(build.number >= 54, `Unexpected pre-Build-54 release ${build.display}.`);
+assert.equal(build.release, 'gravity-lens-20260808');
 
 await import('./test-milestone-4.mjs');
 await import('./test-milestone-6.mjs');
