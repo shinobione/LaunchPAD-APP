@@ -1,6 +1,6 @@
 # LaunchPAD roadmap
 
-> Current application build: `2026.08.08.53` — release `bass-fracture-20260808`.
+> Current application build: `2026.08.08.54` — release `gravity-lens-20260808`.
 
 The repository cleanup/reconciliation phase is complete. This roadmap now tracks product/runtime work rather than historical migration chores.
 
@@ -19,8 +19,9 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Spectrum is the protected reference analyser/render path for custom effects.
 - [x] Neon Shatter and Liquid Chrome were rebuilt around real FFT-driven geometry.
 - [x] Build 51 established the stable three-preset Audio Lab baseline.
-- [x] Build 52 proved the incremental expansion model with one isolated, mobile-budgeted new preset: Pulse Reactor.
-- [x] Build 53 adds Bass Fracture through the same isolated/shared-FFT contract and increases Pulse Reactor peak breakup without raising its permanent mobile geometry.
+- [x] Build 52 proved the incremental expansion model with Pulse Reactor.
+- [x] Build 53 added Bass Fracture and stronger Pulse Reactor peak breakup.
+- [x] Build 54 establishes readability as a first-class visual contract, simplifies Pulse Reactor/Bass Fracture and adds Gravity Lens with its own mobile budget.
 - [x] All Markdown documentation is version-coupled to `js/build-config.js` through CI.
 
 ## P0 — real-device validation
@@ -29,21 +30,22 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Validate Build 51 Liquid Chrome on desktop and Android: real FFT deformation is visible and stable.
 - [x] Confirm Spectrum still reacts exactly as before and remains the stable reference.
 - [x] Validate Build 52 Pulse Reactor baseline on desktop and Android: shared-FFT reaction and mobile smoothness confirmed.
-- [ ] Validate Build 53 Pulse Reactor breakup: strong bass peaks visibly de-cohere rings/core shards without making normal passages noisy.
-- [ ] Validate Bass Fracture on desktop and Android: bass/kick = plate separation, mids = twist, highs/transients = fault-line detail.
-- [ ] Confirm Bass Fracture settles when paused and its mobile 2-layer / 12-sector / DPR 1.05 budget remains smooth.
-- [ ] Verify switching Neon Shatter → Spectrum → Liquid Chrome → Pulse Reactor → Bass Fracture repeatedly does not lose analyser data.
+- [x] Validate Build 53 Pulse Reactor breakup and Bass Fracture shared-FFT behavior on desktop/mobile.
+- [ ] Validate Build 54 Pulse Reactor readability: core remains visually dominant and peak breakup is obvious without becoming cluttered.
+- [ ] Validate Build 54 Bass Fracture desktop readability and stronger mobile plate travel without frame drops.
+- [ ] Validate Gravity Lens on desktop and Android: bass/kick = deeper lens, mids = orbital shear, highs/transients = caustic arcs/curved streams.
+- [ ] Confirm Gravity Lens settles when paused and its DPR 1.05 / 4-band / 12-arc / 8-stream mobile budget remains smooth.
+- [ ] Verify switching all six presets repeatedly does not lose analyser data.
 - [ ] Continue background-playback testing for artefacts with Audio Lab open/closed.
 - [ ] Verify multi-track switching keeps the shared/fallback FFT analysis synchronized across several tracks.
 
 ## P1 — Audio Lab expansion
 
 - [x] Establish the rule: add future visual presets one at a time only after each new effect proves real FFT reactivity and pause settling.
-- [x] Isolate Pulse Reactor in its own renderer module to reduce regression radius.
-- [x] Isolate Bass Fracture in its own renderer module with deterministic geometry rather than random particles.
-- [x] Give Bass Fracture an explicit mobile geometry/DPR budget before merge.
-- [ ] After Bass Fracture is validated on real devices, design the next effect against the same Spectrum-shared feed.
-- [ ] Give every future effect an explicit mobile geometry/DPR budget before merge.
+- [x] Isolate Pulse Reactor, Bass Fracture and Gravity Lens in their own renderer modules.
+- [x] Give every isolated effect an explicit mobile geometry/DPR budget before merge.
+- [x] Establish the readability rule: reduce simultaneous primitives before reducing reaction amplitude.
+- [ ] After Gravity Lens is validated on real devices, design the next effect against the same Spectrum-shared feed.
 - [ ] Prefer peak-only deformation/fracture over permanently increasing particle/segment counts.
 - [ ] Do not restore Aurora Glass, Nebula or Singularity by name unless they are deliberately rebuilt and pass the current contract.
 - [ ] Keep Spectrum untouched as the reference renderer while new effects are developed.
@@ -84,4 +86,5 @@ The repo is considered structurally healthy when:
 4. Workers/R2 are treated as separate backend/data states;
 5. no host-only runtime patch exists outside GitHub;
 6. Audio Lab effects are validated against real FFT behavior, not merely visual motion;
-7. each new Audio Lab effect has a deliberate mobile performance budget.
+7. each new Audio Lab effect has a deliberate mobile performance budget;
+8. visual intensity does not come at the cost of readability or mobile smoothness.
