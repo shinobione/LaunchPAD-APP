@@ -6,7 +6,8 @@ export const AUDIO_LAB_PRESETS = Object.freeze([
   Object.freeze({ id: 'liquid-chrome', label: 'Liquid Chrome', tier: 'core' }),
   Object.freeze({ id: 'pulse-reactor', label: 'Pulse Reactor', tier: 'core' }),
   Object.freeze({ id: 'bass-fracture', label: 'Bass Fracture', tier: 'core' }),
-  Object.freeze({ id: 'gravity-lens', label: 'Gravity Lens', tier: 'core' })
+  Object.freeze({ id: 'gravity-lens', label: 'Gravity Lens', tier: 'core' }),
+  Object.freeze({ id: 'bio-structure', label: 'Bio Structure', tier: 'core' })
 ]);
 
 export const AUDIO_LAB_PRESET_IDS = Object.freeze(AUDIO_LAB_PRESETS.map(preset => preset.id));

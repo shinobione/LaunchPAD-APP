@@ -1,8 +1,20 @@
 # Changelog
 
-> Current application build: `2026.08.08.54` — release `gravity-lens-20260808`.
+> Current application build: `2026.08.08.55` — release `motion-bio-20260808`.
 
 This file intentionally tracks the recent stabilized release line. Older milestone-by-milestone history remains available in Git history and merged pull requests.
+
+## Build 55 — Motion & elasticity + Bio Structure
+
+- Add shared `motion-spring.js` state for deterministic short-memory inertia, velocity and overshoot keyed per Canvas/context; it owns no animation loop.
+- Rework **Pulse Reactor** without adding geometry: stronger breathing core, propagated ring waves, elastic segment wobble and signal-gated spoke sway keep the hierarchy readable but visibly alive.
+- Rework **Bass Fracture** without adding geometry: mobile motion scale rises to `1.58`, rupture gets spring overshoot, plates gain sway/lag and fault lines gain short signal-driven propagation.
+- Rework **Gravity Lens** without adding geometry: spring warp/shear, orbital precession, band breathing and curved stream drift create continuous field motion while the central horizon stays anchored.
+- Add **Bio Structure** as the seventh sanctioned Audio Lab preset: a living spine/rib mesh where bass inflates the body, mids flex branches and highs/transients travel as luminous nerve impulses.
+- Give Bio Structure an explicit mobile budget of 5 ribs / 8 vein impulses / 6 spine nodes at DPR 1.05; desktop uses 8 / 14 / 9.
+- Keep Spectrum sanctuary-protected and keep Neon Shatter / Liquid Chrome unchanged.
+- Keep every isolated renderer on Spectrum's shared analyser feed first, deterministic, free of private RAF/timers and free of `Math.random()` motion.
+- Advance the PWA shell to cache namespace v55 and cache both `motion-spring.js` and `bio-structure.js`.
 
 ## Build 54 — Gravity Lens + readability pass
 

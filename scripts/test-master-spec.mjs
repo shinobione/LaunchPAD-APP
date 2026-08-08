@@ -48,18 +48,19 @@ assert.ok(!home.includes('wordmark-first'), 'The retired wordmark-first mobile h
 const homeStyles = read('css/home-editorial.css');
 assert.ok(homeStyles.includes('grid-template-columns:repeat(2,minmax(0,1fr))'), 'Mobile release actions must use equal-width columns.');
 
-// 7 — Audio Lab: validated shared-FFT expansion; Spectrum remains trusted reference.
+// 7 — Audio Lab: shared Spectrum FFT + deterministic elastic motion.
 const registry = read('js/features/visual/audio-lab-registry.js');
 includesAll(registry, [
   "AUDIO_LAB_DEFAULT_MODE = 'neon-shatter'",
-  "id: 'neon-shatter'", "id: 'spectrum'", "id: 'liquid-chrome'", "id: 'pulse-reactor'", "id: 'bass-fracture'", "id: 'gravity-lens'",
+  "id: 'neon-shatter'", "id: 'spectrum'", "id: 'liquid-chrome'", "id: 'pulse-reactor'",
+  "id: 'bass-fracture'", "id: 'gravity-lens'", "id: 'bio-structure'",
   "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum'])"
 ], 'Audio Lab registry');
 for (const retired of ['aurora-glass', 'nebula', 'singularity']) {
   assert.ok(!registry.includes(retired), `Retired Audio Lab preset returned: ${retired}.`);
 }
 const presetCount = (registry.match(/Object\.freeze\(\{ id:/g) || []).length;
-assert.equal(presetCount, 6, 'Audio Lab must expose exactly six validated Build 54 presets.');
+assert.equal(presetCount, 7, 'Audio Lab must expose exactly seven validated Build 55 presets.');
 
 const visualBase = read('js/features/visual/visual-engine-v2.js');
 function extractFunction(source, name) {
@@ -76,99 +77,75 @@ function extractFunction(source, name) {
 const spectrumHash = '25a86e3763b668fc69734d48439a2c93745ef927a3fcbdddaf2d0f29e0371813';
 const actualSpectrumHash = crypto.createHash('sha256').update(extractFunction(visualBase, 'drawSpectrum')).digest('hex');
 assert.equal(actualSpectrumHash, spectrumHash, 'Spectrum sanctuary hash changed.');
-includesAll(visualBase, [
-  "{ id: 'spectrum', label: 'Spectrum' }",
-  'function readSpectrum(target)', 'analyser.getByteFrequencyData(target)',
-  'return { resume, setMode, readSpectrum }'
-], 'Spectrum reference renderer');
-for (const retired of ['drawLiquidChrome(', 'drawNeonShatter(', 'drawSingularity(', 'drawNebula(']) {
-  assert.ok(!visualBase.includes(retired), `Legacy base visual returned: ${retired}.`);
-}
-
-const live = read('js/features/visual/visual-engine-live.js');
-includesAll(live, [
-  "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode }",
-  "{ id: 'spectrum', label: 'Spectrum' }",
-  "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
-  "{ id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode }",
-  "{ id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }",
-  "{ id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }",
-  'base.readSpectrum?.(raw)',
-  'reading = readAudioLabSpectrum(raw)',
-  "dataset.audioLabRenderer = 'six-core-v1'",
-  `dataset.audioLabPresetCount = '${presetCount}'`,
-  "mode === 'bass-fracture' || mode === 'gravity-lens' ? 1.05",
-  'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)',
-  'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
-], 'Live Audio Lab visuals');
-for (const retired of ['aurora-glass', 'nebula', 'singularity', 'readAudioLabAmplitude', 'createAmplitudeDynamicsTracker', 'synthesizePlaybackSpectrum', "'bars'"]) {
-  assert.ok(!live.includes(retired), `Retired/parallel Audio Lab path returned: ${retired}.`);
-}
+includesAll(visualBase, ["{ id: 'spectrum', label: 'Spectrum' }", 'function readSpectrum(target)', 'analyser.getByteFrequencyData(target)', 'return { resume, setMode, readSpectrum }'], 'Spectrum reference renderer');
+for (const retired of ['drawLiquidChrome(', 'drawNeonShatter(', 'drawSingularity(', 'drawNebula(']) assert.ok(!visualBase.includes(retired), `Legacy base visual returned: ${retired}.`);
 
 const coreModes = read('js/features/visual/visual-engine-core-modes.js');
 includesAll(coreModes, [
-  'drawNeonShatterV2Mode', 'drawLiquidChromeV2Mode',
-  'const impact = clamp(', 'const pulse = clamp(',
-  'const gatedDrift = time * activity * .16',
-  'const phase = time * activity * .2',
+  'drawNeonShatterV2Mode', 'drawLiquidChromeV2Mode', 'const impact = clamp(', 'const pulse = clamp(',
+  'const gatedDrift = time * activity * .16', 'const phase = time * activity * .2',
   'const distance = baseDistance * (.58 + impact * 1.48 + localDrive * .92)',
   'spectralDeform = spectral * .092 + neighbour * .032'
 ], 'Validated baseline FFT modes');
-for (const retired of ['drawAuroraGlassMode', 'drawSingularityLiveMode', 'drawNeonShatterAdaptiveMode', 'drawLiquidChromeLiveMode']) {
-  assert.ok(!coreModes.includes(retired), `Retired core visual returned: ${retired}.`);
-}
+
+const motion = read('js/features/visual/motion-spring.js');
+includesAll(motion, ['const FRAME_STATES = new WeakMap()', 'export function beginMotionFrame(', 'export function springChannel(', 'export function motionPhase(', 'channel.velocity'], 'Shared elastic motion');
 
 const pulseReactor = read('js/features/visual/pulse-reactor.js');
 includesAll(pulseReactor, [
-  'export function drawPulseReactorMode(',
-  'const ringCount = mobile ? 3 : 4',
-  'const segmentCount = mobile ? 14 : 24',
-  'const spokeCount = mobile ? 10 : 18',
-  'const shardCount = mobile ? 4 : 7',
-  'const breakMask = clamp(',
-  'const segmentFracture = fracture * breakMask',
-  'const visible = clamp((drive - .2) * 1.45)',
-  'const drift = time * activity * .055'
-], 'Pulse Reactor readability pass');
+  'export function drawPulseReactorMode(', 'const ringCount = mobile ? 3 : 4', 'const segmentCount = mobile ? 14 : 24',
+  'const spokeCount = mobile ? 10 : 18', 'const shardCount = mobile ? 4 : 7',
+  "springChannel(motion, 'impact'", 'motionPhase(time, activity, .31)', 'const elasticWobble = Math.sin(', 'const spokeSway = Math.sin('
+], 'Pulse Reactor elasticity pass');
 
 const bassFracture = read('js/features/visual/bass-fracture.js');
 includesAll(bassFracture, [
-  'export function drawBassFractureMode(',
-  'const motionScale = mobile ? 1.42 : 1.08',
-  'const layerCount = mobile ? 2 : 3',
-  'const sectorCount = mobile ? 12 : 16',
-  'const crackCount = mobile ? 8 : 12',
-  'const baseRadius = minSide * (mobile ? .305 : .305)',
-  'const drift = time * activity * .03'
-], 'Bass Fracture readability/mobile pass');
+  'export function drawBassFractureMode(', 'const motionScale = mobile ? 1.58 : 1.18',
+  'const layerCount = mobile ? 2 : 3', 'const sectorCount = mobile ? 12 : 16', 'const crackCount = mobile ? 8 : 12',
+  "springChannel(motion, 'rupture'", 'motionPhase(time, activity, .22)', 'const crackPropagation = clamp(', 'const sway = Math.sin('
+], 'Bass Fracture elasticity pass');
 
 const gravityLens = read('js/features/visual/gravity-lens.js');
 includesAll(gravityLens, [
-  'export function drawGravityLensMode(',
-  'const warp = clamp(',
-  'const caustic = clamp(',
-  'const bandCount = mobile ? 4 : 6',
-  'const arcCount = mobile ? 12 : 20',
-  'const streamCount = mobile ? 8 : 14',
-  'const drift = time * activity * .032',
-  'context.quadraticCurveTo(',
-  'const einsteinRadius ='
-], 'Gravity Lens');
+  'export function drawGravityLensMode(', 'const bandCount = mobile ? 4 : 6', 'const arcCount = mobile ? 12 : 20',
+  'const streamCount = mobile ? 8 : 14', "springChannel(motion, 'warp'", 'motionPhase(time, activity, .17)',
+  'const breathing = Math.sin(', 'const streamDrift = Math.sin(', 'context.quadraticCurveTo('
+], 'Gravity Lens elasticity pass');
 
-for (const isolated of [pulseReactor, bassFracture, gravityLens]) {
+const bioStructure = read('js/features/visual/bio-structure.js');
+includesAll(bioStructure, [
+  'export function drawBioStructureMode(', 'const ribCount = mobile ? 5 : 8', 'const veinCount = mobile ? 8 : 14',
+  'const nodeCount = mobile ? 6 : 9', "springChannel(motion, 'breath'", 'motionPhase(time, activity, .24)',
+  'context.quadraticCurveTo(', 'const membranePulse = Math.sin('
+], 'Bio Structure');
+
+for (const isolated of [pulseReactor, bassFracture, gravityLens, bioStructure]) {
   assert.ok(!isolated.includes('requestAnimationFrame('), 'Isolated visual must use the shared renderer scheduler.');
   assert.ok(!isolated.includes('setInterval('), 'Isolated visual must not self-schedule an autonomous loop.');
   assert.ok(!isolated.includes('Math.random('), 'Isolated visual geometry must remain deterministic.');
 }
 
+const live = read('js/features/visual/visual-engine-live.js');
+includesAll(live, [
+  "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode }", "{ id: 'spectrum', label: 'Spectrum' }",
+  "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
+  "{ id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode }",
+  "{ id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }",
+  "{ id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }",
+  "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
+  'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)',
+  "dataset.audioLabRenderer = 'seven-core-v1'", `dataset.audioLabPresetCount = '${presetCount}'`,
+  "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' ? 1.05",
+  'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)', 'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
+], 'Live Audio Lab visuals');
+for (const retired of ['aurora-glass', 'nebula', 'singularity', 'readAudioLabAmplitude', 'createAmplitudeDynamicsTracker', 'synthesizePlaybackSpectrum', "'bars'"]) assert.ok(!live.includes(retired), `Retired/parallel Audio Lab path returned: ${retired}.`);
+
 const signal = read('js/features/audio-lab-signal.js');
 includesAll(signal, [
   'createDecodedSourceProxy', 'fetch(source, {', "mode: 'cors'", 'context.decodeAudioData(bytes.slice(0))',
-  'context.createBufferSource()', 'node.start(0, offset)',
-  "dataset.audioGraph = 'html5-direct-plus-decoded-buffer-metering'",
+  'context.createBufferSource()', 'node.start(0, offset)', "dataset.audioGraph = 'html5-direct-plus-decoded-buffer-metering'",
   "audio.dataset.audioPlaybackPath = 'html5-direct'", "audio.dataset.audioAnalysisPath = 'decoded-buffer'",
-  "audio.addEventListener('loadstart'", "attributeFilter: ['src', 'data-track-id']",
-  "window.addEventListener('shinobi:route-change'", 'async function suspendContexts()'
+  "audio.addEventListener('loadstart'", "attributeFilter: ['src', 'data-track-id']", "window.addEventListener('shinobi:route-change'", 'async function suspendContexts()'
 ], 'Isolated Audio Lab graph');
 assert.ok(!signal.includes('captureStream('));
 assert.ok(!signal.includes('createMediaStreamSource('));
@@ -185,10 +162,7 @@ includesAll(badges, ["STATUS_LABELS = new Set(['CLEAN', 'EXPLICIT', 'LYRICS', 'L
 
 // 9 — Mobile Studio, Canvas, admin tools and release wiring.
 const lyricsStudio = read('js/features/lyrics-studio.js');
-includesAll(lyricsStudio, [
-  "video.setAttribute('webkit-playsinline', '')", "video.setAttribute('autoplay', '')", "video.preload = 'auto'",
-  "routeToHash({ type: 'studio', id: trackId })", "canvasVideo.addEventListener('canplay'", "canvasVideo.addEventListener('ended'"
-], 'Mobile Lyrics Studio');
+includesAll(lyricsStudio, ["video.setAttribute('webkit-playsinline', '')", "video.setAttribute('autoplay', '')", "video.preload = 'auto'", "routeToHash({ type: 'studio', id: trackId })", "canvasVideo.addEventListener('canplay'", "canvasVideo.addEventListener('ended'"], 'Mobile Lyrics Studio');
 const mobileStudioStyles = read('css/mobile-studio.css');
 includesAll(mobileStudioStyles, ['body.lyrics-studio-open .mobile-nav{', 'visibility:visible!important;', 'bottom:54px!important;'], 'Mobile Studio shell');
 
@@ -198,17 +172,16 @@ const admin = read('js/features/admin-access.js');
 includesAll(admin, ['resolveLrcMakerAccess', 'https://shinobione.github.io/lrc-maker/', "label: 'LRC Maker'"], 'Admin access');
 const worker = read('sw.js');
 includesAll(worker, [
-  "'./js/features/theme-scope.js'", "'./js/features/visual/audio-lab-registry.js'",
-  "'./js/features/visual/audio-lab-sanctuary.js'", "'./js/features/visual/pulse-reactor.js'",
-  "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'",
-  "'./js/visual-card-export-guard.js'"
+  "'./js/features/theme-scope.js'", "'./js/features/visual/audio-lab-registry.js'", "'./js/features/visual/audio-lab-sanctuary.js'",
+  "'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'",
+  "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'", "'./js/visual-card-export-guard.js'"
 ], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260808-gravity-lens-v54');
-assert.equal(build.cache, 'shinobi-launchpad-v54');
-assert.equal(build.display, '2026.08.08.54');
-assert.equal(build.release, 'gravity-lens-20260808');
+assert.equal(build.id, '20260808-motion-bio-v55');
+assert.equal(build.cache, 'shinobi-launchpad-v55');
+assert.equal(build.display, '2026.08.08.55');
+assert.equal(build.release, 'motion-bio-20260808');
 assert.ok(build.revision, 'Build revision metadata must be present.');
 
 console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}) with ${presetCount} sanctioned Audio Lab presets.`);

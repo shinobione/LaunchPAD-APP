@@ -8,6 +8,7 @@ import {
 import { drawPulseReactorMode } from './pulse-reactor.js';
 import { drawBassFractureMode } from './bass-fracture.js';
 import { drawGravityLensMode } from './gravity-lens.js';
+import { drawBioStructureMode } from './bio-structure.js';
 
 const DEFAULT_MODE = 'neon-shatter';
 const CUSTOM_MODES = [
@@ -15,7 +16,8 @@ const CUSTOM_MODES = [
   { id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode },
   { id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode },
   { id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode },
-  { id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }
+  { id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode },
+  { id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }
 ];
 const CONTROL_MODES = [
   { id: 'neon-shatter', label: 'Neon Shatter' },
@@ -23,7 +25,8 @@ const CONTROL_MODES = [
   { id: 'liquid-chrome', label: 'Liquid Chrome' },
   { id: 'pulse-reactor', label: 'Pulse Reactor' },
   { id: 'bass-fracture', label: 'Bass Fracture' },
-  { id: 'gravity-lens', label: 'Gravity Lens' }
+  { id: 'gravity-lens', label: 'Gravity Lens' },
+  { id: 'bio-structure', label: 'Bio Structure' }
 ];
 const CUSTOM_RENDERERS = new Map(CUSTOM_MODES.map(mode => [mode.id, mode.renderer]));
 const CUSTOM_MODE_IDS = CUSTOM_MODES.map(mode => mode.id);
@@ -46,7 +49,7 @@ function prepareCanvas(canvas, mode) {
   const mobile = mobileVisualDevice(rect.width);
   const dprCap = mobile
     ? mode === 'neon-shatter' ? 1
-      : mode === 'bass-fracture' || mode === 'gravity-lens' ? 1.05
+      : mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' ? 1.05
         : mode === 'pulse-reactor' ? 1.1
           : 1.35
     : 2;
@@ -175,9 +178,9 @@ export function createVisualController(options) {
   });
   applyMode(DEFAULT_MODE, defaultButton);
 
-  document.documentElement.dataset.audioLabRenderer = 'six-core-v1';
+  document.documentElement.dataset.audioLabRenderer = 'seven-core-v1';
   document.documentElement.dataset.audioLabFeed = 'spectrum-shared';
-  document.documentElement.dataset.audioLabPresetCount = '6';
+  document.documentElement.dataset.audioLabPresetCount = '7';
 
   function readReactiveFrame() {
     if (audio.paused || audio.ended) {

@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD — catalog guide
 
-> Current application build: `2026.08.08.54` — release `gravity-lens-20260808`.
+> Current application build: `2026.08.08.55` — release `motion-bio-20260808`.
 
 The production catalog is managed in Cloudflare R2 through the private LaunchPAD Track Manager. `js/catalog.js` contains album/editorial presentation data only; production track metadata and media are not maintained by hand in the PWA.
 
@@ -95,7 +95,7 @@ Review every detected group before confirmation, especially audio/cover/lyrics/v
 
 ## Audio Lab note
 
-Audio Lab is not a catalog-authoring feature, but media changes should still be smoke-tested there. Build 54 exposes **Neon Shatter, Spectrum, Liquid Chrome, Pulse Reactor, Bass Fracture and Gravity Lens**. Spectrum remains the protected reference FFT view; every custom visual consumes Spectrum's analyser first. Pulse Reactor now favors a readable dominant core and selective peak breakup. Bass Fracture uses fewer desktop plates/cracks and stronger mobile displacement instead of more geometry. Gravity Lens bends orbital bands and curved streams from the same shared FFT. The separately fetched/decoded analysis copy remains fallback-only while the audible HTML5 player stays outside the analysis graph.
+Audio Lab is not a catalog-authoring feature, but media changes should still be smoke-tested there. Build 55 exposes **Neon Shatter, Spectrum, Liquid Chrome, Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure**. Spectrum remains the protected reference FFT view; every custom visual consumes Spectrum's analyser first. Pulse Reactor, Bass Fracture and Gravity Lens now use deterministic spring memory for more amplitude/inertia without extra geometry; spring targets fall back to zero on pause. Bio Structure adds a sparse living spine/rib mesh driven by bass/mids/highs with a mobile-first budget. The separately fetched/decoded analysis copy remains fallback-only while the audible HTML5 player stays outside the analysis graph.
 
 ## Repository validation
 

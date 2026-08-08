@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.08.54` — release `gravity-lens-20260808`.
+> Current application build: `2026.08.08.55` — release `motion-bio-20260808`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -36,20 +36,20 @@ GitHub main
 
 See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the authoritative hosting map.
 
-## Build 54 highlights
+## Build 55 highlights
 
-Build 54 keeps the shared-Spectrum FFT architecture and focuses on **readability before spectacle** while adding one new effect:
+Build 55 keeps the proven shared-Spectrum FFT pipeline and adds a **motion & elasticity layer** without raising mobile geometry budgets:
 
-- **Neon Shatter**, **Spectrum** and **Liquid Chrome** remain untouched as the validated baseline.
-- **Pulse Reactor** is simplified from 5→4 desktop rings, 32→24 segments and 30→18 spokes. Mobile keeps 3 rings but drops to 14 segments / 10 spokes. Strong bass peaks still break the reactor, but only a deterministic subset of segments de-coheres so the main silhouette remains readable.
-- **Bass Fracture** keeps large tectonic plates but reduces desktop sectors/cracks to 16 / 12. Mobile stays at 2 layers / 12 sectors, while displacement is amplified with a dedicated `motionScale` so the effect feels less timid without increasing GPU geometry.
-- **Gravity Lens** becomes the sixth sanctioned preset. Bass/kicks deepen the lens, mids shear orbital bands, highs/transients light caustic arcs and curved streams, and the central horizon remains the visual anchor.
-- Gravity Lens mobile budget: 4 bands / 12 arcs / 8 streams at DPR 1.05. Desktop uses 6 / 20 / 14.
-- All custom visuals still consume the exact same analyser as Spectrum first; decoded analysis remains fallback-only.
-- Pulse Reactor, Bass Fracture and Gravity Lens have no private animation loop and no random motion. Pause/silence settles instead of becoming a screensaver.
-- The PWA cache advances to v54 and includes `gravity-lens.js`, preventing stale Build 53 visual code from masking the new preset.
-
-Recent releases also restored mobile Lyrics → Studio routing, persistent mobile navigation in Studio, resilient Canvas looping, CORS-safe Visual Card export and single-owner track routing.
+- **Spectrum**, **Neon Shatter** and **Liquid Chrome** remain untouched as the trusted baseline.
+- A shared `motion-spring.js` helper adds short-memory spring channels, velocity/overshoot and signal-gated phase. It never owns a RAF/timer loop.
+- **Pulse Reactor** keeps 3/4 rings, 14/24 segments and 10/18 spokes, but the core breathes more, ring motion propagates with phase delay and segments/spokes gain elastic wobble instead of rigid pose changes.
+- **Bass Fracture** keeps 2/3 layers, 12/16 sectors and 8/12 cracks. Mobile motion scale rises to `1.58`, while spring rupture, plate sway and short crack propagation make the mass break, glide and rebound without adding geometry.
+- **Gravity Lens** keeps 4/6 bands, 12/20 arcs and 8/14 streams. Spring warp/shear plus signal-gated precession, breathing and stream drift make the field feel alive while the horizon stays visually anchored.
+- **Bio Structure** becomes the seventh sanctioned preset: a sparse living spine/rib organism where bass inflates the body, mids flex branches and highs travel as luminous nerve impulses.
+- Bio Structure mobile budget is 5 ribs / 8 vein impulses / 6 spine nodes at DPR 1.05; desktop uses 8 / 14 / 9.
+- All custom effects still read Spectrum's analyser first. Decoded analysis remains fallback-only and the audible HTML5 player stays outside the analysis graph.
+- Pause/silence drives the spring targets back to zero; residual movement decays naturally instead of becoming an autonomous screensaver.
+- The PWA cache advances to v55 and includes `motion-spring.js` + `bio-structure.js`.
 
 ## Canonical media model
 
@@ -135,5 +135,6 @@ Useful documents:
 7. Spectrum remains the Audio Lab reference path; every visual effect must consume the real FFT feed rather than independent loop animation.
 8. Add Audio Lab presets one at a time, with desktop and mobile budgets defined before merge.
 9. Prefer deterministic, signal-derived geometry over random particles when a visual must remain cheap on mobile.
-10. Favor readability: reduce simultaneous primitives before reducing reaction amplitude.
-11. Historical-looking compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.
+10. Favor readability and motion amplitude: reduce simultaneous primitives before reducing reaction amplitude.
+11. Motion memory may add overshoot/inertia, but it must decay from real signal targets and never become an autonomous visual loop.
+12. Historical-looking compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.

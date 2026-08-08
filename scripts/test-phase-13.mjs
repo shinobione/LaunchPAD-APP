@@ -19,16 +19,11 @@ for (const required of [
 
 const visuals = read('js/features/visual/visual-engine-v2.js');
 for (const required of [
-  "{ id: 'spectrum', label: 'Spectrum' }",
-  "let mode = 'spectrum'",
-  'function drawSpectrum(',
-  'function readSpectrum(target)',
-  'analyser.getByteFrequencyData(target)',
-  'const delegatedModeSet = new Set(delegatedModes)',
-  'const delegated = delegatedModeSet.has(mode);',
+  "{ id: 'spectrum', label: 'Spectrum' }", "let mode = 'spectrum'", 'function drawSpectrum(',
+  'function readSpectrum(target)', 'analyser.getByteFrequencyData(target)',
+  'const delegatedModeSet = new Set(delegatedModes)', 'const delegated = delegatedModeSet.has(mode);',
   "if (mode === 'spectrum' && homeActive && !externalHomeRenderer && !delegated)",
-  "if (mode === 'spectrum' && labActive && !delegated)",
-  'return { resume, setMode, readSpectrum }'
+  "if (mode === 'spectrum' && labActive && !delegated)", 'return { resume, setMode, readSpectrum }'
 ]) assert.ok(visuals.includes(required), `Phase 13 Spectrum reference engine is missing ${required}.`);
 for (const forbidden of ['drawSingularity(', 'drawNeonShatter(', 'drawLiquidChrome(', 'drawNebula(', 'hex-reactor']) {
   assert.ok(!visuals.includes(forbidden), `Retired base Audio Lab renderer remains: ${forbidden}`);
@@ -36,10 +31,8 @@ for (const forbidden of ['drawSingularity(', 'drawNeonShatter(', 'drawLiquidChro
 
 const coreVisuals = read('js/features/visual/visual-engine-core-modes.js');
 for (const required of [
-  'drawNeonShatterV2Mode(', 'drawLiquidChromeV2Mode(',
-  'const impact = clamp(', 'const pulse = clamp(',
-  'const gatedDrift = time * activity * .16',
-  'const phase = time * activity * .2',
+  'drawNeonShatterV2Mode(', 'drawLiquidChromeV2Mode(', 'const impact = clamp(', 'const pulse = clamp(',
+  'const gatedDrift = time * activity * .16', 'const phase = time * activity * .2',
   'const distance = baseDistance * (.58 + impact * 1.48 + localDrive * .92)',
   'spectralDeform = spectral * .092 + neighbour * .032'
 ]) assert.ok(coreVisuals.includes(required), `Audio Lab FFT renderer is missing ${required}.`);
@@ -48,57 +41,46 @@ for (const forbidden of ['drawAuroraGlassMode', 'drawSingularityLiveMode', 'draw
 }
 assert.ok(!fs.existsSync('js/features/visual/visual-engine-hex-reactor.js'));
 
+const motion = read('js/features/visual/motion-spring.js');
+for (const required of ['beginMotionFrame', 'springChannel', 'motionPhase']) assert.ok(motion.includes(required));
+
 const reactor = read('js/features/visual/pulse-reactor.js');
-for (const required of [
-  'export function drawPulseReactorMode(',
-  'const ringCount = mobile ? 3 : 4',
-  'const segmentCount = mobile ? 14 : 24',
-  'const spokeCount = mobile ? 10 : 18',
-  'const shardCount = mobile ? 4 : 7',
-  'const breakMask = clamp(',
-  'const drift = time * activity * .055'
-]) assert.ok(reactor.includes(required), `Pulse Reactor renderer is missing ${required}.`);
+for (const required of ['export function drawPulseReactorMode(', 'const ringCount = mobile ? 3 : 4', 'const segmentCount = mobile ? 14 : 24', 'const spokeCount = mobile ? 10 : 18', "springChannel(motion, 'impact'", 'motionPhase(time, activity, .31)']) {
+  assert.ok(reactor.includes(required), `Pulse Reactor renderer is missing ${required}.`);
+}
 
 const fracture = read('js/features/visual/bass-fracture.js');
-for (const required of [
-  'export function drawBassFractureMode(',
-  'const motionScale = mobile ? 1.42 : 1.08',
-  'const layerCount = mobile ? 2 : 3',
-  'const sectorCount = mobile ? 12 : 16',
-  'const crackCount = mobile ? 8 : 12',
-  'const drift = time * activity * .03'
-]) assert.ok(fracture.includes(required), `Bass Fracture renderer is missing ${required}.`);
+for (const required of ['export function drawBassFractureMode(', 'const motionScale = mobile ? 1.58 : 1.18', 'const layerCount = mobile ? 2 : 3', 'const sectorCount = mobile ? 12 : 16', 'const crackCount = mobile ? 8 : 12', "springChannel(motion, 'rupture'"]) {
+  assert.ok(fracture.includes(required), `Bass Fracture renderer is missing ${required}.`);
+}
 
 const lens = read('js/features/visual/gravity-lens.js');
-for (const required of [
-  'export function drawGravityLensMode(',
-  'const bandCount = mobile ? 4 : 6',
-  'const arcCount = mobile ? 12 : 20',
-  'const streamCount = mobile ? 8 : 14',
-  'const drift = time * activity * .032',
-  'context.quadraticCurveTo('
-]) assert.ok(lens.includes(required), `Gravity Lens renderer is missing ${required}.`);
+for (const required of ['export function drawGravityLensMode(', 'const bandCount = mobile ? 4 : 6', 'const arcCount = mobile ? 12 : 20', 'const streamCount = mobile ? 8 : 14', "springChannel(motion, 'warp'", 'context.quadraticCurveTo(']) {
+  assert.ok(lens.includes(required), `Gravity Lens renderer is missing ${required}.`);
+}
+
+const bio = read('js/features/visual/bio-structure.js');
+for (const required of ['export function drawBioStructureMode(', 'const ribCount = mobile ? 5 : 8', 'const veinCount = mobile ? 8 : 14', 'const nodeCount = mobile ? 6 : 9', "springChannel(motion, 'breath'", 'context.quadraticCurveTo(']) {
+  assert.ok(bio.includes(required), `Bio Structure renderer is missing ${required}.`);
+}
 
 const registry = read('js/features/visual/audio-lab-registry.js');
 const presetCount = (registry.match(/Object\.freeze\(\{ id:/g) || []).length;
-assert.equal(presetCount, 6, 'Phase 13 Audio Lab must expose the Build 54 six-preset set.');
+assert.equal(presetCount, 7, 'Phase 13 Audio Lab must expose the Build 55 seven-preset set.');
 
 const liveVisuals = read('js/features/visual/visual-engine-live.js');
 for (const required of [
   "const DEFAULT_MODE = 'neon-shatter'",
   "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode }",
-  "{ id: 'spectrum', label: 'Spectrum' }",
-  "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
+  "{ id: 'spectrum', label: 'Spectrum' }", "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
   "{ id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode }",
   "{ id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }",
   "{ id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }",
-  'base.readSpectrum?.(raw)',
-  'reading = readAudioLabSpectrum(raw)',
-  'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)',
-  'function boostLiveFeatures(features)',
-  "dataset.audioLabRenderer = 'six-core-v1'",
-  "dataset.audioLabPresetCount = '6'",
-  "mode === 'bass-fracture' || mode === 'gravity-lens' ? 1.05",
+  "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
+  'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)',
+  'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)', 'function boostLiveFeatures(features)',
+  "dataset.audioLabRenderer = 'seven-core-v1'", "dataset.audioLabPresetCount = '7'",
+  "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' ? 1.05",
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60', 'const TELEMETRY_INTERVAL = 120'
 ]) assert.ok(liveVisuals.includes(required), `Live Audio Lab renderer is missing ${required}.`);
 for (const forbidden of ['aurora-glass', 'nebula', 'singularity', 'wave-cathedral', "id: 'circle'", "'bars'", 'hex-reactor', 'readAudioLabAmplitude', 'createAmplitudeDynamicsTracker', 'synthesizePlaybackSpectrum']) {
@@ -112,12 +94,10 @@ for (const required of ['createAudioReactivityTracker','createAmplitudeDynamicsT
 
 const signal = read('js/features/audio-lab-signal.js');
 for (const required of [
-  'initAudioLabSignalBridge', 'readAudioLabSpectrum', 'readAudioLabAmplitude',
-  'createDecodedSourceProxy', 'context.decodeAudioData(bytes.slice(0))',
-  'context.createBufferSource()',
+  'initAudioLabSignalBridge', 'readAudioLabSpectrum', 'readAudioLabAmplitude', 'createDecodedSourceProxy',
+  'context.decodeAudioData(bytes.slice(0))', 'context.createBufferSource()',
   "document.documentElement.dataset.audioGraph = 'html5-direct-plus-decoded-buffer-metering'",
-  "audio.dataset.audioPlaybackPath = 'html5-direct'",
-  "audio.dataset.audioAnalysisPath = 'decoded-buffer'",
+  "audio.dataset.audioPlaybackPath = 'html5-direct'", "audio.dataset.audioAnalysisPath = 'decoded-buffer'",
   "audio.addEventListener('playing', recover)", "window.addEventListener('shinobi:route-change'",
   'async function suspendContexts()', "document.documentElement.dataset.audioLabSignal"
 ]) assert.ok(signal.includes(required), `Audio Lab signal recovery is missing ${required}.`);
@@ -141,16 +121,17 @@ assert.ok(engine.includes('initPhase13({ audio });'));
 
 const worker = read('sw.js');
 for (const required of [
-  "'./js/features/audio-lab-signal.js'", "'./js/features/feature-13.js'",
-  "'./js/features/visual/audio-reactivity.js'", "'./js/features/visual/visual-engine-v2.js'",
-  "'./js/features/visual/visual-engine-core-modes.js'", "'./js/features/visual/pulse-reactor.js'",
+  "'./js/features/audio-lab-signal.js'", "'./js/features/feature-13.js'", "'./js/features/visual/audio-reactivity.js'",
+  "'./js/features/visual/visual-engine-v2.js'", "'./js/features/visual/visual-engine-core-modes.js'",
+  "'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'",
   "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'",
-  "'./js/features/visual/visual-engine-live.js'", "event.data?.type === 'GET_RELEASE'"
+  "'./js/features/visual/bio-structure.js'", "'./js/features/visual/visual-engine-live.js'",
+  "event.data?.type === 'GET_RELEASE'"
 ]) assert.ok(worker.includes(required));
 
 const build = assertCurrentBuild('Phase 13/current release');
-assert.ok(build.number >= 54, `Unexpected pre-Build-54 release ${build.display}.`);
-assert.equal(build.release, 'gravity-lens-20260808');
+assert.ok(build.number >= 55, `Unexpected pre-Build-55 release ${build.display}.`);
+assert.equal(build.release, 'motion-bio-20260808');
 
 await import('./test-milestone-4.mjs');
 await import('./test-milestone-6.mjs');
