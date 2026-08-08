@@ -15,16 +15,13 @@ const retiredIds = [
 const registry = read('js/features/visual/audio-lab-registry.js');
 for (const required of [
   "const AUDIO_LAB_DEFAULT_MODE = 'neon-shatter'",
-  "id: 'neon-shatter', label: 'Neon Shatter'",
-  "id: 'spectrum', label: 'Spectrum'",
-  "id: 'liquid-chrome', label: 'Liquid Chrome'",
-  "id: 'pulse-reactor', label: 'Pulse Reactor'",
-  "id: 'bass-fracture', label: 'Bass Fracture'",
-  "id: 'gravity-lens', label: 'Gravity Lens'",
-  "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum'])"
+  "id: 'neon-shatter', label: 'Neon Shatter'", "id: 'spectrum', label: 'Spectrum'",
+  "id: 'liquid-chrome', label: 'Liquid Chrome'", "id: 'pulse-reactor', label: 'Pulse Reactor'",
+  "id: 'bass-fracture', label: 'Bass Fracture'", "id: 'gravity-lens', label: 'Gravity Lens'",
+  "id: 'bio-structure', label: 'Bio Structure'", "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum'])"
 ]) assert.ok(registry.includes(required), `Audio Lab registry is missing ${required}.`);
 for (const forbidden of retiredIds) assert.ok(!registry.includes(forbidden), `Retired preset leaked into registry: ${forbidden}.`);
-assert.equal((registry.match(/Object\.freeze\(\{ id:/g) || []).length, 6, 'Audio Lab must expose exactly six validated presets.');
+assert.equal((registry.match(/Object\.freeze\(\{ id:/g) || []).length, 7, 'Audio Lab must expose exactly seven validated presets.');
 
 const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
@@ -33,54 +30,45 @@ for (const required of [
   "{ id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode }",
   "{ id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }",
   "{ id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }",
+  "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
   "{ id: 'spectrum', label: 'Spectrum' }",
-  'base.readSpectrum?.(raw)',
-  'reading = readAudioLabSpectrum(raw)',
-  "document.documentElement.dataset.audioLabRenderer = 'six-core-v1'",
-  "document.documentElement.dataset.audioLabPresetCount = '6'",
-  "mode === 'bass-fracture' || mode === 'gravity-lens' ? 1.05"
+  'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)',
+  "document.documentElement.dataset.audioLabRenderer = 'seven-core-v1'",
+  "document.documentElement.dataset.audioLabPresetCount = '7'",
+  "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' ? 1.05"
 ]) assert.ok(live.includes(required), `Audio Lab integration is missing ${required}.`);
 
 const core = read('js/features/visual/visual-engine-core-modes.js');
-for (const required of [
-  'export function drawNeonShatterV2Mode(',
-  'export function drawLiquidChromeV2Mode(',
-  'const gatedDrift = time * activity * .16',
-  'const phase = time * activity * .2'
-]) assert.ok(core.includes(required), `Validated baseline renderer is missing ${required}.`);
+for (const required of ['export function drawNeonShatterV2Mode(', 'export function drawLiquidChromeV2Mode(', 'const gatedDrift = time * activity * .16', 'const phase = time * activity * .2']) {
+  assert.ok(core.includes(required), `Validated baseline renderer is missing ${required}.`);
+}
+
+const motion = read('js/features/visual/motion-spring.js');
+for (const required of ['export function beginMotionFrame(', 'export function springChannel(', 'export function motionPhase(']) {
+  assert.ok(motion.includes(required), `Motion helper is missing ${required}.`);
+}
 
 const reactor = read('js/features/visual/pulse-reactor.js');
-for (const required of [
-  'export function drawPulseReactorMode(',
-  'const ringCount = mobile ? 3 : 4',
-  'const segmentCount = mobile ? 14 : 24',
-  'const spokeCount = mobile ? 10 : 18',
-  'const shardCount = mobile ? 4 : 7',
-  'const breakMask = clamp(',
-  'const segmentFracture = fracture * breakMask'
-]) assert.ok(reactor.includes(required), `Pulse Reactor contract is missing ${required}.`);
+for (const required of ['export function drawPulseReactorMode(', 'const ringCount = mobile ? 3 : 4', 'const segmentCount = mobile ? 14 : 24', "springChannel(motion, 'impact'", 'const elasticWobble = Math.sin(']) {
+  assert.ok(reactor.includes(required), `Pulse Reactor contract is missing ${required}.`);
+}
 
 const fracture = read('js/features/visual/bass-fracture.js');
-for (const required of [
-  'export function drawBassFractureMode(',
-  'const motionScale = mobile ? 1.42 : 1.08',
-  'const layerCount = mobile ? 2 : 3',
-  'const sectorCount = mobile ? 12 : 16',
-  'const crackCount = mobile ? 8 : 12'
-]) assert.ok(fracture.includes(required), `Bass Fracture contract is missing ${required}.`);
+for (const required of ['export function drawBassFractureMode(', 'const motionScale = mobile ? 1.58 : 1.18', 'const layerCount = mobile ? 2 : 3', 'const sectorCount = mobile ? 12 : 16', 'const crackCount = mobile ? 8 : 12', "springChannel(motion, 'rupture'"]) {
+  assert.ok(fracture.includes(required), `Bass Fracture contract is missing ${required}.`);
+}
 
 const lens = read('js/features/visual/gravity-lens.js');
-for (const required of [
-  'export function drawGravityLensMode(',
-  'const bandCount = mobile ? 4 : 6',
-  'const arcCount = mobile ? 12 : 20',
-  'const streamCount = mobile ? 8 : 14',
-  'const warp = clamp(',
-  'const caustic = clamp(',
-  'context.quadraticCurveTo('
-]) assert.ok(lens.includes(required), `Gravity Lens contract is missing ${required}.`);
+for (const required of ['export function drawGravityLensMode(', 'const bandCount = mobile ? 4 : 6', 'const arcCount = mobile ? 12 : 20', 'const streamCount = mobile ? 8 : 14', "springChannel(motion, 'warp'", 'const streamDrift = Math.sin(']) {
+  assert.ok(lens.includes(required), `Gravity Lens contract is missing ${required}.`);
+}
 
-for (const isolated of [reactor, fracture, lens]) {
+const bio = read('js/features/visual/bio-structure.js');
+for (const required of ['export function drawBioStructureMode(', 'const ribCount = mobile ? 5 : 8', 'const veinCount = mobile ? 8 : 14', 'const nodeCount = mobile ? 6 : 9', "springChannel(motion, 'breath'", 'context.quadraticCurveTo(']) {
+  assert.ok(bio.includes(required), `Bio Structure contract is missing ${required}.`);
+}
+
+for (const isolated of [reactor, fracture, lens, bio]) {
   assert.ok(!isolated.includes('setInterval('));
   assert.ok(!isolated.includes('requestAnimationFrame('));
   assert.ok(!isolated.includes('Math.random('));
@@ -111,14 +99,13 @@ assert.ok(!signal.includes('createMediaStreamSource('));
 
 const worker = read('sw.js');
 for (const required of [
-  "'./js/features/visual/audio-reactivity.js'",
-  "'./js/features/visual/audio-lab-registry.js'",
-  "'./js/features/visual/pulse-reactor.js'",
-  "'./js/features/visual/bass-fracture.js'",
-  "'./js/features/visual/gravity-lens.js'"
+  "'./js/features/visual/audio-reactivity.js'", "'./js/features/visual/audio-lab-registry.js'",
+  "'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'",
+  "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'",
+  "'./js/features/visual/bio-structure.js'"
 ]) assert.ok(worker.includes(required), `PWA shell is missing ${required}.`);
 
 const build = assertCurrentBuild('Audio Lab current build');
-assert.equal(build.display, '2026.08.08.54');
-assert.equal(build.release, 'gravity-lens-20260808');
-console.log(`Audio Lab exposes six shared-FFT presets under ${build.display}.`);
+assert.equal(build.display, '2026.08.08.55');
+assert.equal(build.release, 'motion-bio-20260808');
+console.log(`Audio Lab exposes seven shared-FFT presets with elastic motion under ${build.display}.`);
