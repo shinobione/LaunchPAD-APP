@@ -4,7 +4,7 @@
 > LaunchPAD reference build: `2026.08.08.66`  
 > LaunchPAD reference release: `studio-metadata-validation-20260808`
 
-Status: **Phases 0–4 proven; Phase 5 SonicTrace sidecar contract implemented in the v5.14/v1.6 source candidate.** This contract defines shared identity, data ownership and safe integration boundaries for LaunchPAD, Track Manager, SonicTrace, LRC Maker and SHINOBIWAN Studio.
+Status: **Phases 0–5 proven; Phase 6 canonical Lyrics workflow implemented in the v5.15/v1.7 source candidate.** This contract defines shared identity, data ownership and safe integration boundaries for LaunchPAD, Track Manager, SonicTrace, LRC Maker and SHINOBIWAN Studio.
 
 ## 1. Product boundary
 

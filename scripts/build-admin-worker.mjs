@@ -42,21 +42,21 @@ if (injections.length) {
 // trackManagerVersion: "5.11"
 // const STUDIO_BRIDGE_VERSION = "1.3";
 // write: ["metadata"]
-const staleVersions = ['4.5','4.6','4.7','4.8','4.9','5.0','5.1','5.2','5.3','5.4','5.5','5.6','5.7','5.8','5.9','5.10','5.11','5.12','5.13'];
+const staleVersions = ['4.5','4.6','4.7','4.8','4.9','5.0','5.1','5.2','5.3','5.4','5.5','5.6','5.7','5.8','5.9','5.10','5.11','5.12','5.13','5.14'];
 for (const stale of staleVersions) {
-  source = source.replaceAll(`version: "${stale}"`, 'version: "5.14"');
-  source = source.replaceAll(`<span class="version-pill">v${stale}</span>`, '<span class="version-pill">v5.14</span>');
-  source = source.replaceAll(`version.textContent='v${stale}'`, "version.textContent='v5.14'");
+  source = source.replaceAll(`version: "${stale}"`, 'version: "5.15"');
+  source = source.replaceAll(`<span class="version-pill">v${stale}</span>`, '<span class="version-pill">v5.15</span>');
+  source = source.replaceAll(`version.textContent='v${stale}'`, "version.textContent='v5.15'");
 }
-source = source.replaceAll('trackManagerVersion: "5.8"', 'trackManagerVersion: "5.14"');
-source = source.replace('const STUDIO_BRIDGE_VERSION = "1.0";', 'const STUDIO_BRIDGE_VERSION = "1.6";');
+source = source.replaceAll('trackManagerVersion: "5.8"', 'trackManagerVersion: "5.15"');
+source = source.replace('const STUDIO_BRIDGE_VERSION = "1.0";', 'const STUDIO_BRIDGE_VERSION = "1.7";');
 source = source.replace(
   'read: ["tracks", "track"],\n            write: [],',
-  'read: ["tracks", "track", "lyrics", "sonictrace-analysis", "sonictrace-catalog"],\n            validate: ["metadata", "lyrics"],\n            write: ["metadata", "lyrics", "sonictrace-analysis"],\n            manage: ["track-create", "assets", "catalog-rebuild"],'
+  'read: ["tracks", "track", "lyrics", "lyrics-context", "sonictrace-analysis", "sonictrace-catalog"],\n            validate: ["metadata", "lyrics", "lyrics-sync"],\n            write: ["metadata", "lyrics", "lyrics-sync", "sonictrace-analysis"],\n            manage: ["track-create", "assets", "catalog-rebuild"],'
 );
 
 const legacyWriteGuard = `      if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {\n        enforceSameOrigin(request, url);\n      }`;
-const studioAwareWriteGuard = `      const studioMetadataValidationRoute = studioMetadataValidationMatch(url.pathname);\n      const studioMetadataSaveRoute = studioMetadataSaveMatch(url.pathname);\n      const studioLyricsReadRoute = studioLyricsReadMatch(url.pathname);\n      const studioLyricsValidationRoute = studioLyricsValidationMatch(url.pathname);\n      const studioLyricsSaveRoute = studioLyricsSaveMatch(url.pathname);\n      const studioTrackCreateRoute = studioTrackCreateMatch(url.pathname);\n      const studioAssetUploadRoute = studioAssetUploadMatch(url.pathname);\n      const studioAssetDeleteRoute = studioAssetDeleteMatch(url.pathname);\n      const studioCatalogRebuildRoute = studioCatalogRebuildMatch(url.pathname);\n      const studioSonicTraceTrackRoute = studioSonicTraceTrackMatch(url.pathname);\n      const studioSonicTraceCatalogRoute = studioSonicTraceCatalogMatch(url.pathname);\n      const isStudioMetadataValidation = Boolean(studioMetadataValidationRoute && request.method === "POST");\n      const isStudioMetadataSave = Boolean(studioMetadataSaveRoute && request.method === "POST");\n      const isStudioLyricsValidation = Boolean(studioLyricsValidationRoute && request.method === "POST");\n      const isStudioLyricsSave = Boolean(studioLyricsSaveRoute && request.method === "POST");\n      const isStudioTrackCreate = Boolean(studioTrackCreateRoute && request.method === "POST");\n      const isStudioAssetUpload = Boolean(studioAssetUploadRoute && request.method === "POST");\n      const isStudioAssetDelete = Boolean(studioAssetDeleteRoute && request.method === "POST");\n      const isStudioCatalogRebuild = Boolean(studioCatalogRebuildRoute && request.method === "POST");\n      const isStudioSonicTraceSave = Boolean(studioSonicTraceTrackRoute && request.method === "POST");\n\n      if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {\n        if (isStudioMetadataValidation) assertStudioMetadataValidationRequest(request);\n        else if (isStudioMetadataSave) assertStudioMetadataSaveRequest(request);\n        else if (isStudioLyricsValidation || isStudioLyricsSave) assertStudioLyricsPostRequest(request);\n        else if (isStudioTrackCreate || isStudioAssetDelete || isStudioCatalogRebuild || isStudioSonicTraceSave) assertStudioPhase4OperationRequest(request, "json");\n        else if (isStudioAssetUpload) assertStudioPhase4OperationRequest(request, "upload");\n        else enforceSameOrigin(request, url);\n      }`;
+const studioAwareWriteGuard = `      const studioMetadataValidationRoute = studioMetadataValidationMatch(url.pathname);\n      const studioMetadataSaveRoute = studioMetadataSaveMatch(url.pathname);\n      const studioLyricsReadRoute = studioLyricsReadMatch(url.pathname);\n      const studioLyricsValidationRoute = studioLyricsValidationMatch(url.pathname);\n      const studioLyricsSaveRoute = studioLyricsSaveMatch(url.pathname);\n      const studioLyricsContextRoute = studioLyricsContextMatch(url.pathname);\n      const studioLyricsSyncValidationRoute = studioLyricsSyncValidationMatch(url.pathname);\n      const studioLyricsSyncSaveRoute = studioLyricsSyncSaveMatch(url.pathname);\n      const studioTrackCreateRoute = studioTrackCreateMatch(url.pathname);\n      const studioAssetUploadRoute = studioAssetUploadMatch(url.pathname);\n      const studioAssetDeleteRoute = studioAssetDeleteMatch(url.pathname);\n      const studioCatalogRebuildRoute = studioCatalogRebuildMatch(url.pathname);\n      const studioSonicTraceTrackRoute = studioSonicTraceTrackMatch(url.pathname);\n      const studioSonicTraceCatalogRoute = studioSonicTraceCatalogMatch(url.pathname);\n      const isStudioMetadataValidation = Boolean(studioMetadataValidationRoute && request.method === "POST");\n      const isStudioMetadataSave = Boolean(studioMetadataSaveRoute && request.method === "POST");\n      const isStudioLyricsValidation = Boolean(studioLyricsValidationRoute && request.method === "POST");\n      const isStudioLyricsSave = Boolean(studioLyricsSaveRoute && request.method === "POST");\n      const isStudioLyricsSyncValidation = Boolean(studioLyricsSyncValidationRoute && request.method === "POST");\n      const isStudioLyricsSyncSave = Boolean(studioLyricsSyncSaveRoute && request.method === "POST");\n      const isStudioTrackCreate = Boolean(studioTrackCreateRoute && request.method === "POST");\n      const isStudioAssetUpload = Boolean(studioAssetUploadRoute && request.method === "POST");\n      const isStudioAssetDelete = Boolean(studioAssetDeleteRoute && request.method === "POST");\n      const isStudioCatalogRebuild = Boolean(studioCatalogRebuildRoute && request.method === "POST");\n      const isStudioSonicTraceSave = Boolean(studioSonicTraceTrackRoute && request.method === "POST");\n\n      if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {\n        if (isStudioMetadataValidation) assertStudioMetadataValidationRequest(request);\n        else if (isStudioMetadataSave) assertStudioMetadataSaveRequest(request);\n        else if (isStudioLyricsValidation || isStudioLyricsSave || isStudioLyricsSyncValidation || isStudioLyricsSyncSave) assertStudioLyricsPostRequest(request);\n        else if (isStudioTrackCreate || isStudioAssetDelete || isStudioCatalogRebuild || isStudioSonicTraceSave) assertStudioPhase4OperationRequest(request, "json");\n        else if (isStudioAssetUpload) assertStudioPhase4OperationRequest(request, "upload");\n        else enforceSameOrigin(request, url);\n      }`;
 if (!source.includes(legacyWriteGuard)) throw new Error('Unable to locate the Track Manager same-origin write guard.');
 source = source.replace(legacyWriteGuard, studioAwareWriteGuard);
 
@@ -64,6 +64,34 @@ const studioTrackReadRoute = `      const studioTrackMatch = url.pathname.match(
 const studioRoutes = `${studioTrackReadRoute}\n\n      if (studioLyricsReadRoute && request.method === "GET") {\n        assertStudioReadOrigin(request);\n        return withStudioCors(request, await getStudioTrackLyrics(studioLyricsReadRoute[1], env, user));\n      }\n\n      if (studioMetadataValidationRoute && request.method === "POST") {\n        return withStudioCors(request, await validateStudioTrackMetadata(studioMetadataValidationRoute[1], request, env, user));\n      }\n\n      if (studioMetadataSaveRoute && request.method === "POST") {\n        return withStudioCors(request, await saveStudioTrackMetadata(studioMetadataSaveRoute[1], request, env, user));\n      }\n\n      if (studioLyricsValidationRoute && request.method === "POST") {\n        return withStudioCors(request, await validateStudioTrackLyrics(studioLyricsValidationRoute[1], request, env, user));\n      }\n\n      if (studioLyricsSaveRoute && request.method === "POST") {\n        return withStudioCors(request, await saveStudioTrackLyrics(studioLyricsSaveRoute[1], request, env, user));\n      }\n\n      if (studioTrackCreateRoute && request.method === "POST") {\n        return withStudioCors(request, await createStudioTrack(request, env, user));\n      }\n\n      if (studioAssetUploadRoute && request.method === "POST") {\n        return withStudioCors(request, await uploadStudioTrackAsset(studioAssetUploadRoute[1], studioAssetUploadRoute[2], request, env, user));\n      }\n\n      if (studioAssetDeleteRoute && request.method === "POST") {\n        return withStudioCors(request, await deleteStudioTrackAsset(studioAssetDeleteRoute[1], studioAssetDeleteRoute[2], request, env, user));\n      }\n\n      if (studioCatalogRebuildRoute && request.method === "POST") {\n        return withStudioCors(request, await rebuildStudioCatalog(request, env, user));\n      }\n\n      if (studioSonicTraceTrackRoute && request.method === "GET") {\n        assertStudioReadOrigin(request);\n        return withStudioCors(request, await getStudioSonicTraceAnalysis(studioSonicTraceTrackRoute[1], env, user));\n      }\n\n      if (studioSonicTraceTrackRoute && request.method === "POST") {\n        return withStudioCors(request, await saveStudioSonicTraceAnalysis(studioSonicTraceTrackRoute[1], request, env, user));\n      }\n\n      if (studioSonicTraceCatalogRoute && request.method === "GET") {\n        assertStudioReadOrigin(request);\n        return withStudioCors(request, await getStudioSonicTraceCatalog(env, user));\n      }`;
 if (!source.includes(studioTrackReadRoute)) throw new Error('Unable to locate the Studio track read route.');
 source = source.replace(studioTrackReadRoute, studioRoutes);
+
+const studioLyricsReadRoute = `      if (studioLyricsReadRoute && request.method === "GET") {
+        assertStudioReadOrigin(request);
+        return withStudioCors(request, await getStudioTrackLyrics(studioLyricsReadRoute[1], env, user));
+      }`;
+const studioLyricsContextRoute = `${studioLyricsReadRoute}
+
+      if (studioLyricsContextRoute && request.method === "GET") {
+        assertStudioReadOrigin(request);
+        return withStudioCors(request, await getStudioLyricsContext(studioLyricsContextRoute[1], env, user));
+      }`;
+if (!source.includes(studioLyricsReadRoute)) throw new Error('Unable to locate the Studio lyrics read route.');
+source = source.replace(studioLyricsReadRoute, studioLyricsContextRoute);
+
+const studioLyricsSaveRoute = `      if (studioLyricsSaveRoute && request.method === "POST") {
+        return withStudioCors(request, await saveStudioTrackLyrics(studioLyricsSaveRoute[1], request, env, user));
+      }`;
+const studioLyricsSyncRoutes = `${studioLyricsSaveRoute}
+
+      if (studioLyricsSyncValidationRoute && request.method === "POST") {
+        return withStudioCors(request, await validateStudioTrackLyrics(studioLyricsSyncValidationRoute[1], request, env, user, { expectedIntent: STUDIO_LYRICS_SYNC_VALIDATION_INTENT, requireSynchronized: true }));
+      }
+
+      if (studioLyricsSyncSaveRoute && request.method === "POST") {
+        return withStudioCors(request, await saveStudioTrackLyrics(studioLyricsSyncSaveRoute[1], request, env, user, { expectedIntent: STUDIO_LYRICS_SYNC_SAVE_INTENT, requireSynchronized: true }));
+      }`;
+if (!source.includes(studioLyricsSaveRoute)) throw new Error('Unable to locate the Studio lyrics save route.');
+source = source.replace(studioLyricsSaveRoute, studioLyricsSyncRoutes);
 
 source = source.replace(":' sans timestamps.'))}catch(error)", ":' sans timestamps.')))}catch(error)");
 
@@ -87,8 +115,8 @@ for (const serverOnlySymbol of ['buildCanonicalTrackSummaries', 'readManifest', 
 }
 
 for (const required of [
-  'version: "5.14"',
-  '<span class="version-pill">v5.14</span>',
+  'version: "5.15"',
+  '<span class="version-pill">v5.15</span>',
   'const ADMIN_HTML = String.raw`',
   'function parseLyricsTxtMetadata(text)',
   'async function inspectTrackQuality(',
@@ -110,14 +138,19 @@ for (const required of [
   "modal.id='batchImportModal'",
   'thumbnail.webp',
   'const STUDIO_ALLOWED_ORIGIN = "https://shinobione.github.io"',
-  'const STUDIO_BRIDGE_VERSION = "1.6"',
-  'trackManagerVersion: "5.14"',
+  'const STUDIO_BRIDGE_VERSION = "1.7"',
+  'trackManagerVersion: "5.15"',
   'url.pathname === "/api/studio/health"',
   'url.pathname === "/api/studio/tracks"',
   'STUDIO_METADATA_VALIDATION_INTENT',
   'STUDIO_METADATA_SAVE_INTENT',
   'STUDIO_LYRICS_VALIDATION_INTENT',
   'STUDIO_LYRICS_SAVE_INTENT',
+  'STUDIO_LYRICS_SYNC_VALIDATION_INTENT',
+  'STUDIO_LYRICS_SYNC_SAVE_INTENT',
+  'getStudioLyricsContext',
+  'studioLyricsSyncValidationMatch',
+  'studioLyricsSyncSaveMatch',
   'STUDIO_TRACK_CREATE_INTENT',
   'STUDIO_ASSET_UPLOAD_INTENT',
   'STUDIO_ASSET_DELETE_INTENT',
@@ -137,9 +170,9 @@ for (const required of [
   'studioPhase4BackupKey',
   '_studio-backups/',
   'manage: ["track-create", "assets", "catalog-rebuild"]',
-  'read: ["tracks", "track", "lyrics", "sonictrace-analysis", "sonictrace-catalog"]',
-  'validate: ["metadata", "lyrics"]',
-  'write: ["metadata", "lyrics", "sonictrace-analysis"]'
+  'read: ["tracks", "track", "lyrics", "lyrics-context", "sonictrace-analysis", "sonictrace-catalog"]',
+  'validate: ["metadata", "lyrics", "lyrics-sync"]',
+  'write: ["metadata", "lyrics", "lyrics-sync", "sonictrace-analysis"]'
 ]) {
   if (!source.includes(required)) throw new Error(`Built Track Manager Worker is missing ${required}.`);
 }
@@ -152,7 +185,9 @@ for (const forbidden of [
   '<span class="version-pill">v5.12</span>',
   'version: "5.12"',
   '<span class="version-pill">v5.13</span>',
-  'version: "5.13"'
+  'version: "5.13"',
+  '<span class="version-pill">v5.14</span>',
+  'version: "5.14"'
 ]) {
   if (source.includes(forbidden)) throw new Error(`Built Track Manager Worker still exposes obsolete content: ${forbidden}.`);
 }

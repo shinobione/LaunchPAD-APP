@@ -4,11 +4,11 @@
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
-## Private Worker Phase 5 candidate
+## Private Worker Phase 6 candidate
 
-The current branch builds Track Manager `v5.14` / Studio bridge `v1.6` for SHINOBIWAN Studio Phase 5. It adds private SonicTrace analysis sidecars, history, canonical-audio freshness checks and a 512D catalog index. The public LaunchPAD application and public media Worker remain unchanged. Production remains on v5.13/v1.5 until the admin Worker is explicitly deployed and verified.
+The current branch builds Track Manager `v5.15` / Studio bridge `v1.7` for SHINOBIWAN Studio Phase 6. It preserves the Phase 5 SonicTrace sidecars and adds a protected contextual Lyrics workflow: canonical context read, strict synchronized-text validation and guarded save to the existing `tracks/<slug>/lyrics.txt`. The public LaunchPAD application and public media Worker remain unchanged. Production stays on the deployed v5.14/v1.6 until the admin Worker is explicitly deployed and verified.
 
-See [`docs/STUDIO-SONICTRACE-ANALYSIS.md`](docs/STUDIO-SONICTRACE-ANALYSIS.md).
+See [`docs/STUDIO-LYRICS-SYNCHRONIZATION.md`](docs/STUDIO-LYRICS-SYNCHRONIZATION.md).
 
 ## Source of truth
 
