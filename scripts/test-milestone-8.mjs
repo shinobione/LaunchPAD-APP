@@ -75,15 +75,16 @@ const builder = read('scripts/build-admin-worker.mjs');
 for (const required of [
   "'5.6'",
   "'5.7'",
-  'version: "5.8"',
-  '<span class="version-pill">v5.8</span>',
+  "'5.8'",
+  'version: "5.9"',
+  '<span class="version-pill">v5.9</span>',
   "TRACK_MANAGER_MILESTONE_8_VERSION='5.7'",
   'function milestone8Hydrate()',
   'function milestone8RenderBadges(card)'
 ]) assert.ok(builder.includes(required), `Track Manager builder is missing ${required}.`);
 
 const deployment = read('.github/workflows/deploy-cloudflare.yml');
-assert.ok(deployment.includes("EXPECTED_ADMIN_VERSION: '5.8'"));
+assert.ok(deployment.includes("EXPECTED_ADMIN_VERSION: '5.9'"));
 assert.ok(deployment.includes("EXPECTED_PUBLIC_VERSION: '2.6'"));
 assert.ok(deployment.includes('workflow_dispatch:'));
 assert.ok(!deployment.includes('\n  push:'), 'Production Worker deployment must remain manual-only.');
@@ -107,4 +108,4 @@ for (const required of [
 ]) assert.ok(worker.includes(required), `Milestone 8 offline shell is missing ${required}.`);
 
 const build = assertCurrentBuild('Milestone 8');
-console.log(`Milestone 8 historical v5.7 SVG/badge layer remains intact while the current Track Manager assembles/deploys as v5.8 under Build ${build.number}.`);
+console.log(`Milestone 8 historical v5.7 SVG/badge layer remains intact while the current Track Manager assembles/deploys as v5.9 under Build ${build.number}.`);
