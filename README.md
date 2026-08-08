@@ -36,6 +36,21 @@ GitHub main
 
 See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the authoritative hosting map.
 
+## Track Manager v5.10 / Studio bridge v1.2 hotfix
+
+The public LaunchPAD application remains on **Build 66** because this hotfix changes only the protected Track Manager Worker. No public PWA cache/build bump is required.
+
+- Track Manager advances from **v5.9** to **v5.10** and the Studio bridge from **v1.1** to **v1.2**.
+- The existing metadata-validation endpoint remains validation-only and continues to advertise `write: []`.
+- Build 6 Studio used `Content-Type: application/json` plus `X-Shinobiwan-Studio-Intent`, which forces a CORS preflight. In the real Chrome + Cloudflare Access path, authenticated private GETs succeeded while that preflight could be intercepted before the Worker.
+- Bridge v1.2 keeps the old JSON/custom-header transport for backward compatibility and adds a no-preflight transport using `Content-Type: text/plain` with the same JSON payload.
+- In the simple transport, `intent: "metadata-validate-v1"` moves into the JSON body and remains mandatory.
+- Exact origin `https://shinobione.github.io`, Cloudflare Access verification, whitelist-only metadata and `expectedUpdatedAt` stale-manifest protection remain mandatory.
+- No manifest save, R2 `put/delete`, asset operation, publish, delete or catalog rebuild primitive is added.
+- Public Worker **v2.6**, R2 media/data, SonicTrace and LRC Maker remain unchanged.
+
+See [`docs/STUDIO-VALIDATION-CORS-HOTFIX.md`](docs/STUDIO-VALIDATION-CORS-HOTFIX.md).
+
 ## Build 66 highlights
 
 Build 66 advances **SHINOBIWAN Studio Phase 4B.1A** while still refusing all cross-origin production writes.
@@ -134,7 +149,7 @@ npm run validate
 npm run check:wrangler
 ```
 
-CI checks browser navigation, PWA/service-worker behavior, Audio Lab signal contracts, catalog contracts, Cloudflare bundles, repository cleanliness, documentation/build coherence, the Studio bridge security boundary and desktop overflow regressions. Build 66 additionally proves that Studio metadata validation is non-mutating and that real writes remain same-origin-only.
+CI checks browser navigation, PWA/service-worker behavior, Audio Lab signal contracts, catalog contracts, Cloudflare bundles, repository cleanliness, documentation/build coherence, the Studio bridge security boundary and desktop overflow regressions. The current bridge guard additionally proves that both metadata-validation transports remain non-mutating and that real writes remain same-origin-only.
 
 ## Release discipline
 
@@ -168,6 +183,7 @@ Useful documents:
 - [`CHANGELOG.md`](CHANGELOG.md) — recent build history
 - [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) — canonical hosting/deployment topology
 - [`docs/SHINOBIWAN-STUDIO-CONTRACT.md`](docs/SHINOBIWAN-STUDIO-CONTRACT.md) — Studio integration contract
+- [`docs/STUDIO-VALIDATION-CORS-HOTFIX.md`](docs/STUDIO-VALIDATION-CORS-HOTFIX.md) — Track Manager v5.10 / bridge v1.2 browser validation transport hotfix
 - [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) — safe release procedure
 - [`ROADMAP.md`](ROADMAP.md) — remaining consolidation/product work
 - [`cloudflare/README.md`](cloudflare/README.md) — Workers/R2 operations

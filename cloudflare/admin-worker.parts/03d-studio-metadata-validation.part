@@ -36,7 +36,7 @@ function studioRequestedHeaders(request) {
     .filter(Boolean);
 }
 
-function studioCorsHeadersV11(request) {
+function studioCorsHeadersV12(request) {
   const origin = request.headers.get("origin");
   if (origin !== STUDIO_ALLOWED_ORIGIN) return {};
   return {
@@ -49,7 +49,7 @@ function studioCorsHeadersV11(request) {
   };
 }
 
-function studioCorsPreflightV11(request) {
+function studioCorsPreflightV12(request) {
   const url = new URL(request.url);
   const origin = request.headers.get("origin");
   const requestedMethod = String(request.headers.get("access-control-request-method") || "").toUpperCase();
@@ -62,20 +62,54 @@ function studioCorsPreflightV11(request) {
   if (origin !== STUDIO_ALLOWED_ORIGIN || !methodAllowed || !headersAllowed) {
     return jsonResponse({ ok: false, error: "Accès refusé." }, 403);
   }
-  return new Response(null, { status: 204, headers: studioCorsHeadersV11(request) });
+  return new Response(null, { status: 204, headers: studioCorsHeadersV12(request) });
 }
 
-studioCorsHeaders = studioCorsHeadersV11;
-studioCorsPreflight = studioCorsPreflightV11;
+studioCorsHeaders = studioCorsHeadersV12;
+studioCorsPreflight = studioCorsPreflightV12;
+
+function studioMetadataContentType(request) {
+  return String(request.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+}
 
 function assertStudioMetadataValidationRequest(request) {
   const origin = request.headers.get("origin");
   if (origin !== STUDIO_ALLOWED_ORIGIN) throw new Error("AUTH_Origine Studio refusée.");
-  if (request.headers.get("x-shinobiwan-studio-intent") !== STUDIO_METADATA_VALIDATION_INTENT) {
+
+  const contentType = studioMetadataContentType(request);
+  if (contentType !== "application/json" && contentType !== "text/plain") {
+    throw new Error("INPUT_Le validateur Studio attend application/json ou text/plain JSON.");
+  }
+
+  if (contentType === "application/json" && request.headers.get("x-shinobiwan-studio-intent") !== STUDIO_METADATA_VALIDATION_INTENT) {
     throw new Error("AUTH_Intention Studio invalide.");
   }
-  const contentType = String(request.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
-  if (contentType !== "application/json") throw new Error("INPUT_Le validateur Studio attend du JSON.");
+}
+
+async function readStudioMetadataValidationPayload(request) {
+  const contentType = studioMetadataContentType(request);
+  let payload;
+
+  try {
+    if (contentType === "text/plain") {
+      const raw = await request.text();
+      payload = JSON.parse(raw);
+    } else {
+      payload = await request.json();
+    }
+  } catch {
+    throw new Error("INPUT_JSON metadata invalide.");
+  }
+
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("INPUT_Payload metadata invalide.");
+  }
+
+  if (contentType === "text/plain" && payload.intent !== STUDIO_METADATA_VALIDATION_INTENT) {
+    throw new Error("AUTH_Intention Studio invalide.");
+  }
+
+  return payload;
 }
 
 function normalizeStudioMetadataPatch(input) {
@@ -102,13 +136,7 @@ async function validateStudioTrackMetadata(slug, request, env, user) {
     throw new Error("INPUT_Payload metadata trop volumineux.");
   }
 
-  let payload;
-  try { payload = await request.json(); }
-  catch { throw new Error("INPUT_JSON metadata invalide."); }
-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-    throw new Error("INPUT_Payload metadata invalide.");
-  }
-
+  const payload = await readStudioMetadataValidationPayload(request);
   const existing = await readManifest(env.MEDIA_BUCKET, slug);
   if (!existing) return jsonResponse({ ok: false, error: "Titre introuvable." }, 404);
 
@@ -148,6 +176,7 @@ async function validateStudioTrackMetadata(slug, request, env, user) {
     changedFields: studioMetadataChangedFields(existing, proposed),
     proposed,
     quality,
+    transport: studioMetadataContentType(request) === "text/plain" ? "simple-post-v1" : "json-preflight-v1",
     authenticatedEmail: user.email || null,
   });
 }

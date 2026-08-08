@@ -77,10 +77,10 @@ for (const required of ['./css/feature-10.css','./js/core/editorial-normalizatio
 }
 
 const deployWorkflow = read('.github/workflows/deploy-cloudflare.yml');
-assert.ok(deployWorkflow.includes("EXPECTED_ADMIN_VERSION: '5.9'"));
+assert.ok(deployWorkflow.includes("EXPECTED_ADMIN_VERSION: '5.10'"));
 assert.ok(deployWorkflow.includes("EXPECTED_PUBLIC_VERSION: '2.6'"));
 assert.ok(deployWorkflow.includes('workflow_dispatch:'));
 assert.ok(!deployWorkflow.includes('\n  push:'), 'Production Worker deployment must remain manual-only.');
 
 const build = assertCurrentBuild('Feature 10');
-console.log(`Feature 10 remains valid under public Worker v2.6, current Track Manager v5.9 and Build ${build.number}.`);
+console.log(`Feature 10 remains valid under public Worker v2.6, current Track Manager v5.10 and Build ${build.number}.`);
