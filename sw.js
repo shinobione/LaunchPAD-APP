@@ -9,10 +9,10 @@ const CACHE_NAMES = new Set([SHELL_CACHE, IMAGE_CACHE, RUNTIME_CACHE]);
 const SHELL_RESOURCES = [
   './','./index.html','./manifest.webmanifest','./robots.txt','./sitemap.xml',
   './css/style.css','./css/header.css','./css/refinements.css','./css/lyrics.css','./css/fixes-v2.css','./css/content-v4.css',
-  './css/desktop-hero-wide.css','./css/mobile-top-cleanup.css','./css/mobile-navigation.css','./css/launchpad-features.css',
+  './css/desktop-hero-wide.css','./css/mobile-top-cleanup.css','./css/mobile-navigation.css','./css/launchpad-features.css','./css/ui-polish-v62.css',
   './css/catalog-filters.css','./css/feature-10.css','./css/feature-11.css','./css/feature-12.css','./css/theme-scope.css','./css/discography-experience.css','./css/home-editorial.css','./css/svg-icon-system.css','./css/badge-hierarchy.css','./css/admin-tools.css','./css/about-enhancements.css','./css/library-memory.css',
   './css/pwa.css','./css/visual-card.css','./css/track-detail.css','./css/track-videos.css','./css/mobile-studio.css','./css/canvas-identity.css','./css/r2-track-details.css',
-  './js/build-config.js','./js/visual-card-export-guard.js','./js/app-engine.js','./js/app-engine-recovery.js','./js/app-main.js','./js/catalog.js',
+  './js/build-config.js','./js/visual-card-export-guard.js','./js/app-engine.js','./js/app-engine-recovery.js','./js/app-main.js','./js/ui-polish-v62.js','./js/catalog.js',
   './js/core/assets.js','./js/core/catalog-store.js','./js/core/catalog-schema.js','./js/core/catalog-ordering.js','./js/core/editorial-normalization.js','./js/core/remote-catalog.js',
   './js/core/player-queue.js','./js/core/router.js','./js/core/share.js','./js/core/theme.js',
   './js/features/ui/ui-controller.js','./js/features/catalog-filters.js','./js/features/content-advisory-badges.js','./js/features/feature-11.js','./js/features/feature-12.js','./js/features/feature-13.js','./js/features/theme-scope.js','./js/features/discography-experience.js','./js/features/home-editorial.js','./js/features/svg-icon-system.js','./js/features/badge-hierarchy.js',
