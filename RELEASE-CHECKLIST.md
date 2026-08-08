@@ -1,6 +1,6 @@
 # LaunchPAD release checklist
 
-> Current application build: `2026.08.07.50` — release `audiolab-signal-first-20260807`.
+> Current application build: `2026.08.08.51` — release `audiolab-three-core-20260808`.
 
 This checklist separates four independent states: **source merge**, **web-host deployment**, **Worker deployment**, and **R2 catalog/media publication**.
 
@@ -57,47 +57,48 @@ node scripts/build-cloudflare-pages.mjs && node scripts/validate-cloudflare-page
 23. Verify clean playback with Audio Lab open and while switching presets.
 24. Verify background playback after leaving/minimizing the PWA.
 25. Verify track A → B → C while staying in Audio Lab.
-26. Spectrum must track the current song immediately after decoded analysis warms.
-27. Neon Shatter/Aurora Glass must settle when paused and deform from real FFT when playing; constant autonomous loop motion is a failure.
-28. Liquid Chrome/Singularity should expose real reactions clearly without oversized geometry.
-29. Re-test Android and desktop separately because media/visibility lifecycles differ.
+26. Spectrum must track the current song immediately after its analyser is live.
+27. Neon Shatter must visibly move/deform from real FFT/kick activity and settle when paused; autonomous loop motion is a failure.
+28. Liquid Chrome must visibly pulse/deform with bass/mid/high activity and settle when paused; a static blob or independent loop is a failure.
+29. Audio Lab must expose exactly three controls: Neon Shatter, Spectrum and Liquid Chrome.
+30. Re-test Android and desktop separately because media/visibility lifecycles differ.
 
 ## 5. Lyrics / Studio / Canvas checks
 
-30. On mobile, Track Detail → Lyrics should open that track's Studio when synchronized lyrics exist.
-31. Mobile bottom navigation remains visible in Studio.
-32. The global mini-player stays above the bottom navigation.
-33. Canvas should be muted, `playsinline`, loop reliably and resume after visibility/lifecycle interruptions when allowed.
-34. Lyrics auto-scroll stays inside its reader and does not fight page scrolling.
+31. On mobile, Track Detail → Lyrics should open that track's Studio when synchronized lyrics exist.
+32. Mobile bottom navigation remains visible in Studio.
+33. The global mini-player stays above the bottom navigation.
+34. Canvas should be muted, `playsinline`, loop reliably and resume after visibility/lifecycle interruptions when allowed.
+35. Lyrics auto-scroll stays inside its reader and does not fight page scrolling.
 
 ## 6. Track Manager / R2 publication
 
-35. Use the private Track Manager behind Cloudflare Access.
-36. Create/edit canonical manifests and upload audio/cover/optional lyrics/Canvas.
-37. Confirm thumbnail, metadata, content rating and publishability.
-38. Rebuild `catalog/index.json` only when manifest/derived metadata needs refreshing.
-39. Verify one full `/tracks/<slug>` response after parser/index changes.
+36. Use the private Track Manager behind Cloudflare Access.
+37. Create/edit canonical manifests and upload audio/cover/optional lyrics/Canvas.
+38. Confirm thumbnail, metadata, content rating and publishability.
+39. Rebuild `catalog/index.json` only when manifest/derived metadata needs refreshing.
+40. Verify one full `/tracks/<slug>` response after parser/index changes.
 
 ## 7. Worker deployment
 
-40. Worker deployment is **not** implied by a PWA merge.
-41. From `main`, dispatch **Deploy Cloudflare Workers** for `public`, `admin` or `both`.
-42. Approve the protected environment and verify health/Access/Range checks.
-43. Record source SHA and deployed Worker version IDs.
+41. Worker deployment is **not** implied by a PWA merge.
+42. From `main`, dispatch **Deploy Cloudflare Workers** for `public`, `admin` or `both`.
+43. Approve the protected environment and verify health/Access/Range checks.
+44. Record source SHA and deployed Worker version IDs.
 
 ## 8. Rollback
 
-44. Web rollback is a revert/fix in `main` followed by canonical redeployment, never a host-only patch.
-45. Worker rollback uses the protected rollback workflow.
-46. Worker rollback does not restore R2 objects or catalog state.
+45. Web rollback is a revert/fix in `main` followed by canonical redeployment, never a host-only patch.
+46. Worker rollback uses the protected rollback workflow.
+47. Worker rollback does not restore R2 objects or catalog state.
 
 ## 9. Repository hygiene
 
-47. `main` remains the only persistent branch/source of truth.
-48. Keep auto-delete merged-head branches enabled.
-49. Keep documentation synchronized with the active build; CI enforces the exact markers.
-50. Keep Lovable prototype-only unless deliberately promoted through GitHub.
-51. Do not delete compatibility files just because their names contain an old version; first prove they are no longer wired into runtime/CI/deployment.
-52. Report merged/deployed states separately: source, GitHub Pages, Cloudflare Pages, public Worker, private Worker, R2 catalog/media.
+48. `main` remains the only persistent branch/source of truth.
+49. Keep auto-delete merged-head branches enabled.
+50. Keep documentation synchronized with the active build; CI enforces the exact markers.
+51. Keep Lovable prototype-only unless deliberately promoted through GitHub.
+52. Do not delete compatibility files just because their names contain an old version; first prove they are no longer wired into runtime/CI/deployment.
+53. Report merged/deployed states separately: source, GitHub Pages, Cloudflare Pages, public Worker, private Worker, R2 catalog/media.
 
 See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the canonical map.
