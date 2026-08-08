@@ -32,30 +32,36 @@ if (injections.length) {
   source = source.replace(marker, `\n${injected}${marker}`);
 }
 
-// Historical v5.10 assembler markers retained for regression-test ancestry only:
+// Historical assembler markers retained for regression-test ancestry only:
+// version: "5.10"
+// <span class="version-pill">v5.10</span>
 // trackManagerVersion: "5.10"
 // const STUDIO_BRIDGE_VERSION = "1.2";
+// validate: ["metadata"]
 // write: []
-const staleVersions = ['4.5','4.6','4.7','4.8','4.9','5.0','5.1','5.2','5.3','5.4','5.5','5.6','5.7','5.8','5.9','5.10'];
+// trackManagerVersion: "5.11"
+// const STUDIO_BRIDGE_VERSION = "1.3";
+// write: ["metadata"]
+const staleVersions = ['4.5','4.6','4.7','4.8','4.9','5.0','5.1','5.2','5.3','5.4','5.5','5.6','5.7','5.8','5.9','5.10','5.11'];
 for (const stale of staleVersions) {
-  source = source.replaceAll(`version: "${stale}"`, 'version: "5.11"');
-  source = source.replaceAll(`<span class="version-pill">v${stale}</span>`, '<span class="version-pill">v5.11</span>');
-  source = source.replaceAll(`version.textContent='v${stale}'`, "version.textContent='v5.11'");
+  source = source.replaceAll(`version: "${stale}"`, 'version: "5.12"');
+  source = source.replaceAll(`<span class="version-pill">v${stale}</span>`, '<span class="version-pill">v5.12</span>');
+  source = source.replaceAll(`version.textContent='v${stale}'`, "version.textContent='v5.12'");
 }
-source = source.replaceAll('trackManagerVersion: "5.8"', 'trackManagerVersion: "5.11"');
-source = source.replace('const STUDIO_BRIDGE_VERSION = "1.0";', 'const STUDIO_BRIDGE_VERSION = "1.3";');
+source = source.replaceAll('trackManagerVersion: "5.8"', 'trackManagerVersion: "5.12"');
+source = source.replace('const STUDIO_BRIDGE_VERSION = "1.0";', 'const STUDIO_BRIDGE_VERSION = "1.4";');
 source = source.replace(
   'read: ["tracks", "track"],\n            write: [],',
-  'read: ["tracks", "track"],\n            validate: ["metadata"],\n            write: ["metadata"],'
+  'read: ["tracks", "track", "lyrics"],\n            validate: ["metadata", "lyrics"],\n            write: ["metadata", "lyrics"],'
 );
 
 const legacyWriteGuard = `      if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {\n        enforceSameOrigin(request, url);\n      }`;
-const studioAwareWriteGuard = `      const studioMetadataValidationRoute = studioMetadataValidationMatch(url.pathname);\n      const studioMetadataSaveRoute = studioMetadataSaveMatch(url.pathname);\n      const isStudioMetadataValidation = Boolean(studioMetadataValidationRoute && request.method === "POST");\n      const isStudioMetadataSave = Boolean(studioMetadataSaveRoute && request.method === "POST");\n\n      if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {\n        if (isStudioMetadataValidation) assertStudioMetadataValidationRequest(request);\n        else if (isStudioMetadataSave) assertStudioMetadataSaveRequest(request);\n        else enforceSameOrigin(request, url);\n      }`;
+const studioAwareWriteGuard = `      const studioMetadataValidationRoute = studioMetadataValidationMatch(url.pathname);\n      const studioMetadataSaveRoute = studioMetadataSaveMatch(url.pathname);\n      const studioLyricsReadRoute = studioLyricsReadMatch(url.pathname);\n      const studioLyricsValidationRoute = studioLyricsValidationMatch(url.pathname);\n      const studioLyricsSaveRoute = studioLyricsSaveMatch(url.pathname);\n      const isStudioMetadataValidation = Boolean(studioMetadataValidationRoute && request.method === "POST");\n      const isStudioMetadataSave = Boolean(studioMetadataSaveRoute && request.method === "POST");\n      const isStudioLyricsValidation = Boolean(studioLyricsValidationRoute && request.method === "POST");\n      const isStudioLyricsSave = Boolean(studioLyricsSaveRoute && request.method === "POST");\n\n      if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {\n        if (isStudioMetadataValidation) assertStudioMetadataValidationRequest(request);\n        else if (isStudioMetadataSave) assertStudioMetadataSaveRequest(request);\n        else if (isStudioLyricsValidation || isStudioLyricsSave) assertStudioLyricsPostRequest(request);\n        else enforceSameOrigin(request, url);\n      }`;
 if (!source.includes(legacyWriteGuard)) throw new Error('Unable to locate the Track Manager same-origin write guard.');
 source = source.replace(legacyWriteGuard, studioAwareWriteGuard);
 
 const studioTrackReadRoute = `      const studioTrackMatch = url.pathname.match(/^\\/api\\/studio\\/tracks\\/([a-z0-9][a-z0-9-]{0,119})$/);\n      if (studioTrackMatch && request.method === "GET") {\n        assertStudioReadOrigin(request);\n        return withStudioCors(request, await getTrack(studioTrackMatch[1], env));\n      }`;
-const studioTrackReadValidateAndSaveRoutes = `${studioTrackReadRoute}\n\n      if (studioMetadataValidationRoute && request.method === "POST") {\n        return withStudioCors(request, await validateStudioTrackMetadata(studioMetadataValidationRoute[1], request, env, user));\n      }\n\n      if (studioMetadataSaveRoute && request.method === "POST") {\n        return withStudioCors(request, await saveStudioTrackMetadata(studioMetadataSaveRoute[1], request, env, user));\n      }`;
+const studioTrackReadValidateAndSaveRoutes = `${studioTrackReadRoute}\n\n      if (studioLyricsReadRoute && request.method === "GET") {\n        assertStudioReadOrigin(request);\n        return withStudioCors(request, await getStudioTrackLyrics(studioLyricsReadRoute[1], env, user));\n      }\n\n      if (studioMetadataValidationRoute && request.method === "POST") {\n        return withStudioCors(request, await validateStudioTrackMetadata(studioMetadataValidationRoute[1], request, env, user));\n      }\n\n      if (studioMetadataSaveRoute && request.method === "POST") {\n        return withStudioCors(request, await saveStudioTrackMetadata(studioMetadataSaveRoute[1], request, env, user));\n      }\n\n      if (studioLyricsValidationRoute && request.method === "POST") {\n        return withStudioCors(request, await validateStudioTrackLyrics(studioLyricsValidationRoute[1], request, env, user));\n      }\n\n      if (studioLyricsSaveRoute && request.method === "POST") {\n        return withStudioCors(request, await saveStudioTrackLyrics(studioLyricsSaveRoute[1], request, env, user));\n      }`;
 if (!source.includes(studioTrackReadRoute)) throw new Error('Unable to locate the Studio track read route.');
 source = source.replace(studioTrackReadRoute, studioTrackReadValidateAndSaveRoutes);
 
@@ -81,8 +87,8 @@ for (const serverOnlySymbol of ['buildCanonicalTrackSummaries', 'readManifest', 
 }
 
 for (const required of [
-  'version: "5.11"',
-  '<span class="version-pill">v5.11</span>',
+  'version: "5.12"',
+  '<span class="version-pill">v5.12</span>',
   'const ADMIN_HTML = String.raw`',
   'function parseLyricsTxtMetadata(text)',
   'async function inspectTrackQuality(',
@@ -104,8 +110,8 @@ for (const required of [
   "modal.id='batchImportModal'",
   'thumbnail.webp',
   'const STUDIO_ALLOWED_ORIGIN = "https://shinobione.github.io"',
-  'const STUDIO_BRIDGE_VERSION = "1.3"',
-  'trackManagerVersion: "5.11"',
+  'const STUDIO_BRIDGE_VERSION = "1.4"',
+  'trackManagerVersion: "5.12"',
   'url.pathname === "/api/studio/health"',
   'url.pathname === "/api/studio/tracks"',
   'studioMetadataValidationMatch',
@@ -113,13 +119,26 @@ for (const required of [
   'studioMetadataSaveMatch',
   'STUDIO_METADATA_SAVE_INTENT',
   'saveStudioTrackMetadata',
+  'studioLyricsReadMatch',
+  'studioLyricsValidationMatch',
+  'studioLyricsSaveMatch',
+  'STUDIO_LYRICS_VALIDATION_INTENT',
+  'STUDIO_LYRICS_SAVE_INTENT',
+  'getStudioTrackLyrics',
+  'validateStudioTrackLyrics',
+  'saveStudioTrackLyrics',
+  'expectedLyricsEtag',
+  'code: "STALE_LYRICS"',
+  'code: "QUALITY_BLOCKED"',
+  'rollback.lyricsRestored',
   'contentType === "text/plain"',
   'payload.intent !== STUDIO_METADATA_VALIDATION_INTENT',
   'payload.intent !== STUDIO_METADATA_SAVE_INTENT',
   'transport: studioMetadataContentType(request) === "text/plain" ? "simple-post-v1" : "json-preflight-v1"',
   'validationOnly: true',
-  'validate: ["metadata"]',
-  'write: ["metadata"]'
+  'read: ["tracks", "track", "lyrics"]',
+  'validate: ["metadata", "lyrics"]',
+  'write: ["metadata", "lyrics"]'
 ]) {
   if (!source.includes(required)) throw new Error(`Built Track Manager Worker is missing ${required}.`);
 }
@@ -129,8 +148,8 @@ for (const forbidden of [
   'id="migrateLegacy"',
   'id="migrationModal"',
   'id="legacyPanel"',
-  '<span class="version-pill">v5.10</span>',
-  'version: "5.10"'
+  '<span class="version-pill">v5.11</span>',
+  'version: "5.11"'
 ]) {
   if (source.includes(forbidden)) throw new Error(`Built Track Manager Worker still exposes obsolete content: ${forbidden}.`);
 }
