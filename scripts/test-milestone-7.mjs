@@ -14,10 +14,10 @@ import {
 const read = file => fs.readFileSync(file, 'utf8');
 
 assert.equal(AUDIO_LAB_DEFAULT_MODE, 'neon-shatter');
-assert.deepEqual(AUDIO_LAB_PRESET_IDS, ['neon-shatter', 'spectrum', 'liquid-chrome', 'aurora-glass', 'nebula', 'singularity']);
-assert.deepEqual(AUDIO_LAB_SANCTUARY_IDS, ['spectrum', 'liquid-chrome']);
+assert.deepEqual(AUDIO_LAB_PRESET_IDS, ['neon-shatter', 'spectrum', 'liquid-chrome']);
+assert.deepEqual(AUDIO_LAB_SANCTUARY_IDS, ['spectrum']);
 for (const mode of AUDIO_LAB_PRESET_IDS) assert.equal(isSanctionedAudioLabMode(mode), true);
-assert.equal(isSanctionedAudioLabMode('retired-mode'), false);
+for (const mode of ['aurora-glass', 'nebula', 'singularity', 'retired-mode']) assert.equal(isSanctionedAudioLabMode(mode), false);
 assert.equal(normalizeAudioLabMode('unknown'), 'neon-shatter');
 
 function collectFiles(root, extensions) {
@@ -59,48 +59,50 @@ function extractFunction(source, name) {
   }
   throw new Error(`Protected renderer ${name} is malformed.`);
 }
-const protectedHashes = {
-  drawLiquidChrome: 'bc171075042d4fe881a781ba0206482d721f8e1de6fada4357c7b2d944a23967',
-  drawSpectrum: '25a86e3763b668fc69734d48439a2c93745ef927a3fcbdddaf2d0f29e0371813'
-};
-for (const [name, expected] of Object.entries(protectedHashes)) {
-  const actual = crypto.createHash('sha256').update(extractFunction(base, name)).digest('hex');
-  assert.equal(actual, expected, `${name} is sanctuary-protected and must not change.`);
+const spectrumHash = '25a86e3763b668fc69734d48439a2c93745ef927a3fcbdddaf2d0f29e0371813';
+const actualSpectrumHash = crypto.createHash('sha256').update(extractFunction(base, 'drawSpectrum')).digest('hex');
+assert.equal(actualSpectrumHash, spectrumHash, 'Spectrum is sanctuary-protected and must not change.');
+for (const required of [
+  "{ id: 'spectrum', label: 'Spectrum' }",
+  'function readSpectrum(target)',
+  'analyser.getByteFrequencyData(target)',
+  'return { resume, setMode, readSpectrum }'
+]) assert.ok(base.includes(required), `Spectrum reference contract changed: ${required}`);
+for (const forbidden of ['drawLiquidChrome(', 'drawNeonShatter(', 'drawSingularity(', 'drawNebula(']) {
+  assert.ok(!base.includes(forbidden), `Legacy base renderer remains: ${forbidden}`);
 }
-for (const binding of [
-  "case 'liquid-chrome': drawLiquidChrome(ctx, width, height, data, accent, accent2); break;",
-  'default: drawSpectrum(ctx, width, height, data, accent, accent2);'
-]) assert.ok(base.includes(binding), `Protected Audio Lab base binding changed: ${binding}`);
 
 const core = read('js/features/visual/visual-engine-core-modes.js');
 for (const required of [
-  'export function drawAuroraGlassMode(',
-  'export function drawNeonShatterAdaptiveMode(',
-  'export function drawLiquidChromeLiveMode(',
-  'export function drawSingularityLiveMode(',
-  'const radialDrive = .72 + value * .82',
-  'const spectralLift = (spectral - bandValue * .36)',
-  'const fragments = mobile ? 22 : 54',
-  'const baseRadius = .247',
-  'const outerReach = minSide * .37'
-]) assert.ok(core.includes(required), `Signal-first visual calibration is missing ${required}.`);
+  'export function drawNeonShatterV2Mode(',
+  'export function drawLiquidChromeV2Mode(',
+  'const impact = clamp(',
+  'const pulse = clamp(',
+  'const gatedDrift = time * activity * .16',
+  'const phase = time * activity * .2',
+  'localDrive * .92',
+  'spectralDeform = spectral * .092'
+]) assert.ok(core.includes(required), `Three-core visual calibration is missing ${required}.`);
+for (const forbidden of ['drawAuroraGlassMode', 'drawSingularityLiveMode', 'drawNeonShatterAdaptiveMode', 'drawLiquidChromeLiveMode']) {
+  assert.ok(!core.includes(forbidden), `Retired core renderer remains: ${forbidden}`);
+}
 
 const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
   "const DEFAULT_MODE = 'neon-shatter'",
   "{ id: 'spectrum', label: 'Spectrum' }",
-  "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeLiveMode }",
-  "{ id: 'singularity', label: 'Singularity', renderer: drawSingularityLiveMode }",
-  'readAudioLabSpectrum(raw)',
-  'readAudioLabAmplitude(waveform)',
-  'createAmplitudeDynamicsTracker',
+  "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode }",
+  "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
+  'base.readSpectrum?.(raw)',
+  'reading = readAudioLabSpectrum(raw)',
   'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)',
-  "dataset.audioLabRenderer = 'signal-first-v9'",
-  "homeTitle.textContent = 'Neon Shatter'",
-  'CUSTOM_MOBILE_FRAME_INTERVAL = 1000 / 60'
+  "dataset.audioLabRenderer = 'three-core-v1'",
+  "dataset.audioLabPresetCount = '3'",
+  'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ]) assert.ok(live.includes(required), `Live Audio Lab integration is missing ${required}.`);
-assert.ok(!live.includes("'bars'"), 'Legacy bars alias must not survive Spectrum restoration.');
-assert.ok(!live.includes('shapeReactiveSpectrum(raw, shaped, features)'), 'Custom effects must not use the old shaped-spectrum loop path.');
+for (const forbidden of ['aurora-glass', 'nebula', 'singularity', "'bars'", 'readAudioLabAmplitude', 'createAmplitudeDynamicsTracker', 'synthesizePlaybackSpectrum']) {
+  assert.ok(!live.includes(forbidden), `Retired or parallel live path remains: ${forbidden}`);
+}
 
 const sanctuary = read('js/features/visual/audio-lab-sanctuary.js');
 for (const required of [
@@ -119,4 +121,4 @@ assert.ok(worker.includes("'./js/features/visual/audio-lab-registry.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-sanctuary.js'"));
 
 const build = assertCurrentBuild('Milestone 7/current release');
-console.log(`Milestone 7 registry, protected base renderers and signal-first FFT effects remain valid under Build ${build.number}.`);
+console.log(`Milestone 7 now protects the three-preset Audio Lab and shared Spectrum FFT under Build ${build.number}.`);
