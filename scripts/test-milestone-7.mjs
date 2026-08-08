@@ -119,7 +119,10 @@ for (const required of [
   "{ id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }",
   "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
   'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)',
-  "dataset.audioLabRenderer = 'seven-core-v2'", "dataset.audioLabPresetCount = '7'",
+  "const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure'])",
+  'function createAdaptiveLowPunchTracker()', 'relativeContrast', 'relativeFlux', 'relativeRise',
+  'function kineticImpactFeatures(mode, features)', 'features.punch = adaptivePunch.punch',
+  "dataset.audioLabRenderer = 'seven-core-v3'", "dataset.audioLabPresetCount = '7'",
   "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' ? 1.05",
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ]) assert.ok(live.includes(required), `Live Audio Lab integration is missing ${required}.`);
@@ -138,6 +141,6 @@ for (const required of [
 ]) assert.ok(worker.includes(required));
 
 const build = assertCurrentBuild('Milestone 7/current release');
-assert.equal(build.display, '2026.08.08.57');
-assert.equal(build.release, 'kinetic-flow-20260808');
-console.log(`Milestone 7 protects ${AUDIO_LAB_PRESET_IDS.length} sanctioned Audio Lab presets with shared FFT + kinetic flow under Build ${build.number}.`);
+assert.equal(build.display, '2026.08.08.58');
+assert.equal(build.release, 'adaptive-punch-20260808');
+console.log(`Milestone 7 protects ${AUDIO_LAB_PRESET_IDS.length} sanctioned Audio Lab presets with shared FFT + kinetic flow + adaptive punch under Build ${build.number}.`);

@@ -51,7 +51,9 @@ const live = read('js/features/visual/visual-engine-live.js');
 requireAll(live, [
   "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
   'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)',
-  "dataset.audioLabRenderer = 'seven-core-v2'", "dataset.audioLabPresetCount = '7'",
+  'function createAdaptiveLowPunchTracker()', 'relativeContrast', 'relativeFlux', 'relativeRise',
+  'function kineticImpactFeatures(mode, features)', 'features.punch = adaptivePunch.punch',
+  "dataset.audioLabRenderer = 'seven-core-v3'", "dataset.audioLabPresetCount = '7'",
   "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' ? 1.05",
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ], 'Live Audio Lab');
@@ -65,9 +67,9 @@ const worker = read('sw.js');
 requireAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/bio-structure.js'", "event.data?.type === 'GET_RELEASE'"], 'PWA shell');
 
 const build = assertCurrentBuild('Phase 13/current release');
-assert.ok(build.number >= 57, `Unexpected pre-Build-57 release ${build.display}.`);
-assert.equal(build.release, 'kinetic-flow-20260808');
+assert.ok(build.number >= 58, `Unexpected pre-Build-58 release ${build.display}.`);
+assert.equal(build.release, 'adaptive-punch-20260808');
 
 await import('./test-milestone-4.mjs');
 await import('./test-milestone-6.mjs');
-console.log(`Phase 13 remains valid with the shared-FFT ${presetCount}-preset kinetic Audio Lab under ${build.display}.`);
+console.log(`Phase 13 remains valid with the shared-FFT ${presetCount}-preset kinetic Audio Lab plus adaptive punch under ${build.display}.`);

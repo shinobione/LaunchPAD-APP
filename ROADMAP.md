@@ -1,6 +1,6 @@
 # LaunchPAD roadmap
 
-> Current application build: `2026.08.08.57` — release `kinetic-flow-20260808`.
+> Current application build: `2026.08.08.58` — release `adaptive-punch-20260808`.
 
 The repository cleanup/reconciliation phase is complete. This roadmap now tracks product/runtime work rather than historical migration chores.
 
@@ -25,6 +25,7 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Build 55 added deterministic spring memory/overshoot and Bio Structure without raising geometry budgets.
 - [x] Build 56 tested dynamic-headroom compression but real-device feedback showed it reduced visible travel too far.
 - [x] Build 57 replaces pose compression with integrated kinetic phase: sustained real audio now drives continuous travel while peaks add extra excursion.
+- [x] Build 58 adds adaptive low-frequency punch so kicks/bass onsets remain distinct inside already-dense passages.
 - [x] All Markdown documentation is version-coupled to `js/build-config.js` through CI.
 
 ## P0 — real-device validation
@@ -37,10 +38,12 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Validate Build 54 Pulse Reactor/Bass Fracture/Gravity Lens readability and baseline performance on desktop/mobile.
 - [x] Validate Build 55 signal reactivity and spring motion on Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure.
 - [x] Validate Build 56 real-device behavior and record that soft-knee compression made the four elastic modes feel less alive/ample despite correct FFT reaction.
-- [ ] Validate Build 57 Pulse Reactor: whole-reactor drift + ring travel remain clearly visible through steady grooves, with kicks adding extra impact rather than being the sole movement source.
-- [ ] Validate Build 57 Bass Fracture on mobile and desktop: body roll/translation and plate glide remain obvious between kicks, while rupture still feels forceful.
-- [ ] Validate Build 57 Gravity Lens: continuous precession/drift/stream sweep is visible at moderate energy and pauses cleanly when audio stops.
-- [ ] Validate Build 57 Bio Structure: spine/ribs/membrane/nerve motion reads as a living organism through steady passages, not only at peaks.
+- [x] Validate Build 57 continuous travel on Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure; real-device feedback confirms they move/turn/undulate through the groove.
+- [ ] Validate Build 58 Pulse Reactor: continuous Build 57 travel remains intact and kick/bass impacts create an obvious extra excursion after the intro and inside full-density sections.
+- [ ] Validate Build 58 Bass Fracture: plate/body motion stays alive between beats and adaptive punch produces a distinct rupture hit on mobile and desktop.
+- [ ] Validate Build 58 Gravity Lens: continuous field movement remains visible while bass/kick onsets add a brief extra warp instead of blending into the groove.
+- [ ] Validate Build 58 Bio Structure: organism keeps moving continuously while low-frequency transients produce a distinct contraction/impact accent.
+- [ ] Confirm `audioLabPunch` rises on bass/kick impacts even when `audioLabBass` is already high.
 - [ ] Confirm all kinetic modes stop phase progression and settle their amplitude after pause.
 - [ ] Verify switching all seven presets repeatedly does not lose analyser data.
 - [ ] Continue background-playback testing for artefacts with Audio Lab open/closed.
@@ -55,7 +58,8 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Establish spring-memory rule: inertia/overshoot may preserve short motion history, but must be driven by FFT targets and decay to rest.
 - [x] Establish the kinetic-motion rule: real sustained audio must produce visible travel, not merely a larger static pose; peaks layer extra excursion on top.
 - [x] Establish the integrated-phase rule: phase advances by `speed × dt` while real audio activity exists, rather than multiplying absolute time by a changing activity value.
-- [ ] After Build 57 real-device validation, add the next effect against the same Spectrum-shared feed.
+- [x] Establish the adaptive-impact rule: low-frequency transients are detected relative to a local baseline so dense passages cannot erase kick/bass accents.
+- [ ] After Build 58 real-device validation, add the next effect against the same Spectrum-shared feed.
 - [ ] Prefer amplitude, travel and elastic lag over permanently increasing particle/segment counts.
 - [ ] Do not restore Aurora Glass, Nebula or Singularity by name unless they are deliberately rebuilt and pass the current contract.
 - [ ] Keep Spectrum untouched as the reference renderer while new effects are developed.
@@ -99,4 +103,4 @@ The repo is considered structurally healthy when:
 7. each new Audio Lab effect has a deliberate mobile performance budget;
 8. visual intensity does not come at the cost of readability or mobile smoothness;
 9. spring/inertia amplitude decays to rest when the real audio target disappears;
-10. sustained musical energy produces visible kinetic travel while peaks retain additional excursion.
+10. sustained musical energy produces visible kinetic travel while adaptive low-frequency onset detection preserves extra impact inside dense sections.

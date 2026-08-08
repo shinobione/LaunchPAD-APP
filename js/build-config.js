@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260808-kinetic-flow-v57',
-    cache: 'shinobi-launchpad-v57',
-    revision: 'kinetic-flow-1',
-    display: '2026.08.08.57',
-    release: 'kinetic-flow-20260808'
+    id: '20260808-adaptive-punch-v58',
+    cache: 'shinobi-launchpad-v58',
+    revision: 'adaptive-punch-1',
+    display: '2026.08.08.58',
+    release: 'adaptive-punch-20260808'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;

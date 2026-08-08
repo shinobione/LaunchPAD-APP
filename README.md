@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.08.57` — release `kinetic-flow-20260808`.
+> Current application build: `2026.08.08.58` — release `adaptive-punch-20260808`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -36,20 +36,18 @@ GitHub main
 
 See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the authoritative hosting map.
 
-## Build 57 highlights
+## Build 58 highlights
 
-Build 57 keeps the proven shared-Spectrum FFT pipeline but removes the Build 56 soft-knee pose compression that made **Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure** feel paradoxically more static.
+Build 58 keeps Build 57's kinetic motion intact and adds a separate **adaptive low-frequency punch** layer for Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure.
 
 - **Spectrum**, **Neon Shatter** and **Liquid Chrome** remain untouched as the trusted baseline.
-- `motion-spring.js` now separates amplitude from motion: raw FFT + smoothed features are blended with `shapeAudioDrive()` while `advanceMotionPhase()` integrates a real forward-moving phase frame by frame.
-- The kinetic phase advances only while real audio activity exists. A changing FFT value can no longer make the motion phase jump, stall or appear to reverse because absolute time was multiplied by a changing activity value.
-- **Pulse Reactor** now drifts as a whole, breathes over a much larger travel range, continuously rotates its ring system and carries travelling radial waves through steady grooves. Bass/kicks add impact and breakup on top of that living motion.
-- **Bass Fracture** now rolls and translates as a complete tectonic mass while individual plates slide, twist and recoil continuously. Mobile keeps the same geometry but regains a stronger `1.66` motion scale.
-- **Gravity Lens** now continuously precesses, drifts through the canvas and sweeps curved streams around the horizon. Warp peaks deepen an already-moving field instead of switching a mostly static diagram into a larger pose.
-- **Bio Structure** now moves as an organism: whole-body drift/tilt, large travelling spine waves, wider rib sweeps, moving membrane deformation and nerve impulses that visibly travel from end to end.
-- No new visual primitives, private RAF/timer loop, random motion or secondary audio path is introduced. Motion amplitude returns toward neutral as audio activity decays, and integrated phase speed stops on pause/silence.
-- Mobile DPR/geometry budgets remain unchanged from the validated seven-preset baseline.
-- The PWA cache advances to v57 so Build 56 motion code cannot remain hidden in an installed PWA cache.
+- Build 57's integrated phase remains responsible for travel, rotation, breathing and continuous groove motion.
+- A new low-frequency onset tracker compares fast bass, a slow local bass baseline, low-bin positive spectral flux and short-term bass rise. Kicks can therefore stand out even after a dense section has already raised the average bass level.
+- The adaptive punch is short-lived and overlays the existing kinetic movement; it does not replace groove motion or create a private animation loop.
+- Only Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure receive the punch-enhanced kick/peak/dynamics features. Neon Shatter and Liquid Chrome keep their previous feature calibration.
+- Audio Lab telemetry now exposes `audioLabPunch` so real-device testing can distinguish continuous bass level from detected low-frequency impacts.
+- No new visual primitives or higher mobile DPR budgets are introduced.
+- The PWA cache advances to v58 so Build 57 assets cannot mask the new transient detector.
 
 ## Canonical media model
 
@@ -135,6 +133,6 @@ Useful documents:
 7. Spectrum remains the Audio Lab reference path; every visual effect must consume the real FFT feed rather than independent loop animation.
 8. Add Audio Lab presets one at a time, with desktop and mobile budgets defined before merge.
 9. Prefer deterministic, signal-derived geometry over random particles when a visual must remain cheap on mobile.
-10. A visual must have real travel, not merely strong reaction: steady musical energy should create continuous signal-driven motion while peaks add excursion on top.
+10. Separate continuous movement from transient impact: groove energy owns travel; adaptive low-frequency onset detection owns the brief visual punch.
 11. Motion memory/kinetic phase must stop when the real audio target disappears and must never become an autonomous screensaver.
 12. Historical-looking compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.

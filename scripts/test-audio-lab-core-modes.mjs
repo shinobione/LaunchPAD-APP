@@ -32,7 +32,10 @@ for (const required of [
   "{ id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }",
   "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
   "{ id: 'spectrum', label: 'Spectrum' }", 'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)',
-  "document.documentElement.dataset.audioLabRenderer = 'seven-core-v2'",
+  "const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure'])",
+  'function createAdaptiveLowPunchTracker()', 'relativeContrast', 'relativeFlux', 'relativeRise',
+  'function kineticImpactFeatures(mode, features)', 'features.punch = adaptivePunch.punch',
+  "document.documentElement.dataset.audioLabRenderer = 'seven-core-v3'",
   "document.documentElement.dataset.audioLabPresetCount = '7'",
   "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' ? 1.05"
 ]) assert.ok(live.includes(required), `Audio Lab integration is missing ${required}.`);
@@ -115,6 +118,6 @@ for (const required of [
 ]) assert.ok(worker.includes(required), `PWA shell is missing ${required}.`);
 
 const build = assertCurrentBuild('Audio Lab current build');
-assert.equal(build.display, '2026.08.08.57');
-assert.equal(build.release, 'kinetic-flow-20260808');
-console.log(`Audio Lab exposes seven shared-FFT presets with integrated kinetic motion under ${build.display}.`);
+assert.equal(build.display, '2026.08.08.58');
+assert.equal(build.release, 'adaptive-punch-20260808');
+console.log(`Audio Lab exposes seven shared-FFT presets with kinetic flow plus adaptive low-frequency punch under ${build.display}.`);
