@@ -1,8 +1,21 @@
 # Changelog
 
-> Current application build: `2026.08.08.64` — release `sonictrace-badge-fix-20260808`.
+> Current application build: `2026.08.08.65` — release `studio-private-read-bridge-20260808`.
 
 This file intentionally tracks the recent stabilized release line. Older milestone-by-milestone history remains available in Git history and merged pull requests.
+
+## Build 65 — Studio private read bridge
+
+- Advance the private Track Manager repository contract from v5.7 to **v5.8**.
+- Add an additive `/api/studio/*` namespace for authenticated Studio reads without changing the existing Track Manager routes.
+- Expose `GET /api/studio/health`, `GET /api/studio/tracks` and `GET /api/studio/tracks/<trackId>` plus GET-only CORS preflight.
+- Allow browser CORS only from the exact GitHub Pages origin `https://shinobione.github.io`; do not use wildcard CORS.
+- Keep Studio data GETs behind Cloudflare Access JWT verification.
+- Keep all existing `POST`, `PUT`, `PATCH` and `DELETE` operations behind the unchanged same-origin write guard; the Studio bridge explicitly reports `write: []`.
+- Add `scripts/test-studio-private-read-bridge.mjs` and wire it into Cloudflare validation to catch accidental cross-origin write exposure.
+- Correct the Studio integration contract so timestamped canonical `lyrics.txt` counts as synchronized lyrics; a separate `.lrc` sidecar is optional rather than mandatory.
+- Do not migrate R2, rebuild `catalog/index.json`, replace media, or change the public Worker in this source step.
+- Preserve rollback reference `safety/pre-studio-integration-20260808-1048` while the bridge is introduced.
 
 ## Build 64 — SonicTrace badge styling fix
 

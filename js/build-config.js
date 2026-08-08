@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260808-sonictrace-badge-v64',
-    cache: 'shinobi-launchpad-v64',
-    revision: 'sonictrace-badge-1',
-    display: '2026.08.08.64',
-    release: 'sonictrace-badge-fix-20260808'
+    id: '20260808-studio-read-bridge-v65',
+    cache: 'shinobi-launchpad-v65',
+    revision: 'studio-read-bridge-1',
+    display: '2026.08.08.65',
+    release: 'studio-private-read-bridge-20260808'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;

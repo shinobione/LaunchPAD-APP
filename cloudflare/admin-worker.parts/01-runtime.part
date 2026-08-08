@@ -9,6 +9,8 @@ const MAX_LYRICS_BYTES = 1024 * 1024;
 const MAX_BODY_OVERHEAD = 4 * 1024 * 1024;
 const MAX_LIST_PAGES = 20;
 const DEFAULT_MIGRATION_MANIFEST_URL = "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/main/cloudflare/migration-manifest.json";
+const STUDIO_ALLOWED_ORIGIN = "https://shinobione.github.io";
+const STUDIO_BRIDGE_VERSION = "1.0";
 
 const ALLOWED_EXTENSIONS = new Set([
   "jpg", "jpeg", "png", "webp", "gif",
@@ -21,11 +23,53 @@ const STATUS_VALUES = new Set(["draft", "published", "archived"]);
 
 let jwksCache = { url: "", keys: null, expiresAt: 0 };
 
+function assertStudioReadOrigin(request) {
+  const origin = request.headers.get("origin");
+  if (origin && origin !== STUDIO_ALLOWED_ORIGIN) throw new Error("AUTH_Origine Studio refusée.");
+}
+
+function studioCorsHeaders(request) {
+  const origin = request.headers.get("origin");
+  if (origin !== STUDIO_ALLOWED_ORIGIN) return {};
+  return {
+    "Access-Control-Allow-Origin": STUDIO_ALLOWED_ORIGIN,
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Max-Age": "600",
+    "Vary": "Origin",
+  };
+}
+
+function withStudioCors(request, response) {
+  const headers = new Headers(response.headers);
+  for (const [name, value] of Object.entries(studioCorsHeaders(request))) headers.set(name, value);
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
+function studioCorsPreflight(request) {
+  const origin = request.headers.get("origin");
+  const requestedMethod = String(request.headers.get("access-control-request-method") || "").toUpperCase();
+  if (origin !== STUDIO_ALLOWED_ORIGIN || requestedMethod !== "GET") {
+    return jsonResponse({ ok: false, error: "Accès refusé." }, 403);
+  }
+  return new Response(null, { status: 204, headers: studioCorsHeaders(request) });
+}
+
 export default {
   async fetch(request, env) {
     try {
-      const user = await verifyAccessJwt(request, env);
       const url = new URL(request.url);
+
+      if (request.method === "OPTIONS" && url.pathname.startsWith("/api/studio/")) {
+        return studioCorsPreflight(request);
+      }
+
+      const user = await verifyAccessJwt(request, env);
 
       if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {
         enforceSameOrigin(request, url);
@@ -47,6 +91,33 @@ export default {
           legacyObjects: legacy.length,
           migrationManifestUrl: getMigrationManifestUrl(env),
         });
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/studio/health") {
+        assertStudioReadOrigin(request);
+        return withStudioCors(request, jsonResponse({
+          ok: true,
+          service: "launchpad-r2-track-manager-studio-bridge",
+          version: STUDIO_BRIDGE_VERSION,
+          trackManagerVersion: "5.8",
+          authenticatedEmail: user.email || null,
+          allowedOrigin: STUDIO_ALLOWED_ORIGIN,
+          capabilities: {
+            read: ["tracks", "track"],
+            write: [],
+          },
+        }));
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/studio/tracks") {
+        assertStudioReadOrigin(request);
+        return withStudioCors(request, await listTracks(env));
+      }
+
+      const studioTrackMatch = url.pathname.match(/^\/api\/studio\/tracks\/([a-z0-9][a-z0-9-]{0,119})$/);
+      if (studioTrackMatch && request.method === "GET") {
+        assertStudioReadOrigin(request);
+        return withStudioCors(request, await getTrack(studioTrackMatch[1], env));
       }
 
       if (request.method === "GET" && url.pathname === "/api/tracks") {
@@ -103,7 +174,7 @@ export default {
       const message = error instanceof Error ? error.message : "Erreur inconnue.";
       const isAuth = message.startsWith("AUTH_");
       const isInput = message.startsWith("INPUT_") || message.startsWith("UPLOAD_");
-      return jsonResponse(
+      const response = jsonResponse(
         {
           ok: false,
           error: isAuth ? "Accès refusé." : isInput ? "Requête invalide." : "Erreur interne.",
@@ -111,6 +182,8 @@ export default {
         },
         isAuth ? 403 : isInput ? 400 : 500,
       );
+      const url = new URL(request.url);
+      return url.pathname.startsWith("/api/studio/") ? withStudioCors(request, response) : response;
     }
   },
 };

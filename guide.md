@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD — catalog guide
 
-> Current application build: `2026.08.08.64` — release `sonictrace-badge-fix-20260808`.
+> Current application build: `2026.08.08.65` — release `studio-private-read-bridge-20260808`.
 
 The production catalog is managed in Cloudflare R2 through the private LaunchPAD Track Manager. `js/catalog.js` contains album/editorial presentation data only; production track metadata and media are not maintained by hand in the PWA.
 
@@ -14,13 +14,15 @@ https://launchpad-r2-api.jerryquinet.workers.dev/
 
 LaunchPAD exposes private desktop shortcuts after an explicit `?admin=1` opt-in:
 
-- **SonicTrace** — neural/audio-analysis interface at `https://shinobione.github.io/LM-IA-Analayse/`, rendered as the cyan/teal `ST` pill in Build 64;
-- **LRC Maker** — external synchronized-lyrics authoring tool;
+- **SonicTrace** — neural/audio-analysis interface at `https://shinobione.github.io/LM-IA-Analayse/`, rendered as the cyan/teal `ST` pill;
+- **LRC Maker** — synchronized-lyrics authoring tool;
 - **Track Manager** — private R2/catalog administration.
 
 All three use the same persisted admin gate in browser and installed desktop PWA sessions. Use `?admin=0` to clear it.
 
-Repository Track Manager contract: **v5.7**. Public media Worker contract: **v2.6**.
+Repository Track Manager contract: **v5.8**. Public media Worker contract: **v2.6**.
+
+Build 65 also introduces an additive private **Studio read bridge** under `/api/studio/*`. It is GET-only, Cloudflare-Access-authenticated and CORS-allowlisted to `https://shinobione.github.io`. It does not replace the Track Manager UI and does not expose cross-origin write capability.
 
 ## Add or edit a track
 
@@ -45,11 +47,11 @@ tracks/<slug>/manifest.json
 tracks/<slug>/audio.<ext>
 tracks/<slug>/cover.<ext>
 tracks/<slug>/thumbnail.webp
-tracks/<slug>/lyrics.txt      # optional
+tracks/<slug>/lyrics.txt      # optional; may be timestamped
 tracks/<slug>/video.<ext>     # optional
 ```
 
-Do not rename a published slug. It is the permanent catalog/share-route identifier.
+Do not rename a published slug. It is the permanent catalog/share-route identifier and the canonical Studio `trackId`.
 
 ## Publication quality
 
@@ -71,7 +73,9 @@ A timestamp followed by its lyric on the next line
 
 Structured metadata may appear before a line containing exactly `LYRICS:`.
 
-Track Detail exposes one Lyrics state and Lyrics Studio consumes the same canonical asset, so both should agree after a correct catalog rebuild.
+**Synchronization is determined from content, not the file extension.** A canonical `lyrics.txt` containing recognized timestamps is already synchronized. A separate `.lrc` sidecar is optional compatibility/export data and is not required for Content Health or publication completeness.
+
+Track Detail, SHINOBIWAN Studio and LRC Maker should all treat the same timestamped canonical lyrics source consistently.
 
 ## Metadata conventions
 
@@ -106,7 +110,7 @@ npm run validate
 npm run check:wrangler
 ```
 
-Every new app build must update every Markdown file to the active build display/release; `check:build-docs` enforces that contract.
+Every new app build must update every Markdown file to the active build display/release; `check:build-docs` enforces that contract. Build 65 additionally runs `check:studio-private-read-bridge` as part of Cloudflare validation.
 
 ## Deployment boundaries
 
@@ -114,6 +118,7 @@ Every new app build must update every Markdown file to the active build display/
 - GitHub Pages publishes the canonical validated static artifact;
 - Cloudflare Pages staging mirrors the same runtime;
 - Worker code deploys separately through **Deploy Cloudflare Workers**;
-- R2 catalog/media changes happen through Track Manager and explicit catalog rebuilds.
+- Build 65 requires only the **admin Worker** to change; the public Worker remains v2.6;
+- R2 catalog/media changes happen through Track Manager and explicit catalog rebuilds and are not performed merely by deploying Build 65.
 
-See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md), [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) and [`cloudflare/README.md`](cloudflare/README.md).
+See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md), [`docs/SHINOBIWAN-STUDIO-CONTRACT.md`](docs/SHINOBIWAN-STUDIO-CONTRACT.md), [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) and [`cloudflare/README.md`](cloudflare/README.md).

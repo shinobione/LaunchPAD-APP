@@ -1,12 +1,12 @@
 # LaunchPAD roadmap
 
-> Current application build: `2026.08.08.64` — release `sonictrace-badge-fix-20260808`.
+> Current application build: `2026.08.08.65` — release `studio-private-read-bridge-20260808`.
 
 The repository cleanup/reconciliation phase is complete. This roadmap now tracks product/runtime work rather than historical migration chores.
 
 ## Baseline — complete
 
-- [x] `main` is the only persistent application source branch.
+- [x] `main` is the only normal application source branch; named `safety/*` branches are rollback references only.
 - [x] GitHub Pages deploys the validated runtime from `main`.
 - [x] Cloudflare Pages is staging only and tracks the same source.
 - [x] Historical `gh-pages`, migration/fix backlog and duplicate deployment workflows are gone.
@@ -32,7 +32,22 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Build 62/62.1 polishes Studio/Audio Lab/mobile-player layout and advances the visible build/cache marker correctly.
 - [x] Build 63 adds SonicTrace to the persistent desktop admin shortcut strip with the same shared admin gate as LRC Maker and Track Manager.
 - [x] Build 64 corrects SonicTrace's live PWA styling so the cyan/teal `ST` control uses the same pill geometry and behavior as the two existing admin tools.
+- [x] Build 65 defines the GET-only, Access-authenticated Track Manager bridge for SHINOBIWAN Studio without weakening existing write protection.
+- [x] Build 65 corrects the shared lyrics contract: timestamped canonical `lyrics.txt` is synchronized; a duplicate `.lrc` file is not required.
 - [x] All Markdown documentation is version-coupled to `js/build-config.js` through CI.
+
+## P0 — Studio integration safety
+
+- [x] Create restoration snapshots before cross-repository integration: `safety/pre-studio-integration-20260808-1048` for LaunchPAD/Track Manager, SonicTrace and LRC Maker.
+- [x] Keep Phase 4A additive: new `/api/studio/*` namespace only; no rewrite of existing Track Manager routes.
+- [x] Keep Phase 4A GET/OPTIONS only and advertise `write: []`.
+- [x] Keep Studio GET data behind Cloudflare Access and allow browser CORS only from `https://shinobione.github.io`.
+- [x] Add a CI regression guard that fails if the Studio namespace acquires write methods or loses the legacy same-origin write guard.
+- [ ] Merge Build 65 only after all LaunchPAD/Cloudflare/overflow validations are green.
+- [ ] Deploy the **admin Worker only** from merged `main`, through the protected Cloudflare environment.
+- [ ] Verify existing Track Manager operations after Worker deploy before connecting Studio to the new bridge.
+- [ ] Connect Studio to `/api/studio/health` first in a separate Studio PR/release, then progressively consume private read data.
+- [ ] Design Phase 4B write integration separately; no browser secret, wildcard CORS or direct weakening of `enforceSameOrigin()` is acceptable.
 
 ## P0 — real-device validation
 
@@ -86,12 +101,12 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] GitHub Pages and Cloudflare Pages publish repository-built artifacts only.
 - [x] Worker deployment remains protected/manual.
 - [x] Every new build updates every `.md` document and passes `check:build-docs`.
-- [ ] Record the next repository-driven public/private Worker production deploy with source SHA and Cloudflare version IDs.
+- [ ] Record the next repository-driven private Worker production deploy with source SHA and Cloudflare version ID.
 
 ## P2 — catalog / Track Manager
 
 - [ ] Complete metadata for tracks still carrying analysis/review warnings.
-- [x] Keep Track Manager as the only publishing interface for production manifests/media.
+- [x] Keep Track Manager as the only production publishing/write interface until a separately secured Studio write path is proven.
 - [ ] Rebuild `catalog/index.json` only when manifest/lyrics-derived metadata requires it.
 - [ ] Remove dormant migration UI/API routes in one coordinated Track Manager refactor, then redeploy/verify the admin Worker.
 
@@ -103,7 +118,7 @@ Lovable remains prototype-only. A feature is shipped only when it is implemented
 
 The repo is considered structurally healthy when:
 
-1. `main` remains the only persistent source branch;
+1. `main` remains the only normal persistent source branch and safety snapshots remain rollback-only;
 2. web hosts expose the same build/release;
 3. Markdown docs match `js/build-config.js`;
 4. Workers/R2 are treated as separate backend/data states;
@@ -113,4 +128,5 @@ The repo is considered structurally healthy when:
 8. visual intensity does not come at the cost of readability or mobile smoothness;
 9. spring/inertia amplitude decays to rest when the real audio target disappears;
 10. sustained musical energy produces visible kinetic travel while low-frequency onsets retain a separate post-pose impact with reserved headroom;
-11. the Audio Lab can introduce new composition families without duplicating the same centered radial grammar.
+11. the Audio Lab can introduce new composition families without duplicating the same centered radial grammar;
+12. Studio integration can fail or be reverted without disabling the standalone Track Manager, LaunchPAD, SonicTrace or LRC Maker.
