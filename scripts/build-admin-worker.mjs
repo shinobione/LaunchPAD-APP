@@ -104,7 +104,7 @@ for (const required of [
   'trackManagerVersion: "5.9"',
   'url.pathname === "/api/studio/health"',
   'url.pathname === "/api/studio/tracks"',
-  'metadata/validate',
+  'studioMetadataValidationMatch',
   'STUDIO_METADATA_VALIDATION_INTENT',
   'validationOnly: true',
   'validate: ["metadata"]',
