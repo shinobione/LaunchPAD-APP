@@ -65,7 +65,7 @@ function normalizeStudioSonicTraceAnalysis(value, slug, currentSourceVersion) {
   const analyzedAt = String(value.analyzedAt || "").trim();
   if (!analyzedAt || !Number.isFinite(Date.parse(analyzedAt))) throw new Error("INPUT_Date d'analyse SonicTrace invalide.");
   if (!studioSourceVersionEqual(value.sourceVersion, currentSourceVersion)) {
-    const error = new Error("STALE_AUDIO_L'audio canonique a changÃ© depuis l'analyse.");
+    const error = new Error("STALE_AUDIO_L'audio canonique a changé depuis l'analyse.");
     error.currentSourceVersion = currentSourceVersion;
     throw error;
   }
@@ -141,13 +141,13 @@ async function saveStudioSonicTraceAnalysis(slug, request, env, user) {
   const manifest = await readManifest(env.MEDIA_BUCKET, slug);
   if (!manifest) return jsonResponse({ ok: false, error: "Titre introuvable." }, 404);
   const currentSourceVersion = await studioAudioSourceVersion(env.MEDIA_BUCKET, manifest);
-  if (!currentSourceVersion) return jsonResponse({ ok: false, error: "Aucun audio canonique Ã  analyser.", code: "AUDIO_MISSING" }, 409);
+  if (!currentSourceVersion) return jsonResponse({ ok: false, error: "Aucun audio canonique à analyser.", code: "AUDIO_MISSING" }, 409);
 
   let prepared;
   try { prepared = normalizeStudioSonicTraceAnalysis(payload.analysis, slug, currentSourceVersion); }
   catch (error) {
     if (String(error?.message || "").startsWith("STALE_AUDIO_")) {
-      return jsonResponse({ ok: false, error: "L'audio canonique a changÃ© depuis l'analyse.", code: "STALE_AUDIO", currentSourceVersion }, 409);
+      return jsonResponse({ ok: false, error: "L'audio canonique a changé depuis l'analyse.", code: "STALE_AUDIO", currentSourceVersion }, 409);
     }
     throw error;
   }
@@ -155,7 +155,7 @@ async function saveStudioSonicTraceAnalysis(slug, request, env, user) {
   const latestKey = studioSonicTraceLatestKey(slug);
   const historyKey = studioSonicTraceHistoryKey(slug, prepared.normalized.analysisId);
   if (await env.MEDIA_BUCKET.head(historyKey)) {
-    return jsonResponse({ ok: false, error: "Cet analysisId existe dÃ©jÃ .", code: "ANALYSIS_EXISTS" }, 409);
+    return jsonResponse({ ok: false, error: "Cet analysisId existe déjà.", code: "ANALYSIS_EXISTS" }, 409);
   }
   const previousLatest = await env.MEDIA_BUCKET.get(latestKey);
   let historyWritten = false;
@@ -183,7 +183,7 @@ async function saveStudioSonicTraceAnalysis(slug, request, env, user) {
       readStudioJsonObject(env.MEDIA_BUCKET, latestKey),
     ]);
     if (historyCheck?.analysisId !== prepared.normalized.analysisId || latestCheck?.analysisId !== prepared.normalized.analysisId) {
-      throw new Error("SAVE_VERIFY_Analyse SonicTrace non vÃ©rifiÃ©e.");
+      throw new Error("SAVE_VERIFY_Analyse SonicTrace non vérifiée.");
     }
     return jsonResponse({
       ok: true,
@@ -213,7 +213,7 @@ async function saveStudioSonicTraceAnalysis(slug, request, env, user) {
       } catch (rollbackError) { console.error("SonicTrace latest rollback failed", rollbackError); }
     }
     console.error("Studio SonicTrace save failed", error);
-    return jsonResponse({ ok: false, error: "Sauvegarde SonicTrace annulÃ©e aprÃ¨s Ã©chec de vÃ©rification.", code: "ANALYSIS_ROLLBACK", rollback }, 500);
+    return jsonResponse({ ok: false, error: "Sauvegarde SonicTrace annulée après échec de vérification.", code: "ANALYSIS_ROLLBACK", rollback }, 500);
   }
 }
 
