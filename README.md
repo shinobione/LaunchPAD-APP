@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.08.60` — release `void-bloom-20260808`.
+> Current application build: `2026.08.08.61` — release `creep-signal-20260808`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -36,19 +36,19 @@ GitHub main
 
 See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the authoritative hosting map.
 
-## Build 60 highlights
+## Build 61 highlights
 
-Build 60 expands the validated Build 59 motion/reactivity model with **Void Bloom**, an isolated eighth Audio Lab preset designed to feel alive before the kick and still preserve a separate kick/bass hit.
+Build 61 adds **Creep Signal**, the ninth sanctioned Audio Lab preset and the first deliberately non-radial kinetic visual in the current line.
 
 - **Spectrum**, **Neon Shatter** and **Liquid Chrome** remain untouched as the trusted baseline.
-- Build 57's integrated phase still owns continuous travel, rotation, breathing and groove motion.
-- Build 58's adaptive onset detector and Build 59's post-pose `visualImpact` lane remain unchanged.
-- **Void Bloom** uses FFT-sampled petals: bass opens/deepens the bloom, mids twist individual petals, highs drive luminous veins and edge motion.
-- The new renderer uses the same integrated kinetic phase as the validated modes so the bloom drifts, breathes and rotates continuously while real audio exists.
-- The existing direct-impact lane gives Void Bloom a reserved whole-bloom expansion/twist on kick/bass transients after the normal pose is computed.
-- Mobile budget is fixed at 7 petals / 7 veins / DPR 1.05; desktop uses 11 petals / 16 veins / DPR up to 2.
-- Void Bloom owns no private RAF/timer, uses no `Math.random()` motion and adds no particle field.
-- The PWA cache advances to v60 so installed clients cannot remain on Build 59 visual runtime code.
+- Build 57's integrated kinetic phase still owns continuous movement while Build 58/59 onset + Direct Impact own short low-frequency hits.
+- **Creep Signal** forms an asymmetric signal-organism that traverses the canvas instead of orbiting a central object.
+- Bass gives the body mass and wider travel, mids whip alternating branches, highs/transients drive luminous infection pulses along the network.
+- Local FFT samples deform separate body/branch positions so the structure does not behave like one rigid spline.
+- Direct Impact gives kick/bass onsets a reserved whole-network lateral lunge, shear and compression after the normal pose is computed.
+- Mobile budget is fixed at 9 body nodes / 6 branches / 7 travelling pulses / DPR 1.05; desktop uses 14 / 10 / 12 / DPR up to 2.
+- The renderer owns no private RAF/timer, uses no `Math.random()` motion and adds no particle field.
+- The PWA cache advances to v61 so installed clients cannot remain on Build 60 visual runtime code.
 
 ## Canonical media model
 
@@ -136,4 +136,5 @@ Useful documents:
 9. Prefer deterministic, signal-derived geometry over random particles when a visual must remain cheap on mobile.
 10. Continuous movement and transient impact must stay separate: groove energy owns travel; detected onset creates a post-pose impact with reserved visual headroom.
 11. Motion memory/kinetic phase must stop when the real audio target disappears and must never become an autonomous screensaver.
-12. Historical-looking compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.
+12. New visual families should prefer distinct composition/motion language rather than repeating radial center-object patterns.
+13. Historical-looking compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.
