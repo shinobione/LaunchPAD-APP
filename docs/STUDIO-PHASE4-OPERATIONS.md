@@ -3,7 +3,22 @@
 > Public application build remains `2026.08.08.66` — release `studio-metadata-validation-20260808`.
 
 Date: 2026-08-08  
-Status in this branch: **source candidate / not production until protected admin deployment succeeds**
+Status: **production deployed / protected admin Worker only**
+
+## Production proof
+
+```text
+Track Manager       v5.13
+Studio bridge       v1.5
+source SHA          df75509d89b1ed1477d4b249fab63a6bd41db311
+workflow run        31272655808
+deployment target   admin
+Worker Version ID   781f75f9-776c-4e39-90a7-5cdf34854599
+Access verification protected / HTTP 302 unauthenticated
+public Worker       skipped / remains v2.6
+```
+
+The deployment workflow rebuilt and validated the Worker bundle before upload. It deployed Worker code only and did not rebuild the canonical catalog or mutate R2 media.
 
 ## Objective
 
@@ -33,7 +48,7 @@ Metadata and canonical lyrics read/validate/save remain the already-separated v1
 }
 ```
 
-The new `manage` family is separate so the meaning of the production-proven `write` list does not silently broaden.
+The `manage` family is separate so the meaning of the production-proven `write` list does not silently broaden.
 
 ## Routes
 
@@ -164,13 +179,13 @@ Backups are not a new source of truth. They are temporary compensation material 
 - no SonicTrace/Phase 5 persistence;
 - no `.lrc` storage path.
 
-## Deployment ordering
+## Deployment ordering — completed
 
-1. Studio Build 12 is deployed first and remains compatible because it ignores the future `capabilities.manage` family.
-2. Merge v5.13 source only after LaunchPAD + Worker + overflow CI is green.
-3. Deploy private/admin Worker only using protected `workflow_dispatch`.
-4. Record actual source SHA, workflow run and Cloudflare Version ID.
-5. Only then deploy the final Studio Phase 4 UI which consumes `manage`.
+1. Studio Build 12 deployed first and safely ignored the future `capabilities.manage` family. ✅
+2. v5.13 source merged only after LaunchPAD + Worker + overflow CI was green. ✅
+3. private/admin Worker deployed through protected `workflow_dispatch`. ✅
+4. source SHA, workflow run and Cloudflare Version ID recorded. ✅
+5. final Studio Phase 4 UI may now consume `manage`. ✅
 
 ## Safety references
 
