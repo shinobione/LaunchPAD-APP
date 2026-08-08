@@ -1,0 +1,373 @@
+
+const STUDIO_TRACK_CREATE_INTENT = "track-create-v1";
+const STUDIO_ASSET_UPLOAD_INTENT = "asset-upload-v1";
+const STUDIO_ASSET_DELETE_INTENT = "asset-delete-v1";
+const STUDIO_CATALOG_REBUILD_INTENT = "catalog-rebuild-v1";
+const STUDIO_PHASE4_ASSET_KINDS = new Set(["audio", "cover", "thumbnail", "lyrics", "video"]);
+
+function studioTrackCreateMatch(pathname) {
+  return String(pathname || "") === "/api/studio/tracks/create";
+}
+
+function studioAssetUploadMatch(pathname) {
+  return String(pathname || "").match(/^\/api\/studio\/tracks\/([a-z0-9][a-z0-9-]{0,119})\/assets\/(audio|cover|thumbnail|lyrics|video)\/upload$/);
+}
+
+function studioAssetDeleteMatch(pathname) {
+  return String(pathname || "").match(/^\/api\/studio\/tracks\/([a-z0-9][a-z0-9-]{0,119})\/assets\/(audio|cover|thumbnail|lyrics|video)\/delete$/);
+}
+
+function studioCatalogRebuildMatch(pathname) {
+  return String(pathname || "") === "/api/studio/catalog/rebuild";
+}
+
+function assertStudioPhase4OperationRequest(request, mode) {
+  const origin = request.headers.get("origin");
+  if (origin !== STUDIO_ALLOWED_ORIGIN) throw new Error("AUTH_Origine Studio refusée.");
+  const contentType = studioMetadataContentType(request);
+  if (mode === "upload") {
+    if (contentType !== "multipart/form-data") throw new Error("INPUT_L'upload Studio attend multipart/form-data.");
+    return;
+  }
+  if (contentType !== "text/plain") throw new Error("INPUT_L'opération Studio attend text/plain JSON.");
+}
+
+async function readStudioPhase4JsonPayload(request, expectedIntent) {
+  let payload;
+  try { payload = JSON.parse(await request.text()); }
+  catch { throw new Error("INPUT_JSON Studio invalide."); }
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new Error("INPUT_Payload Studio invalide.");
+  if (payload.intent !== expectedIntent) throw new Error("AUTH_Intention Studio invalide.");
+  return payload;
+}
+
+function studioPhase4StaleResponse(manifest, expectedUpdatedAt) {
+  const expected = String(expectedUpdatedAt || "").trim();
+  if (!expected) throw new Error("INPUT_expectedUpdatedAt est requis.");
+  if (expected !== String(manifest.updatedAt || "")) {
+    return jsonResponse({
+      ok: false,
+      error: "Le morceau a changé depuis son chargement.",
+      code: "STALE_MANIFEST",
+      currentUpdatedAt: manifest.updatedAt || null,
+    }, 409);
+  }
+  return null;
+}
+
+function studioPhase4BackupKey(slug, kind) {
+  const token = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + "-" + Math.random().toString(16).slice(2);
+  return `_studio-backups/${slug}/${kind}-${token}`;
+}
+
+async function studioBackupObject(bucket, object, backupKey) {
+  if (!object) return false;
+  await bucket.put(backupKey, object.body, {
+    httpMetadata: object.httpMetadata || {},
+    customMetadata: object.customMetadata || {},
+  });
+  return true;
+}
+
+async function studioRestoreBackup(bucket, backupKey, targetKey) {
+  const backup = await bucket.get(backupKey);
+  if (!backup) throw new Error("Backup R2 introuvable.");
+  await bucket.put(targetKey, backup.body, {
+    httpMetadata: backup.httpMetadata || {},
+    customMetadata: backup.customMetadata || {},
+  });
+}
+
+async function studioDeleteBackup(bucket, backupKey) {
+  if (!backupKey) return;
+  try { await bucket.delete(backupKey); }
+  catch (error) { console.error("Studio backup cleanup failed", error); }
+}
+
+function studioPhase4NextManifest(existing, user, assetPatch = null) {
+  return normalizeManifest({
+    ...existing,
+    slug: existing.slug,
+    assets: assetPatch ? { ...existing.assets, ...assetPatch } : existing.assets,
+    migration: existing.migration,
+    createdAt: existing.createdAt,
+    updatedAt: new Date().toISOString(),
+    updatedBy: String(user.email || "authorized-user"),
+  });
+}
+
+async function createStudioTrack(request, env, user) {
+  const payload = await readStudioPhase4JsonPayload(request, STUDIO_TRACK_CREATE_INTENT);
+  const slug = slugify(payload.slug || "");
+  if (!slug || slug !== String(payload.slug || "").trim()) throw new Error("INPUT_Slug canonique invalide.");
+  const existing = await readManifest(env.MEDIA_BUCKET, slug);
+  if (existing) {
+    return jsonResponse({ ok: false, error: "Ce trackId existe déjà.", code: "TRACK_EXISTS", trackId: slug }, 409);
+  }
+
+  const patch = normalizeStudioMetadataPatch(payload.metadata || {});
+  const now = new Date().toISOString();
+  const manifest = normalizeManifest({
+    ...patch,
+    slug,
+    status: "draft",
+    assets: { audio: null, cover: null, thumbnail: null, lyrics: null, video: null },
+    migration: null,
+    createdAt: now,
+    updatedAt: now,
+    updatedBy: String(user.email || "authorized-user"),
+  });
+
+  let manifestWritten = false;
+  try {
+    await writeManifest(env.MEDIA_BUCKET, manifest);
+    manifestWritten = true;
+    const index = await writeCatalogIndex(env.MEDIA_BUCKET);
+    const reread = await readManifest(env.MEDIA_BUCKET, slug);
+    if (!reread || reread.updatedAt !== manifest.updatedAt || reread.slug !== slug) throw new Error("SAVE_VERIFY_Manifest créé non vérifié.");
+    return jsonResponse({
+      ok: true,
+      created: true,
+      trackId: slug,
+      track: reread,
+      catalogRebuilt: true,
+      catalogGeneratedAt: index.generatedAt || null,
+      catalogCount: index.count,
+      authenticatedEmail: user.email || null,
+    }, 201);
+  } catch (error) {
+    const rollback = { manifestRemoved: false, catalogRestored: false };
+    if (manifestWritten) {
+      try { await env.MEDIA_BUCKET.delete(trackPrefix(slug) + MANIFEST_NAME); rollback.manifestRemoved = true; }
+      catch (rollbackError) { console.error("Studio create rollback manifest delete failed", rollbackError); }
+      try { await writeCatalogIndex(env.MEDIA_BUCKET); rollback.catalogRestored = true; }
+      catch (rollbackError) { console.error("Studio create rollback catalog failed", rollbackError); }
+    }
+    console.error("Studio track create failed", error);
+    return jsonResponse({ ok: false, error: "Création Studio annulée après échec de publication ou vérification.", code: "CREATE_ROLLBACK", rollback }, 500);
+  }
+}
+
+async function uploadStudioTrackAsset(slug, kind, request, env, user) {
+  if (!STUDIO_PHASE4_ASSET_KINDS.has(kind)) throw new Error("INPUT_Type d'asset Studio invalide.");
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (contentLength && contentLength > MAX_UPLOAD_BYTES + MAX_BODY_OVERHEAD) throw new Error("UPLOAD_Envoi trop volumineux.");
+  const formData = await request.formData();
+  if (formData.get("intent") !== STUDIO_ASSET_UPLOAD_INTENT) throw new Error("AUTH_Intention Studio invalide.");
+  const manifest = await readManifest(env.MEDIA_BUCKET, slug);
+  if (!manifest) return jsonResponse({ ok: false, error: "Titre introuvable." }, 404);
+  const stale = studioPhase4StaleResponse(manifest, formData.get("expectedUpdatedAt"));
+  if (stale) return stale;
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size <= 0) throw new Error("UPLOAD_Fichier manquant.");
+  validateUploadFile(file, kind);
+  if (kind === "thumbnail" && file.size > MAX_THUMBNAIL_BYTES) throw new Error("UPLOAD_La miniature doit peser moins de 2 Mo.");
+
+  const extension = normalizedExtension(file.name, file.type, kind);
+  const filename = kind + "." + extension;
+  if (kind === "lyrics" && filename !== STUDIO_CANONICAL_LYRICS_FILENAME) throw new Error("UPLOAD_Les lyrics canoniques Studio doivent être lyrics.txt.");
+  const prefix = trackPrefix(slug);
+  const newKey = prefix + filename;
+  const oldFilename = manifest.assets?.[kind] || null;
+  const oldKey = oldFilename ? prefix + oldFilename : null;
+  const oldObject = oldKey ? await env.MEDIA_BUCKET.get(oldKey) : null;
+  const backupKey = oldObject ? studioPhase4BackupKey(slug, kind) : null;
+  let backupWritten = false;
+  let newWritten = false;
+  let oldDeleted = false;
+  let manifestWritten = false;
+
+  try {
+    if (oldObject && backupKey) backupWritten = await studioBackupObject(env.MEDIA_BUCKET, oldObject, backupKey);
+
+    await env.MEDIA_BUCKET.put(newKey, file.stream(), {
+      httpMetadata: {
+        contentType: file.type || guessContentType(extension),
+        cacheControl: kind === "lyrics" ? "public, max-age=60, stale-while-revalidate=300" : "public, max-age=31536000, immutable",
+      },
+      customMetadata: {
+        kind,
+        slug,
+        originalName: String(file.name || filename).slice(0, 300),
+        uploadedBy: String(user.email || "authorized-user").slice(0, 200),
+        uploadedAt: new Date().toISOString(),
+        studioIntent: STUDIO_ASSET_UPLOAD_INTENT,
+      },
+    });
+    newWritten = true;
+
+    if (oldKey && oldKey !== newKey) {
+      await env.MEDIA_BUCKET.delete(oldKey);
+      oldDeleted = true;
+    }
+
+    const nextManifest = studioPhase4NextManifest(manifest, user, { [kind]: filename });
+    const objects = await listAllObjects(env.MEDIA_BUCKET, prefix);
+    const quality = await inspectTrackQuality(env.MEDIA_BUCKET, nextManifest, objects);
+    if (nextManifest.status === "published" && quality.publishable !== true) {
+      const error = new Error("QUALITY_BLOCKED_Asset refusé car le morceau publié deviendrait non publiable.");
+      error.quality = quality;
+      throw error;
+    }
+
+    await writeManifest(env.MEDIA_BUCKET, nextManifest);
+    manifestWritten = true;
+    const index = await writeCatalogIndex(env.MEDIA_BUCKET);
+    const [rereadManifest, rereadObject] = await Promise.all([
+      readManifest(env.MEDIA_BUCKET, slug),
+      env.MEDIA_BUCKET.get(newKey),
+    ]);
+    if (!rereadManifest || rereadManifest.updatedAt !== nextManifest.updatedAt || rereadManifest.assets?.[kind] !== filename || !rereadObject) {
+      throw new Error("SAVE_VERIFY_Asset ou manifest relu non vérifié.");
+    }
+
+    await studioDeleteBackup(env.MEDIA_BUCKET, backupKey);
+    return jsonResponse({
+      ok: true,
+      saved: true,
+      trackId: slug,
+      kind,
+      filename,
+      size: rereadObject.size,
+      contentType: rereadObject.httpMetadata?.contentType || file.type || guessContentType(extension),
+      etag: studioLyricsObjectEtag(rereadObject),
+      previousUpdatedAt: manifest.updatedAt || null,
+      updatedAt: rereadManifest.updatedAt || null,
+      quality,
+      catalogRebuilt: true,
+      catalogGeneratedAt: index.generatedAt || null,
+      catalogCount: index.count,
+      authenticatedEmail: user.email || null,
+    });
+  } catch (error) {
+    const rollback = { assetRestored: !oldObject, manifestRestored: !manifestWritten, catalogRestored: false, backupRemoved: false };
+    try {
+      if (oldObject && backupWritten && backupKey && oldKey) {
+        await studioRestoreBackup(env.MEDIA_BUCKET, backupKey, oldKey);
+        rollback.assetRestored = true;
+      } else if (!oldObject && newWritten) {
+        await env.MEDIA_BUCKET.delete(newKey);
+        rollback.assetRestored = true;
+      }
+      if (oldObject && oldKey !== newKey && newWritten) {
+        try { await env.MEDIA_BUCKET.delete(newKey); } catch {}
+      }
+    } catch (rollbackError) { console.error("Studio asset rollback object failed", rollbackError); }
+    try {
+      if (manifestWritten) await writeManifest(env.MEDIA_BUCKET, manifest);
+      rollback.manifestRestored = true;
+    } catch (rollbackError) { console.error("Studio asset rollback manifest failed", rollbackError); }
+    if (rollback.assetRestored && rollback.manifestRestored) {
+      try { await writeCatalogIndex(env.MEDIA_BUCKET); rollback.catalogRestored = true; }
+      catch (rollbackError) { console.error("Studio asset rollback catalog failed", rollbackError); }
+    }
+    if (backupKey) {
+      await studioDeleteBackup(env.MEDIA_BUCKET, backupKey);
+      rollback.backupRemoved = true;
+    }
+    console.error("Studio asset upload failed", error);
+    const qualityBlocked = String(error?.message || "").startsWith("QUALITY_BLOCKED_");
+    return jsonResponse({
+      ok: false,
+      error: qualityBlocked ? "Asset refusé par le contrôle qualité du morceau publié." : "Remplacement asset annulé après échec de publication ou vérification.",
+      code: qualityBlocked ? "QUALITY_BLOCKED" : "ASSET_SAVE_ROLLBACK",
+      quality: error?.quality || null,
+      rollback,
+      currentUpdatedAt: manifest.updatedAt || null,
+    }, qualityBlocked ? 409 : 500);
+  }
+}
+
+async function deleteStudioTrackAsset(slug, kind, request, env, user) {
+  if (!STUDIO_PHASE4_ASSET_KINDS.has(kind)) throw new Error("INPUT_Type d'asset Studio invalide.");
+  const payload = await readStudioPhase4JsonPayload(request, STUDIO_ASSET_DELETE_INTENT);
+  const manifest = await readManifest(env.MEDIA_BUCKET, slug);
+  if (!manifest) return jsonResponse({ ok: false, error: "Titre introuvable." }, 404);
+  const stale = studioPhase4StaleResponse(manifest, payload.expectedUpdatedAt);
+  if (stale) return stale;
+  const filename = manifest.assets?.[kind] || null;
+  if (!filename) return jsonResponse({ ok: false, error: "Asset absent.", code: "ASSET_MISSING", trackId: slug, kind }, 409);
+
+  const prefix = trackPrefix(slug);
+  const key = prefix + filename;
+  const object = await env.MEDIA_BUCKET.get(key);
+  if (!object) return jsonResponse({ ok: false, error: "Le manifest référence un asset R2 absent.", code: "ASSET_R2_MISSING" }, 409);
+  const proposedManifest = studioPhase4NextManifest(manifest, user, { [kind]: null });
+  const currentObjects = await listAllObjects(env.MEDIA_BUCKET, prefix);
+  const proposedQuality = await inspectTrackQuality(env.MEDIA_BUCKET, proposedManifest, currentObjects);
+  if (proposedManifest.status === "published" && proposedQuality.publishable !== true) {
+    return jsonResponse({
+      ok: false,
+      error: "Suppression bloquée car le morceau publié deviendrait non publiable. Passe le morceau en draft d'abord.",
+      code: "QUALITY_BLOCKED",
+      quality: proposedQuality,
+      currentUpdatedAt: manifest.updatedAt || null,
+    }, 409);
+  }
+
+  const backupKey = studioPhase4BackupKey(slug, kind);
+  let backupWritten = false;
+  let assetDeleted = false;
+  let manifestWritten = false;
+  try {
+    backupWritten = await studioBackupObject(env.MEDIA_BUCKET, object, backupKey);
+    await env.MEDIA_BUCKET.delete(key);
+    assetDeleted = true;
+    await writeManifest(env.MEDIA_BUCKET, proposedManifest);
+    manifestWritten = true;
+    const index = await writeCatalogIndex(env.MEDIA_BUCKET);
+    const [rereadManifest, rereadObject] = await Promise.all([readManifest(env.MEDIA_BUCKET, slug), env.MEDIA_BUCKET.get(key)]);
+    if (!rereadManifest || rereadManifest.updatedAt !== proposedManifest.updatedAt || rereadManifest.assets?.[kind] || rereadObject) {
+      throw new Error("SAVE_VERIFY_Suppression asset non vérifiée.");
+    }
+    const objects = await listAllObjects(env.MEDIA_BUCKET, prefix);
+    const quality = await inspectTrackQuality(env.MEDIA_BUCKET, rereadManifest, objects);
+    await studioDeleteBackup(env.MEDIA_BUCKET, backupKey);
+    return jsonResponse({
+      ok: true,
+      deleted: true,
+      trackId: slug,
+      kind,
+      filename,
+      previousUpdatedAt: manifest.updatedAt || null,
+      updatedAt: rereadManifest.updatedAt || null,
+      quality,
+      catalogRebuilt: true,
+      catalogGeneratedAt: index.generatedAt || null,
+      catalogCount: index.count,
+      authenticatedEmail: user.email || null,
+    });
+  } catch (error) {
+    const rollback = { assetRestored: false, manifestRestored: !manifestWritten, catalogRestored: false, backupRemoved: false };
+    if (assetDeleted && backupWritten) {
+      try { await studioRestoreBackup(env.MEDIA_BUCKET, backupKey, key); rollback.assetRestored = true; }
+      catch (rollbackError) { console.error("Studio asset delete rollback object failed", rollbackError); }
+    }
+    try {
+      if (manifestWritten) await writeManifest(env.MEDIA_BUCKET, manifest);
+      rollback.manifestRestored = true;
+    } catch (rollbackError) { console.error("Studio asset delete rollback manifest failed", rollbackError); }
+    if (rollback.assetRestored && rollback.manifestRestored) {
+      try { await writeCatalogIndex(env.MEDIA_BUCKET); rollback.catalogRestored = true; }
+      catch (rollbackError) { console.error("Studio asset delete rollback catalog failed", rollbackError); }
+    }
+    await studioDeleteBackup(env.MEDIA_BUCKET, backupKey);
+    rollback.backupRemoved = true;
+    console.error("Studio asset delete failed", error);
+    return jsonResponse({ ok: false, error: "Suppression asset annulée après échec de publication ou vérification.", code: "ASSET_DELETE_ROLLBACK", rollback, currentUpdatedAt: manifest.updatedAt || null }, 500);
+  }
+}
+
+async function rebuildStudioCatalog(request, env, user) {
+  const payload = await readStudioPhase4JsonPayload(request, STUDIO_CATALOG_REBUILD_INTENT);
+  if (payload.confirm !== "REBUILD") throw new Error("INPUT_Confirmation REBUILD requise.");
+  const index = await writeCatalogIndex(env.MEDIA_BUCKET);
+  return jsonResponse({
+    ok: true,
+    rebuilt: true,
+    catalogGeneratedAt: index.generatedAt || null,
+    catalogCount: index.count,
+    authenticatedEmail: user.email || null,
+  });
+}
