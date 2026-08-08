@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD architecture
 
-> Current application build: `2026.08.08.64` — release `sonictrace-badge-fix-20260808`.
+> Current application build: `2026.08.08.65` — release `studio-private-read-bridge-20260808`.
 
 LaunchPAD is a modular static PWA whose application source lives in GitHub `main`. The web shell is mirrored to GitHub Pages and Cloudflare Pages; production catalog/media state lives in Cloudflare R2 and is exposed through public/private Workers.
 
@@ -27,8 +27,8 @@ For the operational hosting map, see [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOY
               |                               |
               v                               v
       launchpad-media Worker          launchpad-r2-api Worker
-      public GET/HEAD API             private Track Manager
-              |                               |
+      public GET/HEAD API             private Track Manager v5.8
+              |                       + GET-only Studio bridge
               +---------------+---------------+
                               |
                        shinobiwan-media R2
@@ -105,6 +105,43 @@ Stable routes include:
 ## Admin tool access
 
 Desktop admin shortcuts are gated by one persisted `shinobiLaunchpadAdmin` state. `?admin=1` enables the strip; `?admin=0` clears it. Build 63 introduced three shortcuts through that same gate: SonicTrace, LRC Maker and Track Manager. Build 64 fixes SonicTrace's live-shell presentation by adding it to the shared admin-tool selectors in `css/pwa.css`, so the `ST` control now uses the same pill geometry/spacing as its neighbors with a cyan/teal identity.
+
+## Build 65 — Studio private read boundary
+
+Build 65 adds an **additive read-only integration surface** to the existing private Track Manager Worker; it does not replace Track Manager or change its historical write routes.
+
+New namespace:
+
+```text
+OPTIONS /api/studio/*
+GET     /api/studio/health
+GET     /api/studio/tracks
+GET     /api/studio/tracks/<trackId>
+```
+
+Security contract:
+
+1. Studio data GETs remain behind Cloudflare Access JWT verification.
+2. Browser CORS is allowlisted to the exact origin `https://shinobione.github.io`.
+3. Preflight allows only `GET, OPTIONS`.
+4. The bridge explicitly advertises `write: []`.
+5. Existing `POST`, `PUT`, `PATCH` and `DELETE` operations remain behind the unchanged `enforceSameOrigin()` guard.
+6. No permanent token/service secret is exposed to GitHub Pages.
+7. Build 65 introduces no R2 schema migration, no media rewrite and no automatic catalog rebuild.
+
+The private Worker contract advances from v5.7 to **v5.8**. The public `launchpad-media` Worker remains v2.6 and unchanged.
+
+A dedicated `scripts/test-studio-private-read-bridge.mjs` regression guard builds the assembled Worker and verifies exact origin, Access ordering, GET-only capabilities and preservation of the legacy write guard.
+
+## Lyrics synchronization contract
+
+The canonical authoring object remains:
+
+```text
+tracks/<slug>/lyrics.txt
+```
+
+That TXT can be plain or timestamped. Synchronization is derived from its content, using the existing timestamp parser; a timestamped canonical TXT is already synchronized. A separate `.lrc` sidecar may exist later for compatibility/export workflows but is **not required** to make a track synchronized or complete. This avoids two competing canonical lyric sources.
 
 ## Player and page theme separation
 
@@ -207,7 +244,7 @@ tracks/<slug>/manifest.json
 tracks/<slug>/audio.<ext>
 tracks/<slug>/cover.<ext>
 tracks/<slug>/thumbnail.webp
-tracks/<slug>/lyrics.txt      # optional
+tracks/<slug>/lyrics.txt      # optional; may contain synchronization timestamps
 tracks/<slug>/video.<ext>     # optional
 ```
 
@@ -215,7 +252,7 @@ tracks/<slug>/video.<ext>     # optional
 
 ## PWA / Canvas / Studio
 
-The service worker caches same-origin application assets while audio/video media remain network-oriented. Build 64 advances the cache namespace to `shinobi-launchpad-v64` after correcting SonicTrace's active PWA stylesheet integration, so installed clients cannot remain on the visually broken Build 63 shell. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
+The service worker caches same-origin application assets while audio/video media remain network-oriented. Build 65 advances the cache namespace to `shinobi-launchpad-v65`. The shell itself has no visual feature change in Build 65; the cache bump keeps application release metadata coherent while the private backend contract advances. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
 
 ## Deployment artifact
 
@@ -250,6 +287,8 @@ Every new application build must update every Markdown file to the exact `displa
 19. Kinetic phase/spring state may preserve short motion history, but phase speed and amplitudes must stop/settle when the real audio target disappears.
 20. New visual families should prefer distinct composition/motion language instead of repeatedly centering a radial object.
 21. Historical-looking compatibility files that remain wired into boot/deployment are removed only through dedicated regression-tested refactors.
+22. Studio integration is additive and reversible: new `/api/studio/*` routes must not alter legacy Track Manager behavior.
+23. Cross-origin Studio writes remain forbidden until a separately reviewed Phase 4B design proves authentication and authorization without browser secrets.
 
 ## Validation
 
