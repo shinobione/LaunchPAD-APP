@@ -5,16 +5,19 @@ import {
   drawLiquidChromeV2Mode,
   drawNeonShatterV2Mode
 } from './visual-engine-core-modes.js';
+import { drawPulseReactorMode } from './pulse-reactor.js';
 
 const DEFAULT_MODE = 'neon-shatter';
 const CUSTOM_MODES = [
   { id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode },
-  { id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }
+  { id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode },
+  { id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode }
 ];
 const CONTROL_MODES = [
   { id: 'neon-shatter', label: 'Neon Shatter' },
   { id: 'spectrum', label: 'Spectrum' },
-  { id: 'liquid-chrome', label: 'Liquid Chrome' }
+  { id: 'liquid-chrome', label: 'Liquid Chrome' },
+  { id: 'pulse-reactor', label: 'Pulse Reactor' }
 ];
 const CUSTOM_RENDERERS = new Map(CUSTOM_MODES.map(mode => [mode.id, mode.renderer]));
 const CUSTOM_MODE_IDS = CUSTOM_MODES.map(mode => mode.id);
@@ -35,7 +38,9 @@ function prepareCanvas(canvas, mode) {
   const rect = canvas?.getBoundingClientRect();
   if (!canvas || !rect?.width || !rect?.height) return null;
   const mobile = mobileVisualDevice(rect.width);
-  const dprCap = mode === 'neon-shatter' && mobile ? 1 : mobile ? 1.35 : 2;
+  const dprCap = mobile
+    ? mode === 'neon-shatter' ? 1 : mode === 'pulse-reactor' ? 1.1 : 1.35
+    : 2;
   const dpr = Math.min(window.devicePixelRatio || 1, dprCap);
   const widthPx = Math.round(rect.width * dpr);
   const heightPx = Math.round(rect.height * dpr);
@@ -161,9 +166,9 @@ export function createVisualController(options) {
   });
   applyMode(DEFAULT_MODE, defaultButton);
 
-  document.documentElement.dataset.audioLabRenderer = 'three-core-v1';
+  document.documentElement.dataset.audioLabRenderer = 'four-core-v1';
   document.documentElement.dataset.audioLabFeed = 'spectrum-shared';
-  document.documentElement.dataset.audioLabPresetCount = '3';
+  document.documentElement.dataset.audioLabPresetCount = '4';
 
   function readReactiveFrame() {
     if (audio.paused || audio.ended) {
@@ -179,8 +184,8 @@ export function createVisualController(options) {
       };
     }
 
-    // Neon Shatter and Liquid Chrome now read the exact analyser used by
-    // Spectrum. The legacy Audio Lab bridge is fallback-only.
+    // All custom visuals read the exact analyser used by Spectrum. The legacy
+    // decoded Audio Lab bridge remains fallback-only.
     let reading = base.readSpectrum?.(raw) || { available: false, peak: 0, state: 'missing-shared-feed' };
     if (!reading.available) reading = readAudioLabSpectrum(raw);
 

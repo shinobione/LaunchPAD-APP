@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.08.51` — release `audiolab-three-core-20260808`.
+> Current application build: `2026.08.08.52` — release `pulse-reactor-20260808`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -36,18 +36,17 @@ GitHub main
 
 See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the authoritative hosting map.
 
-## Build 51 highlights
+## Build 52 highlights
 
-Build 51 resets Audio Lab to a deliberately small, testable core:
+Build 52 keeps the stable Build 51 Audio Lab foundation and adds **one** new effect at a time:
 
-- **Neon Shatter**, **Spectrum** and **Liquid Chrome** are the only sanctioned presets.
-- Spectrum remains the protected reference renderer and exposes the analyser feed used by the two custom effects.
-- Neon Shatter was rebuilt around FFT-driven shard distance, size, rotation, cracks and impact rings.
-- Liquid Chrome was rebuilt around an FFT-deformed metallic contour with bass pulse, mid-band fluidity and high-frequency specular detail.
-- Aurora Glass, Nebula and Singularity are removed from the active registry/render paths instead of being kept as half-working presets.
-- Custom effects use Spectrum's analyser first; the decoded analysis bridge is fallback-only.
-- Time-based motion is gated by real signal activity so paused/silent playback settles instead of looking like a looping animation.
-- Build 51 advances the PWA cache namespace so clients cannot keep serving the Build 50 Audio Lab bundle as the current runtime.
+- **Neon Shatter**, **Spectrum** and **Liquid Chrome** remain unchanged as the validated baseline.
+- **Pulse Reactor** is the fourth sanctioned preset and consumes the exact same Spectrum analyser feed.
+- Pulse Reactor is signal-first: bass/kicks compress and expand the core, mids drive segmented orbital rings, and highs/transients fire radial needles.
+- Time contributes only a tiny energy-gated drift; pause/silence produces a stable reactor rather than a looping animation.
+- Mobile uses a dedicated performance budget: 3 rings / 18 segments / 16 spokes and DPR capped at 1.1, while desktop uses 5 / 32 / 30 with full DPR up to 2.
+- The new renderer lives in its own `pulse-reactor.js` module so adding/removing it cannot destabilize the three validated renderers.
+- The PWA cache advances to v52, preventing stale Build 51 visual modules from masking the new preset.
 
 Recent releases also restored mobile Lyrics → Studio routing, persistent mobile navigation in Studio, resilient Canvas looping, CORS-safe Visual Card export and single-owner track routing.
 
@@ -132,5 +131,6 @@ Useful documents:
 4. Advance application versions only in `js/build-config.js`.
 5. Update every `.md` file for every new build; CI validates the build/release markers.
 6. Keep Worker deployment, web deployment and R2 catalog rebuild as separate explicit states.
-7. Spectrum remains the Audio Lab reference path; visual effects must consume the real FFT feed rather than independent loop animation.
-8. Historical-looking compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.
+7. Spectrum remains the Audio Lab reference path; every visual effect must consume the real FFT feed rather than independent loop animation.
+8. Add Audio Lab presets one at a time, with desktop and mobile budgets defined before merge.
+9. Historical-looking compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.

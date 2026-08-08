@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260808-audiolab-three-core-v51',
-    cache: 'shinobi-launchpad-v51',
-    revision: 'audiolab-three-core-1',
-    display: '2026.08.08.51',
-    release: 'audiolab-three-core-20260808'
+    id: '20260808-pulse-reactor-v52',
+    cache: 'shinobi-launchpad-v52',
+    revision: 'pulse-reactor-1',
+    display: '2026.08.08.52',
+    release: 'pulse-reactor-20260808'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;

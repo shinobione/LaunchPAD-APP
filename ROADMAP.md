@@ -1,6 +1,6 @@
 # LaunchPAD roadmap
 
-> Current application build: `2026.08.08.51` — release `audiolab-three-core-20260808`.
+> Current application build: `2026.08.08.52` — release `pulse-reactor-20260808`.
 
 The repository cleanup/reconciliation phase is complete. This roadmap now tracks product/runtime work rather than historical migration chores.
 
@@ -16,25 +16,31 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Visual Card PNG export is CORS-safe.
 - [x] Mobile Lyrics can enter the selected track's Studio directly and the bottom navigation remains available.
 - [x] Audio Lab's audible player is isolated from the decoded fallback analysis graph.
-- [x] Audio Lab is reduced to Neon Shatter, Spectrum and Liquid Chrome only.
 - [x] Spectrum is the protected reference analyser/render path for custom effects.
 - [x] Neon Shatter and Liquid Chrome were rebuilt around real FFT-driven geometry.
-- [x] Build 51 advances the PWA cache namespace so Build 50 visual code cannot mask the new runtime.
+- [x] Build 51 established the stable three-preset Audio Lab baseline.
+- [x] Build 52 proves the incremental expansion model with one isolated, mobile-budgeted new preset: Pulse Reactor.
 - [x] All Markdown documentation is version-coupled to `js/build-config.js` through CI.
 
 ## P0 — real-device validation
 
-- [ ] Validate Build 51 Neon Shatter on desktop and Android: paused = settled, playing = visibly driven by kicks/bins, no autonomous loop feel.
-- [ ] Validate Build 51 Liquid Chrome on desktop and Android: bass = obvious pulse, mids = fluid deformation, highs = detail/specular response.
-- [ ] Confirm Spectrum still reacts exactly as before and remains the stable reference.
-- [ ] Verify switching Neon Shatter → Spectrum → Liquid Chrome repeatedly does not lose analyser data.
+- [x] Validate Build 51 Neon Shatter on desktop and Android: paused = settled, playing = visibly driven by kicks/bins, no autonomous loop feel.
+- [x] Validate Build 51 Liquid Chrome on desktop and Android: real FFT deformation is visible and stable.
+- [x] Confirm Spectrum still reacts exactly as before and remains the stable reference.
+- [ ] Validate Build 52 Pulse Reactor on desktop and Android: bass/kick = core/shock response, mids = segmented ring movement, highs = radial needles.
+- [ ] Confirm Pulse Reactor remains stable when paused and does not feel like an autonomous loop.
+- [ ] Confirm its Android/mobile budget remains smooth on the same device where Neon Shatter is now fluid.
+- [ ] Verify switching Neon Shatter → Spectrum → Liquid Chrome → Pulse Reactor repeatedly does not lose analyser data.
 - [ ] Continue background-playback testing for artefacts with Audio Lab open/closed.
 - [ ] Verify multi-track switching keeps the shared/fallback FFT analysis synchronized across several tracks.
 
 ## P1 — Audio Lab expansion
 
-- [ ] Add future visual presets one at a time only after each new effect proves real FFT reactivity and pause settling.
-- [ ] Do not restore Aurora Glass, Nebula or Singularity by name unless they are deliberately rebuilt and pass the same three-core contract.
+- [x] Establish the rule: add future visual presets one at a time only after each new effect proves real FFT reactivity and pause settling.
+- [x] Isolate Pulse Reactor in its own renderer module to reduce regression radius.
+- [ ] After Pulse Reactor is validated on real devices, design the next effect against the same Spectrum-shared feed.
+- [ ] Give every future effect an explicit mobile geometry/DPR budget before merge.
+- [ ] Do not restore Aurora Glass, Nebula or Singularity by name unless they are deliberately rebuilt and pass the current contract.
 - [ ] Keep Spectrum untouched as the reference renderer while new effects are developed.
 
 ## P1 — compatibility debt
@@ -72,4 +78,5 @@ The repo is considered structurally healthy when:
 3. Markdown docs match `js/build-config.js`;
 4. Workers/R2 are treated as separate backend/data states;
 5. no host-only runtime patch exists outside GitHub;
-6. Audio Lab effects are validated against real FFT behavior, not merely visual motion.
+6. Audio Lab effects are validated against real FFT behavior, not merely visual motion;
+7. each new Audio Lab effect has a deliberate mobile performance budget.

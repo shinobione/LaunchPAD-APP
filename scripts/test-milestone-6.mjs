@@ -37,12 +37,17 @@ for (const required of ['.launchpad-hero .launchpad-banner-rail','order: 1;','.l
   assert.ok(routeStyles.includes(required), `Canonical mobile hero order is missing ${required}.`);
 }
 
+const registry = read('js/features/visual/audio-lab-registry.js');
+const presetCount = (registry.match(/Object\.freeze\(\{ id:/g) || []).length;
+assert.ok(presetCount >= 3, 'Audio Lab registry unexpectedly lost its validated baseline presets.');
+
 const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
   "const DEFAULT_MODE = 'neon-shatter'", 'externalHomeRenderer: false',
   'const homeTitle = document.querySelector', 'if (homeTitle) homeTitle.textContent = label;',
   "new CustomEvent('shinobi:visual-mode'",
-  "dataset.audioLabRenderer = 'three-core-v1'", "dataset.audioLabPresetCount = '3'",
+  'dataset.audioLabRenderer =',
+  `dataset.audioLabPresetCount = '${presetCount}'`,
   'function boostLiveFeatures(features)', 'base.readSpectrum?.(raw)',
   'renderMode(homeCanvas, customRenderer, raw, getAccent, time, features, mode)'
 ]) assert.ok(live.includes(required), `Milestone 6 visual engine is missing ${required}.`);
@@ -57,4 +62,4 @@ assert.ok(worker.includes("'./css/home-editorial.css'"));
 assert.ok(worker.includes("'./js/features/home-editorial.js'"));
 
 const build = assertCurrentBuild('Milestone 6');
-console.log(`Milestone 6 Home editorial release, banner-first mobile order and three-core visual switcher remain valid under Build ${build.number}.`);
+console.log(`Milestone 6 Home editorial release, banner-first mobile order and ${presetCount}-preset visual switcher remain valid under Build ${build.number}.`);

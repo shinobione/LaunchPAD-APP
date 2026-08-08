@@ -18,25 +18,28 @@ for (const required of [
   "id: 'neon-shatter', label: 'Neon Shatter'",
   "id: 'spectrum', label: 'Spectrum'",
   "id: 'liquid-chrome', label: 'Liquid Chrome'",
+  "id: 'pulse-reactor', label: 'Pulse Reactor'",
   "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum'])"
 ]) assert.ok(registry.includes(required), `Audio Lab registry is missing ${required}.`);
 for (const forbidden of retiredIds) {
   assert.ok(!registry.includes(forbidden), `Retired Audio Lab preset ${forbidden} leaked into the registry.`);
 }
-assert.equal((registry.match(/Object\.freeze\(\{ id:/g) || []).length, 3, 'Audio Lab must expose exactly three presets.');
+assert.equal((registry.match(/Object\.freeze\(\{ id:/g) || []).length, 4, 'Audio Lab must expose exactly four validated presets.');
 
 const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
   "const DEFAULT_MODE = 'neon-shatter'",
   "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode }",
   "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
+  "{ id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode }",
   "{ id: 'spectrum', label: 'Spectrum' }",
   'base.readSpectrum?.(raw)',
   'reading = readAudioLabSpectrum(raw)',
-  "document.documentElement.dataset.audioLabRenderer = 'three-core-v1'",
-  "document.documentElement.dataset.audioLabPresetCount = '3'",
+  "document.documentElement.dataset.audioLabRenderer = 'four-core-v1'",
+  "document.documentElement.dataset.audioLabPresetCount = '4'",
+  "mode === 'pulse-reactor' ? 1.1",
   'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)'
-]) assert.ok(live.includes(required), `Three-core Audio Lab integration is missing ${required}.`);
+]) assert.ok(live.includes(required), `Audio Lab integration is missing ${required}.`);
 for (const forbidden of [...retiredIds, "'bars'", "id: 'circle'", 'synthesizePlaybackSpectrum', 'readAudioLabAmplitude']) {
   assert.ok(!live.includes(forbidden), `Retired or parallel Audio Lab path ${forbidden} leaked into live integration.`);
 }
@@ -56,6 +59,20 @@ for (const required of [
 for (const forbidden of ['drawAuroraGlassMode', 'drawSingularityLiveMode', 'drawNeonShatterAdaptiveMode', 'drawLiquidChromeLiveMode']) {
   assert.ok(!core.includes(forbidden), `Retired renderer ${forbidden} remains in core modes.`);
 }
+
+const reactor = read('js/features/visual/pulse-reactor.js');
+for (const required of [
+  'export function drawPulseReactorMode(',
+  'const ringCount = mobile ? 3 : 5',
+  'const segmentCount = mobile ? 18 : 32',
+  'const spokeCount = mobile ? 16 : 30',
+  'const drift = time * activity * .075',
+  'const impact = clamp(',
+  'sampleAt(data, progress',
+  'sampleAt(data, .46 + progress * .54)'
+]) assert.ok(reactor.includes(required), `Pulse Reactor signal/mobile contract is missing ${required}.`);
+assert.ok(!reactor.includes('setInterval('));
+assert.ok(!reactor.includes('Math.random('));
 
 const base = read('js/features/visual/visual-engine-v2.js');
 for (const required of [
@@ -99,8 +116,9 @@ const worker = read('sw.js');
 assert.ok(worker.includes("'./js/features/visual/audio-reactivity.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-registry.js'"));
 assert.ok(worker.includes("'./js/features/visual/audio-lab-sanctuary.js'"));
+assert.ok(worker.includes("'./js/features/visual/pulse-reactor.js'"));
 
 const build = assertCurrentBuild('Audio Lab current build');
 assert.match(build.display, /^\d{4}\.\d{2}\.\d{2}\.\d+$/);
 assert.ok(build.release, 'Current build release must be present.');
-console.log(`Audio Lab is reduced to Neon Shatter, Spectrum and Liquid Chrome under ${build.display}.`);
+console.log(`Audio Lab exposes Neon Shatter, Spectrum, Liquid Chrome and Pulse Reactor under ${build.display}.`);

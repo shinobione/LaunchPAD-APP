@@ -1,8 +1,18 @@
 # Changelog
 
-> Current application build: `2026.08.08.51` — release `audiolab-three-core-20260808`.
+> Current application build: `2026.08.08.52` — release `pulse-reactor-20260808`.
 
 This file intentionally tracks the recent stabilized release line. Older milestone-by-milestone history remains available in Git history and merged pull requests.
+
+## Build 52 — Pulse Reactor
+
+- Add **Pulse Reactor** as the fourth sanctioned Audio Lab preset, without changing the validated Neon Shatter / Spectrum / Liquid Chrome renderers.
+- Drive the reactor from the same Spectrum analyser feed: bass/kicks control the core, mids the segmented orbital rings, highs/transients the radial needles.
+- Keep autonomous motion signal-gated; silence/paused playback produces a stable reactor rather than a looping animation.
+- Isolate the effect in `js/features/visual/pulse-reactor.js` so it can be tuned or removed without touching the three validated baseline renderers.
+- Add an explicit mobile budget: 3 rings, 18 segments/ring, 16 spokes and DPR cap 1.1; desktop uses 5 rings, 32 segments and 30 spokes.
+- Cache the new renderer in the PWA shell and advance the app/cache namespace to Build 52.
+- Extend Audio Lab CI contracts to verify the shared FFT path, mobile budget and absence of self-scheduled animation loops.
 
 ## Build 51 — Audio Lab three-core reset
 

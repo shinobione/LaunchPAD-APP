@@ -1,6 +1,6 @@
 # LaunchPAD deployment topology
 
-> Current application build: `2026.08.08.51` — release `audiolab-three-core-20260808`.
+> Current application build: `2026.08.08.52` — release `pulse-reactor-20260808`.
 
 ## One source of truth
 
@@ -10,7 +10,7 @@
                          GitHub repository
                               main
                                |
-                      validated Build 51
+                      validated Build 52
                                |
                 +--------------+--------------+
                 |                             |
@@ -34,18 +34,18 @@
                       shinobiwan-media
 ```
 
-## Canonical Build 51
+## Canonical Build 52
 
 The current application release is defined only in `js/build-config.js`:
 
 ```text
-id       20260808-audiolab-three-core-v51
-cache    shinobi-launchpad-v51
-display  2026.08.08.51
-release  audiolab-three-core-20260808
+id       20260808-pulse-reactor-v52
+cache    shinobi-launchpad-v52
+display  2026.08.08.52
+release  pulse-reactor-20260808
 ```
 
-Every Markdown document must carry the same display/release markers; CI rejects stale documentation. The new cache namespace is intentional: it prevents the prior Build 50 Audio Lab bundle from being served as the current visual runtime.
+Every Markdown document must carry the same display/release markers; CI rejects stale documentation. The cache namespace advances with Build 52 so the new Pulse Reactor module and four-preset Audio Lab registry cannot be hidden by stale Build 51 shell assets.
 
 ## Web hosting
 
