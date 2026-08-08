@@ -1,8 +1,23 @@
 # Changelog
 
-> Current application build: `2026.08.08.65` — release `studio-private-read-bridge-20260808`.
+> Current application build: `2026.08.08.66` — release `studio-metadata-validation-20260808`.
 
 This file intentionally tracks the recent stabilized release line. Older milestone-by-milestone history remains available in Git history and merged pull requests.
+
+## Build 66 — Studio metadata validation gate
+
+- Advance Track Manager from **v5.8** to **v5.9** and the Studio bridge from **v1.0** to **v1.1**.
+- Add exactly one cross-origin non-mutating capability: `POST /api/studio/tracks/<trackId>/metadata/validate`.
+- Require the exact Studio origin, Cloudflare Access JWT, JSON content type and `X-Shinobiwan-Studio-Intent: metadata-validate-v1`.
+- Require `expectedUpdatedAt` and return `STALE_MANIFEST` on stale workspace data instead of validating against an outdated manifest.
+- Whitelist editable metadata fields; Studio validation cannot supply slug, assets, migration/provenance fields, server timestamps or media payloads.
+- Normalize the proposed manifest and reuse Track Manager quality inspection against the existing R2 objects.
+- Keep the endpoint explicitly `validationOnly: true`; it does not call `writeManifest`, `writeCatalogIndex`, R2 `put/delete`, upload, delete, publish or rebuild paths.
+- Keep Studio health explicit: `validate: ["metadata"]`, `write: []`.
+- Keep every other POST/PUT/PATCH/DELETE operation behind the existing Track Manager same-origin guard.
+- Extend CI so a mutation primitive added to the validation module fails the build.
+- Preserve the public Worker at **v2.6** and require only the admin Worker to be redeployed after source merge.
+- Create pre-4B.1A safety snapshots for both LaunchPAD/Track Manager and SHINOBIWAN Studio before opening this POST boundary.
 
 ## Build 65 — Studio private read bridge
 

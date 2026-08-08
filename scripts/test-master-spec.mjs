@@ -12,11 +12,12 @@ includesAll(read('js/features/about/about-controller.js'), ['new Date().getFullY
 includesAll(read('js/core/catalog-schema.js'), ['normalizeCatalogTrack', 'releaseDate', 'createdAt', 'updatedAt'], 'Catalog schema');
 includesAll(read('js/core/catalog-ordering.js'), ['latestActiveTrackEntries', 'recentlyAddedTrackEntries', 'releaseDateUnavailable'], 'Catalog ordering');
 const deploy = read('.github/workflows/deploy-cloudflare.yml');
-includesAll(deploy, ['workflow_dispatch:', "if: github.ref == 'refs/heads/main'", "test \"${{ inputs.confirm }}\" = 'DEPLOY'", "EXPECTED_PUBLIC_VERSION: '2.6'", "EXPECTED_ADMIN_VERSION: '5.8'"], 'Cloudflare deployment');
+includesAll(deploy, ['workflow_dispatch:', "if: github.ref == 'refs/heads/main'", "test \"${{ inputs.confirm }}\" = 'DEPLOY'", "EXPECTED_PUBLIC_VERSION: '2.6'", "EXPECTED_ADMIN_VERSION: '5.9'"], 'Cloudflare deployment');
 assert.ok(!deploy.includes('\n  push:'), 'Production Cloudflare Worker deployment must remain manual-only.');
 includesAll(read('js/features/theme-scope.js'), ['trackFromRoute', 'playingTrack(audio)', 'applyPagePalette(viewed, played)', 'applyPlayerPalette(played)'], 'Theme scoping');
 
-// Studio integration boundary: additive reads only, no weakening of legacy writes.
+// Studio integration boundary. The base runtime remains the proven Phase 4A read-only source;
+// Build 66 adds the exact validation-only POST through a separately guarded source part + assembler.
 const adminRuntime = read('cloudflare/admin-worker.parts/01-runtime.part');
 includesAll(adminRuntime, [
   'const STUDIO_ALLOWED_ORIGIN = "https://shinobione.github.io"',
@@ -27,8 +28,38 @@ includesAll(adminRuntime, [
   'write: []',
   'if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method))',
   'enforceSameOrigin(request, url)'
-], 'Studio private read bridge');
-assert.ok(!/request\.method\s*===\s*["'](?:POST|PUT|PATCH|DELETE)["'][\s\S]{0,180}\/api\/studio\//.test(adminRuntime), 'Studio bridge must remain write-free.');
+], 'Studio Phase 4A base runtime');
+assert.ok(!/request\.method\s*===\s*["'](?:POST|PUT|PATCH|DELETE)["'][\s\S]{0,180}\/api\/studio\//.test(adminRuntime), 'Base Studio runtime must remain write-free.');
+
+const studioValidation = read('cloudflare/admin-worker.parts/03d-studio-metadata-validation.part');
+includesAll(studioValidation, [
+  'STUDIO_METADATA_VALIDATION_INTENT = "metadata-validate-v1"',
+  '/metadata\\/validate$/',
+  'requestedMethod === "POST" && metadataValidation',
+  'x-shinobiwan-studio-intent',
+  'expectedUpdatedAt',
+  'code: "STALE_MANIFEST"',
+  'validationOnly: true',
+  'inspectTrackQuality'
+], 'Studio Phase 4B.1A metadata validation');
+for (const forbiddenMutation of ['writeManifest(', 'writeCatalogIndex(', '.put(', '.delete(', 'saveTrack(', 'saveThumbnail(', 'deleteTrack(']) {
+  assert.ok(!studioValidation.includes(forbiddenMutation), `Studio metadata validation must not mutate production state: ${forbiddenMutation}`);
+}
+
+const adminBuilder = read('scripts/build-admin-worker.mjs');
+includesAll(adminBuilder, [
+  "'5.8'",
+  'version: "5.9"',
+  '<span class="version-pill">v5.9</span>',
+  'trackManagerVersion: "5.9"',
+  'const STUDIO_BRIDGE_VERSION = "1.1";',
+  'validate: ["metadata"]',
+  'write: []',
+  'isStudioMetadataValidation',
+  'assertStudioMetadataValidationRequest(request)',
+  'else enforceSameOrigin(request, url)',
+  'validateStudioTrackMetadata(studioMetadataValidationRoute[1], request, env, user)'
+], 'Track Manager v5.9 assembler');
 
 // Discography/Home contracts.
 includesAll(read('js/features/discography-experience.js'), ["const FILTER_GROUP_ORDER = ['genre', 'language', 'content', 'energy', 'era', 'type', 'media', 'year', 'mood']", 'mini-equalizer', 'track-card-loader'], 'Discography');
@@ -147,10 +178,10 @@ const worker = read('sw.js');
 includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260808-studio-read-bridge-v65');
-assert.equal(build.cache, 'shinobi-launchpad-v65');
-assert.equal(build.display, '2026.08.08.65');
-assert.equal(build.release, 'studio-private-read-bridge-20260808');
-assert.equal(build.revision, 'studio-read-bridge-1');
+assert.equal(build.id, '20260808-studio-metadata-validation-v66');
+assert.equal(build.cache, 'shinobi-launchpad-v66');
+assert.equal(build.display, '2026.08.08.66');
+assert.equal(build.release, 'studio-metadata-validation-20260808');
+assert.equal(build.revision, 'studio-metadata-validation-1');
 
-console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}) with current Track Manager v5.8, GET-only Studio bridge and ${presetCount} sanctioned Audio Lab presets.`);
+console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}) with current Track Manager v5.9, Studio metadata validation-only bridge and ${presetCount} sanctioned Audio Lab presets.`);
