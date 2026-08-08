@@ -31,7 +31,7 @@ includesAll(adminRuntime, [
 ], 'Studio Phase 4A base runtime');
 assert.ok(!/request\.method\s*===\s*["'](?:POST|PUT|PATCH|DELETE)["'][\s\S]{0,180}\/api\/studio\//.test(adminRuntime), 'Base Studio runtime must remain write-free.');
 
-const studioValidation = read('cloudflare/admin-worker.parts/01z-studio-metadata-validation.part');
+const studioValidation = read('cloudflare/admin-worker.parts/03d-studio-metadata-validation.part');
 includesAll(studioValidation, [
   'STUDIO_METADATA_VALIDATION_INTENT = "metadata-validate-v1"',
   '/metadata\\/validate$/',
