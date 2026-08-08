@@ -14,10 +14,10 @@ import {
 const read = file => fs.readFileSync(file, 'utf8');
 
 assert.equal(AUDIO_LAB_DEFAULT_MODE, 'neon-shatter');
-for (const required of ['neon-shatter', 'spectrum', 'liquid-chrome', 'pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure']) {
+for (const required of ['neon-shatter', 'spectrum', 'liquid-chrome', 'pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure', 'void-bloom']) {
   assert.ok(AUDIO_LAB_PRESET_IDS.includes(required), `Sanctioned Audio Lab registry is missing ${required}.`);
 }
-assert.equal(AUDIO_LAB_PRESET_IDS.length, 7);
+assert.equal(AUDIO_LAB_PRESET_IDS.length, 8);
 assert.equal(new Set(AUDIO_LAB_PRESET_IDS).size, AUDIO_LAB_PRESET_IDS.length, 'Audio Lab preset ids must remain unique.');
 assert.deepEqual(AUDIO_LAB_SANCTUARY_IDS, ['spectrum']);
 for (const mode of AUDIO_LAB_PRESET_IDS) assert.equal(isSanctionedAudioLabMode(mode), true);
@@ -103,7 +103,14 @@ for (const required of [
   "springChannel(motion, 'breath'", "advanceMotionPhase(motion, 'bio-flow'", 'const driftRadius =', 'const membranePulse = Math.sin('
 ]) assert.ok(bio.includes(required), `Bio Structure contract is missing ${required}.`);
 
-for (const isolated of [reactor, fracture, lens, bio]) {
+const bloom = read('js/features/visual/void-bloom.js');
+for (const required of [
+  'export function drawVoidBloomMode(', 'shapeAudioDrive(', 'const petalCount = mobile ? 7 : 11',
+  'const veinCount = mobile ? 7 : 16', "springChannel(motion, 'open'", "advanceMotionPhase(motion, 'void-bloom-flow'",
+  'const driftRadius =', 'context.bezierCurveTo(', 'context.quadraticCurveTo('
+]) assert.ok(bloom.includes(required), `Void Bloom contract is missing ${required}.`);
+
+for (const isolated of [reactor, fracture, lens, bio, bloom]) {
   assert.ok(!isolated.includes('Math.random('));
   assert.ok(!isolated.includes('requestAnimationFrame('));
   assert.ok(!isolated.includes('setInterval('));
@@ -118,14 +125,15 @@ for (const required of [
   "{ id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }",
   "{ id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }",
   "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
+  "{ id: 'void-bloom', label: 'Void Bloom', renderer: drawVoidBloomMode }",
   'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)',
-  "const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure'])",
+  "const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure', 'void-bloom'])",
   'function createAdaptiveLowPunchTracker()', 'relativeContrast', 'relativeFlux', 'relativeRise',
   'function createDirectVisualImpactTracker()', 'function applyDirectKineticImpact(context, width, height, mode, features)',
   'features.visualImpact = visualImpactTracker.update(features)',
   'function kineticImpactFeatures(mode, features)', 'features.punch = adaptivePunch.punch',
-  "dataset.audioLabRenderer = 'seven-core-v4'", "dataset.audioLabPresetCount = '7'",
-  "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' ? 1.05",
+  "dataset.audioLabRenderer = 'eight-core-v1'", "dataset.audioLabPresetCount = '8'",
+  "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' || mode === 'void-bloom' ? 1.05",
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ]) assert.ok(live.includes(required), `Live Audio Lab integration is missing ${required}.`);
 
@@ -139,10 +147,10 @@ for (const required of [
   "'./js/features/visual/audio-lab-registry.js'", "'./js/features/visual/audio-lab-sanctuary.js'",
   "'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'",
   "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'",
-  "'./js/features/visual/bio-structure.js'"
+  "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'"
 ]) assert.ok(worker.includes(required));
 
 const build = assertCurrentBuild('Milestone 7/current release');
-assert.equal(build.display, '2026.08.08.59');
-assert.equal(build.release, 'direct-impact-20260808');
+assert.equal(build.display, '2026.08.08.60');
+assert.equal(build.release, 'void-bloom-20260808');
 console.log(`Milestone 7 protects ${AUDIO_LAB_PRESET_IDS.length} sanctioned Audio Lab presets with shared FFT + kinetic flow + adaptive onset + direct impact under Build ${build.number}.`);
