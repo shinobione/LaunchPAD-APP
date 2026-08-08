@@ -48,17 +48,18 @@ assert.ok(!home.includes('wordmark-first'), 'The retired wordmark-first mobile h
 const homeStyles = read('css/home-editorial.css');
 assert.ok(homeStyles.includes('grid-template-columns:repeat(2,minmax(0,1fr))'), 'Mobile release actions must use equal-width columns.');
 
-// 7 — Audio Lab: exactly three presets; Spectrum is the trusted analyser/reference renderer.
+// 7 — Audio Lab: validated baseline + registry-driven expansion; Spectrum remains trusted reference.
 const registry = read('js/features/visual/audio-lab-registry.js');
 includesAll(registry, [
   "AUDIO_LAB_DEFAULT_MODE = 'neon-shatter'",
-  "id: 'neon-shatter'", "id: 'spectrum'", "id: 'liquid-chrome'",
+  "id: 'neon-shatter'", "id: 'spectrum'", "id: 'liquid-chrome'", "id: 'pulse-reactor'",
   "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum'])"
 ], 'Audio Lab registry');
 for (const retired of ['aurora-glass', 'nebula', 'singularity']) {
   assert.ok(!registry.includes(retired), `Retired Audio Lab preset returned: ${retired}.`);
 }
-assert.equal((registry.match(/Object\.freeze\(\{ id:/g) || []).length, 3, 'Audio Lab registry must contain exactly three presets.');
+const presetCount = (registry.match(/Object\.freeze\(\{ id:/g) || []).length;
+assert.ok(presetCount >= 3, 'Audio Lab must retain the validated three-preset baseline.');
 
 const visualBase = read('js/features/visual/visual-engine-v2.js');
 function extractFunction(source, name) {
@@ -89,10 +90,11 @@ includesAll(live, [
   "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode }",
   "{ id: 'spectrum', label: 'Spectrum' }",
   "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
+  "{ id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode }",
   'base.readSpectrum?.(raw)',
   'reading = readAudioLabSpectrum(raw)',
-  "dataset.audioLabRenderer = 'three-core-v1'",
-  "dataset.audioLabPresetCount = '3'",
+  'dataset.audioLabRenderer =',
+  `dataset.audioLabPresetCount = '${presetCount}'`,
   'renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode)',
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ], 'Live Audio Lab visuals');
@@ -108,10 +110,21 @@ includesAll(coreModes, [
   'const phase = time * activity * .2',
   'const distance = baseDistance * (.58 + impact * 1.48 + localDrive * .92)',
   'spectralDeform = spectral * .092 + neighbour * .032'
-], 'Three-core FFT modes');
+], 'Validated baseline FFT modes');
 for (const retired of ['drawAuroraGlassMode', 'drawSingularityLiveMode', 'drawNeonShatterAdaptiveMode', 'drawLiquidChromeLiveMode']) {
   assert.ok(!coreModes.includes(retired), `Retired core visual returned: ${retired}.`);
 }
+
+const pulseReactor = read('js/features/visual/pulse-reactor.js');
+includesAll(pulseReactor, [
+  'export function drawPulseReactorMode(',
+  'const ringCount = mobile ? 3 : 5',
+  'const segmentCount = mobile ? 18 : 32',
+  'const spokeCount = mobile ? 16 : 30',
+  'const drift = time * activity * .075'
+], 'Pulse Reactor');
+assert.ok(!pulseReactor.includes('requestAnimationFrame('), 'Pulse Reactor must use the shared renderer scheduler.');
+assert.ok(!pulseReactor.includes('setInterval('), 'Pulse Reactor must not self-schedule an autonomous loop.');
 
 const signal = read('js/features/audio-lab-signal.js');
 includesAll(signal, [
@@ -149,7 +162,7 @@ includesAll(engine, ['initThemeScoping({ audio })', 'initDiscographyExperience({
 const admin = read('js/features/admin-access.js');
 includesAll(admin, ['resolveLrcMakerAccess', 'https://shinobione.github.io/lrc-maker/', "label: 'LRC Maker'"], 'Admin access');
 const worker = read('sw.js');
-includesAll(worker, ["'./js/features/theme-scope.js'", "'./js/features/visual/audio-lab-registry.js'", "'./js/features/visual/audio-lab-sanctuary.js'", "'./js/visual-card-export-guard.js'"], 'PWA shell');
+includesAll(worker, ["'./js/features/theme-scope.js'", "'./js/features/visual/audio-lab-registry.js'", "'./js/features/visual/audio-lab-sanctuary.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/visual-card-export-guard.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
 assert.match(build.id, /^\d{8}-[a-z0-9-]+$/);
@@ -157,4 +170,4 @@ assert.match(build.cache, /^shinobi-launchpad-v\d+$/);
 assert.match(build.display, /^\d{4}\.\d{2}\.\d{2}\.\d+$/);
 assert.ok(build.revision && build.release, 'Build revision/release metadata must be present.');
 
-console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}).`);
+console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}) with ${presetCount} sanctioned Audio Lab presets.`);
