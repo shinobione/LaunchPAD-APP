@@ -1,8 +1,19 @@
 # Changelog
 
-> Current application build: `2026.08.08.53` — release `bass-fracture-20260808`.
+> Current application build: `2026.08.08.54` — release `gravity-lens-20260808`.
 
 This file intentionally tracks the recent stabilized release line. Older milestone-by-milestone history remains available in Git history and merged pull requests.
+
+## Build 54 — Gravity Lens + readability pass
+
+- Add **Gravity Lens** as the sixth sanctioned Audio Lab preset, isolated in `js/features/visual/gravity-lens.js`.
+- Drive Gravity Lens from the shared Spectrum FFT: bass/kicks deepen the lens, mids shear its bands, highs/transients light caustic arcs and curved streams.
+- Give Gravity Lens an explicit mobile budget of 4 bands / 12 arcs / 8 streams at DPR 1.05; desktop uses 6 / 20 / 14.
+- Rework **Pulse Reactor** for readability: fewer desktop rings/segments/spokes, fewer mobile segments/spokes, a larger dominant core, gated needles and selective peak breakup instead of frame-wide chaos.
+- Rework **Bass Fracture** for readability and stronger mobile impact: reduce desktop sector/crack counts, keep mobile geometry fixed, increase mobile displacement via `motionScale`, and emphasize fewer, larger fault gestures.
+- Keep all custom modes on Spectrum's shared analyser feed first; decoded analysis remains fallback-only.
+- Keep isolated renderers deterministic and free of private `requestAnimationFrame`, `setInterval` and `Math.random()` animation paths.
+- Cache Gravity Lens in the PWA shell and advance the app/cache namespace to Build 54.
 
 ## Build 53 — Bass Fracture + Pulse Reactor breakup
 
