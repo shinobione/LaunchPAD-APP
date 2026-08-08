@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD — catalog guide
 
-> Current application build: `2026.08.08.57` — release `kinetic-flow-20260808`.
+> Current application build: `2026.08.08.58` — release `adaptive-punch-20260808`.
 
 The production catalog is managed in Cloudflare R2 through the private LaunchPAD Track Manager. `js/catalog.js` contains album/editorial presentation data only; production track metadata and media are not maintained by hand in the PWA.
 
@@ -95,7 +95,7 @@ Review every detected group before confirmation, especially audio/cover/lyrics/v
 
 ## Audio Lab note
 
-Audio Lab is not a catalog-authoring feature, but media changes should still be smoke-tested there. Build 57 exposes **Neon Shatter, Spectrum, Liquid Chrome, Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure**. Spectrum remains the protected reference FFT view; every custom visual consumes Spectrum's analyser first. The four elastic modes now use raw+smoothed FFT blending for amplitude and a separate integrated kinetic phase for continuous signal-driven travel. Pulse Reactor drifts/rotates, Bass Fracture rolls and slides, Gravity Lens precesses and sweeps, and Bio Structure sways as a whole organism through steady musical passages. Peaks add extra excursion rather than being the only visible movement source. Pause still drives spring targets toward zero and stops the integrated phase speed. The separately fetched/decoded analysis copy remains fallback-only while the audible HTML5 player stays outside the analysis graph.
+Audio Lab is not a catalog-authoring feature, but media changes should still be smoke-tested there. Build 58 exposes **Neon Shatter, Spectrum, Liquid Chrome, Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure**. Spectrum remains the protected reference FFT view; every custom visual consumes Spectrum's analyser first. Build 57's integrated kinetic phase still owns continuous travel. Build 58 adds a separate adaptive low-frequency punch detector for Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure, comparing fast bass, a slow local baseline, low-bin spectral flux and short-term bass rise so kicks remain distinct after the full mix becomes dense. `audioLabPunch` telemetry is available for diagnosis. Neon Shatter and Liquid Chrome keep their prior calibration. Pause still drives targets toward zero and stops kinetic phase speed. The separately fetched/decoded analysis copy remains fallback-only while the audible HTML5 player stays outside the analysis graph.
 
 ## Repository validation
 
