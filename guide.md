@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD — catalog guide
 
-> Current application build: `2026.08.08.62` — release `ui-polish-62-1-20260808`.
+> Current application build: `2026.08.08.63` — release `sonictrace-admin-link-20260808`.
 
 The production catalog is managed in Cloudflare R2 through the private LaunchPAD Track Manager. `js/catalog.js` contains album/editorial presentation data only; production track metadata and media are not maintained by hand in the PWA.
 
@@ -14,10 +14,11 @@ https://launchpad-r2-api.jerryquinet.workers.dev/
 
 LaunchPAD exposes private desktop shortcuts after an explicit `?admin=1` opt-in:
 
+- **SonicTrace** — neural/audio-analysis interface at `https://shinobione.github.io/LM-IA-Analayse/`;
 - **LRC Maker** — external synchronized-lyrics authoring tool;
 - **Track Manager** — private R2/catalog administration.
 
-The opt-in persists for the installed desktop PWA. Use `?admin=0` to clear it.
+All three use the same persisted admin gate in browser and installed desktop PWA sessions. Use `?admin=0` to clear it.
 
 Repository Track Manager contract: **v5.7**. Public media Worker contract: **v2.6**.
 
