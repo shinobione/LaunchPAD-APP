@@ -286,6 +286,60 @@
   .lyrics-track-panel:not(.lyrics-track-panel-collapsed) .lyrics-studio-canvas[data-playback="playing"] .lyrics-studio-canvas-video{
     opacity:1!important;
   }
+
+  /* Same fallback in the compact/collapsed header. */
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active
+  .lyrics-track-panel.lyrics-track-panel-collapsed .lyrics-cover-wrap{
+    position:relative!important;
+    z-index:1!important;
+    display:block!important;
+    grid-column:1!important;
+    grid-row:1!important;
+    width:36px!important;
+    height:64px!important;
+    aspect-ratio:9/16!important;
+    margin:0!important;
+    overflow:hidden!important;
+    border-radius:9px!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active
+  .lyrics-track-panel.lyrics-track-panel-collapsed .lyrics-cover-glow{
+    display:none!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active
+  .lyrics-track-panel.lyrics-track-panel-collapsed .lyrics-cover-wrap img{
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    height:100%!important;
+    border:0!important;
+    border-radius:inherit!important;
+    object-fit:cover!important;
+    box-shadow:none!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active
+  .lyrics-track-panel.lyrics-track-panel-collapsed .lyrics-studio-canvas{
+    z-index:2!important;
+    width:36px!important;
+    height:64px!important;
+    margin:0!important;
+    border-radius:9px!important;
+    background:transparent!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active
+  .lyrics-track-panel.lyrics-track-panel-collapsed .lyrics-studio-canvas-video{
+    opacity:0!important;
+    transition:opacity .22s ease!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active
+  .lyrics-track-panel.lyrics-track-panel-collapsed .lyrics-studio-canvas[data-playback="playing"] .lyrics-studio-canvas-video{
+    opacity:1!important;
+  }
 }
 
 @media (max-width:760px) and (orientation:landscape){
