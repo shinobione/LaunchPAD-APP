@@ -159,6 +159,5 @@ for (const required of [
 ]) assert.ok(worker.includes(required));
 
 const build = assertCurrentBuild('Milestone 7/current release');
-assert.equal(build.display, '2026.08.08.61');
-assert.equal(build.release, 'creep-signal-20260808');
+assert.ok(build.number >= 61, `Milestone 7 requires Build 61 or newer, got ${build.display}.`);
 console.log(`Milestone 7 protects ${AUDIO_LAB_PRESET_IDS.length} sanctioned Audio Lab presets with shared FFT + kinetic flow + adaptive onset + direct impact under Build ${build.number}.`);
