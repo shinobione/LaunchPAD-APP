@@ -137,7 +137,7 @@ Security contract:
 
 The private Worker contract advances to **Track Manager v5.9 / Studio bridge v1.1**. The public `launchpad-media` Worker remains **v2.6** and unchanged.
 
-The validation implementation lives in `cloudflare/admin-worker.parts/01z-studio-metadata-validation.part`; `scripts/build-admin-worker.mjs` assembles the one exact POST exception into the generated Worker. `scripts/test-studio-private-read-bridge.mjs` verifies the assembled behavior and fails if the validation module gains a production mutation primitive.
+The validation implementation lives in `cloudflare/admin-worker.parts/03d-studio-metadata-validation.part`; it is intentionally placed after the complete server helper/quality parts and before the UI parts so it cannot split an existing source fragment. `scripts/build-admin-worker.mjs` assembles the one exact POST exception into the generated Worker. `scripts/test-studio-private-read-bridge.mjs` verifies the assembled behavior and fails if the validation module gains a production mutation primitive.
 
 ## Build 65 — Studio private read boundary
 
