@@ -36,101 +36,106 @@ GitHub main
 
 See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the authoritative hosting map.
 
-## Track Manager v5.11 / Studio bridge v1.3 — metadata-only write
+## Track Manager v5.13 / Studio bridge v1.5 — final roadmap Phase 4 backend
 
-The public LaunchPAD application deliberately remains on **Build 66**. Track Manager v5.11 is a private Worker-only evolution for SHINOBIWAN Studio Phase 4B.1B.
+The public LaunchPAD stays on **Build 66** and public media Worker **v2.6**. v5.13 is a private Track Manager Worker-only evolution.
 
-- Studio Build 8 is deployed first and can recognize exactly `write: ["metadata"]` without using it.
-- Track Manager advances from **v5.10** to **v5.11** and the Studio bridge from **v1.2** to **v1.3**.
-- Existing authenticated private reads and the non-mutating metadata validation endpoint remain available.
-- One new route is added: `POST /api/studio/tracks/<slug>/metadata/save`.
-- The save route uses the proven no-preflight `Content-Type: text/plain` transport with mandatory `intent: "metadata-save-v1"` in the JSON-text body.
-- `expectedUpdatedAt` is mandatory; stale workspaces receive `409 / STALE_MANIFEST` instead of overwriting newer canonical state.
-- Only the existing metadata whitelist is accepted. Slug, assets, duration, migration/provenance and server-owned timestamps cannot be supplied by Studio.
-- Existing asset filenames, migration provenance and `createdAt` are preserved server-side.
-- Published proposals are quality-checked before persistence and may be blocked with `QUALITY_BLOCKED`.
-- No-change proposals return without writing R2 or rebuilding the public catalog.
-- A real metadata change writes the canonical manifest, rebuilds `catalog/index.json`, rereads the manifest and verifies the persisted revision.
-- If catalog rebuild or post-write verification fails after the manifest write, the endpoint attempts to restore the previous manifest and rebuild the previous catalog before returning `SAVE_ROLLBACK`.
-- The new module has no direct media `.put()`, `.delete()`, FormData, thumbnail, asset-removal or delete-track path. Existing media operations remain in the original Track Manager UI.
-- Every unrelated Track Manager `POST`, `PUT`, `PATCH` and `DELETE` still goes through the historical `enforceSameOrigin()` boundary.
-- Public Worker **v2.6**, LaunchPAD PWA runtime, SonicTrace and LRC Maker remain unchanged.
+The existing private read, metadata and canonical lyrics contracts remain unchanged. Bridge v1.5 adds a separate `manage` capability family for the remaining Track Manager operations named by the SHINOBIWAN Studio roadmap Phase 4:
+
+```json
+{
+  "read": ["tracks", "track", "lyrics"],
+  "validate": ["metadata", "lyrics"],
+  "write": ["metadata", "lyrics"],
+  "manage": ["track-create", "assets", "catalog-rebuild"]
+}
+```
+
+New scoped routes:
+
+```text
+POST /api/studio/tracks/create
+POST /api/studio/tracks/<slug>/assets/<kind>/upload
+POST /api/studio/tracks/<slug>/assets/<kind>/delete
+POST /api/studio/catalog/rebuild
+```
+
+Key rules:
+
+- Cloudflare Access and the exact Studio origin remain mandatory;
+- create always starts a new track as `draft` and rejects duplicate slugs;
+- uploads operate on exactly one canonical asset kind at a time;
+- audio, cover, thumbnail, lyrics TXT and video/Canvas use the existing Track Manager upload validators;
+- lyrics upload stays canonical `lyrics.txt`; no `.lrc` persistence is introduced;
+- file uploads use browser multipart FormData without custom headers, avoiding the previously proven Access/CORS preflight trap;
+- asset operations require canonical `expectedUpdatedAt` stale protection;
+- previous R2 objects are temporarily backed up outside the canonical track prefix during replace/delete transactions;
+- manifest/catalog publication is verified after operations;
+- failures attempt object + manifest + catalog compensation;
+- published tracks cannot lose an essential asset or accept an asset change that makes quality non-publishable;
+- explicit catalog rebuild requires a literal `REBUILD` confirmation;
+- no whole-track deletion is exposed by Studio;
+- no legacy all-in-one `saveTrack()` route is opened cross-origin;
+- every unrelated legacy Track Manager write retains `enforceSameOrigin()`;
+- SonicTrace, LRC Maker and Phase 5 persistence are untouched.
+
+See [`docs/STUDIO-PHASE4-OPERATIONS.md`](docs/STUDIO-PHASE4-OPERATIONS.md).
+
+## Track Manager v5.12 / Studio bridge v1.4 — canonical lyrics ancestry
+
+v5.12 added guarded canonical `lyrics.txt` read/validate/save before the final operational bridge:
+
+- `GET /api/studio/tracks/<slug>/lyrics` exposes canonical text + opaque R2 ETag;
+- validate/save require both manifest `expectedUpdatedAt` and `expectedLyricsEtag`;
+- validation is non-mutating;
+- save is limited to an existing canonical `lyrics.txt`;
+- timestamps inside `lyrics.txt` define synchronized state;
+- `.lrc` remains optional compatibility/export only;
+- successful save updates server-owned manifest revision fields, rebuilds `catalog/index.json`, rereads the stored object/manifest and verifies the changed ETag;
+- failure attempts lyrics + manifest + catalog rollback.
+
+See [`docs/STUDIO-LYRICS-WRITE.md`](docs/STUDIO-LYRICS-WRITE.md).
+
+## Track Manager v5.11 / Studio bridge v1.3 — metadata-only write ancestry
+
+v5.11 introduced the first real Studio production write while keeping media isolated:
+
+- `POST /api/studio/tracks/<slug>/metadata/save`;
+- CORS-simple `text/plain` transport;
+- mandatory `expectedUpdatedAt`;
+- whitelist-only metadata;
+- quality blocking for invalid published proposals;
+- canonical manifest write + catalog rebuild + reread verification;
+- compensating manifest/catalog rollback on failure;
+- no direct media mutation plumbing.
+
+The metadata write was smoke-tested and restored cleanly in the real browser on `soft-addiction`.
 
 See [`docs/STUDIO-METADATA-WRITE.md`](docs/STUDIO-METADATA-WRITE.md).
 
 ## Historical: Track Manager v5.10 / Studio bridge v1.2 CORS hotfix
 
-The public LaunchPAD application remained on **Build 66** because this hotfix changed only the protected Track Manager Worker.
+v5.10 kept metadata validation non-mutating and added a CORS-safelisted `text/plain` transport after the real Chrome + Cloudflare Access path showed that the older JSON/custom-header request could be intercepted at preflight.
 
-- Track Manager advanced from **v5.9** to **v5.10** and the Studio bridge from **v1.1** to **v1.2**.
-- The existing metadata-validation endpoint remained validation-only and advertised `write: []`.
-- Build 6 Studio used `Content-Type: application/json` plus `X-Shinobiwan-Studio-Intent`, which forced a CORS preflight. In the real Chrome + Cloudflare Access path, authenticated private GETs succeeded while that preflight could be intercepted before the Worker.
-- Bridge v1.2 kept the old JSON/custom-header transport for backward compatibility and added a no-preflight transport using `Content-Type: text/plain` with the same JSON payload.
-- In the simple transport, `intent: "metadata-validate-v1"` moved into the JSON body and remained mandatory.
-- Exact origin `https://shinobione.github.io`, Cloudflare Access verification, whitelist-only metadata and `expectedUpdatedAt` stale-manifest protection remained mandatory.
-- No manifest save, R2 `put/delete`, asset operation, publish, delete or catalog rebuild primitive was added in v5.10.
+Exact origin, Access verification, whitelist-only metadata and stale-manifest protection remained mandatory.
 
 See [`docs/STUDIO-VALIDATION-CORS-HOTFIX.md`](docs/STUDIO-VALIDATION-CORS-HOTFIX.md).
 
 ## Build 66 highlights
 
-Build 66 introduced **SHINOBIWAN Studio Phase 4B.1A** while still refusing cross-origin production writes at that release point.
-
-- Track Manager contract advanced to **v5.9** and the Studio bridge to **v1.1**.
-- Existing `/api/studio/*` private GET reads remained Cloudflare-Access-authenticated and restricted to the exact origin `https://shinobione.github.io`.
-- One endpoint was assembled: `POST /api/studio/tracks/<slug>/metadata/validate`.
-- Metadata fields were whitelist-only; assets, slug, migration/provenance fields and server-owned timestamps could not be supplied through the Studio patch.
-- The endpoint normalized the proposed manifest and ran Track Manager quality inspection without persistence.
-- Studio bridge health advertised `validate: ["metadata"]` while `write: []` remained explicit at Build 66's original Track Manager v5.9 release.
-- Every other `POST`, `PUT`, `PATCH` and `DELETE` route retained the existing Track Manager `enforceSameOrigin()` boundary.
-- The public Worker stayed **v2.6**.
+Build 66 introduced SHINOBIWAN Studio Phase 4B.1A metadata validation while the public PWA itself stayed stable. Later Track Manager revisions v5.10-v5.13 are private Worker-only backend evolutions and intentionally do not advance the public PWA build/cache.
 
 ## Build 65 highlights
 
-Build 65 prepared the private Track Manager for **SHINOBIWAN Studio Phase 4A** without opening production write access.
+Build 65 introduced the authenticated `/api/studio/*` private-read bridge with exact-origin CORS, Cloudflare Access verification and public fallback support. It also froze the corrected synchronized-lyrics contract: timestamped canonical `lyrics.txt` is already synchronized and a second `.lrc` file is optional.
 
-- Track Manager contract advanced to **v5.8**.
-- A new authenticated namespace `/api/studio/*` exposed GET-only health, track-list and track-detail projections for Studio.
-- CORS was allowlisted to the exact GitHub Pages origin `https://shinobione.github.io`; it was not wildcarded.
-- Cloudflare Access JWT verification remained mandatory for Studio data reads.
-- Existing `POST`, `PUT`, `PATCH` and `DELETE` routes remained protected by the unchanged same-origin write guard.
-- The bridge advertised `write: []` and supported only `GET, OPTIONS`; CI added a dedicated regression guard for this contract.
-- No R2 migration, catalog rebuild, asset rewrite or public Worker behavior was part of Build 65.
-- The synchronized-lyrics contract was corrected: timestamped canonical `lyrics.txt` is already synchronized; a second `.lrc` file is optional compatibility/export data, not a mandatory source of truth.
+## Audio Lab protected release history
 
-## Build 64 highlights
+Builds 52-61 established the currently sanctioned nine-preset shared-FFT Audio Lab line, including Pulse Reactor, Bass Fracture, Gravity Lens, Bio Structure, Void Bloom and Creep Signal while keeping Spectrum as the sanctuary reference path. These visual-runtime contracts are unchanged by Studio/Track Manager integration.
 
-Build 64 fixes the visual integration of the new **SonicTrace** admin shortcut in the stylesheet actually used by the live PWA shell.
+## Build 63 / 64 admin links
 
-- SonicTrace now uses the exact same pill geometry, spacing, typography and hover behavior as LRC Maker and Track Manager.
-- Its `ST` disc uses a cyan/teal gradient and the surrounding pill uses matching cyan border, text and arrow accents.
-- The active `css/pwa.css` contract now includes SonicTrace in every shared admin-tool selector instead of leaving it as an unstyled anchor.
-- CI explicitly guards the SonicTrace pill styling so this mismatch cannot silently return.
-- The PWA cache advances to v64 so installed clients cannot stay on the visually broken Build 63 shell.
-
-## Build 63 highlights
-
-Build 63 adds **SonicTrace** to the persistent desktop admin-tool strip alongside LRC Maker and Track Manager.
-
-- SonicTrace opens `https://shinobione.github.io/LM-IA-Analayse/` in a new tab.
-- It shares the exact same persisted `?admin=1` / `?admin=0` gate as the existing private-tool shortcuts.
-- The shortcut stays desktop-only, matching the current admin access contract.
-- Its `ST` badge uses a cyan/teal treatment derived from SonicTrace's visual identity while keeping LaunchPAD's existing pill geometry.
-- The PWA cache advances to v63 so installed clients pick up the new admin UI immediately.
-
-## Build 61 highlights
-
-Build 61 adds **Creep Signal**, the ninth sanctioned Audio Lab preset and the first deliberately non-radial kinetic visual in the current line.
-
-- **Spectrum**, **Neon Shatter** and **Liquid Chrome** remain untouched as the trusted baseline.
-- Build 57's integrated kinetic phase still owns continuous movement while Build 58/59 onset + Direct Impact own short low-frequency hits.
-- **Creep Signal** forms an asymmetric signal-organism that traverses the canvas instead of orbiting a central object.
-- Bass gives the body mass and wider travel, mids whip alternating branches, highs/transients drive luminous infection pulses along the network.
-- Local FFT samples deform separate body/branch positions so the structure does not behave like one rigid spline.
-- Direct Impact gives kick/bass onsets a reserved whole-network lateral lunge, shear and compression after the normal pose is computed.
-- Mobile budget is fixed at 9 body nodes / 6 branches / 7 travelling pulses / DPR 1.05; desktop uses 14 / 10 / 12 / DPR up to 2.
-- The renderer owns no private RAF/timer, uses no `Math.random()` motion and adds no particle field.
-- The PWA cache advances to v61 so installed clients cannot remain on Build 60 visual runtime code.
+Build 63 added SonicTrace to the desktop admin strip; Build 64 corrected its cyan/teal pill styling to match the established Track Manager/LRC Maker geometry. These LaunchPAD UI paths remain unchanged by worker-only Studio integration.
 
 ## Canonical media model
 
@@ -145,6 +150,8 @@ tracks/<slug>/thumbnail.webp
 tracks/<slug>/lyrics.txt      # optional; may contain synchronization timestamps
 tracks/<slug>/video.<ext>     # optional
 ```
+
+Temporary v5.13 rollback material may exist during an active scoped asset transaction only under `_studio-backups/<slug>/...`; it is not canonical track data and is removed after success/compensation.
 
 The public application hydrates through the public Worker. Localhost/CI may use deterministic fixtures; production must not silently substitute a bundled production catalog.
 
@@ -166,17 +173,29 @@ Before merging application or infrastructure changes:
 ```bash
 npm run validate
 npm run check:wrangler
+npm run check:build-docs
 ```
 
-CI checks browser navigation, PWA/service-worker behavior, Audio Lab signal contracts, catalog contracts, Cloudflare bundles, repository cleanliness, documentation/build coherence, the Studio bridge security boundary and desktop overflow regressions. The Studio bridge guard separately proves that metadata validation remains non-mutating and that the v5.11 save module is limited to canonical manifest/catalog helpers with no media mutation plumbing.
+`check:build-docs` enforces build-synchronized Markdown validation: every Markdown document must mention the active public build display and release marker.
+
+CI checks browser navigation, PWA/service-worker behavior, Audio Lab signal contracts, catalog contracts, Cloudflare bundles, repository cleanliness, documentation/build coherence, Studio bridge security boundaries and desktop overflow regressions.
+
+The Studio bridge guard separately proves that:
+
+- metadata validation remains non-mutating;
+- metadata save remains media-isolated;
+- canonical lyrics remains manifest+ETag guarded;
+- v1.5 management is limited to track-create, per-asset upload/delete and explicit catalog rebuild;
+- whole-track deletion is not exposed;
+- legacy unrelated Track Manager writes remain same-origin.
 
 ## Release discipline
 
-A runtime build advances in one place: `js/build-config.js`.
+A public runtime build advances in one place: `js/build-config.js`.
 
-Every build that changes that metadata must update **all Markdown documentation** to the same `display` and `release` values. `npm run check:build-docs` enforces this so README/architecture/roadmap/deployment docs cannot silently lag behind the shipped build.
+Every public build change must update all Markdown documentation to the same `display` and `release` values. Worker-only contract revisions keep the public Build 66 marker but update affected backend/integration docs.
 
-Web-host deployment, Worker deployment and R2 catalog publication remain separate states. Do not report “deployed” without saying which state changed.
+Web-host deployment, Worker deployment and R2/catalog mutation remain separate states. Do not report “deployed” without saying which state changed.
 
 ## Project map
 
@@ -184,7 +203,7 @@ Web-host deployment, Worker deployment and R2 catalog publication remain separat
 index.html                    Static application shell
 css/                          UI, responsive and feature styles
 js/
-  build-config.js             Single application release/version source
+  build-config.js             Single public application release/version source
   app-engine*.js              Boot/recovery bootstrap
   app-main.js                 Main application composition
   core/                       Shared catalog/router/player/theme state
@@ -199,11 +218,13 @@ docs/                         Operational and architecture documentation
 Useful documents:
 
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — runtime/module structure
-- [`CHANGELOG.md`](CHANGELOG.md) — recent build history
+- [`CHANGELOG.md`](CHANGELOG.md) — recent public build history
 - [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) — canonical hosting/deployment topology
 - [`docs/SHINOBIWAN-STUDIO-CONTRACT.md`](docs/SHINOBIWAN-STUDIO-CONTRACT.md) — Studio integration contract
-- [`docs/STUDIO-VALIDATION-CORS-HOTFIX.md`](docs/STUDIO-VALIDATION-CORS-HOTFIX.md) — historical Track Manager v5.10 / bridge v1.2 browser validation transport hotfix
-- [`docs/STUDIO-METADATA-WRITE.md`](docs/STUDIO-METADATA-WRITE.md) — Track Manager v5.11 / bridge v1.3 metadata-only write contract
+- [`docs/STUDIO-VALIDATION-CORS-HOTFIX.md`](docs/STUDIO-VALIDATION-CORS-HOTFIX.md) — v5.10 browser validation transport hotfix
+- [`docs/STUDIO-METADATA-WRITE.md`](docs/STUDIO-METADATA-WRITE.md) — v5.11 metadata write contract
+- [`docs/STUDIO-LYRICS-WRITE.md`](docs/STUDIO-LYRICS-WRITE.md) — v5.12 canonical lyrics contract
+- [`docs/STUDIO-PHASE4-OPERATIONS.md`](docs/STUDIO-PHASE4-OPERATIONS.md) — v5.13 final Phase 4 operational contract
 - [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) — safe release procedure
 - [`ROADMAP.md`](ROADMAP.md) — remaining consolidation/product work
 - [`cloudflare/README.md`](cloudflare/README.md) — Workers/R2 operations
@@ -212,9 +233,9 @@ Useful documents:
 
 1. `main` is the only source of truth.
 2. Do not edit production code only in Cloudflare, GitHub Pages, Lovable or generated `dist/` output.
-3. Temporary feature/fix branches are disposable and automatically deleted after merge; named `safety/*` restoration snapshots created for Studio integration are rollback references and must not be developed on.
-4. Advance application versions only in `js/build-config.js`.
-5. Update every `.md` file for every new application build; CI validates the build/release markers. Worker-only contract revisions keep the public build fixed but must update the affected backend/integration documentation.
+3. Temporary feature/fix branches are disposable; named `safety/*` snapshots are rollback references and must not be developed on.
+4. Advance public application versions only in `js/build-config.js`.
+5. Update every `.md` file for every new public application build; Worker-only revisions keep the public build fixed but update affected backend/integration documentation.
 6. Keep Worker deployment, web deployment and R2 catalog rebuild as separate explicit states.
 7. Spectrum remains the Audio Lab reference path; every visual effect must consume the real FFT feed rather than independent loop animation.
 8. Add Audio Lab presets one at a time, with desktop and mobile budgets defined before merge.
@@ -222,5 +243,6 @@ Useful documents:
 10. Continuous movement and transient impact must stay separate: groove energy owns travel; detected onset creates a post-pose impact with reserved visual headroom.
 11. Motion memory/kinetic phase must stop when the real audio target disappears and must never become an autonomous screensaver.
 12. New visual families should prefer distinct composition/motion language rather than repeating radial center-object patterns.
-13. Historical-looking compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.
-14. Studio integration must remain additive and reversible: capabilities are opened one narrowly versioned route at a time, with real-browser validation and fallback retained until the replacement path is proven.
+13. Historical compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.
+14. Studio integration must remain additive and reversible: capabilities are opened one narrowly versioned route at a time, with fallback retained until replacement paths are proven.
+15. When roadmap Phase 4 is complete, stop before Phase 5 SonicTrace/Catalog Intelligence until new user instructions are provided.

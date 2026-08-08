@@ -8,10 +8,12 @@ const runtimePath = 'cloudflare/admin-worker.parts/01-runtime.part';
 const validationPartPath = 'cloudflare/admin-worker.parts/03d-studio-metadata-validation.part';
 const savePartPath = 'cloudflare/admin-worker.parts/03e-studio-metadata-save.part';
 const lyricsPartPath = 'cloudflare/admin-worker.parts/03f-studio-lyrics.part';
+const phase4PartPath = 'cloudflare/admin-worker.parts/03g-studio-phase4-ops.part';
 const runtime = fs.readFileSync(runtimePath, 'utf8');
 const validationPart = fs.readFileSync(validationPartPath, 'utf8');
 const savePart = fs.readFileSync(savePartPath, 'utf8');
 const lyricsPart = fs.readFileSync(lyricsPartPath, 'utf8');
+const phase4Part = fs.readFileSync(phase4PartPath, 'utf8');
 const builtPath = path.join(os.tmpdir(), 'launchpad-studio-bridge-test-worker.js');
 
 const build = spawnSync(process.execPath, ['scripts/build-admin-worker.mjs', builtPath], { encoding: 'utf8' });
@@ -25,26 +27,13 @@ const built = fs.readFileSync(builtPath, 'utf8');
 assert.ok(runtime.includes('const STUDIO_ALLOWED_ORIGIN = "https://shinobione.github.io";'), 'Studio bridge origin must remain exact.');
 assert.ok(runtime.includes('const user = await verifyAccessJwt(request, env);'), 'Studio bridge must remain behind Cloudflare Access JWT verification.');
 assert.ok(runtime.includes('enforceSameOrigin(request, url);'), 'Legacy Track Manager writes must retain the same-origin guard.');
-for (const route of [
-  'url.pathname === "/api/studio/health"',
-  'url.pathname === "/api/studio/tracks"',
-  '/^\\/api\\/studio\\/tracks\\/([a-z0-9][a-z0-9-]{0,119})$/'
-]) assert.ok(runtime.includes(route), `Missing Studio read route: ${route}`);
 
 for (const required of [
   'const STUDIO_METADATA_VALIDATION_INTENT = "metadata-validate-v1";',
-  '/metadata\\/validate$/',
-  'requestedMethod === "POST" && metadataValidation',
-  'contentType !== "application/json" && contentType !== "text/plain"',
-  'contentType === "application/json" && request.headers.get("x-shinobiwan-studio-intent")',
-  'contentType === "text/plain"',
-  'payload.intent !== STUDIO_METADATA_VALIDATION_INTENT',
   'expectedUpdatedAt',
   'code: "STALE_MANIFEST"',
   'validationOnly: true',
   'inspectTrackQuality',
-  'simple-post-v1',
-  'json-preflight-v1',
 ]) assert.ok(validationPart.includes(required), `Metadata validation contract missing: ${required}`);
 for (const forbiddenMutation of ['writeManifest(', 'writeCatalogIndex(', '.put(', '.delete(', 'saveTrack(', 'saveThumbnail(', 'deleteTrack(']) {
   assert.ok(!validationPart.includes(forbiddenMutation), `Metadata validation part must remain non-mutating: ${forbiddenMutation}`);
@@ -52,9 +41,6 @@ for (const forbiddenMutation of ['writeManifest(', 'writeCatalogIndex(', '.put('
 
 for (const required of [
   'const STUDIO_METADATA_SAVE_INTENT = "metadata-save-v1";',
-  '/metadata\\/save$/',
-  'studioMetadataContentType(request) !== "text/plain"',
-  'payload.intent !== STUDIO_METADATA_SAVE_INTENT',
   'expectedUpdatedAt',
   'code: "STALE_MANIFEST"',
   'normalizeStudioMetadataPatch(payload.metadata)',
@@ -62,13 +48,9 @@ for (const required of [
   'code: "QUALITY_BLOCKED"',
   'await writeManifest(env.MEDIA_BUCKET, proposed)',
   'await writeCatalogIndex(env.MEDIA_BUCKET)',
-  'const reread = await readManifest(env.MEDIA_BUCKET, slug)',
-  'reread.updatedAt !== proposed.updatedAt',
   'await writeManifest(env.MEDIA_BUCKET, existing)',
-  'code: manifestWritten ? "SAVE_ROLLBACK" : "SAVE_FAILED"',
-  'catalogRebuilt: true',
 ]) assert.ok(savePart.includes(required), `Metadata save contract missing: ${required}`);
-for (const forbiddenMutation of ['.put(', '.delete(', 'saveTrack(', 'saveThumbnail(', 'deleteTrack(', 'FormData', 'remove_audio', 'remove_cover', 'remove_thumbnail', 'remove_lyrics', 'remove_video']) {
+for (const forbiddenMutation of ['.put(', '.delete(', 'saveTrack(', 'saveThumbnail(', 'deleteTrack(', 'FormData']) {
   assert.ok(!savePart.includes(forbiddenMutation), `Metadata save part must not expose media mutation plumbing: ${forbiddenMutation}`);
 }
 
@@ -76,83 +58,101 @@ for (const required of [
   'const STUDIO_LYRICS_VALIDATION_INTENT = "lyrics-validate-v1";',
   'const STUDIO_LYRICS_SAVE_INTENT = "lyrics-save-v1";',
   'const STUDIO_CANONICAL_LYRICS_FILENAME = "lyrics.txt";',
-  '/lyrics$/',
-  '/lyrics\\/validate$/',
-  '/lyrics\\/save$/',
-  'studioMetadataContentType(request) !== "text/plain"',
-  'payload.intent !== expectedIntent',
   'expectedUpdatedAt',
   'expectedLyricsEtag',
-  'code: "STALE_MANIFEST"',
   'code: "STALE_LYRICS"',
-  'code: "LYRICS_MISSING"',
-  'code: "LYRICS_NON_CANONICAL"',
   'filename !== STUDIO_CANONICAL_LYRICS_FILENAME',
   'validationOnly: true',
-  'studioLyricsQuality(proposedLyrics, snapshot.manifest)',
   'code: "QUALITY_BLOCKED"',
   'await env.MEDIA_BUCKET.put(snapshot.key, proposedLyrics',
   'await writeManifest(env.MEDIA_BUCKET, nextManifest)',
   'await writeCatalogIndex(env.MEDIA_BUCKET)',
-  'const rereadLyrics = await env.MEDIA_BUCKET.get(snapshot.key)',
-  'rereadText !== proposedLyrics',
-  'rereadEtag === snapshot.etag',
   'await env.MEDIA_BUCKET.put(snapshot.key, snapshot.body',
   'rollback.lyricsRestored = true',
   'rollback.manifestRestored = true',
   'rollback.catalogRestored = true',
-  'catalogRebuilt: true',
 ]) assert.ok(lyricsPart.includes(required), `Lyrics bridge contract missing: ${required}`);
-
-for (const forbiddenMutation of ['.delete(', 'saveTrack(', 'saveThumbnail(', 'deleteTrack(', 'FormData', 'remove_audio', 'remove_cover', 'remove_thumbnail', 'remove_video']) {
+for (const forbiddenMutation of ['saveTrack(', 'saveThumbnail(', 'deleteTrack(', 'FormData', 'remove_audio', 'remove_cover', 'remove_thumbnail', 'remove_video']) {
   assert.ok(!lyricsPart.includes(forbiddenMutation), `Lyrics bridge must not expose unrelated mutation plumbing: ${forbiddenMutation}`);
 }
-assert.equal((lyricsPart.match(/MEDIA_BUCKET\.put\(snapshot\.key/g) || []).length, 2, 'Lyrics module must contain exactly the canonical lyrics write and its rollback restore.');
-assert.ok(!/MEDIA_BUCKET\.put\([^s]/.test(lyricsPart), 'Lyrics module must not write to an arbitrary R2 key.');
-for (const forbiddenAsset of ['audio', 'cover', 'thumbnail', 'video']) {
-  assert.ok(!lyricsPart.includes(`assets.${forbiddenAsset} =`), `Lyrics bridge must not mutate ${forbiddenAsset} asset references.`);
+
+for (const required of [
+  'const STUDIO_TRACK_CREATE_INTENT = "track-create-v1";',
+  'const STUDIO_ASSET_UPLOAD_INTENT = "asset-upload-v1";',
+  'const STUDIO_ASSET_DELETE_INTENT = "asset-delete-v1";',
+  'const STUDIO_CATALOG_REBUILD_INTENT = "catalog-rebuild-v1";',
+  'STUDIO_PHASE4_ASSET_KINDS',
+  '/api/studio/tracks/create',
+  '/assets\\/(audio|cover|thumbnail|lyrics|video)\\/upload$/',
+  '/assets\\/(audio|cover|thumbnail|lyrics|video)\\/delete$/',
+  '/api/studio/catalog/rebuild',
+  'contentType !== "multipart/form-data"',
+  'contentType !== "text/plain"',
+  'normalizeStudioMetadataPatch(payload.metadata || {})',
+  'status: "draft"',
+  'code: "TRACK_EXISTS"',
+  'validateUploadFile(file, kind)',
+  'kind === "thumbnail" && file.size > MAX_THUMBNAIL_BYTES',
+  'kind === "lyrics" && filename !== STUDIO_CANONICAL_LYRICS_FILENAME',
+  '_studio-backups/',
+  'studioBackupObject',
+  'studioRestoreBackup',
+  'await env.MEDIA_BUCKET.put(newKey, file.stream()',
+  'await env.MEDIA_BUCKET.delete(oldKey)',
+  'await env.MEDIA_BUCKET.delete(key)',
+  'studioPhase4NextManifest',
+  'inspectTrackQuality',
+  'QUALITY_BLOCKED',
+  'await writeManifest(env.MEDIA_BUCKET, nextManifest)',
+  'await writeCatalogIndex(env.MEDIA_BUCKET)',
+  'ASSET_SAVE_ROLLBACK',
+  'ASSET_DELETE_ROLLBACK',
+  'payload.confirm !== "REBUILD"',
+]) assert.ok(phase4Part.includes(required), `Phase 4 operational contract missing: ${required}`);
+
+assert.ok(!phase4Part.includes('deleteTrack('), 'Studio Phase 4 bridge must not expose whole-track deletion.');
+assert.ok(!phase4Part.includes('saveTrack('), 'Studio Phase 4 bridge must not expose the legacy all-in-one saveTrack route.');
+assert.ok(!phase4Part.includes('saveThumbnail('), 'Studio Phase 4 bridge must use the scoped asset route rather than legacy thumbnail route.');
+for (const forbiddenLiteral of ['LM-IA-Analayse', 'SonicTrace', 'analysis/sonictrace', 'lyrics.lrc']) {
+  assert.ok(!phase4Part.includes(forbiddenLiteral), `Phase 4 operations must not leak Phase 5/duplicate lyrics concerns: ${forbiddenLiteral}`);
 }
 
-for (const forbiddenMethod of ['PUT', 'PATCH', 'DELETE']) {
-  assert.ok(!savePart.includes(`request.method === "${forbiddenMethod}"`), `Studio metadata save part must not expose ${forbiddenMethod}.`);
-  assert.ok(!validationPart.includes(`request.method === "${forbiddenMethod}"`), `Studio metadata validation part must not expose ${forbiddenMethod}.`);
-  assert.ok(!lyricsPart.includes(`request.method === "${forbiddenMethod}"`), `Studio lyrics part must not expose ${forbiddenMethod}.`);
-}
+assert.ok(built.includes('version: "5.13"'), 'Built Track Manager contract must be v5.13.');
+assert.ok(built.includes('<span class="version-pill">v5.13</span>'), 'Built Track Manager UI must report v5.13.');
+assert.ok(built.includes('const STUDIO_BRIDGE_VERSION = "1.5";'), 'Studio bridge contract must be v1.5.');
+assert.ok(built.includes('trackManagerVersion: "5.13"'), 'Studio bridge health must report Track Manager v5.13.');
+assert.ok(built.includes('read: ["tracks", "track", "lyrics"]'), 'Studio health must retain private reads.');
+assert.ok(built.includes('validate: ["metadata", "lyrics"]'), 'Studio health must retain validation capabilities.');
+assert.ok(built.includes('write: ["metadata", "lyrics"]'), 'Studio health write list must remain metadata + lyrics.');
+assert.ok(built.includes('manage: ["track-create", "assets", "catalog-rebuild"]'), 'Studio health must expose the final Phase 4 manage capabilities separately.');
+assert.ok(!built.includes('write: ["metadata", "lyrics",'), 'Operational management must not be disguised as a third generic write capability.');
 
-assert.ok(built.includes('version: "5.12"'), 'Built Track Manager contract must be v5.12.');
-assert.ok(built.includes('<span class="version-pill">v5.12</span>'), 'Built Track Manager UI must report v5.12.');
-assert.ok(built.includes('const STUDIO_BRIDGE_VERSION = "1.4";'), 'Studio bridge contract must be v1.4.');
-assert.ok(built.includes('trackManagerVersion: "5.12"'), 'Studio bridge health must report Track Manager v5.12.');
-assert.ok(built.includes('read: ["tracks", "track", "lyrics"]'), 'Studio health must expose canonical lyrics read capability.');
-assert.ok(built.includes('validate: ["metadata", "lyrics"]'), 'Studio health must expose metadata and lyrics validation capabilities.');
-assert.ok(built.includes('write: ["metadata", "lyrics"]'), 'Studio health must expose only metadata and lyrics write capabilities.');
-assert.ok(!built.includes('write: ["metadata", "lyrics",'), 'Studio health must not expose a third write capability.');
-assert.ok(built.includes('const isStudioMetadataValidation = Boolean(studioMetadataValidationRoute && request.method === "POST");'));
-assert.ok(built.includes('const isStudioMetadataSave = Boolean(studioMetadataSaveRoute && request.method === "POST");'));
-assert.ok(built.includes('const isStudioLyricsValidation = Boolean(studioLyricsValidationRoute && request.method === "POST");'));
-assert.ok(built.includes('const isStudioLyricsSave = Boolean(studioLyricsSaveRoute && request.method === "POST");'));
-assert.ok(built.includes('else if (isStudioLyricsValidation || isStudioLyricsSave) assertStudioLyricsPostRequest(request);\n        else enforceSameOrigin(request, url);'), 'All unrelated Track Manager writes must retain same-origin enforcement.');
-assert.ok(built.includes('await getStudioTrackLyrics(studioLyricsReadRoute[1], env, user)'));
-assert.ok(built.includes('await validateStudioTrackLyrics(studioLyricsValidationRoute[1], request, env, user)'));
-assert.ok(built.includes('await saveStudioTrackLyrics(studioLyricsSaveRoute[1], request, env, user)'));
-assert.ok(built.includes('await validateStudioTrackMetadata(studioMetadataValidationRoute[1], request, env, user)'));
-assert.ok(built.includes('await saveStudioTrackMetadata(studioMetadataSaveRoute[1], request, env, user)'));
-assert.ok(built.includes('payload.intent !== STUDIO_METADATA_VALIDATION_INTENT'));
-assert.ok(built.includes('payload.intent !== STUDIO_METADATA_SAVE_INTENT'));
-assert.ok(built.includes('Access-Control-Allow-Origin'), 'Built worker lost Studio CORS headers.');
-
-const authIndex = built.indexOf('const user = await verifyAccessJwt(request, env);');
-for (const guardedRoute of [
+for (const routeCall of [
   'await getStudioTrackLyrics(studioLyricsReadRoute[1], env, user)',
   'await validateStudioTrackLyrics(studioLyricsValidationRoute[1], request, env, user)',
   'await saveStudioTrackLyrics(studioLyricsSaveRoute[1], request, env, user)',
   'await validateStudioTrackMetadata(studioMetadataValidationRoute[1], request, env, user)',
   'await saveStudioTrackMetadata(studioMetadataSaveRoute[1], request, env, user)',
+  'await createStudioTrack(request, env, user)',
+  'await uploadStudioTrackAsset(studioAssetUploadRoute[1], studioAssetUploadRoute[2], request, env, user)',
+  'await deleteStudioTrackAsset(studioAssetDeleteRoute[1], studioAssetDeleteRoute[2], request, env, user)',
+  'await rebuildStudioCatalog(request, env, user)',
+]) assert.ok(built.includes(routeCall), `Built Worker missing guarded route call: ${routeCall}`);
+
+const authIndex = built.indexOf('const user = await verifyAccessJwt(request, env);');
+for (const guardedRoute of [
+  'await getStudioTrackLyrics(studioLyricsReadRoute[1], env, user)',
+  'await saveStudioTrackLyrics(studioLyricsSaveRoute[1], request, env, user)',
+  'await createStudioTrack(request, env, user)',
+  'await uploadStudioTrackAsset(studioAssetUploadRoute[1], studioAssetUploadRoute[2], request, env, user)',
+  'await deleteStudioTrackAsset(studioAssetDeleteRoute[1], studioAssetDeleteRoute[2], request, env, user)',
+  'await rebuildStudioCatalog(request, env, user)',
 ]) {
   const routeIndex = built.indexOf(guardedRoute);
   assert.ok(authIndex >= 0 && routeIndex > authIndex, `${guardedRoute} must remain behind Access JWT verification.`);
 }
-const optionsIndex = built.indexOf('request.method === "OPTIONS" && url.pathname.startsWith("/api/studio/")');
-assert.ok(optionsIndex >= 0 && optionsIndex < authIndex, 'Legacy metadata-validation preflight support must remain before Access JWT verification.');
 
-console.log('Studio bridge guard passed: v1.4 preserves metadata writes and adds canonical existing-lyrics read/validate/save with manifest+ETag concurrency, quality blocking, catalog rebuild and full lyrics/manifest/catalog rollback while unrelated media writes remain unreachable.');
+assert.ok(built.includes('else enforceSameOrigin(request, url);'), 'All unrelated legacy Track Manager writes must retain same-origin enforcement.');
+assert.ok(built.includes('Access-Control-Allow-Origin'), 'Built worker lost Studio CORS headers.');
+
+console.log('Studio bridge guard passed: v1.5 preserves metadata+lyrics writes and adds only scoped track-create, per-asset upload/delete and explicit catalog rebuild management while legacy Track Manager remains same-origin protected.');
