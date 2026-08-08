@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD — catalog guide
 
-> Current application build: `2026.08.08.65` — release `studio-private-read-bridge-20260808`.
+> Current application build: `2026.08.08.66` — release `studio-metadata-validation-20260808`.
 
 The production catalog is managed in Cloudflare R2 through the private LaunchPAD Track Manager. `js/catalog.js` contains album/editorial presentation data only; production track metadata and media are not maintained by hand in the PWA.
 
@@ -20,9 +20,11 @@ LaunchPAD exposes private desktop shortcuts after an explicit `?admin=1` opt-in:
 
 All three use the same persisted admin gate in browser and installed desktop PWA sessions. Use `?admin=0` to clear it.
 
-Repository Track Manager contract: **v5.8**. Public media Worker contract: **v2.6**.
+Repository Track Manager contract: **v5.9**. Public media Worker contract: **v2.6**.
 
-Build 65 also introduces an additive private **Studio read bridge** under `/api/studio/*`. It is GET-only, Cloudflare-Access-authenticated and CORS-allowlisted to `https://shinobione.github.io`. It does not replace the Track Manager UI and does not expose cross-origin write capability.
+Build 66 keeps the additive private **Studio bridge** under `/api/studio/*` and advances it to contract **v1.1**. Existing reads remain GET-only, Cloudflare-Access-authenticated and CORS-allowlisted to `https://shinobione.github.io`. One exact additional capability is now exposed: `POST /api/studio/tracks/<slug>/metadata/validate`.
+
+That POST is **validation-only**. It requires the Studio intent header, an `expectedUpdatedAt` stale-data guard and JSON metadata restricted to an explicit whitelist. It normalizes the proposed manifest and runs the same Track Manager quality inspection without calling `writeManifest`, `writeCatalogIndex`, R2 `put/delete`, media replacement or any catalog mutation. Studio health therefore reports `validate: ["metadata"]` while `write: []` remains unchanged.
 
 ## Add or edit a track
 
@@ -58,6 +60,8 @@ Do not rename a published slug. It is the permanent catalog/share-route identifi
 Use **draft** while metadata/media is incomplete. Before publishing, run Track Manager quality control and resolve blocking errors.
 
 Saving a track and rebuilding the public catalog are related but distinct. Rebuild `catalog/index.json` whenever manifest or derived lyrics/media metadata must be reflected in public summaries.
+
+The Build 66 Studio metadata endpoint performs only a dry validation preview. It does not save, publish or rebuild anything.
 
 ## Lyrics formats
 
@@ -110,7 +114,7 @@ npm run validate
 npm run check:wrangler
 ```
 
-Every new app build must update every Markdown file to the active build display/release; `check:build-docs` enforces that contract. Build 65 additionally runs `check:studio-private-read-bridge` as part of Cloudflare validation.
+Every new app build must update every Markdown file to the active build display/release; `check:build-docs` enforces that contract. Build 66 runs the Studio bridge guard as part of Cloudflare validation and verifies that the sole cross-origin POST is non-mutating metadata validation while all real writes remain same-origin-only.
 
 ## Deployment boundaries
 
@@ -118,7 +122,8 @@ Every new app build must update every Markdown file to the active build display/
 - GitHub Pages publishes the canonical validated static artifact;
 - Cloudflare Pages staging mirrors the same runtime;
 - Worker code deploys separately through **Deploy Cloudflare Workers**;
-- Build 65 requires only the **admin Worker** to change; the public Worker remains v2.6;
-- R2 catalog/media changes happen through Track Manager and explicit catalog rebuilds and are not performed merely by deploying Build 65.
+- Build 66 requires only the **admin Worker** to change; the public Worker remains v2.6;
+- R2 catalog/media changes happen through Track Manager and explicit catalog rebuilds and are not performed merely by deploying Build 66;
+- the Build 66 metadata validation POST itself performs no R2 or catalog writes.
 
 See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md), [`docs/SHINOBIWAN-STUDIO-CONTRACT.md`](docs/SHINOBIWAN-STUDIO-CONTRACT.md), [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) and [`cloudflare/README.md`](cloudflare/README.md).
