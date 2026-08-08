@@ -1,6 +1,6 @@
 # LaunchPAD deployment topology
 
-> Current application build: `2026.08.08.63` — release `sonictrace-admin-link-20260808`.
+> Current application build: `2026.08.08.64` — release `sonictrace-badge-fix-20260808`.
 
 ## One source of truth
 
@@ -10,7 +10,7 @@
                          GitHub repository
                               main
                                |
-                     validated Build 63
+                     validated Build 64
                                |
                 +--------------+--------------+
                 |                             |
@@ -34,18 +34,18 @@
                       shinobiwan-media
 ```
 
-## Canonical Build 63
+## Canonical Build 64
 
 The current application release is defined only in `js/build-config.js`:
 
 ```text
-id       20260808-sonictrace-admin-v63
-cache    shinobi-launchpad-v63
-display  2026.08.08.63
-release  sonictrace-admin-link-20260808
+id       20260808-sonictrace-badge-v64
+cache    shinobi-launchpad-v64
+display  2026.08.08.64
+release  sonictrace-badge-fix-20260808
 ```
 
-Every Markdown document must carry the same display/release markers; CI rejects stale documentation. The cache namespace advances with Build 63 so the SonicTrace admin shortcut and its shared-gate validation cannot remain hidden behind Build 62 shell assets.
+Every Markdown document must carry the same display/release markers; CI rejects stale documentation. The cache namespace advances with Build 64 so the corrected SonicTrace pill styling in the active PWA stylesheet cannot remain hidden behind the visually broken Build 63 shell.
 
 ## Web hosting
 
