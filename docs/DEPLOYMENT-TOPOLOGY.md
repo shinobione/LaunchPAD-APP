@@ -1,6 +1,6 @@
 # LaunchPAD deployment topology
 
-> Current application build: `2026.08.08.60` — release `void-bloom-20260808`.
+> Current application build: `2026.08.08.61` — release `creep-signal-20260808`.
 
 ## One source of truth
 
@@ -10,7 +10,7 @@
                          GitHub repository
                               main
                                |
-                      validated Build 60
+                      validated Build 61
                                |
                 +--------------+--------------+
                 |                             |
@@ -34,18 +34,18 @@
                       shinobiwan-media
 ```
 
-## Canonical Build 60
+## Canonical Build 61
 
 The current application release is defined only in `js/build-config.js`:
 
 ```text
-id       20260808-void-bloom-v60
-cache    shinobi-launchpad-v60
-display  2026.08.08.60
-release  void-bloom-20260808
+id       20260808-creep-signal-v61
+cache    shinobi-launchpad-v61
+display  2026.08.08.61
+release  creep-signal-20260808
 ```
 
-Every Markdown document must carry the same display/release markers; CI rejects stale documentation. The cache namespace advances with Build 60 so the new Void Bloom renderer and eight-preset controller cannot be hidden by stale Build 59 shell assets.
+Every Markdown document must carry the same display/release markers; CI rejects stale documentation. The cache namespace advances with Build 61 so the new Creep Signal renderer and nine-preset controller cannot be hidden by stale Build 60 shell assets.
 
 ## Web hosting
 
