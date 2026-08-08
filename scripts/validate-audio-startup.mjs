@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 
-const read = path => fs.readFileSync(path, 'utf8');
+const read = path => fs.readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
 const fail = message => { throw new Error(message); };
 
 const readiness = read('js/features/audio-readiness.js');

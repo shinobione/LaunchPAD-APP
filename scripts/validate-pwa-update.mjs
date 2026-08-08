@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { assertCurrentBuild } from './lib/build-metadata.mjs';
 
-const read = path => fs.readFileSync(path, 'utf8');
+const read = path => fs.readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
 const fail = message => { throw new Error(message); };
 
 const pwa = read('js/features/pwa.js');

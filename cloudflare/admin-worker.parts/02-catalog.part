@@ -213,6 +213,8 @@ function assetStateFromObjects(objects, manifest) {
       present: Boolean(object), filename, key,
       size: object?.size || 0,
       contentType: object?.httpMetadata?.contentType || guessContentType(getExtension(filename)),
+      etag: object?.etag || null,
+      uploaded: object?.uploaded?.toISOString?.() || null,
     } : null;
   }
   return state;

@@ -1,5 +1,15 @@
 # Changelog
 
+## Track Manager v5.14 / Studio bridge v1.6 — Phase 5 candidate
+
+- adds canonical SonicTrace `latest.json` and append-only history sidecars in R2;
+- binds every analysis to the existing manifest slug/trackId and current audio ETag+size;
+- rejects stale audio and reused analysis IDs;
+- verifies writes and restores the prior latest object on failure;
+- exposes a private 512D analysis index for Studio similarity/clusters;
+- preserves manifest schema v1, public `catalog/index.json`, public Worker v2.6 and LaunchPAD Build 66;
+- persists no audio copy.
+
 > Current application build: `2026.08.08.66` — release `studio-metadata-validation-20260808`.
 
 This file intentionally tracks the recent stabilized release line. Older milestone-by-milestone history remains available in Git history and merged pull requests.

@@ -11,7 +11,7 @@ import {
   normalizeAudioLabMode
 } from '../js/features/visual/audio-lab-registry.js';
 
-const read = file => fs.readFileSync(file, 'utf8');
+const read = file => fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
 
 assert.equal(AUDIO_LAB_DEFAULT_MODE, 'neon-shatter');
 for (const required of ['neon-shatter', 'spectrum', 'liquid-chrome', 'pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure', 'void-bloom', 'creep-signal']) {
