@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD architecture
 
-> Current application build: `2026.08.08.57` — release `kinetic-flow-20260808`.
+> Current application build: `2026.08.08.58` — release `adaptive-punch-20260808`.
 
 LaunchPAD is a modular static PWA whose application source lives in GitHub `main`. The web shell is mirrored to GitHub Pages and Cloudflare Pages; production catalog/media state lives in Cloudflare R2 and is exposed through public/private Workers.
 
@@ -57,7 +57,7 @@ js/
     lyrics/                   Lyrics reader/synchronization
     visual/
       visual-engine-v2.js     Spectrum reference renderer/analyser
-      visual-engine-live.js   Shared live FFT controller
+      visual-engine-live.js   Shared live FFT + adaptive punch controller
       visual-engine-core-modes.js
                               Neon Shatter + Liquid Chrome
       motion-spring.js        Per-canvas spring + integrated kinetic phase
@@ -124,46 +124,63 @@ fallback:  track URL --> fetch/decode --> AnalyserNode --> shared FFT readers
 
 ### Motion / kinetic layer
 
-Build 57 replaces Build 56's soft-knee pose compression with two independent concepts:
+Build 57 introduced two independent concepts and Build 58 keeps them unchanged:
 
 ```text
 raw FFT + smoothed features --> shapeAudioDrive() --> amplitude/spring targets
 real audio activity ---------> advanceMotionPhase() --> integrated forward phase
 ```
 
-`shapeAudioDrive()` blends the raw analyser bands with the already-smoothed feature stream instead of taking a boosted maximum and then compressing it. Quiet/mid signal remains visible, but the full 0..1 excursion is preserved for real peaks.
+`shapeAudioDrive()` blends the raw analyser bands with the already-smoothed feature stream. `advanceMotionPhase()` stores phase and phase speed per Canvas and integrates `phase += speed * dt` frame by frame. Spring channels still provide local inertia/recoil. The helper owns no RAF, timer or audio node.
 
-`advanceMotionPhase()` stores phase and phase speed per Canvas in the same `WeakMap` state. It integrates `phase += speed * dt` frame by frame. This fixes the old `absoluteTime × changingActivity` behavior: changing FFT energy no longer causes the apparent motion phase to jump, stall or reverse. Audio activity controls phase speed; zero activity drives target speed to zero.
+### Adaptive punch layer
 
-Spring channels still provide local inertia/recoil. The helper owns no RAF, timer or audio node. Playback pause zeroes the FFT/features upstream, spring targets fall toward zero and the integrated phase speed stops.
+Build 58 adds a separate transient path for the four kinetic presets:
+
+```text
+low FFT bins
+   +--> fast bass envelope
+   +--> slow local bass baseline
+   +--> positive low-bin spectral flux
+   +--> short bass rise
+              |
+              v
+      adaptive low punch
+              |
+              +--> kick / peak / dynamics overlay
+```
+
+The goal is to preserve Build 57's continuous travel while restoring a short extra visual hit on bass/kick transients inside already-loud sections. The detector compares the current low-frequency behavior with its own recent local baseline, so a kick can still be exceptional even when absolute bass level is already high.
+
+The punch decays rapidly and does not create or own an animation loop. It is applied only to **Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure**. **Neon Shatter, Spectrum and Liquid Chrome** keep their existing calibration.
 
 ### Audio Lab rendering contract
 
-Build 57 exposes seven sanctioned presets:
+Build 58 exposes seven sanctioned presets:
 
 - **Spectrum** — protected reference renderer and owner of the primary analyser contract.
-- **Neon Shatter** — FFT/local-delta shard displacement, scaling, rotation, cracks and bass/kick impact rings; unchanged in Build 57.
-- **Liquid Chrome** — FFT-deformed metallic contour; unchanged in Build 57.
-- **Pulse Reactor** — whole-reactor drift plus continuously advancing orbital/radial motion; bass/kicks add breathing excursion and breakup on top of groove-level flow.
-- **Bass Fracture** — tectonic mass roll/translation plus continuously sliding/twisting plates; rupture peaks add large separation/recoil rather than being the sole movement source.
-- **Gravity Lens** — continuously precessing spatial field with drifting centre and sweeping curved streams; bass/kicks deepen an already-moving lens.
-- **Bio Structure** — whole-body drift/tilt, travelling spine waves, wide rib sweeps, membrane deformation and nerve impulses moving through the organism.
+- **Neon Shatter** — unchanged baseline FFT-driven shard renderer.
+- **Liquid Chrome** — unchanged baseline FFT-deformed metallic contour.
+- **Pulse Reactor** — Build 57 kinetic travel plus Build 58 adaptive low-frequency impact overlay.
+- **Bass Fracture** — Build 57 tectonic glide plus Build 58 short rupture emphasis on low-frequency onsets.
+- **Gravity Lens** — Build 57 precession/field drift plus Build 58 brief extra warp on detected punch.
+- **Bio Structure** — Build 57 organism motion plus Build 58 brief extra contraction/impact response through enhanced kinetic features.
 
-All custom effects read Spectrum's analyser through `readSpectrum()` first. Motion time may only advance through the audio-gated integrated phase or short spring memory; paused/silent playback must stop moving. Isolated renderers must not own their own RAF/timer loop or use random motion as a substitute for signal reactivity.
+All custom effects read Spectrum's analyser through `readSpectrum()` first. Paused/silent playback must settle. Isolated renderers must not own their own RAF/timer loop or use random motion as a substitute for signal reactivity.
 
 ### Mobile visual budget
 
-Performance limits remain geometry-first rather than motion-first in Build 57:
+Performance limits remain unchanged in Build 58:
 
 - Neon Shatter: DPR cap 1.0 on mobile.
 - Pulse Reactor: DPR cap 1.1, 3 rings, 14 segments/ring, 10 spokes and 4 peak-only core shards on mobile; desktop uses 4 / 24 / 18 / 7.
-- Bass Fracture: DPR cap 1.05, 2 plate layers, 12 sectors and 8 crack spokes on mobile; desktop uses 3 / 16 / 12. Mobile movement uses a `1.66` travel scale without adding primitives.
+- Bass Fracture: DPR cap 1.05, 2 plate layers, 12 sectors and 8 crack spokes on mobile; desktop uses 3 / 16 / 12. Mobile movement keeps the `1.66` travel scale.
 - Gravity Lens: DPR cap 1.05, 4 bands, 12 arc segments and 8 curved streams on mobile; desktop uses 6 / 20 / 14.
 - Bio Structure: DPR cap 1.05, 5 paired ribs, 8 nerve impulses and 6 spine subdivisions on mobile; desktop uses 8 / 14 / 9.
 - Liquid Chrome: DPR cap 1.35 on mobile.
 - All custom modes target the same 60 Hz render scheduler; when performance needs reduction, reduce primitive density before reducing motion travel.
 
-New effects should be isolated in their own module when practical and added one at a time after desktop + Android validation. A visual is not considered “alive” merely because peak values change: sustained musical energy must create visible travel, while peaks add extra excursion without replacing that baseline motion.
+New effects should be isolated in their own module when practical and added one at a time after desktop + Android validation. Continuous motion and transient impact are separate requirements: sustained musical energy must create visible travel, while bass/kick onsets must add a short additional excursion.
 
 ## Canonical R2 structure
 
@@ -181,7 +198,7 @@ tracks/<slug>/video.<ext>     # optional
 
 ## PWA / Canvas / Studio
 
-The service worker caches same-origin application assets while audio/video media remain network-oriented. Build 57 advances the cache namespace while keeping `motion-spring.js`, `pulse-reactor.js`, `bass-fracture.js`, `gravity-lens.js` and `bio-structure.js` in the application shell. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
+The service worker caches same-origin application assets while audio/video media remain network-oriented. Build 58 advances the cache namespace so the adaptive punch controller cannot be hidden behind Build 57 assets. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
 
 ## Deployment artifact
 
@@ -210,9 +227,10 @@ Every new application build must update every Markdown file to the exact `displa
 13. Audio Lab visuals must prove reactivity against the live FFT feed rather than merely animate while playback is active.
 14. Audio Lab presets are added one at a time with explicit mobile geometry/DPR budgets.
 15. Sustained signal must create visible travel; peak reactivity alone is not sufficient evidence that a renderer feels alive.
-16. Readability is a first-class visual contract: fewer stronger gestures beat dense always-on detail.
-17. Kinetic phase/spring state may preserve short motion history, but phase speed and amplitudes must stop/settle when the real audio target disappears.
-18. Historical-looking compatibility files that remain wired into boot/deployment are removed only through dedicated regression-tested refactors.
+16. Low-frequency transients must be measured relative to a local baseline so dense passages do not erase kick/bass impact.
+17. Readability is a first-class visual contract: fewer stronger gestures beat dense always-on detail.
+18. Kinetic phase/spring state may preserve short motion history, but phase speed and amplitudes must stop/settle when the real audio target disappears.
+19. Historical-looking compatibility files that remain wired into boot/deployment are removed only through dedicated regression-tested refactors.
 
 ## Validation
 
