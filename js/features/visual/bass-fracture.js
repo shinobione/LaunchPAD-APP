@@ -53,12 +53,11 @@ function point(angle, radius) {
 }
 
 /**
- * Bass Fracture
+ * Bass Fracture — clearer, harder plate motion.
  *
- * A tectonic, signal-first disc. Bass and kick energy physically separate
- * annular plates, mids twist them, and highs illuminate cracks/edges.
- * There is no self-scheduled animation and all residual drift is gated by
- * actual signal activity so pause/silence settles into a coherent disc.
+ * Large annular plates remain the visual subject. Bass/kicks separate them,
+ * mids twist layer groups and highs reveal a restrained set of fault lines.
+ * Mobile gets stronger displacement, not more geometry.
  */
 export function drawBassFractureMode(context, width, height, data, accent, accent2, time, features = {}) {
   const mobile = mobileVisualDevice(width);
@@ -79,28 +78,30 @@ export function drawBassFractureMode(context, width, height, data, accent, accen
   const peak = feature(features, 'peak');
   const dynamics = feature(features, 'dynamics');
 
-  const activity = clamp(energy * .7 + bass * .34 + kick * .24 + high * .14);
-  const fracture = clamp(
-    Math.pow(bass, .62) * .58
+  const activity = clamp(energy * .68 + bass * .36 + kick * .26 + high * .1);
+  const fractureBase = clamp(
+    Math.pow(bass, .62) * .6
     + kick * 1.08
-    + Math.max(0, peak - .48) * .72
-    + dynamics * .2
+    + Math.max(0, peak - .48) * .7
+    + dynamics * .18
   );
-  const rupture = clamp(Math.max(0, fracture - .5) * 1.9 + kick * .16);
-  const twist = (mid * .09 + high * .022) * activity;
-  const drift = time * activity * .038;
+  const motionScale = mobile ? 1.42 : 1.08;
+  const fracture = clamp(fractureBase * (mobile ? 1.12 : 1.02));
+  const rupture = clamp((Math.max(0, fracture - .46) * 2.05 + kick * .18) * motionScale);
+  const twist = (mid * .085 + high * .018) * activity;
+  const drift = time * activity * .03;
 
+  // Fewer desktop sectors/cracks than Build 53 for better plate readability.
   const layerCount = mobile ? 2 : 3;
-  const sectorCount = mobile ? 12 : 20;
-  const crackCount = mobile ? 10 : 18;
-  const shadowCap = mobile ? 4 : 10;
-  const baseRadius = minSide * (mobile ? .265 : .29);
+  const sectorCount = mobile ? 12 : 16;
+  const crackCount = mobile ? 8 : 12;
+  const shadowCap = mobile ? 4 : 9;
+  const baseRadius = minSide * (mobile ? .305 : .305);
 
-  const atmosphereRadius = baseRadius * (1.9 + fracture * .28);
+  const atmosphereRadius = baseRadius * (1.82 + fracture * .3);
   const atmosphere = context.createRadialGradient(cx, cy, 0, cx, cy, atmosphereRadius);
-  atmosphere.addColorStop(0, colorWithAlpha(accent2, .055 + fracture * .12));
-  atmosphere.addColorStop(.38, colorWithAlpha(accent, .025 + bass * .08));
-  atmosphere.addColorStop(.78, colorWithAlpha(accent2, .01 + high * .035));
+  atmosphere.addColorStop(0, colorWithAlpha(accent2, .045 + fracture * .11));
+  atmosphere.addColorStop(.42, colorWithAlpha(accent, .018 + bass * .065));
   atmosphere.addColorStop(1, 'rgba(0,0,0,0)');
   context.fillStyle = atmosphere;
   context.fillRect(0, 0, width, height);
@@ -111,34 +112,36 @@ export function drawBassFractureMode(context, width, height, data, accent, accen
 
   const sectorSpan = Math.PI * 2 / sectorCount;
   for (let layer = 0; layer < layerCount; layer += 1) {
-    const layerProgress = layer / layerCount;
-    const innerBase = baseRadius * (.16 + layerProgress * .31);
-    const outerBase = baseRadius * (.48 + layerProgress * .34);
-    const layerRotation = (layer % 2 ? -1 : 1) * (drift * (.55 + layerProgress * .35) + twist * (layer + 1));
+    const layerProgress = layer / Math.max(1, layerCount - 1);
+    const innerBase = baseRadius * (.14 + layerProgress * .3);
+    const outerBase = baseRadius * (.5 + layerProgress * .32);
+    const layerRotation = (layer % 2 ? -1 : 1) * (drift * (.46 + layerProgress * .28) + twist * (layer + 1));
+    const layerWeight = 1 - layerProgress * .22;
 
     for (let sector = 0; sector < sectorCount; sector += 1) {
       const progress = (sector + .5) / sectorCount;
-      const spectral = Math.pow(sampleAt(data, progress * .82 + layerProgress * .16), .64);
+      const spectral = Math.pow(sampleAt(data, progress * .8 + layerProgress * .14), .64);
       const lowBias = Math.pow(sampleAt(data, progress * .22), .62);
-      const localImpact = clamp(fracture * .54 + rupture * .66 + spectral * .33 + lowBias * bass * .28);
       const personality = hash(sector, layer + 1) * 2 - 1;
-      const separation = baseRadius * (
-        fracture * (.018 + layerProgress * .02)
-        + rupture * (.03 + Math.abs(personality) * .038)
-        + spectral * .012
+      const plateDrive = clamp(fracture * .5 + rupture * .72 + spectral * .26 + lowBias * bass * .28);
+      const separation = baseRadius * motionScale * (
+        fracture * (.018 + layerProgress * .018)
+        + rupture * (.034 + Math.abs(personality) * .04)
+        + spectral * .01
       );
-      const radialOffset = separation * (.52 + Math.abs(personality) * .78);
-      const tangential = personality * rupture * baseRadius * .022;
+      const radialOffset = separation * (.62 + Math.abs(personality) * .82) * layerWeight;
+      const tangential = personality * rupture * baseRadius * .029 * motionScale;
       const angleCenter = sector * sectorSpan + layerRotation;
-      const start = angleCenter + sectorSpan * (.045 + rupture * .035);
-      const end = angleCenter + sectorSpan * (.91 - rupture * .055);
-      const inner = innerBase + radialOffset * (.32 + layerProgress * .18);
+      const gapScale = .06 + rupture * .08;
+      const start = angleCenter + sectorSpan * gapScale;
+      const end = angleCenter + sectorSpan * (.94 - gapScale);
+      const inner = innerBase + radialOffset * (.28 + layerProgress * .14);
       const outer = outerBase + radialOffset;
 
       const [x1, y1] = point(start, inner);
       const [x2, y2] = point(end, inner + personality * rupture * baseRadius * .012);
-      const [x3, y3] = point(end + personality * high * .006, outer);
-      const [x4, y4] = point(start - personality * high * .008, outer + personality * rupture * baseRadius * .01);
+      const [x3, y3] = point(end + personality * high * .005, outer);
+      const [x4, y4] = point(start - personality * high * .006, outer + personality * rupture * baseRadius * .012);
       const tx = -Math.sin(angleCenter) * tangential;
       const ty = Math.cos(angleCenter) * tangential;
 
@@ -150,82 +153,92 @@ export function drawBassFractureMode(context, width, height, data, accent, accen
       context.closePath();
 
       const plateColor = (sector + layer) % 3 === 0 ? accent2 : accent;
-      const fillAlpha = .018 + localImpact * .075 + high * .018;
-      context.fillStyle = colorWithAlpha(plateColor, fillAlpha);
+      context.fillStyle = colorWithAlpha(plateColor, .022 + plateDrive * .085);
       context.fill();
-
       context.strokeStyle = colorWithAlpha(
-        (sector + layer) % 4 === 0 ? '#ffffff' : plateColor,
-        .07 + spectral * .32 + high * .19 + rupture * .22
+        (sector + layer) % 5 === 0 ? '#ffffff' : plateColor,
+        .08 + spectral * .26 + high * .12 + rupture * .24
       );
-      context.lineWidth = .48 + spectral * 1.05 + rupture * .72;
+      context.lineWidth = .6 + spectral * .9 + rupture * .78;
       context.shadowColor = plateColor;
-      context.shadowBlur = Math.min(shadowCap, high * shadowCap + rupture * shadowCap * .45);
+      context.shadowBlur = Math.min(shadowCap, high * shadowCap * .6 + rupture * shadowCap * .36);
       context.stroke();
     }
   }
 
   context.shadowBlur = 0;
 
+  // Fault lines are deliberately fewer; each one travels further on impact.
   for (let crack = 0; crack < crackCount; crack += 1) {
     const progress = (crack + .5) / crackCount;
     const spectral = Math.pow(sampleAt(data, .5 + progress * .5), .58);
     const personality = hash(crack, 17) * 2 - 1;
-    const drive = clamp(high * .44 + spectral * .72 + rupture * .52 + dynamics * .12);
-    const angle = progress * Math.PI * 2 + drift * .2 + personality * mid * .035;
-    const inner = baseRadius * (.09 + hash(crack, 5) * .11);
-    const middle = baseRadius * (.35 + hash(crack, 8) * .12 + rupture * .06);
-    const outer = baseRadius * (.72 + drive * .31 + rupture * .16);
-    const bend = personality * (.045 + drive * .065);
+    const drive = clamp(high * .4 + spectral * .66 + rupture * .54 + dynamics * .1);
+    if (drive < .08) continue;
+    const angle = progress * Math.PI * 2 + drift * .12 + personality * mid * .025;
+    const inner = baseRadius * (.1 + hash(crack, 5) * .1);
+    const middle = baseRadius * (.36 + hash(crack, 8) * .1 + rupture * .07);
+    const outer = baseRadius * (.76 + drive * .28 + rupture * .22 * motionScale);
+    const bend = personality * (.04 + drive * .055);
 
     const [x1, y1] = point(angle, inner);
     const [x2, y2] = point(angle + bend, middle);
-    const [x3, y3] = point(angle - bend * .55, outer);
+    const [x3, y3] = point(angle - bend * .5, outer);
     context.beginPath();
     context.moveTo(x1, y1);
     context.lineTo(x2, y2);
     context.lineTo(x3, y3);
-    context.strokeStyle = colorWithAlpha(crack % 3 ? accent2 : '#ffffff', .025 + drive * .48);
-    context.lineWidth = .35 + drive * 1.1;
+    context.strokeStyle = colorWithAlpha(crack % 3 ? accent2 : '#ffffff', .025 + drive * .42);
+    context.lineWidth = .4 + drive * 1.05;
     context.stroke();
   }
 
-  const faultRadius = baseRadius * (.22 + fracture * .08);
+  const faultRadius = baseRadius * (.2 + fracture * .09);
   const fault = context.createRadialGradient(0, 0, 0, 0, 0, faultRadius);
-  fault.addColorStop(0, colorWithAlpha('#ffffff', .16 + peak * .42));
-  fault.addColorStop(.2, colorWithAlpha(accent2, .2 + fracture * .34));
-  fault.addColorStop(.65, colorWithAlpha(accent, .06 + bass * .16));
+  fault.addColorStop(0, colorWithAlpha('#ffffff', .14 + peak * .38));
+  fault.addColorStop(.22, colorWithAlpha(accent2, .18 + fracture * .3));
+  fault.addColorStop(.68, colorWithAlpha(accent, .04 + bass * .12));
   fault.addColorStop(1, 'rgba(0,0,0,0)');
   context.fillStyle = fault;
   context.beginPath();
   context.arc(0, 0, faultRadius, 0, Math.PI * 2);
   context.fill();
 
-  if (rupture > .08) {
-    const shardCount = mobile ? 6 : 10;
+  if (rupture > .14) {
+    const shardCount = mobile ? 5 : 7;
     for (let shard = 0; shard < shardCount; shard += 1) {
       const progress = (shard + .5) / shardCount;
       const personality = hash(shard, 31) * 2 - 1;
-      const angle = progress * Math.PI * 2 + personality * .1;
-      const travel = baseRadius * rupture * (.13 + hash(shard, 4) * .16);
-      const centerRadius = baseRadius * (.16 + hash(shard, 9) * .18) + travel;
-      const size = baseRadius * (.025 + hash(shard, 12) * .035) * (.45 + rupture);
+      const angle = progress * Math.PI * 2 + personality * .08;
+      const travel = baseRadius * rupture * motionScale * (.15 + hash(shard, 4) * .16);
+      const centerRadius = baseRadius * (.18 + hash(shard, 9) * .16) + travel;
+      const size = baseRadius * (.028 + hash(shard, 12) * .032) * (.5 + rupture * .85);
       const [sx, sy] = point(angle, centerRadius);
       context.save();
       context.translate(sx, sy);
-      context.rotate(angle + personality * rupture * .7);
+      context.rotate(angle + personality * rupture * .55);
       context.beginPath();
-      context.moveTo(-size, size * .36);
-      context.lineTo(size * .72, -size * .55);
-      context.lineTo(size * .45, size * .62);
+      context.moveTo(-size, size * .34);
+      context.lineTo(size * .72, -size * .52);
+      context.lineTo(size * .44, size * .6);
       context.closePath();
-      context.fillStyle = colorWithAlpha(shard % 2 ? accent : accent2, .035 + rupture * .13);
+      context.fillStyle = colorWithAlpha(shard % 2 ? accent : accent2, .035 + rupture * .14);
       context.fill();
-      context.strokeStyle = colorWithAlpha(shard % 3 ? accent2 : '#ffffff', .08 + rupture * .42);
-      context.lineWidth = .4 + rupture * .65;
+      context.strokeStyle = colorWithAlpha(shard % 3 ? accent2 : '#ffffff', .08 + rupture * .4);
+      context.lineWidth = .4 + rupture * .62;
       context.stroke();
       context.restore();
     }
+  }
+
+  // A single readable fracture front on large impacts.
+  if (rupture > .52) {
+    const frontRadius = baseRadius * (.7 + rupture * .32);
+    context.beginPath();
+    context.arc(0, 0, frontRadius, 0, Math.PI * 2);
+    context.strokeStyle = colorWithAlpha(accent2, (rupture - .52) * .32);
+    context.lineWidth = .75 + rupture * .9;
+    context.stroke();
   }
 
   context.restore();
