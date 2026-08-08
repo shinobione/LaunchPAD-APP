@@ -1,6 +1,6 @@
 # LaunchPAD roadmap
 
-> Current application build: `2026.08.08.60` — release `void-bloom-20260808`.
+> Current application build: `2026.08.08.61` — release `creep-signal-20260808`.
 
 The repository cleanup/reconciliation phase is complete. This roadmap now tracks product/runtime work rather than historical migration chores.
 
@@ -28,6 +28,7 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Build 58 adds adaptive low-frequency onset detection so kicks/bass can be measured against a local baseline inside dense passages.
 - [x] Build 59 separates detected onset from ordinary renderer clamps and applies a direct post-pose visual impact lane with reserved headroom.
 - [x] Build 60 adds Void Bloom as the eighth isolated preset using the same shared FFT + kinetic phase + direct-impact architecture.
+- [x] Build 61 adds Creep Signal as the ninth preset and establishes a deliberately non-radial, screen-traversing motion language.
 - [x] All Markdown documentation is version-coupled to `js/build-config.js` through CI.
 
 ## P0 — real-device validation
@@ -43,17 +44,19 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Validate Build 57 continuous travel on Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure; real-device feedback confirms they move/turn/undulate through the groove.
 - [x] Validate Build 58 real-device behavior and record that adaptive onset detection alone did not create visible hits because the renderer targets could already be near their clamp ceiling.
 - [x] Validate Build 59 Pulse Reactor/Bass Fracture/Gravity Lens/Bio Structure direct impact on real devices: continuous travel remains and kick/bass hits now create distinct visual excursions.
-- [ ] Validate Build 60 Void Bloom on desktop: petals continuously breathe/orbit/flex through the groove and direct impact creates a distinct opening/twist hit in dense sections.
-- [ ] Validate Build 60 Void Bloom on Android: 7-petal / 7-vein budget remains fluid while the direct-impact hit stays obvious.
+- [x] Validate Build 60 Void Bloom architecture/CI with shared FFT, kinetic motion, Direct Impact and explicit 7-petal / 7-vein mobile budget.
+- [ ] Validate Build 60 Void Bloom visually on desktop + Android: groove motion stays alive and kick/bass direct impact remains obvious.
+- [ ] Validate Build 61 Creep Signal on desktop: whole network continuously crawls, branches whip independently and kick/bass onsets lunge/shear the structure.
+- [ ] Validate Build 61 Creep Signal on Android: 9-node / 6-branch / 7-pulse budget remains fluid while the Direct Impact lunge stays obvious.
 - [ ] Confirm all kinetic modes stop phase progression and settle their amplitude/impact after pause.
-- [ ] Verify switching all eight presets repeatedly does not lose analyser data.
+- [ ] Verify switching all nine presets repeatedly does not lose analyser data.
 - [ ] Continue background-playback testing for artefacts with Audio Lab open/closed.
 - [ ] Verify multi-track switching keeps the shared/fallback FFT analysis synchronized across several tracks.
 
 ## P1 — Audio Lab expansion
 
 - [x] Establish the rule: add future visual presets one at a time only after each new effect proves real FFT reactivity and pause settling.
-- [x] Isolate Pulse Reactor, Bass Fracture, Gravity Lens, Bio Structure and Void Bloom in their own renderer modules.
+- [x] Isolate Pulse Reactor, Bass Fracture, Gravity Lens, Bio Structure, Void Bloom and Creep Signal in their own renderer modules.
 - [x] Give every isolated effect an explicit mobile geometry/DPR budget before merge.
 - [x] Establish the readability rule: reduce simultaneous primitives before reducing reaction amplitude.
 - [x] Establish spring-memory rule: inertia/overshoot may preserve short motion history, but must be driven by FFT targets and decay to rest.
@@ -61,7 +64,8 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Establish the integrated-phase rule: phase advances by `speed × dt` while real audio activity exists, rather than multiplying absolute time by a changing activity value.
 - [x] Establish the adaptive-onset rule: low-frequency transients are detected relative to a local baseline so dense passages cannot erase kick/bass accents.
 - [x] Establish the reserved-impact rule: transient emphasis must have a post-pose lane outside ordinary clamped spring targets.
-- [ ] After Build 60 Void Bloom real-device validation, add the next effect against the same Spectrum-shared feed.
+- [x] Establish the composition-diversity rule: new visual families should not default back to a centered radial object when an equally cheap asymmetric composition is possible.
+- [ ] After Build 61 real-device validation, add the next effect against the same Spectrum-shared feed.
 - [ ] Prefer amplitude, travel and elastic lag over permanently increasing particle/segment counts.
 - [ ] Do not restore Aurora Glass, Nebula or Singularity by name unless they are deliberately rebuilt and pass the current contract.
 - [ ] Keep Spectrum untouched as the reference renderer while new effects are developed.
@@ -105,4 +109,5 @@ The repo is considered structurally healthy when:
 7. each new Audio Lab effect has a deliberate mobile performance budget;
 8. visual intensity does not come at the cost of readability or mobile smoothness;
 9. spring/inertia amplitude decays to rest when the real audio target disappears;
-10. sustained musical energy produces visible kinetic travel while low-frequency onsets retain a separate post-pose impact with reserved headroom.
+10. sustained musical energy produces visible kinetic travel while low-frequency onsets retain a separate post-pose impact with reserved headroom;
+11. the Audio Lab can introduce new composition families without duplicating the same centered radial grammar.
