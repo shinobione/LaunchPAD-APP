@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260808-bass-fracture-v53',
-    cache: 'shinobi-launchpad-v53',
-    revision: 'bass-fracture-1',
-    display: '2026.08.08.53',
-    release: 'bass-fracture-20260808'
+    id: '20260808-gravity-lens-v54',
+    cache: 'shinobi-launchpad-v54',
+    revision: 'gravity-lens-1',
+    display: '2026.08.08.54',
+    release: 'gravity-lens-20260808'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
