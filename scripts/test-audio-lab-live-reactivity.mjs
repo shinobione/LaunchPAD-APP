@@ -14,18 +14,19 @@ for (const required of [
   "{ id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }",
   "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
   "{ id: 'void-bloom', label: 'Void Bloom', renderer: drawVoidBloomMode }",
-  "const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure', 'void-bloom'])",
+  "{ id: 'creep-signal', label: 'Creep Signal', renderer: drawCreepSignalMode }",
+  "const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure', 'void-bloom', 'creep-signal'])",
   'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)', 'boostLiveFeatures(features)',
   'function createAdaptiveLowPunchTracker()', 'relativeContrast', 'relativeFlux', 'relativeRise',
   'function createDirectVisualImpactTracker()', 'punchRise * 3.8', 'kickRise * 2.25', 'contrastRise * 6.5',
   'function applyDirectKineticImpact(context, width, height, mode, features)',
-  "mode === 'pulse-reactor'", "mode === 'bass-fracture'", "mode === 'gravity-lens'", "mode === 'bio-structure'", "mode === 'void-bloom'",
+  "mode === 'pulse-reactor'", "mode === 'bass-fracture'", "mode === 'gravity-lens'", "mode === 'bio-structure'", "mode === 'void-bloom'", "mode === 'creep-signal'",
   'function kineticImpactFeatures(mode, features)', 'punch * 1.08', 'punch * .92',
   'features.punch = adaptivePunch.punch', 'features.visualImpact = visualImpactTracker.update(features)',
   'data.audioLabPunch = values[5]', 'data.audioLabVisualImpact = values[6]',
-  "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' || mode === 'void-bloom' ? 1.05",
-  "document.documentElement.dataset.audioLabRenderer = 'eight-core-v1'",
-  "document.documentElement.dataset.audioLabPresetCount = '8'",
+  "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' || mode === 'void-bloom' || mode === 'creep-signal' ? 1.05",
+  "document.documentElement.dataset.audioLabRenderer = 'nine-core-v1'",
+  "document.documentElement.dataset.audioLabPresetCount = '9'",
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ]) assert.ok(live.includes(required), `Live Audio Lab integration is missing ${required}.`);
 
@@ -83,7 +84,15 @@ for (const required of [
   'context.bezierCurveTo(', 'context.quadraticCurveTo('
 ]) assert.ok(bloom.includes(required), `Void Bloom kinetic/mobile contract is missing ${required}.`);
 
-for (const isolated of [reactor, fracture, lens, bio, bloom]) {
+const creep = read('js/features/visual/creep-signal.js');
+for (const required of [
+  'export function drawCreepSignalMode(', 'shapeAudioDrive(', 'beginMotionFrame(context, time)',
+  "springChannel(motion, 'mass'", "advanceMotionPhase(motion, 'creep-flow'", 'const forwardDrift =',
+  'const nodeCount = mobile ? 9 : 14', 'const branchCount = mobile ? 6 : 10', 'const pulseCount = mobile ? 7 : 12',
+  'context.quadraticCurveTo(', 'context.lineTo('
+]) assert.ok(creep.includes(required), `Creep Signal kinetic/mobile contract is missing ${required}.`);
+
+for (const isolated of [reactor, fracture, lens, bio, bloom, creep]) {
   assert.ok(!isolated.includes('requestAnimationFrame('));
   assert.ok(!isolated.includes('setInterval('));
   assert.ok(!isolated.includes('Math.random('));
@@ -97,4 +106,4 @@ for (const required of ['function readSpectrum(target)', 'analyser.getByteFreque
 
 const bridge = read('js/features/visual/visual-engine.js').trim();
 assert.equal(bridge, "export { createVisualController } from './visual-engine-live.js';");
-console.log('Build 60 keeps direct-impact kinetic flow and adds Void Bloom with a mobile-first geometry budget.');
+console.log('Build 61 keeps direct-impact kinetic flow and adds asymmetric Creep Signal with a mobile-first geometry budget.');
