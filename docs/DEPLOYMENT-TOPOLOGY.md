@@ -1,6 +1,6 @@
 # LaunchPAD deployment topology
 
-> Current application build: `2026.08.08.62` — release `ui-polish-62-1-20260808`.
+> Current application build: `2026.08.08.63` — release `sonictrace-admin-link-20260808`.
 
 ## One source of truth
 
@@ -10,7 +10,7 @@
                          GitHub repository
                               main
                                |
-                    validated Build 62.1
+                     validated Build 63
                                |
                 +--------------+--------------+
                 |                             |
@@ -34,18 +34,18 @@
                       shinobiwan-media
 ```
 
-## Canonical Build 62 / release 62.1
+## Canonical Build 63
 
 The current application release is defined only in `js/build-config.js`:
 
 ```text
-id       20260808-ui-polish-v62-1
-cache    shinobi-launchpad-v62
-display  2026.08.08.62
-release  ui-polish-62-1-20260808
+id       20260808-sonictrace-admin-v63
+cache    shinobi-launchpad-v63
+display  2026.08.08.63
+release  sonictrace-admin-link-20260808
 ```
 
-Every Markdown document must carry the same display/release markers; CI rejects stale documentation. The cache namespace advances with Build 62 so the 62.1 Studio/Audio Lab/mobile-player polish and the corrected visible build marker cannot remain hidden behind Build 61 shell assets.
+Every Markdown document must carry the same display/release markers; CI rejects stale documentation. The cache namespace advances with Build 63 so the SonicTrace admin shortcut and its shared-gate validation cannot remain hidden behind Build 62 shell assets.
 
 ## Web hosting
 
