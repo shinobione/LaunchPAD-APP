@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260808-studio-validation-cors-hotfix-v67',
-    cache: 'shinobi-launchpad-v67',
-    revision: 'studio-validation-cors-hotfix-1',
-    display: '2026.08.08.67',
-    release: 'studio-validation-cors-hotfix-20260808'
+    id: '20260808-studio-metadata-validation-v66',
+    cache: 'shinobi-launchpad-v66',
+    revision: 'studio-metadata-validation-1',
+    display: '2026.08.08.66',
+    release: 'studio-metadata-validation-20260808'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
