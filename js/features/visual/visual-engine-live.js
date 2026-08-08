@@ -30,6 +30,7 @@ const CONTROL_MODES = [
 ];
 const CUSTOM_RENDERERS = new Map(CUSTOM_MODES.map(mode => [mode.id, mode.renderer]));
 const CUSTOM_MODE_IDS = CUSTOM_MODES.map(mode => mode.id);
+const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure']);
 const CUSTOM_FRAME_INTERVAL = 1000 / 60;
 const TELEMETRY_INTERVAL = 120;
 
@@ -126,6 +127,92 @@ function boostLiveFeatures(features) {
   return features;
 }
 
+/**
+ * Adaptive low-frequency onset detector.
+ *
+ * The ordinary bass envelope is intentionally smooth and useful for motion,
+ * but once a dense section starts it stops distinguishing one kick from the
+ * next. This detector keeps a slow local bass baseline plus a fast envelope
+ * and low-bin spectral flux. A kick/bass hit therefore remains visible when it
+ * rises relative to the immediately preceding groove, not only when absolute
+ * bass level is low.
+ */
+function createAdaptiveLowPunchTracker() {
+  let slowBass = 0;
+  let fastBass = 0;
+  let previousBass = 0;
+  let punch = 0;
+  const previousBins = new Float32Array(32);
+
+  return {
+    reset() {
+      slowBass = 0;
+      fastBass = 0;
+      previousBass = 0;
+      punch = 0;
+      previousBins.fill(0);
+    },
+    update(data) {
+      const lowCount = Math.max(8, Math.min(previousBins.length, Math.floor(data.length * .2)));
+      const subCount = Math.max(4, Math.floor(lowCount * .42));
+      let low = 0;
+      let sub = 0;
+      let positiveFlux = 0;
+
+      for (let index = 0; index < lowCount; index += 1) {
+        const value = (data[index] || 0) / 255;
+        low += value;
+        if (index < subCount) sub += value;
+        positiveFlux += Math.max(0, value - previousBins[index]);
+        previousBins[index] = value;
+      }
+
+      low /= lowCount;
+      sub /= subCount;
+      positiveFlux /= lowCount;
+
+      fastBass += (low - fastBass) * (low > fastBass ? .58 : .22);
+      slowBass += (low - slowBass) * (low > slowBass ? .035 : .018);
+
+      const rise = Math.max(0, low - previousBass);
+      previousBass = low;
+      const contrast = Math.max(0, fastBass - slowBass);
+      const relativeContrast = contrast / Math.max(.035, slowBass * .18);
+      const relativeFlux = positiveFlux / Math.max(.01, slowBass * .08);
+      const relativeRise = rise / Math.max(.012, slowBass * .09);
+      const subLift = Math.max(0, sub - slowBass * .94);
+
+      const target = clamp(
+        relativeContrast * .72
+        + relativeFlux * .54
+        + relativeRise * .48
+        + subLift * 1.8
+      );
+      punch = Math.max(target, punch * .62);
+
+      return {
+        punch: clamp(Math.pow(punch, .82) * 1.12),
+        fastBass: clamp(fastBass),
+        slowBass: clamp(slowBass)
+      };
+    }
+  };
+}
+
+function kineticImpactFeatures(mode, features) {
+  if (!KINETIC_MODE_IDS.has(mode)) return features;
+  const punch = clamp(Number(features.punch) || 0);
+  if (punch <= 0) return features;
+  return {
+    ...features,
+    punch,
+    kick: clamp(Math.max(features.kick, punch * 1.08)),
+    peak: clamp(Math.max(features.peak, punch * .78)),
+    dynamics: clamp(Math.max(features.dynamics, punch * .92)),
+    intensity: clamp(Math.max(features.intensity, punch * .9))
+  };
+}
+
 export function createVisualController(options) {
   if (document.documentElement.dataset.visualTest === 'true') {
     document.documentElement.dataset.audioLabRenderer = 'disabled-for-visual-test';
@@ -143,6 +230,7 @@ export function createVisualController(options) {
   const controls = document.querySelector('.lab-controls');
   const raw = new Uint8Array(128);
   const tracker = createAudioReactivityTracker({ attack: .82, release: .12, transientDecay: .72 });
+  const punchTracker = createAdaptiveLowPunchTracker();
   let mode = DEFAULT_MODE;
   let frame = 0;
   let lastFrameAt = 0;
@@ -178,20 +266,22 @@ export function createVisualController(options) {
   });
   applyMode(DEFAULT_MODE, defaultButton);
 
-  document.documentElement.dataset.audioLabRenderer = 'seven-core-v2';
+  document.documentElement.dataset.audioLabRenderer = 'seven-core-v3';
   document.documentElement.dataset.audioLabFeed = 'spectrum-shared';
   document.documentElement.dataset.audioLabPresetCount = '7';
 
   function readReactiveFrame() {
     if (audio.paused || audio.ended) {
       raw.fill(0);
+      punchTracker.reset();
       return {
         reading: { available: true, peak: 0, state: 'idle' },
         features: boostLiveFeatures({
           ...tracker.update(raw),
           rms: 0,
           peak: 0,
-          dynamics: 0
+          dynamics: 0,
+          punch: 0
         })
       };
     }
@@ -200,6 +290,7 @@ export function createVisualController(options) {
     if (!reading.available) reading = readAudioLabSpectrum(raw);
 
     const features = tracker.update(raw);
+    const adaptivePunch = punchTracker.update(raw);
     const normalizedPeak = clamp((reading.peak || 0) / 255);
     features.rms = clamp(features.energy * .9 + features.bass * .1);
     features.peak = normalizedPeak;
@@ -210,6 +301,9 @@ export function createVisualController(options) {
       + normalizedPeak * .18
     );
     boostLiveFeatures(features);
+    features.punch = adaptivePunch.punch;
+    features.lowFast = adaptivePunch.fastBass;
+    features.lowBaseline = adaptivePunch.slowBass;
     return { reading, features };
   }
 
@@ -222,6 +316,7 @@ export function createVisualController(options) {
       features.mid.toFixed(3),
       features.high.toFixed(3),
       features.kick.toFixed(3),
+      features.punch.toFixed(3),
       features.peak.toFixed(3)
     ];
     const signature = values.join('|');
@@ -234,7 +329,8 @@ export function createVisualController(options) {
     data.audioLabMid = values[2];
     data.audioLabHigh = values[3];
     data.audioLabKick = values[4];
-    data.audioLabPeak = values[5];
+    data.audioLabPunch = values[5];
+    data.audioLabPeak = values[6];
   }
 
   function render(now = performance.now()) {
@@ -247,9 +343,10 @@ export function createVisualController(options) {
       lastFrameAt = now;
       const time = now / 1000;
       const { reading, features } = readReactiveFrame();
-      if (labActive) updateTelemetry(reading, features, now);
-      if (labActive) renderMode(labCanvas, customRenderer, raw, getAccent, time, features, mode);
-      if (homeActive) renderMode(homeCanvas, customRenderer, raw, getAccent, time, features, mode);
+      const renderFeatures = kineticImpactFeatures(mode, features);
+      if (labActive) updateTelemetry(reading, renderFeatures, now);
+      if (labActive) renderMode(labCanvas, customRenderer, raw, getAccent, time, renderFeatures, mode);
+      if (homeActive) renderMode(homeCanvas, customRenderer, raw, getAccent, time, renderFeatures, mode);
     }
 
     frame = requestAnimationFrame(render);
