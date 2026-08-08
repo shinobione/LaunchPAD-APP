@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.08.56` — release `dynamic-breathing-20260808`.
+> Current application build: `2026.08.08.57` — release `kinetic-flow-20260808`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -36,20 +36,20 @@ GitHub main
 
 See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the authoritative hosting map.
 
-## Build 56 highlights
+## Build 57 highlights
 
-Build 56 keeps the proven shared-Spectrum FFT pipeline and recalibrates **Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure** for wider visual dynamics:
+Build 57 keeps the proven shared-Spectrum FFT pipeline but removes the Build 56 soft-knee pose compression that made **Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure** feel paradoxically more static.
 
 - **Spectrum**, **Neon Shatter** and **Liquid Chrome** remain untouched as the trusted baseline.
-- `motion-spring.js` now includes a soft-knee motion target. Low/mid signal detail is preserved while strong boosted values are compressed before they can pin a visual near its maximum pose.
-- Signal-gated phase uses a sub-linear activity curve, so quiet/moderate passages retain visible movement instead of waiting for large peaks.
-- **Pulse Reactor** keeps its Build 55 geometry budget but uses lower target ceilings, slower springs and signed bass/impact recoil. Rings breathe and precess through the groove instead of living fully expanded.
-- **Bass Fracture** keeps the same 2/3 layer, 12/16 sector and 8/12 crack budgets. Rupture peaks are compressed; signed plate recoil, sway and crawl make the mass glide between impacts rather than remain permanently broken open.
-- **Gravity Lens** keeps 4/6 bands, 12/20 arcs and 8/14 streams. Warp/shear/caustic targets now reserve headroom, while low-level precession, breathing and curved stream drift remain visible through moderate passages.
-- **Bio Structure** keeps 5/8 ribs, 8/14 nerve impulses and 6/9 spine subdivisions. Its body width expands less on peaks, while spine sway, rib flex, membrane drift and heart motion remain more continuous at mid energy.
-- No new visual geometry, private RAF/timer loop, random motion or secondary audio path is introduced by this pass.
-- Pause/silence still drives targets to zero and spring velocity decays naturally.
-- The PWA cache advances to v56 so the recalibrated motion code cannot be hidden behind Build 55 assets.
+- `motion-spring.js` now separates amplitude from motion: raw FFT + smoothed features are blended with `shapeAudioDrive()` while `advanceMotionPhase()` integrates a real forward-moving phase frame by frame.
+- The kinetic phase advances only while real audio activity exists. A changing FFT value can no longer make the motion phase jump, stall or appear to reverse because absolute time was multiplied by a changing activity value.
+- **Pulse Reactor** now drifts as a whole, breathes over a much larger travel range, continuously rotates its ring system and carries travelling radial waves through steady grooves. Bass/kicks add impact and breakup on top of that living motion.
+- **Bass Fracture** now rolls and translates as a complete tectonic mass while individual plates slide, twist and recoil continuously. Mobile keeps the same geometry but regains a stronger `1.66` motion scale.
+- **Gravity Lens** now continuously precesses, drifts through the canvas and sweeps curved streams around the horizon. Warp peaks deepen an already-moving field instead of switching a mostly static diagram into a larger pose.
+- **Bio Structure** now moves as an organism: whole-body drift/tilt, large travelling spine waves, wider rib sweeps, moving membrane deformation and nerve impulses that visibly travel from end to end.
+- No new visual primitives, private RAF/timer loop, random motion or secondary audio path is introduced. Motion amplitude returns toward neutral as audio activity decays, and integrated phase speed stops on pause/silence.
+- Mobile DPR/geometry budgets remain unchanged from the validated seven-preset baseline.
+- The PWA cache advances to v57 so Build 56 motion code cannot remain hidden in an installed PWA cache.
 
 ## Canonical media model
 
@@ -135,6 +135,6 @@ Useful documents:
 7. Spectrum remains the Audio Lab reference path; every visual effect must consume the real FFT feed rather than independent loop animation.
 8. Add Audio Lab presets one at a time, with desktop and mobile budgets defined before merge.
 9. Prefer deterministic, signal-derived geometry over random particles when a visual must remain cheap on mobile.
-10. Preserve dynamic range: quiet/mid passages need visible motion and peaks need headroom rather than permanent saturation.
-11. Motion memory may add overshoot/inertia, but it must decay from real signal targets and never become an autonomous visual loop.
+10. A visual must have real travel, not merely strong reaction: steady musical energy should create continuous signal-driven motion while peaks add excursion on top.
+11. Motion memory/kinetic phase must stop when the real audio target disappears and must never become an autonomous screensaver.
 12. Historical-looking compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.
