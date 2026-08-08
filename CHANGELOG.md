@@ -1,8 +1,20 @@
 # Changelog
 
-> Current application build: `2026.08.08.55` — release `motion-bio-20260808`.
+> Current application build: `2026.08.08.56` — release `dynamic-breathing-20260808`.
 
 This file intentionally tracks the recent stabilized release line. Older milestone-by-milestone history remains available in Git history and merged pull requests.
+
+## Build 56 — Dynamic breathing
+
+- Add `shapeMotionTarget()` to `motion-spring.js`: quiet/mid values keep detail while the boosted top end is soft-compressed to reserve visible headroom for real peaks.
+- Change signal-gated phase to a sub-linear activity curve so low/moderate passages retain motion without creating autonomous animation.
+- Recalibrate **Pulse Reactor** with lower target ceilings, slower springs and signed bass/impact recoil; the same 3/4 ring, 14/24 segment and 10/18 spoke budgets remain.
+- Recalibrate **Bass Fracture** without adding geometry: rupture spends less time pinned open, plate motion uses signed recoil/glide and cracks crawl through moderate energy instead of only appearing at maximum impact.
+- Recalibrate **Gravity Lens** with compressed warp/shear/caustic targets and more continuous low-level precession, breathing and curved-stream drift while keeping the central horizon readable.
+- Recalibrate **Bio Structure** so body inflation is less peak-dominated and spine sway, rib flex, membrane drift and nerve travel remain visible through groove-level energy.
+- Keep **Spectrum**, **Neon Shatter** and **Liquid Chrome** untouched.
+- Preserve the single shared-Spectrum FFT feed, deterministic geometry, no private RAF/timer loops and no `Math.random()` motion.
+- Advance the PWA namespace to Build 56 / cache v56 so Build 55 motion calibration cannot remain stale in installed PWAs.
 
 ## Build 55 — Motion & elasticity + Bio Structure
 
