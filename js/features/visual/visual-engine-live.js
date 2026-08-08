@@ -7,20 +7,23 @@ import {
 } from './visual-engine-core-modes.js';
 import { drawPulseReactorMode } from './pulse-reactor.js';
 import { drawBassFractureMode } from './bass-fracture.js';
+import { drawGravityLensMode } from './gravity-lens.js';
 
 const DEFAULT_MODE = 'neon-shatter';
 const CUSTOM_MODES = [
   { id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode },
   { id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode },
   { id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode },
-  { id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }
+  { id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode },
+  { id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }
 ];
 const CONTROL_MODES = [
   { id: 'neon-shatter', label: 'Neon Shatter' },
   { id: 'spectrum', label: 'Spectrum' },
   { id: 'liquid-chrome', label: 'Liquid Chrome' },
   { id: 'pulse-reactor', label: 'Pulse Reactor' },
-  { id: 'bass-fracture', label: 'Bass Fracture' }
+  { id: 'bass-fracture', label: 'Bass Fracture' },
+  { id: 'gravity-lens', label: 'Gravity Lens' }
 ];
 const CUSTOM_RENDERERS = new Map(CUSTOM_MODES.map(mode => [mode.id, mode.renderer]));
 const CUSTOM_MODE_IDS = CUSTOM_MODES.map(mode => mode.id);
@@ -43,7 +46,7 @@ function prepareCanvas(canvas, mode) {
   const mobile = mobileVisualDevice(rect.width);
   const dprCap = mobile
     ? mode === 'neon-shatter' ? 1
-      : mode === 'bass-fracture' ? 1.05
+      : mode === 'bass-fracture' || mode === 'gravity-lens' ? 1.05
         : mode === 'pulse-reactor' ? 1.1
           : 1.35
     : 2;
@@ -172,9 +175,9 @@ export function createVisualController(options) {
   });
   applyMode(DEFAULT_MODE, defaultButton);
 
-  document.documentElement.dataset.audioLabRenderer = 'five-core-v1';
+  document.documentElement.dataset.audioLabRenderer = 'six-core-v1';
   document.documentElement.dataset.audioLabFeed = 'spectrum-shared';
-  document.documentElement.dataset.audioLabPresetCount = '5';
+  document.documentElement.dataset.audioLabPresetCount = '6';
 
   function readReactiveFrame() {
     if (audio.paused || audio.ended) {
@@ -190,8 +193,6 @@ export function createVisualController(options) {
       };
     }
 
-    // All custom visuals read the exact analyser used by Spectrum. The legacy
-    // decoded Audio Lab bridge remains fallback-only.
     let reading = base.readSpectrum?.(raw) || { available: false, peak: 0, state: 'missing-shared-feed' };
     if (!reading.available) reading = readAudioLabSpectrum(raw);
 
