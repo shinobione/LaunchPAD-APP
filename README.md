@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.08.58` — release `adaptive-punch-20260808`.
+> Current application build: `2026.08.08.59` — release `direct-impact-20260808`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -36,18 +36,19 @@ GitHub main
 
 See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the authoritative hosting map.
 
-## Build 58 highlights
+## Build 59 highlights
 
-Build 58 keeps Build 57's kinetic motion intact and adds a separate **adaptive low-frequency punch** layer for Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure.
+Build 59 fixes the remaining transient-impact failure exposed by real-device testing: Build 58 detected low-frequency onsets correctly but fed them back into already-clamped renderer targets, so dense passages could still look flat.
 
 - **Spectrum**, **Neon Shatter** and **Liquid Chrome** remain untouched as the trusted baseline.
-- Build 57's integrated phase remains responsible for travel, rotation, breathing and continuous groove motion.
-- A new low-frequency onset tracker compares fast bass, a slow local bass baseline, low-bin positive spectral flux and short-term bass rise. Kicks can therefore stand out even after a dense section has already raised the average bass level.
-- The adaptive punch is short-lived and overlays the existing kinetic movement; it does not replace groove motion or create a private animation loop.
-- Only Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure receive the punch-enhanced kick/peak/dynamics features. Neon Shatter and Liquid Chrome keep their previous feature calibration.
-- Audio Lab telemetry now exposes `audioLabPunch` so real-device testing can distinguish continuous bass level from detected low-frequency impacts.
-- No new visual primitives or higher mobile DPR budgets are introduced.
-- The PWA cache advances to v58 so Build 57 assets cannot mask the new transient detector.
+- Build 57's integrated phase still owns continuous travel, rotation, breathing and groove motion.
+- Build 58's adaptive low-frequency tracker still compares fast bass, slow local baseline, low-bin positive flux and short-term bass rise.
+- A new `createDirectVisualImpactTracker()` converts rising punch/kick/low-band contrast into a short visual-only impulse with its own decay.
+- The impulse is applied **after** the normal renderer pose through `applyDirectKineticImpact()`, preserving visual headroom even when bass/kick spring targets are already near their clamp ceiling.
+- Pulse Reactor gets a whole-reactor expansion/twist hit; Bass Fracture gets a horizontal rupture/compression hit; Gravity Lens gets an anisotropic snap/rotation; Bio Structure gets an organic contraction/expansion hit.
+- Audio Lab telemetry now exposes both `audioLabPunch` and `audioLabVisualImpact`, making detector activity and actual visual impulse separately observable.
+- No new primitives, private RAF/timer, random motion or higher mobile DPR budget is introduced; the extra movement is a cheap canvas transform.
+- The PWA cache advances to v59 so Build 58 renderer/controller code cannot remain hidden in an installed PWA cache.
 
 ## Canonical media model
 
@@ -133,6 +134,6 @@ Useful documents:
 7. Spectrum remains the Audio Lab reference path; every visual effect must consume the real FFT feed rather than independent loop animation.
 8. Add Audio Lab presets one at a time, with desktop and mobile budgets defined before merge.
 9. Prefer deterministic, signal-derived geometry over random particles when a visual must remain cheap on mobile.
-10. Separate continuous movement from transient impact: groove energy owns travel; adaptive low-frequency onset detection owns the brief visual punch.
+10. Continuous movement and transient impact must stay separate: groove energy owns travel; detected onset creates a post-pose impact with reserved visual headroom.
 11. Motion memory/kinetic phase must stop when the real audio target disappears and must never become an autonomous screensaver.
 12. Historical-looking compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.

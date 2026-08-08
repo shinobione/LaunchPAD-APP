@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD architecture
 
-> Current application build: `2026.08.08.58` — release `adaptive-punch-20260808`.
+> Current application build: `2026.08.08.59` — release `direct-impact-20260808`.
 
 LaunchPAD is a modular static PWA whose application source lives in GitHub `main`. The web shell is mirrored to GitHub Pages and Cloudflare Pages; production catalog/media state lives in Cloudflare R2 and is exposed through public/private Workers.
 
@@ -57,7 +57,7 @@ js/
     lyrics/                   Lyrics reader/synchronization
     visual/
       visual-engine-v2.js     Spectrum reference renderer/analyser
-      visual-engine-live.js   Shared live FFT + adaptive punch controller
+      visual-engine-live.js   Shared FFT + onset + direct-impact controller
       visual-engine-core-modes.js
                               Neon Shatter + Liquid Chrome
       motion-spring.js        Per-canvas spring + integrated kinetic phase
@@ -124,7 +124,7 @@ fallback:  track URL --> fetch/decode --> AnalyserNode --> shared FFT readers
 
 ### Motion / kinetic layer
 
-Build 57 introduced two independent concepts and Build 58 keeps them unchanged:
+Build 57 introduced two independent concepts and Build 59 keeps them unchanged:
 
 ```text
 raw FFT + smoothed features --> shapeAudioDrive() --> amplitude/spring targets
@@ -133,9 +133,9 @@ real audio activity ---------> advanceMotionPhase() --> integrated forward phase
 
 `shapeAudioDrive()` blends the raw analyser bands with the already-smoothed feature stream. `advanceMotionPhase()` stores phase and phase speed per Canvas and integrates `phase += speed * dt` frame by frame. Spring channels still provide local inertia/recoil. The helper owns no RAF, timer or audio node.
 
-### Adaptive punch layer
+### Adaptive onset + direct impact
 
-Build 58 adds a separate transient path for the four kinetic presets:
+Build 58 introduced a low-frequency onset detector. Real-device testing then exposed a second problem: the detected punch was re-injected into renderer targets that were already near their clamp ceiling during loud sections. Build 59 keeps the detector but reserves a separate post-pose impact lane:
 
 ```text
 low FFT bins
@@ -145,32 +145,37 @@ low FFT bins
    +--> short bass rise
               |
               v
-      adaptive low punch
+       adaptive punch
               |
-              +--> kick / peak / dynamics overlay
+              +--> ordinary kinetic feature overlay
+              |
+              +--> rising-edge impact tracker
+                         |
+                         v
+              post-pose canvas transform
 ```
 
-The goal is to preserve Build 57's continuous travel while restoring a short extra visual hit on bass/kick transients inside already-loud sections. The detector compares the current low-frequency behavior with its own recent local baseline, so a kick can still be exceptional even when absolute bass level is already high.
+`createDirectVisualImpactTracker()` watches the rising edge of adaptive punch, kick and fast-vs-baseline low-band contrast. Its envelope decays independently and is not mixed back into the normal bass/kick clamp. `applyDirectKineticImpact()` runs after the renderer pose is prepared, so transient movement retains headroom even when normal targets are already high.
 
-The punch decays rapidly and does not create or own an animation loop. It is applied only to **Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure**. **Neon Shatter, Spectrum and Liquid Chrome** keep their existing calibration.
+The direct impact remains scoped to **Pulse Reactor, Bass Fracture, Gravity Lens and Bio Structure**. **Neon Shatter, Spectrum and Liquid Chrome** keep their existing calibration.
 
 ### Audio Lab rendering contract
 
-Build 58 exposes seven sanctioned presets:
+Build 59 exposes seven sanctioned presets:
 
 - **Spectrum** — protected reference renderer and owner of the primary analyser contract.
 - **Neon Shatter** — unchanged baseline FFT-driven shard renderer.
 - **Liquid Chrome** — unchanged baseline FFT-deformed metallic contour.
-- **Pulse Reactor** — Build 57 kinetic travel plus Build 58 adaptive low-frequency impact overlay.
-- **Bass Fracture** — Build 57 tectonic glide plus Build 58 short rupture emphasis on low-frequency onsets.
-- **Gravity Lens** — Build 57 precession/field drift plus Build 58 brief extra warp on detected punch.
-- **Bio Structure** — Build 57 organism motion plus Build 58 brief extra contraction/impact response through enhanced kinetic features.
+- **Pulse Reactor** — kinetic travel plus whole-reactor expansion/twist on direct impact.
+- **Bass Fracture** — tectonic glide plus horizontal rupture/compression and mass kick on direct impact.
+- **Gravity Lens** — precession/field drift plus anisotropic stretch/rotation snap on direct impact.
+- **Bio Structure** — organism motion plus whole-body contraction/expansion on direct impact.
 
 All custom effects read Spectrum's analyser through `readSpectrum()` first. Paused/silent playback must settle. Isolated renderers must not own their own RAF/timer loop or use random motion as a substitute for signal reactivity.
 
 ### Mobile visual budget
 
-Performance limits remain unchanged in Build 58:
+Performance limits remain unchanged in Build 59:
 
 - Neon Shatter: DPR cap 1.0 on mobile.
 - Pulse Reactor: DPR cap 1.1, 3 rings, 14 segments/ring, 10 spokes and 4 peak-only core shards on mobile; desktop uses 4 / 24 / 18 / 7.
@@ -178,9 +183,10 @@ Performance limits remain unchanged in Build 58:
 - Gravity Lens: DPR cap 1.05, 4 bands, 12 arc segments and 8 curved streams on mobile; desktop uses 6 / 20 / 14.
 - Bio Structure: DPR cap 1.05, 5 paired ribs, 8 nerve impulses and 6 spine subdivisions on mobile; desktop uses 8 / 14 / 9.
 - Liquid Chrome: DPR cap 1.35 on mobile.
+- Direct impact adds no primitives and uses only a cheap canvas transform around existing geometry.
 - All custom modes target the same 60 Hz render scheduler; when performance needs reduction, reduce primitive density before reducing motion travel.
 
-New effects should be isolated in their own module when practical and added one at a time after desktop + Android validation. Continuous motion and transient impact are separate requirements: sustained musical energy must create visible travel, while bass/kick onsets must add a short additional excursion.
+New effects should be isolated in their own module when practical and added one at a time after desktop + Android validation. Continuous motion and transient impact are separate requirements: sustained musical energy must create visible travel, while bass/kick onsets must add a short additional excursion with reserved headroom.
 
 ## Canonical R2 structure
 
@@ -198,7 +204,7 @@ tracks/<slug>/video.<ext>     # optional
 
 ## PWA / Canvas / Studio
 
-The service worker caches same-origin application assets while audio/video media remain network-oriented. Build 58 advances the cache namespace so the adaptive punch controller cannot be hidden behind Build 57 assets. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
+The service worker caches same-origin application assets while audio/video media remain network-oriented. Build 59 advances the cache namespace so the direct-impact controller cannot be hidden behind Build 58 assets. Mobile Lyrics actions may enter the track's Studio directly; the bottom navigation remains available in Studio. Track Canvas video is silent, looped and `playsinline`, with resume/recovery hooks for mobile lifecycle events.
 
 ## Deployment artifact
 
@@ -228,9 +234,10 @@ Every new application build must update every Markdown file to the exact `displa
 14. Audio Lab presets are added one at a time with explicit mobile geometry/DPR budgets.
 15. Sustained signal must create visible travel; peak reactivity alone is not sufficient evidence that a renderer feels alive.
 16. Low-frequency transients must be measured relative to a local baseline so dense passages do not erase kick/bass impact.
-17. Readability is a first-class visual contract: fewer stronger gestures beat dense always-on detail.
-18. Kinetic phase/spring state may preserve short motion history, but phase speed and amplitudes must stop/settle when the real audio target disappears.
-19. Historical-looking compatibility files that remain wired into boot/deployment are removed only through dedicated regression-tested refactors.
+17. Detected transient impact must retain a post-pose lane outside ordinary renderer clamps; re-mixing it into saturated spring targets is not sufficient.
+18. Readability is a first-class visual contract: fewer stronger gestures beat dense always-on detail.
+19. Kinetic phase/spring state may preserve short motion history, but phase speed and amplitudes must stop/settle when the real audio target disappears.
+20. Historical-looking compatibility files that remain wired into boot/deployment are removed only through dedicated regression-tested refactors.
 
 ## Validation
 

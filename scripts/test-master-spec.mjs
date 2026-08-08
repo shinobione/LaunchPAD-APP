@@ -51,7 +51,7 @@ includesAll(visualBase, ["{ id: 'spectrum', label: 'Spectrum' }", 'function read
 const coreModes = read('js/features/visual/visual-engine-core-modes.js');
 includesAll(coreModes, ['drawNeonShatterV2Mode', 'drawLiquidChromeV2Mode', 'const gatedDrift = time * activity * .16', 'const phase = time * activity * .2'], 'Validated baseline FFT modes');
 
-// Build 57 kinetic-flow system retained in Build 58.
+// Build 57 kinetic-flow system retained in Build 59.
 const motion = read('js/features/visual/motion-spring.js');
 includesAll(motion, [
   'const FRAME_STATES = new WeakMap()', 'phases: new Map()', 'export function beginMotionFrame(', 'export function springChannel(',
@@ -86,15 +86,18 @@ for (const isolated of [pulse, fracture, lens, bio]) {
   assert.ok(!isolated.includes('shapeMotionTarget('), 'Build 56 soft-knee compression must not remain in kinetic renderers.');
 }
 
-// Build 58 adaptive-punch overlay.
+// Build 59 direct-impact lane keeps Build 58 onset detection but reserves post-pose headroom.
 const live = read('js/features/visual/visual-engine-live.js');
 includesAll(live, [
   "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
   'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)',
   "const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure'])",
   'function createAdaptiveLowPunchTracker()', 'relativeContrast', 'relativeFlux', 'relativeRise', 'subLift',
-  'function kineticImpactFeatures(mode, features)', 'features.punch = adaptivePunch.punch', 'data.audioLabPunch = values[5]',
-  "dataset.audioLabRenderer = 'seven-core-v3'", `dataset.audioLabPresetCount = '${presetCount}'`,
+  'function createDirectVisualImpactTracker()', 'punchRise * 3.8', 'kickRise * 2.25', 'contrastRise * 6.5',
+  'function applyDirectKineticImpact(context, width, height, mode, features)',
+  'features.visualImpact = visualImpactTracker.update(features)', 'data.audioLabVisualImpact = values[6]',
+  'function kineticImpactFeatures(mode, features)', 'features.punch = adaptivePunch.punch',
+  "dataset.audioLabRenderer = 'seven-core-v4'", `dataset.audioLabPresetCount = '${presetCount}'`,
   "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' ? 1.05",
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ], 'Live Audio Lab visuals');
@@ -112,10 +115,10 @@ const worker = read('sw.js');
 includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260808-adaptive-punch-v58');
-assert.equal(build.cache, 'shinobi-launchpad-v58');
-assert.equal(build.display, '2026.08.08.58');
-assert.equal(build.release, 'adaptive-punch-20260808');
-assert.equal(build.revision, 'adaptive-punch-1');
+assert.equal(build.id, '20260808-direct-impact-v59');
+assert.equal(build.cache, 'shinobi-launchpad-v59');
+assert.equal(build.display, '2026.08.08.59');
+assert.equal(build.release, 'direct-impact-20260808');
+assert.equal(build.revision, 'direct-impact-1');
 
 console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}) with ${presetCount} sanctioned Audio Lab presets.`);

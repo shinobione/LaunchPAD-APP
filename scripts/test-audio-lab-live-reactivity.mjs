@@ -16,10 +16,14 @@ for (const required of [
   "const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure'])",
   'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)', 'boostLiveFeatures(features)',
   'function createAdaptiveLowPunchTracker()', 'relativeContrast', 'relativeFlux', 'relativeRise',
+  'function createDirectVisualImpactTracker()', 'punchRise * 3.8', 'kickRise * 2.25', 'contrastRise * 6.5',
+  'function applyDirectKineticImpact(context, width, height, mode, features)',
+  "mode === 'pulse-reactor'", "mode === 'bass-fracture'", "mode === 'gravity-lens'", "mode === 'bio-structure'",
   'function kineticImpactFeatures(mode, features)', 'punch * 1.08', 'punch * .92',
-  'features.punch = adaptivePunch.punch', 'data.audioLabPunch = values[5]',
+  'features.punch = adaptivePunch.punch', 'features.visualImpact = visualImpactTracker.update(features)',
+  'data.audioLabPunch = values[5]', 'data.audioLabVisualImpact = values[6]',
   "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' ? 1.05",
-  "document.documentElement.dataset.audioLabRenderer = 'seven-core-v3'",
+  "document.documentElement.dataset.audioLabRenderer = 'seven-core-v4'",
   "document.documentElement.dataset.audioLabPresetCount = '7'",
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ]) assert.ok(live.includes(required), `Live Audio Lab integration is missing ${required}.`);
@@ -84,4 +88,4 @@ for (const required of ['function readSpectrum(target)', 'analyser.getByteFreque
 
 const bridge = read('js/features/visual/visual-engine.js').trim();
 assert.equal(bridge, "export { createVisualController } from './visual-engine-live.js';");
-console.log('Build 58 Audio Lab keeps Build 57 kinetic flow and overlays adaptive low-frequency punch on the four kinetic modes only.');
+console.log('Build 59 keeps kinetic flow and adaptive onset detection, then applies a separate post-pose visual impact lane to the four kinetic modes.');

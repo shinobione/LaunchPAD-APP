@@ -49,6 +49,8 @@ for (const required of [
   'dataset.audioLabRenderer =',
   `dataset.audioLabPresetCount = '${presetCount}'`,
   'function boostLiveFeatures(features)', 'base.readSpectrum?.(raw)',
+  'function applyDirectKineticImpact(context, width, height, mode, features)',
+  'features.visualImpact = visualImpactTracker.update(features)',
   'const renderFeatures = kineticImpactFeatures(mode, features);',
   'renderMode(homeCanvas, customRenderer, raw, getAccent, time, renderFeatures, mode)'
 ]) assert.ok(live.includes(required), `Milestone 6 visual engine is missing ${required}.`);

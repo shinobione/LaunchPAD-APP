@@ -107,11 +107,57 @@ function installControls(controls) {
   return controls.querySelector(`[data-visual="${DEFAULT_MODE}"]`);
 }
 
+function applyDirectKineticImpact(context, width, height, mode, features) {
+  if (!KINETIC_MODE_IDS.has(mode)) return false;
+  const impact = clamp(Number(features?.visualImpact) || 0);
+  if (impact < .012) return false;
+
+  const mobile = mobileVisualDevice(width);
+  const minSide = Math.min(width, height);
+  context.save();
+  context.translate(width / 2, height / 2);
+
+  if (mode === 'pulse-reactor') {
+    const scale = 1 + impact * (mobile ? .2 : .28);
+    context.rotate(impact * (mobile ? .035 : .05));
+    context.scale(scale, scale);
+  } else if (mode === 'bass-fracture') {
+    context.translate(0, -minSide * impact * (mobile ? .025 : .035));
+    context.scale(
+      1 + impact * (mobile ? .2 : .26),
+      1 - impact * (mobile ? .08 : .11)
+    );
+  } else if (mode === 'gravity-lens') {
+    context.rotate(-impact * (mobile ? .028 : .045));
+    context.scale(
+      1 - impact * (mobile ? .07 : .1),
+      1 + impact * (mobile ? .18 : .26)
+    );
+  } else if (mode === 'bio-structure') {
+    context.translate(0, -minSide * impact * (mobile ? .02 : .03));
+    context.scale(
+      1 + impact * (mobile ? .16 : .22),
+      1 - impact * (mobile ? .11 : .16)
+    );
+  }
+
+  context.translate(-width / 2, -height / 2);
+  return true;
+}
+
 function renderMode(canvas, renderer, data, getAccent, time, features, mode) {
   const prepared = prepareCanvas(canvas, mode);
   if (!prepared || typeof renderer !== 'function') return;
   const [accent, accent2] = getAccent();
+  const transformed = applyDirectKineticImpact(
+    prepared.context,
+    prepared.width,
+    prepared.height,
+    mode,
+    features
+  );
   renderer(prepared.context, prepared.width, prepared.height, data, accent, accent2, time, features);
+  if (transformed) prepared.context.restore();
 }
 
 function boostLiveFeatures(features) {
@@ -199,6 +245,54 @@ function createAdaptiveLowPunchTracker() {
   };
 }
 
+/**
+ * Converts detected low-frequency attacks into a short visual-only impulse.
+ *
+ * This intentionally does NOT feed back into the ordinary bass/kick spring
+ * targets. It measures the rising edge of punch/kick/low-band contrast and
+ * creates reserved headroom after the normal renderer pose has been computed.
+ * Dense passages can therefore still produce a visible hit even when their
+ * ordinary audio targets are already near their clamp ceiling.
+ */
+function createDirectVisualImpactTracker() {
+  let previousPunch = 0;
+  let previousKick = 0;
+  let previousContrast = 0;
+  let envelope = 0;
+
+  return {
+    reset() {
+      previousPunch = 0;
+      previousKick = 0;
+      previousContrast = 0;
+      envelope = 0;
+    },
+    update(features) {
+      const punch = clamp(Number(features?.punch) || 0);
+      const kick = clamp(Number(features?.kick) || 0);
+      const lowFast = clamp(Number(features?.lowFast) || 0);
+      const lowBaseline = clamp(Number(features?.lowBaseline) || 0);
+      const contrast = Math.max(0, lowFast - lowBaseline);
+
+      const punchRise = Math.max(0, punch - previousPunch);
+      const kickRise = Math.max(0, kick - previousKick);
+      const contrastRise = Math.max(0, contrast - previousContrast);
+      previousPunch = punch;
+      previousKick = kick;
+      previousContrast = contrast;
+
+      const trigger = clamp(
+        punchRise * 3.8
+        + kickRise * 2.25
+        + contrastRise * 6.5
+        + Math.max(0, punch - .68) * .12
+      );
+      envelope = Math.max(trigger, envelope * .62);
+      return clamp(Math.pow(envelope, .7) * 1.08);
+    }
+  };
+}
+
 function kineticImpactFeatures(mode, features) {
   if (!KINETIC_MODE_IDS.has(mode)) return features;
   const punch = clamp(Number(features.punch) || 0);
@@ -231,6 +325,7 @@ export function createVisualController(options) {
   const raw = new Uint8Array(128);
   const tracker = createAudioReactivityTracker({ attack: .82, release: .12, transientDecay: .72 });
   const punchTracker = createAdaptiveLowPunchTracker();
+  const visualImpactTracker = createDirectVisualImpactTracker();
   let mode = DEFAULT_MODE;
   let frame = 0;
   let lastFrameAt = 0;
@@ -266,7 +361,7 @@ export function createVisualController(options) {
   });
   applyMode(DEFAULT_MODE, defaultButton);
 
-  document.documentElement.dataset.audioLabRenderer = 'seven-core-v3';
+  document.documentElement.dataset.audioLabRenderer = 'seven-core-v4';
   document.documentElement.dataset.audioLabFeed = 'spectrum-shared';
   document.documentElement.dataset.audioLabPresetCount = '7';
 
@@ -274,6 +369,7 @@ export function createVisualController(options) {
     if (audio.paused || audio.ended) {
       raw.fill(0);
       punchTracker.reset();
+      visualImpactTracker.reset();
       return {
         reading: { available: true, peak: 0, state: 'idle' },
         features: boostLiveFeatures({
@@ -281,7 +377,8 @@ export function createVisualController(options) {
           rms: 0,
           peak: 0,
           dynamics: 0,
-          punch: 0
+          punch: 0,
+          visualImpact: 0
         })
       };
     }
@@ -304,6 +401,7 @@ export function createVisualController(options) {
     features.punch = adaptivePunch.punch;
     features.lowFast = adaptivePunch.fastBass;
     features.lowBaseline = adaptivePunch.slowBass;
+    features.visualImpact = visualImpactTracker.update(features);
     return { reading, features };
   }
 
@@ -317,6 +415,7 @@ export function createVisualController(options) {
       features.high.toFixed(3),
       features.kick.toFixed(3),
       features.punch.toFixed(3),
+      features.visualImpact.toFixed(3),
       features.peak.toFixed(3)
     ];
     const signature = values.join('|');
@@ -330,7 +429,8 @@ export function createVisualController(options) {
     data.audioLabHigh = values[3];
     data.audioLabKick = values[4];
     data.audioLabPunch = values[5];
-    data.audioLabPeak = values[6];
+    data.audioLabVisualImpact = values[6];
+    data.audioLabPeak = values[7];
   }
 
   function render(now = performance.now()) {
