@@ -1,8 +1,50 @@
 import { ensureStylesheet } from '../../core/assets.js';
 
+function trackIdFromLyricsEntry(entry) {
+  const href = entry?.getAttribute?.('href') || '';
+  const match = href.match(/^#lyrics=(.+)$/);
+  if (!match) return '';
+
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return match[1];
+  }
+}
+
+function installMobileLyricsStudioRouting() {
+  if (window.__shinobiMobileLyricsStudioRoutingReady) return;
+  window.__shinobiMobileLyricsStudioRoutingReady = true;
+
+  document.addEventListener('click', event => {
+    if (!window.matchMedia?.('(max-width:760px)')?.matches) return;
+
+    const entry = event.target.closest?.(
+      '.mobile-nav [data-view="lyrics"], [data-view-target="lyrics"], a[href^="#lyrics="], [data-track-detail-route="lyrics"]'
+    );
+    if (!entry) return;
+
+    const audio = document.querySelector('#audio');
+    const trackId = trackIdFromLyricsEntry(entry) || audio?.dataset.trackId || '';
+    if (!trackId) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    const studioHash = `#studio=${encodeURIComponent(trackId)}`;
+    if (window.location.hash === studioHash) {
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+      return;
+    }
+    window.location.hash = studioHash;
+  }, true);
+}
+
 export function installExtendedUI() {
   ensureStylesheet('css/lyrics.css');
   ensureStylesheet('css/fixes-v2.css');
+  ensureStylesheet('css/ui-polish-v62.css');
+  installMobileLyricsStudioRouting();
 
   const mainNav = document.querySelector('.main-nav');
   const albumsNav = mainNav?.querySelector('[data-view="analytics"]');
