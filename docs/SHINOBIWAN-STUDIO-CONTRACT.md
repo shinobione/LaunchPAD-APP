@@ -172,11 +172,11 @@ Rules:
 ### Private Track Manager
 
 - service: `launchpad-r2-api`;
-- deployed Track Manager: **v5.15**;
-- deployed Studio bridge: **v1.7**;
-- PHASE UX admin-only corrective source target: **v5.16 / bridge v1.8**;
-- final Phase 6 deployed source: `23a7b494b89d4958f573f0889057b53a44aa23b6`;
-- protected deployment run: `31288949405`;
+- deployed Track Manager: **v5.16**;
+- deployed Studio bridge: **v1.8**;
+- deployed source: `1bbe0293e4e17968bb7e191f58e7ae1cdd95dadf`;
+- protected deployment run: `31324447727`;
+- Worker Version ID: `5a83c6dd-cfb4-4be6-ab8d-16b5c34bdc2b`;
 - target: `admin`.
 
 Studio capability families include:

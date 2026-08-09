@@ -28,8 +28,8 @@ Lovable is prototype-only unless a future migration is explicitly promoted back 
                   |                         |
                   v                         v
           public media Worker        private admin Worker
-          launchpad-media v2.6       launchpad-r2-api v5.15
-                                     Studio bridge v1.7
+          launchpad-media v2.6       launchpad-r2-api v5.16
+                                     Studio bridge v1.8
                   |                         |
                   +------------+------------+
                                |
@@ -85,17 +85,18 @@ The staging project tracks `main`. Generated `dist/cloudflare-pages/` output is 
 ### Private Track Manager Worker
 
 - service: `launchpad-r2-api`;
-- deployed Track Manager contract: **v5.15**;
-- deployed Studio bridge contract: **v1.7**;
+- deployed Track Manager contract: **v5.16**;
+- deployed Studio bridge contract: **v1.8**;
 - protected by Cloudflare Access;
 - purpose: Track Manager production writes plus the private Studio integration;
 - R2 binding: `MEDIA_BUCKET`;
-- deployed source head: `23a7b494b89d4958f573f0889057b53a44aa23b6`;
-- protected deployment run: `31288949405`;
+- deployed source head: `1bbe0293e4e17968bb7e191f58e7ae1cdd95dadf`;
+- protected deployment run: `31324447727`;
+- Worker Version ID: `5a83c6dd-cfb4-4be6-ab8d-16b5c34bdc2b`;
 - deployment target: `admin`;
-- public Worker deployment was not required by that Phase 6 deployment.
+- public Worker deployment steps were skipped and public Worker `v2.6` remains unchanged.
 
-The private Worker supports the established Track Manager operations plus the versioned Studio capabilities introduced across Phases 4–6.
+The private Worker supports the established Track Manager operations plus the versioned Studio capabilities introduced across Phases 4–6 and the PHASE UX C2 observed-duration evidence on the existing Lyrics routes.
 
 Current Studio families include:
 

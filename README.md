@@ -4,11 +4,13 @@
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
-## Production Phase 6 backend
+## Production PHASE UX C2 backend
 
-Track Manager `v5.15` / Studio bridge `v1.7` remains the deployed private backend until the guarded admin-only deployment of the PHASE UX corrective candidate. Source target `v5.16` / bridge `v1.8` adds observed canonical-audio duration evidence to the existing Lyrics synchronization validation without adding a route, changing R2 schemas or mutating manifest duration as a side effect.
+Track Manager `v5.16` / Studio bridge `v1.8` is the deployed private backend. It was deployed from `1bbe0293e4e17968bb7e191f58e7ae1cdd95dadf` by admin-only workflow `31324447727`; the recorded Worker Version ID is `5a83c6dd-cfb4-4be6-ab8d-16b5c34bdc2b` and Cloudflare Access remains protected.
 
-The public media Worker remains v2.6. The Phase 6 backend is separate from this public Build 67 Track DNA maintenance hotfix. Phase 7 is not started.
+The C2 integration accepts request-scoped observed canonical-audio duration evidence from LRC Maker `6.3.6` on the existing Lyrics validation/save routes. Real-user production smoke passed canonical playback, timestamp navigation, synchronized `lyrics.txt` save and canonical reread; the false end-of-audio blocker is gone. `lyrics.txt` remains the only canonical lyrics source and `.lrc` remains optional export/compatibility only.
+
+The deployment skipped every public Worker step, did not change LaunchPAD's public Build 67 runtime, and did not perform an automated production R2 test mutation. The public media Worker remains `v2.6`. The final PHASE UX checkpoint is not created, C3 is suspended pending C2.5, and Phase 7 is not started.
 
 See [`docs/STUDIO-LYRICS-SYNCHRONIZATION.md`](docs/STUDIO-LYRICS-SYNCHRONIZATION.md) and [`docs/PHASE-6-PROTECTED-MEDIA-SEEK-HOTFIX.md`](docs/PHASE-6-PROTECTED-MEDIA-SEEK-HOTFIX.md).
 
