@@ -1,3 +1,43 @@
+.brand-wordmark{
+  position:relative;
+  min-height:58px!important;
+  padding:2px 4px!important;
+}
+
+.brand-wordmark img{
+  width:178px!important;
+  height:52px!important;
+  opacity:0!important;
+}
+
+.brand-wordmark::after{
+  content:"";
+  position:absolute;
+  left:4px;
+  top:50%;
+  width:178px;
+  height:52px;
+  transform:translateY(-50%);
+  pointer-events:none;
+  background:linear-gradient(180deg,#fff3b8 0%,#f4cf70 24%,#c7902f 58%,#f2cf72 78%,#9b651d 100%);
+  -webkit-mask:url('../assets/logo.png') left center / contain no-repeat;
+  mask:url('../assets/logo.png') left center / contain no-repeat;
+  filter:drop-shadow(0 8px 18px rgba(0,0,0,.34)) drop-shadow(0 0 12px rgba(232,184,77,.16));
+}
+
+.launchpad-hero .hero-body::after{
+  content:"";
+  align-self:end;
+  justify-self:end;
+  width:min(24vw,280px);
+  height:min(34vw,370px);
+  margin:0 -6px -18px 0;
+  background:url('../assets/NinJa-ShinoBiWan.png') right bottom / contain no-repeat;
+  filter:drop-shadow(0 18px 35px rgba(0,0,0,.46)) drop-shadow(0 0 22px rgba(166,27,38,.16));
+  opacity:.8;
+  pointer-events:none;
+}
+
 #view-about .about-card{
   grid-template-columns:minmax(220px,280px) minmax(320px,1fr) minmax(260px,430px)!important;
   align-items:center!important;
@@ -74,27 +114,20 @@
   overflow:visible;
 }
 
-.about-golden-wordmark{
+.about-signature-art{
   display:block;
-  width:min(100%,430px);
-  aspect-ratio:4 / 1.25;
-  background:
-    linear-gradient(
-      180deg,
-      #fff3b8 0%,
-      #f4cf70 24%,
-      #c7902f 58%,
-      #f2cf72 78%,
-      #9b651d 100%
-    );
-  -webkit-mask:url('../assets/logo.png') center / contain no-repeat;
-  mask:url('../assets/logo.png') center / contain no-repeat;
-  filter:
-    drop-shadow(0 13px 25px rgba(0,0,0,.32))
-    drop-shadow(0 0 18px rgba(232,184,77,.2));
+  width:min(100%,420px);
+  height:auto;
+  aspect-ratio:1;
+  object-fit:contain;
+  filter:drop-shadow(0 17px 28px rgba(0,0,0,.38)) drop-shadow(0 0 18px rgba(232,184,77,.12));
 }
 
 @media(max-width:1180px) and (min-width:761px){
+  .launchpad-hero .hero-body::after{
+    display:none;
+  }
+
   #view-about .about-card{
     grid-template-columns:220px minmax(0,1fr)!important;
   }
@@ -104,12 +137,26 @@
     padding-top:18px;
   }
 
-  .about-golden-wordmark{
-    width:min(68%,430px);
+  .about-signature-art{
+    width:min(62%,390px);
   }
 }
 
 @media(max-width:760px){
+  .brand-wordmark{
+    min-height:58px!important;
+  }
+
+  .brand-wordmark img,
+  .brand-wordmark::after{
+    width:176px!important;
+    height:52px!important;
+  }
+
+  .launchpad-hero .hero-body::after{
+    display:none;
+  }
+
   #view-about .about-card{
     grid-template-columns:1fr!important;
   }
@@ -151,8 +198,8 @@
     padding:8px 0 0;
   }
 
-  .about-golden-wordmark{
-    width:min(88vw,430px);
+  .about-signature-art{
+    width:min(82vw,360px);
   }
 }
 
