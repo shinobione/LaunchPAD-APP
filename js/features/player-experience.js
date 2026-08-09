@@ -86,7 +86,7 @@ function applyLoadingState(root = document) {
     setAttributeIfChanged(button, 'aria-label', 'Loading audio');
     setAttributeIfChanged(button, 'aria-pressed', 'true');
     setAttributeIfChanged(button, 'aria-busy', 'true');
-    setPlaybackDatasetIfChanged(button, state);
+    setPlaybackDatasetIfChanged(button, 'loading');
   });
 }
 
