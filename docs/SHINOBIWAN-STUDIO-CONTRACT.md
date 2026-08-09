@@ -1,203 +1,149 @@
-# SHINOBIWAN Studio — integration contract
+# SHINOBIWAN Studio — authoritative integration contract
 
-> Integration contract updated: 2026-08-08  
-> LaunchPAD reference build: `2026.08.08.66`  
-> LaunchPAD reference release: `studio-metadata-validation-20260808`
+> Contract hardened: 2026-08-09  
+> LaunchPAD reference build: `2026.08.09.67`  
+> LaunchPAD reference release: `post-phase6-track-dna-release-date-20260809`
 
-Status: **Phases 0–5 proven; Phase 6 canonical Lyrics workflow implemented in the v5.15/v1.7 source candidate.** This contract defines shared identity, data ownership and safe integration boundaries for LaunchPAD, Track Manager, SonicTrace, LRC Maker and SHINOBIWAN Studio.
+Status: **Phases 0–6 complete and production-validated. Phase 7 is not started.**
+
+This document is the current cross-repository contract for LaunchPAD, Track Manager, SonicTrace, LRC Maker and SHINOBIWAN Studio. Older phase documents remain useful as historical implementation records, but this file wins when an old document conflicts with a frozen current rule.
 
 ## 1. Product boundary
 
-SHINOBIWAN Studio is the private, track-centric orchestration UI.
+- **LaunchPAD** = public listening product / PWA.
+- **SHINOBIWAN Studio** = private track-centric orchestration cockpit.
+- **Track Manager** = protected production write/admin authority.
+- **Cloudflare R2** = canonical production catalog/media/sidecar store.
+- **SonicTrace** = audio-intelligence engine; it does not own a competing music catalog.
+- **LRC Maker** = lyrics editing/timing engine; standalone remains a fallback.
+- **GitHub** = source of truth for code.
 
-- **LaunchPAD** remains the public listening product.
-- **LaunchPAD / Cloudflare R2** remains the canonical production catalog and media store.
-- **Track Manager Worker** remains the production write/admin backend during migration.
-- **SonicTrace** remains the audio-intelligence engine. It computes results but does not own a competing music catalog.
-- **LRC Maker** remains the lyrics editing/synchronization engine during the integration stages.
-- **SHINOBIWAN Studio** selects one track once and reuses that context across metadata, assets, audio intelligence, lyrics and publishing.
-
-The Studio is a projection/orchestration layer, **not a fourth catalog**.
+Studio is a projection/orchestration layer, **not another catalog**.
 
 ## 2. Canonical track identity
 
-### Frozen decision
-
-The canonical `trackId` is the existing R2/manifest **slug**.
+The canonical `trackId` is the R2/manifest slug:
 
 ```text
 trackId === manifest.slug === R2 track directory === public API slug
 ```
 
-Example:
+Rules:
 
-```text
-trackId = ghost-signal
-manifest = tracks/ghost-signal/manifest.json
-public API = /tracks/ghost-signal
-```
+1. lower-case ASCII kebab-case Track Manager slug;
+2. stable during normal edits;
+3. title is mutable and is never identity;
+4. slug rename is an explicit migration;
+5. Studio, Track Manager, LaunchPAD, SonicTrace and LRC Maker reuse the same `trackId`;
+6. version/master identifiers remain subordinate to `trackId`.
 
-### Identity rules
+## 3. Canonical manifest and R2 layout
 
-1. `trackId` uses the existing lower-case ASCII kebab-case Track Manager slug rule.
-2. `trackId` is stable and immutable after creation for normal edits.
-3. `title` is mutable and never serves as identity.
-4. Renaming a slug is a migration operation, not a metadata edit.
-5. SonicTrace, LRC Maker and Studio reuse the same `trackId`; none may mint a competing track ID.
-6. Version/master identifiers remain subordinate to the canonical `trackId`.
+Manifest schema v1 remains authoritative for core track metadata/assets. Do not silently add Studio/SonicTrace-only fields to schema v1 while `normalizeManifest()` still reconstructs a fixed shape.
 
-## 3. Existing canonical manifest
-
-Current Track Manager manifest schema v1 contains:
-
-```text
-schemaVersion
-slug
-title
-status
-type
-year
-releaseDate
-album.id
-album.title
-genres[]
-tags[]
-moods[]
-themes[]
-era
-energy
-languages[]
-bpm
-key
-keyConfidence
-explicit
-duration
-accent
-accent2
-assets.audio
-assets.cover
-assets.thumbnail
-assets.lyrics
-assets.video
-migration
-createdAt
-updatedAt
-updatedBy
-```
-
-Current canonical R2 layout:
+Canonical layout:
 
 ```text
 catalog/index.json
 tracks/<trackId>/manifest.json
 tracks/<trackId>/audio.<ext>
 tracks/<trackId>/cover.<ext>
-tracks/<trackId>/thumbnail.<ext>
+tracks/<trackId>/thumbnail.webp
 tracks/<trackId>/lyrics.txt
 tracks/<trackId>/video.<ext>
+tracks/<trackId>/analysis/sonictrace/latest.json
+tracks/<trackId>/analysis/sonictrace/history/<analysisId>.json
 ```
 
-### Compatibility rule
+Temporary transactional backup material may exist under `_studio-backups/...` only while a scoped Track Manager operation is active. It is not canonical track data.
 
-Do **not** write Studio/SonicTrace-specific fields into manifest schema v1 yet. The current `normalizeManifest()` reconstructs a fixed object, so unknown fields could be discarded on a future Track Manager save.
+## 4. `StudioTrack` projection
 
-New Studio integration data therefore uses additive sidecars or dedicated private API contracts until an explicit manifest schema migration is designed.
+`StudioTrack` is a normalized view model, not a persisted source of truth.
 
-## 4. `StudioTrack` contract
+Core projection rules:
 
-`StudioTrack` is a normalized view model, not a new persisted source of truth.
+- `StudioTrack.id = manifest.slug`;
+- `manifest.assets.lyrics` maps to canonical lyrics TXT availability;
+- `timestampsAvailable` is derived from recognized timestamps in canonical lyrics content / parsed canonical segments;
+- SonicTrace availability/freshness is derived from persisted SonicTrace sidecars and source revision;
+- public catalog data is fallback read data; protected Track Manager reads are the richer admin source;
+- Studio must not cache a competing authoritative copy of the manifest/catalog.
 
-Minimum logical shape:
+## 5. Lyrics — frozen canonical rule
 
-```json
-{
-  "id": "ghost-signal",
-  "title": "Ghost Signal",
-  "status": "published",
-  "type": "single",
-  "year": 2026,
-  "releaseDate": null,
-  "album": { "id": "singles", "title": "Singles" },
-  "genres": [],
-  "tags": [],
-  "moods": [],
-  "themes": [],
-  "era": null,
-  "energy": null,
-  "languages": [],
-  "bpm": null,
-  "key": null,
-  "keyConfidence": null,
-  "explicit": null,
-  "duration": null,
-  "accent": null,
-  "accent2": null,
-  "lyricsAvailable": false,
-  "timestampsAvailable": false,
-  "assets": {
-    "audio": null,
-    "cover": null,
-    "thumbnail": null,
-    "video": null,
-    "lyricsTxt": null,
-    "lyricsLrc": null
-  },
-  "audioIntelligence": {
-    "available": false,
-    "outdated": false,
-    "latestAnalysisId": null
-  },
-  "publishing": {
-    "catalogVisible": false,
-    "publishable": null
-  },
-  "createdAt": null,
-  "updatedAt": null
-}
-```
-
-Projection rules:
-
-- `StudioTrack.id = manifest.slug`.
-- Current `manifest.assets.lyrics` maps to `StudioTrack.assets.lyricsTxt`.
-- `timestampsAvailable` is content-derived and may also be inferred from parsed timestamp segments returned by the API.
-- `lyricsLrc` remains an optional compatibility field only; its absence does not mean lyrics are unsynchronized.
-- SonicTrace availability is derived from SonicTrace persistence, never guessed.
-- Public catalog data is the safe fallback read layer; the private manifest/quality projection is the richer admin read source.
-
-## 5. Lyrics storage and synchronization
-
-### Canonical rule
-
-The canonical authoring object remains:
+The **only canonical lyrics source** is:
 
 ```text
 tracks/<trackId>/lyrics.txt
 ```
 
-That file may contain plain lyrics **or synchronized timestamped lyrics**.
-
-Supported timestamp forms already include LRC-style bracketed lines and the existing Track Manager/LaunchPAD parser variants.
-
-Synchronization is determined from **content**, not from file extension:
+It may contain plain lyrics or timestamped synchronized lyrics.
 
 ```text
-lyrics.txt present + no recognized timestamps  -> plain lyrics
-lyrics.txt present + recognized timestamps     -> synchronized lyrics
-optional lyrics.lrc sidecar present            -> compatible synchronized artifact
+lyrics.txt missing                        -> lyrics missing
+lyrics.txt present, no recognized times  -> plain / unsynchronized lyrics
+lyrics.txt present, recognized times     -> synchronized lyrics
 ```
 
-A separate `lyrics.lrc` is **not required** for synchronization, Content Health or normal Studio operation. If a later export/compatibility workflow writes an `.lrc` sidecar, it must not become a competing canonical source.
+### `.lrc` rule
 
-This rule avoids maintaining two near-duplicate lyric files that can drift apart.
+A separate `.lrc` file is optional export/compatibility material only.
 
-## 6. SonicTrace persistence
+It:
 
-### Ownership
+- is **not required**;
+- is **not a second source of truth**;
+- does **not** determine synchronization state;
+- does **not** award Content Health points;
+- must never override or silently diverge from canonical `lyrics.txt`.
 
-SonicTrace computes analysis. R2 stores catalog-linked analysis. SonicTrace must not become an independent authoritative track database.
+If a future compatibility workflow produces `.lrc`, it is derived from canonical lyrics state.
 
-### Phase 5 R2 layout
+## 6. LRC Maker synchronization behavior
+
+Final Phase 6 native workflow, shared by standalone and embedded modes:
+
+- **simple click** = select lyric line only;
+- **double-click** on a timestamped line = explicit seek/reposition to its existing timestamp;
+- **Space** = write current audio time to the selected line, then advance selection exactly one line.
+
+The 6.3.2 experiment that sought audio on simple click is retired.
+
+Embedded Studio reuses the real LRC Maker engine via Web Component/Shadow DOM. It is not an iframe and not a copied reimplementation.
+
+## 7. Lyrics context and guarded save
+
+Studio passes only minimal context in navigation:
+
+```text
+studio=lyrics-v1
+trackId=<canonical slug>
+returnPath=<same-origin Studio path>
+```
+
+Audio blobs and lyric text are never placed in the URL.
+
+Protected context:
+
+```text
+GET /api/studio/tracks/<slug>/lyrics/context
+```
+
+Protected synchronization write:
+
+```text
+POST /api/studio/tracks/<slug>/lyrics/sync/validate
+POST /api/studio/tracks/<slug>/lyrics/sync/save
+```
+
+Writes remain specialized and require canonical stale guards (`expectedUpdatedAt`, lyrics ETag), strict validation, canonical reread and compensation/rollback where required.
+
+Canonical text equality normalizes only the agreed storage form: optional UTF-8 BOM removal and `CRLF` / `CR` to `LF`. Genuine lyric differences remain blocking.
+
+## 8. SonicTrace persistence
+
+SonicTrace computes; R2 persists catalog-linked results.
 
 ```text
 tracks/<trackId>/analysis/sonictrace/latest.json
@@ -206,334 +152,82 @@ tracks/<trackId>/analysis/sonictrace/history/<analysisId>.json
 
 Rules:
 
-- `latest.json` is the fast Studio read path.
-- history is append-only except explicit maintenance cleanup.
-- the analyzed WAV/MP3 is **not duplicated** in the analysis directory.
+- `latest.json` = fast current profile;
+- history = append-oriented provenance;
+- canonical WAV/MP3 is not duplicated in the analysis directory;
+- analysis stores a source revision/fingerprint so changed audio can mark results outdated;
+- metadata/cover/video/lyrics-only changes must not invalidate the audio fingerprint;
+- model/engine/provenance/warnings are preserved;
+- relative Neural/CLAP scores are not mislabelled as objective DSP measurements.
 
-Public LaunchPAD Build 66 remains unchanged. Private SonicTrace persistence is introduced only by the Track Manager v5.14 / bridge v1.6 candidate.
+## 9. Current backend surfaces
 
-## 7. `SonicTraceAnalysis` contract
+### Public LaunchPAD Worker
 
-Minimum envelope:
+- service: `launchpad-media`;
+- contract: **v2.6**;
+- public/read-only;
+- catalog/detail/media delivery including Range-capable public media.
 
-```json
-{
-  "schemaVersion": 1,
-  "analysisId": "unique-analysis-id",
-  "trackId": "ghost-signal",
-  "sourceVersion": {
-    "kind": "r2-revision",
-    "value": "stable-source-revision",
-    "sizeBytes": null
-  },
-  "analyzedAt": "2026-08-08T00:00:00.000Z",
-  "engine": {
-    "apiSchema": "2.2",
-    "appVersion": null,
-    "nodeName": null,
-    "nodeRole": null
-  },
-  "browserDsp": null,
-  "mastering": null,
-  "neural": null,
-  "anatomy": null,
-  "fusion": null,
-  "stemsSummary": null,
-  "semanticSummary": null,
-  "provenance": {},
-  "warnings": []
-}
-```
+### Private Track Manager
 
-### Neural fields worth retaining
+- service: `launchpad-r2-api`;
+- deployed Track Manager: **v5.15**;
+- deployed Studio bridge: **v1.7**;
+- final Phase 6 deployed source: `23a7b494b89d4958f573f0889057b53a44aa23b6`;
+- protected deployment run: `31288949405`;
+- target: `admin`.
 
-Current SonicTrace CLAP analysis already exposes:
+Studio capability families include:
 
 ```text
-engine.model
-engine.model_family
-engine.device
-engine.device_name
-engine.torch_version
-engine.cuda_runtime
-engine.segment_count
-engine.segment_seconds
-engine.segment_offsets_seconds
-engine.gpu_memory_allocated_mb
-engine.gpu_memory_reserved_mb
-genres[]
-moods[]
-instruments[]
-traits.electronic
-traits.vocal
-traits.energy
-traits.brightness
-traits.danceability
-traits.aggression
-traits.space
-embedding.model
-embedding.dimension
-embedding.vector[]
-provenance
+read/context
+metadata validate/save
+canonical lyrics validate/save
+track create
+asset upload/delete
+explicit catalog rebuild
+SonicTrace sidecar read/save
+Lyrics Studio context
+Lyrics synchronization validate/save
+protected canonical media Range reads
 ```
 
-Persistence principles:
+Whole-track deletion is not exposed by the Studio bridge.
 
-1. Preserve provenance (`measured`, `neural`, `estimated`, etc.).
-2. Preserve model/engine versions.
-3. Preserve warnings and partial-layer failures.
-4. Do not present relative CLAP zero-shot scores as objective DSP measurements or absolute probabilities.
-5. Saving a new `latest` analysis does not erase history.
+## 10. Security boundary
 
-## 8. Outdated-analysis detection
+The private Studio bridge remains behind Cloudflare Access.
 
-Studio must detect when the canonical audio changed after the latest SonicTrace scan.
+Required rules:
 
-Each saved analysis therefore stores a `sourceVersion` tied only to the R2 audio revision.
+- exact allowed browser origin: `https://shinobione.github.io`;
+- Access verification before protected routing;
+- credentialed CORS never uses wildcard origin;
+- browser control POSTs use established CORS-simple `text/plain;charset=UTF-8` where applicable;
+- multipart uploads use native `FormData` without custom request headers;
+- no R2 credentials or Access secrets in GitHub Pages/browser bundles;
+- stale-sensitive writes use manifest revisions/ETags;
+- successful writes use canonical reread;
+- multi-object operations keep compensating rollback;
+- unrelated legacy Track Manager mutation routes retain same-origin enforcement.
 
-Requirements:
+The public Worker's wildcard public-read CORS is a separate public surface and does not weaken the private Track Manager boundary.
 
-- changes when the canonical audio object changes;
-- stays stable when only metadata, cover, video or lyrics change;
-- does not require duplicate WAV storage;
-- used for revision invalidation, not as a security signature.
+## 11. Protected media seek contract
 
-Preferred implementation order:
+Protected canonical Studio media supports one HTTP byte range:
 
-1. R2 object revision/ETag + size exposed by the private API;
-2. optional SHA-256 later if useful.
+- `Accept-Ranges: bytes`;
+- `206 Partial Content` for valid ranges;
+- `416 Range Not Satisfiable` for invalid ranges;
+- exact `Content-Range` / `Content-Length`;
+- R2 offset/length ranged reads;
+- Range headers exposed only through the established exact-origin credentialed CORS path.
 
-If the current source version differs from `latest.json.sourceVersion`:
+This backend capability supports explicit media seeks such as LRC Maker **double-click**. It does not redefine simple-click behavior.
 
-```text
-audioIntelligence.outdated = true
-```
-
-## 9. LaunchPAD public read API
-
-Relevant routes:
-
-```text
-GET/HEAD /health
-GET/HEAD /tracks
-GET/HEAD /tracks/{trackId}
-GET/HEAD /media/{trackId}/{cover|thumbnail|audio|video|lyrics}/{filename}
-OPTIONS ...
-```
-
-Properties:
-
-- public and read-only;
-- CORS enabled;
-- `/tracks` powers Studio's public fallback catalog layer;
-- `/tracks/{trackId}` can include lyrics and parsed timestamp data;
-- only published tracks are exposed.
-
-The public Worker remains contract v2.6 and is unchanged by Build 66.
-
-## 10. Track Manager private API
-
-Historical routes remain:
-
-```text
-GET    /health
-GET    /api/tracks
-GET    /api/tracks/{trackId}
-PUT    /api/tracks/{trackId}
-DELETE /api/tracks/{trackId}
-GET    /api/media/{trackId}/{cover|thumbnail|audio|video|lyrics}
-PUT    /api/tracks/{trackId}/thumbnail
-POST   /api/catalog/rebuild
-GET    /api/migration-plan
-POST   /api/import/github/{trackId}
-POST   /api/import/legacy/{trackId}
-POST   /api/import/legacy
-```
-
-Build 65 established Track Manager v5.8 / Studio bridge v1.0 with:
-
-```text
-OPTIONS /api/studio/*
-GET     /api/studio/health
-GET     /api/studio/tracks
-GET     /api/studio/tracks/{trackId}
-```
-
-That bridge was deployed admin-only and then proven from SHINOBIWAN Studio 0.4.0 / Build 5 in a real authenticated Chrome session. Studio displayed `PRIVATE READ` both globally and inside Track Workspace.
-
-Build 66 advances the private Worker to **Track Manager v5.9 / Studio bridge v1.1** and adds exactly:
-
-```text
-POST /api/studio/tracks/{trackId}/metadata/validate
-```
-
-The list/detail bridge still reuses the existing private read implementations rather than creating a competing data projection.
-
-### Phase 4B.1A metadata validation contract
-
-The validation request envelope is logically:
-
-```json
-{
-  "expectedUpdatedAt": "current-manifest-updatedAt",
-  "metadata": {
-    "title": "Ghost Signal",
-    "status": "published"
-  }
-}
-```
-
-Required transport/security:
-
-```text
-Origin: https://shinobione.github.io
-Content-Type: application/json
-X-Shinobiwan-Studio-Intent: metadata-validate-v1
-Cloudflare Access session/JWT: required
-```
-
-Editable whitelist:
-
-```text
-title
-status
-type
-year
-releaseDate
-album
-genres
-tags
-moods
-themes
-era
-energy
-languages
-bpm
-key
-keyConfidence
-explicit
-accent
-accent2
-```
-
-Not editable through this validation contract:
-
-```text
-slug / trackId
-schemaVersion
-assets.*
-migration
-createdAt
-updatedAt
-updatedBy
-duration
-unknown fields
-```
-
-`duration` stays server/audio-derived during this stage rather than becoming an ordinary Studio form field.
-
-Validation behavior:
-
-1. reject non-exact Studio origin;
-2. reject missing/wrong Studio intent header;
-3. reject non-JSON body;
-4. reject missing `expectedUpdatedAt`;
-5. return `409` / `STALE_MANIFEST` if canonical `updatedAt` changed since Studio loaded it;
-6. reject unknown metadata fields;
-7. preserve canonical slug/assets/provenance/server timestamps;
-8. normalize the proposal through Track Manager's existing `normalizeManifest()`;
-9. run existing `inspectTrackQuality()` against current R2 objects;
-10. return the proposed normalized manifest, quality, changed fields and `validationOnly: true`.
-
-Non-mutation guarantee:
-
-```text
-NO writeManifest
-NO writeCatalogIndex
-NO R2 put/delete
-NO media upload/replace/delete
-NO publication/rebuild
-```
-
-The Studio health capability remains explicit:
-
-```json
-{
-  "read": ["tracks", "track"],
-  "validate": ["metadata"],
-  "write": []
-}
-```
-
-POST preflight is allowed only for the exact `/metadata/validate` route. Every other `POST`, `PUT`, `PATCH` and `DELETE` method remains behind Track Manager's existing same-origin enforcement.
-
-## 11. Current private write security constraint
-
-The historical Track Manager Worker protects real mutations with:
-
-```text
-Origin == private Worker origin
-```
-
-Build 66 **preserves this rule for production writes**.
-
-A Studio UI hosted at:
-
-```text
-https://shinobione.github.io/shinobiwan-studio/
-```
-
-can perform private reads and the one validation-only POST after Cloudflare Access authentication, but it still cannot directly use the production save/delete/upload/rebuild routes.
-
-Consequences:
-
-- Phase 4A private reads are proven.
-- Phase 4B.1A proves authenticated cross-origin validation before mutation.
-- Legacy Track Manager remains the write fallback and production publishing interface.
-- Phase 4B.1B real metadata save must be separately versioned/reviewed and cannot be smuggled into `/metadata/validate`.
-- Real write design requires exact-origin CORS, Access authorization, explicit intent, stale-write protection, confirmation UI and rollback.
-- Studio integration failure must not take Track Manager offline.
-
-## 12. Current SonicTrace local API
-
-Current coordinator capabilities include:
-
-```text
-GET  /api/live
-GET  /api/health
-GET  /api/diagnostics
-GET  /api/cluster
-GET  /api/neural/status
-GET  /api/stems/status
-GET  /api/anatomy/status
-GET  /api/fusion/status
-GET  /api/route/{task}
-POST /api/analyze
-POST /api/anatomy
-POST /api/stems
-POST /api/stems/analyze
-POST /api/fusion
-```
-
-SonicTrace already allows the GitHub Pages origin `https://shinobione.github.io` by default. A Studio page on that origin can integrate with the local coordinator later without inventing a second public GPU service.
-
-Initial Studio rule: Studio may wrap an existing SonicTrace response inside `SonicTraceAnalysis` and attach the canonical `trackId` itself. SonicTrace does not need R2 credentials to analyze audio.
-
-## 13. Data ownership matrix
-
-| Data | Canonical owner | Readers | Writer |
-|---|---|---|---|
-| Track identity / slug | R2 manifest | LaunchPAD, Studio, SonicTrace/LRC context | Track Manager/admin API |
-| Metadata | R2 manifest | LaunchPAD, Studio | Track Manager/admin API; Studio validation does not write |
-| Audio / cover / video | R2 | LaunchPAD, Studio, SonicTrace input | Track Manager/admin API |
-| Lyrics TXT, plain or synchronized | R2 `lyrics.txt` | LaunchPAD, Studio, LRC Maker | Track Manager/admin API |
-| Optional LRC compatibility artifact | optional sidecar/export | Studio/LRC compatibility workflows | future private lyrics workflow |
-| SonicTrace latest | planned R2 analysis sidecar | Studio | future private admin API after compute |
-| SonicTrace history | planned R2 analysis sidecars | Studio | future private admin API |
-| GPU temp upload | SonicTrace temporary storage | SonicTrace | automatically deleted |
-| Public catalog index | R2 derived artifact | LaunchPAD, Studio | Track Manager rebuild |
-
-## 14. MVP Content Health
+## 12. Content Health
 
 Content Health measures **completeness only**, never artistic quality.
 
@@ -551,110 +245,87 @@ Publication        10
 TOTAL              100
 ```
 
-`Synced Lyrics` earns its 10 points when recognized timestamp data is present in the canonical lyrics source, or when an optional compatible synchronized sidecar exists. A missing `.lrc` file by itself is not a gap.
+`Synced Lyrics` earns its 10 points **only when recognized timestamp data is present in canonical `lyrics.txt` / its canonical parsed representation**.
+
+An optional `.lrc` sidecar can never award these points.
 
 GPU availability itself never changes the score.
 
-## 15. Version/master rule
+## 13. Version/master rule
 
-The canonical `trackId` identifies the catalog entry. A different master/version must not silently overwrite analysis provenance.
+The canonical `trackId` identifies the catalog entry. A different audio master/version must not silently overwrite analysis provenance.
 
-Until a dedicated versions model exists, every SonicTrace analysis must at minimum preserve the source fingerprint. Future subordinate IDs may use:
+Until a dedicated versions model exists, every SonicTrace analysis preserves the analyzed source revision/fingerprint. Future subordinate identifiers may use:
 
 ```text
 <trackId>:<versionId>
 ```
 
-but `versionId` never replaces the canonical `trackId`.
+but `versionId` never replaces canonical `trackId`.
 
-## 16. Integration progress gates
+## 14. Deployment discipline
 
-### Phase 0 — complete
+Treat these as separate states:
 
-- [x] canonical `trackId` selected;
-- [x] slug/manifest/catalog/LaunchPAD mapping verified;
-- [x] `StudioTrack` minimum contract defined;
-- [x] `SonicTraceAnalysis` minimum contract defined;
-- [x] private write-origin constraint documented.
+1. source merged;
+2. GitHub Pages/static web deployed;
+3. Worker deployed;
+4. R2/catalog data mutated/rebuilt.
 
-### Phases 1–3 — complete in Studio
+Never report one as another.
 
-- [x] Studio shell on GitHub Pages;
-- [x] public catalog read layer;
-- [x] track-centric workspace;
-- [x] Content Health;
-- [x] synchronized lyrics semantics corrected to content-driven detection.
+Private Track Manager-only source changes should deploy `target=admin`. Never use `both` unless both Worker surfaces genuinely changed.
 
-### Phase 4A — complete and proven
+A public LaunchPAD build bump is not required for Worker-only changes; conversely a public UI Build 67 change does not require Worker redeployment.
 
-- [x] pre-integration restoration branches created;
-- [x] GET-only Studio private namespace implemented and guarded;
-- [x] exact allowed Origin defined;
-- [x] Access-authenticated data reads retained;
-- [x] write capability explicitly empty;
-- [x] legacy same-origin write guard retained;
-- [x] LaunchPAD Build 65 / Track Manager v5.8 CI green and merged;
-- [x] admin Worker deployed through protected workflow; public Worker skipped;
-- [x] Studio 0.4.0 / Build 5 private-first/public-fallback consumer merged/deployed;
-- [x] real Chrome session confirmed `PRIVATE READ` on Dashboard and Track Workspace.
-
-### Phase 4B.1A — Build 66 validation gate
-
-- [x] new pre-4B.1A safety snapshots created for LaunchPAD/Track Manager and Studio;
-- [x] exact metadata validation route defined;
-- [x] Access + exact Origin + intent header + JSON contract defined;
-- [x] `expectedUpdatedAt` stale protection defined;
-- [x] metadata whitelist defined;
-- [x] validator reuses normalize/quality code without mutation primitives;
-- [x] bridge health remains `write: []` and gains `validate: ["metadata"]`;
-- [x] CI guard extended to fail on validation-module mutation primitives;
-- [ ] all LaunchPAD CI/check:wrangler green;
-- [ ] reviewed Build 66 PR merged;
-- [ ] admin Worker v5.9 deployed through protected workflow;
-- [ ] real-browser no-change validation proves `updatedAt` and R2/catalog state unchanged;
-- [ ] Studio 0.4.1 / Build 6 validation-preview editor added separately;
-- [ ] stale validation path verified in Studio;
-- [ ] Phase 4B.1B real save designed only after validation gate is proven.
-
-## 17. Rollback / repository safety
-
-Restoration references:
+## 15. Frozen Phase 6 production state
 
 ```text
-Global pre-integration:
-LaunchPAD + Track Manager: safety/pre-studio-integration-20260808-1048
-SonicTrace:               safety/pre-studio-integration-20260808-1048
-LRC Maker:                safety/pre-studio-integration-20260808-1048
-Studio:                   safety/pre-integration-20260808-1048
+SHINOBIWAN Studio
+  0.9.5 / Build 20
+  closeout main SHA: 00b4504779ec6220d97564965309ef7a9ef20887
 
-Immediate pre-4B.1A:
-LaunchPAD + Track Manager: safety/pre-phase-4b1a-20260808-1452
-Studio:                    safety/pre-phase-4b1a-20260808-1452
+LRC Maker
+  6.3.4 production-validated baseline
+  SHA: 8bd3f3fd52acc1217a65216541c0b7e40fcab5ba
+
+Track Manager / LaunchPAD backend
+  v5.15 / bridge v1.7
+  Phase 6 backend source: 23a7b494b89d4958f573f0889057b53a44aa23b6
+
+Final Phase 6 checkpoint
+  safety/phase6-complete-20260809-0513
 ```
+
+Post-Phase-6 maintenance/hardening may advance public/test/doc versions without changing what constituted the validated Phase 6 checkpoint.
+
+## 16. Rollback / repository safety
 
 Rules:
 
-1. Prefer a normal PR revert for a bad integration step.
-2. Stop the next phase when a regression appears.
-3. Verify the affected standalone tool independently after rollback.
-4. Use safety branches only if a normal revert is insufficient.
-5. Cross-repository features use separate PRs; do not merge breaking coordinated changes simultaneously.
-6. Deploy only the affected Worker target; Build 66 is admin-only.
-7. Do not rebuild R2/catalog as part of a validation-only release.
+1. use dedicated feature branches;
+2. keep `safety/*` branches immutable rollback references;
+3. never merge red CI;
+4. merge the exact tested head;
+5. deploy backend dependency before frontend consumer when a contract changes;
+6. prefer normal PR revert before emergency branch restoration;
+7. verify standalone tools independently after rollback;
+8. do not mutate real production media merely to prove destructive code can mutate it.
 
-## 18. Non-negotiable rules carried forward
+## 17. Non-negotiable rules carried forward
 
 1. LaunchPAD = public product.
 2. Studio = private cockpit.
-3. R2 = canonical catalog/media/Studio persistence.
-4. SonicTrace = audio intelligence engine, not a competing catalog.
-5. LRC Maker = lyrics engine during migration.
-6. `trackId` = immutable canonical slug.
-7. No duplicate WAV storage for Catalog Intelligence.
-8. No browser secret in GitHub Pages.
-9. No destructive Track Manager replacement before Studio write flows are proven.
-10. Timestamped canonical TXT is synchronized lyrics; do not require a duplicate `.lrc` source.
-11. Integrate progressively; never copy/paste the three applications into one monorepo.
-12. Phase 4A private reads remain reversible with public fallback.
-13. Phase 4B.1A is validation-only; `/metadata/validate` must never silently become a save route.
-14. Real cross-origin writes require a separately versioned security review and must preserve Track Manager as fallback until proven.
+3. R2 = canonical catalog/media/analysis persistence.
+4. Track Manager = protected R2 write authority.
+5. SonicTrace = audio intelligence engine, not a competing catalog.
+6. LRC Maker = lyrics timing engine with standalone fallback.
+7. `trackId` = canonical slug everywhere.
+8. No duplicate canonical WAV storage for Catalog Intelligence.
+9. No browser secrets.
+10. `lyrics.txt` is the only canonical lyrics source.
+11. Timestamped canonical TXT = synchronized lyrics.
+12. `.lrc` is optional compatibility/export only and cannot affect Content Health.
+13. No iframe as the final Lyrics Studio architecture.
+14. Preserve LaunchPAD, Track Manager, LRC Maker and SonicTrace independently.
+15. **Phase 7 must not start, be scaffolded or be silently prepared without explicit user authorization.**

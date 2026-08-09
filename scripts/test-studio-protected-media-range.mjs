@@ -34,26 +34,33 @@ for (const required of [
   'status: 206',
 ]) assert.ok(source.includes(required), `Protected media range contract missing: ${required}`);
 
-const builtPath = path.join(os.tmpdir(), 'launchpad-phase6-media-range-worker.js');
-const build = spawnSync(process.execPath, ['scripts/build-admin-worker.mjs', builtPath], { encoding: 'utf8' });
-if (build.status !== 0) {
-  process.stdout.write(build.stdout || '');
-  process.stderr.write(build.stderr || '');
-  process.exit(build.status || 1);
+const builtPath = path.join(os.tmpdir(), `launchpad-phase6-media-range-worker-${process.pid}.js`);
+
+try {
+  const build = spawnSync(process.execPath, ['scripts/build-admin-worker.mjs', builtPath], { encoding: 'utf8' });
+  if (build.status !== 0) {
+    process.stdout.write(build.stdout || '');
+    process.stderr.write(build.stderr || '');
+    process.exit(build.status || 1);
+  }
+
+  const built = fs.readFileSync(builtPath, 'utf8');
+  for (const required of [
+    'function phase6ParseSingleByteRange(rangeHeader, size)',
+    'getProtectedMedia = async function phase6GetProtectedMedia',
+    'Accept-Ranges',
+    'Content-Range',
+    'status: 206',
+    'range: { offset: range.start, length: range.length }',
+  ]) assert.ok(built.includes(required), `Built admin Worker lost media seek contract: ${required}`);
+
+  assert.ok(
+    built.indexOf('const user = await verifyAccessJwt(request, env);') < built.indexOf('const mediaMatch = url.pathname.match('),
+    'Protected media range reads must remain behind Cloudflare Access JWT verification.',
+  );
+
+  console.log('Protected media range guard passed: canonical audio/video reads support single-byte ranges for HTML media seeking without weakening Access/CORS.');
+} finally {
+  fs.rmSync(builtPath, { force: true });
+  assert.equal(fs.existsSync(builtPath), false, 'Temporary generated Worker artifact must be removed after the test.');
 }
-const built = fs.readFileSync(builtPath, 'utf8');
-for (const required of [
-  'function phase6ParseSingleByteRange(rangeHeader, size)',
-  'getProtectedMedia = async function phase6GetProtectedMedia',
-  'Accept-Ranges',
-  'Content-Range',
-  'status: 206',
-  'range: { offset: range.start, length: range.length }',
-]) assert.ok(built.includes(required), `Built admin Worker lost media seek contract: ${required}`);
-
-assert.ok(
-  built.indexOf('const user = await verifyAccessJwt(request, env);') < built.indexOf('const mediaMatch = url.pathname.match('),
-  'Protected media range reads must remain behind Cloudflare Access JWT verification.',
-);
-
-console.log('Protected media range guard passed: canonical audio/video reads support single-byte ranges for HTML media seeking without weakening Access/CORS.');
