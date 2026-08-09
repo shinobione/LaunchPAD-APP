@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.09.70` — release `phase-ux-c2-5-a-mobile-album-focus-20260809`.
+> Current application build: `2026.08.09.71` — release `phase-ux-c2-5-a-era-play-mobile-20260809`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -10,13 +10,15 @@ Build 68 established the scalable Albums baseline: tracklists are collapsed by d
 
 Build 69 refines that accepted direction without changing the Album data model. `Show N tracks` now promotes the selected Album into an animated **Album Focus** layout: on wide desktop the active project occupies the dominant panel while sibling Albums move into a compact, still-clickable dock; narrower layouts keep the active Album first without forcing a fragile side rail. View Transitions are progressive-only and reduced-motion aware.
 
-Discography Era selection now also creates a virtual playback context. Selecting an Era still only filters the catalog; it does not autoplay. Once a track from that Era is played, the existing queue engine resolves the Era tracks as a reconstructible `era:` collection, labels the player context `Era queue`, and keeps Next / Previous inside that Era just like Album playback.
+Discography Era selection creates a virtual playback context. Once a track from that Era is played, the existing queue engine resolves the Era tracks as a reconstructible `era:` collection, labels the player context `Era queue`, and keeps Next / Previous inside that Era just like Album playback.
 
-Build 70 is the narrow-screen Album Focus follow-up found during real-user mobile smoke. When a lower Album is expanded on mobile/tablet, the runtime now waits for the reorder/View Transition to finish and then follows the selected Album to its new position, accounting for the sticky topbar. Desktop Album Focus is unchanged; closing an Album does not force a scroll; reduced-motion preference remains respected.
+Build 70 is the narrow-screen Album Focus follow-up found during real-user mobile smoke. When a lower Album is expanded on mobile/tablet, the runtime waits for the reorder/View Transition to finish and then follows the selected Album to its new position, accounting for the sticky topbar. Desktop Album Focus is unchanged; closing an Album does not force a scroll; reduced-motion preference remains respected.
 
-`Play album` and `Open project →` remain available, and the individual Album detail page remains complete and unchanged. Build 70 is LaunchPAD frontend-only: no Track Manager change, no Worker deployment, no R2 mutation, no canonical Album schema, no migration and no `catalog/index.json` change. See [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md), [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md) and [`docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md`](docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md).
+Build 71 polishes the **Era** workflow. Selecting exactly one Era now reveals a dedicated `Play Era · N` action. It starts the same existing virtual `era:` queue from the Era's first title instead of requiring a track card to be launched first. The button disappears again for `All eras` or any state without one unambiguous Era. On mobile, the Era selector becomes a wider snap carousel, deliberately reveals neighboring content, centers the chosen Era and includes a visible `Swipe to explore eras →` affordance so horizontal navigation is discoverable.
 
-The Build 70 hotfix remains a release candidate until CI, Pages and real-user browser smoke pass. The final PHASE UX checkpoint is not created, C2.5-B is not started, C3 remains suspended, and Phase 7 is not started.
+`Play album` and `Open project →` remain available, and the individual Album detail page remains complete and unchanged. Build 71 is LaunchPAD frontend-only: no Track Manager change, no Worker deployment, no R2 mutation, no canonical Album schema, no migration and no `catalog/index.json` change. See [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md), [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md), [`docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md`](docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md) and [`docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md`](docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md).
+
+The Build 71 refinement remains a release candidate until CI, Pages and real-user browser/mobile smoke pass. The final PHASE UX checkpoint is not created, C2.5-B is not started, C3 remains suspended, and Phase 7 is not started.
 
 ## Production PHASE UX C2 backend
 
@@ -144,6 +146,14 @@ v5.10 kept metadata validation non-mutating and added a CORS-safelisted `text/pl
 Exact origin, Access verification, whitelist-only metadata and stale-manifest protection remained mandatory.
 
 See [`docs/STUDIO-VALIDATION-CORS-HOTFIX.md`](docs/STUDIO-VALIDATION-CORS-HOTFIX.md).
+
+## Build 71 highlights
+
+Build 71 adds a dedicated `Play Era · N` action whenever exactly one Discography Era is selected. The action is hidden otherwise and reuses the same reconstructible `era:` collection already supported by the shared queue engine, starting from the first track in that Era without creating an Album or persistent playlist.
+
+On mobile, Era cards are wider and scroll-snap to the viewport, the chosen Era recenters after selection, neighboring content stays partially visible, and an explicit `Swipe to explore eras →` hint makes the horizontal interaction discoverable. Reduced-motion preference disables decorative hint movement.
+
+Build 71 changes no Worker, R2 object, canonical Album schema, track manifest, catalog projection, SonicTrace runtime or Phase 7 scope.
 
 ## Build 70 highlights
 
@@ -284,6 +294,7 @@ Useful documents:
 - [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md) — Build 68 C2.5-A scalable Albums baseline
 - [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md) — Build 69 Album Focus + virtual Era queue refinement
 - [`docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md`](docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md) — Build 70 narrow-screen viewport follow-up
+- [`docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md`](docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md) — Build 71 explicit Era playback + mobile discoverability
 - [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) — safe release procedure
 - [`ROADMAP.md`](ROADMAP.md) — remaining consolidation/product work
 - [`cloudflare/README.md`](cloudflare/README.md) — Workers/R2 operations
