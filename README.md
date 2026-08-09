@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.09.74` — release `phase-ux-c2-5-a-video-loop-isolation-20260809`.
+> Current application build: `2026.08.09.75` — release `phase-ux-c2-5-a-canvas-single-owner-20260809`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -22,11 +22,13 @@ Build 72 also promoted the supplied SHINOBIWAN artwork already stored in the rep
 
 Build 73 removed that Ninja and introduced the Android audio-clock heartbeat. Its first explicit video recovery pass also disabled native loop and attempted to recover `waiting` / `stalled` states. Real-user smoke then proved that the pre-boundary recovery itself could interrupt the video roughly 0.14 seconds before its natural end and that automatic `video.load()` retries could create protected-media request churn severe enough to interfere with later audio seeks.
 
-Build 74 keeps the successful Build 73 audio-clock heartbeat but isolates video recovery completely from the canonical audio path. Video recovery no longer calls `video.load()`, no longer seeks before the real media boundary, and no longer reacts directly to `waiting`, `stalled` or `suspend`. A normal `ended` event owns the loop restart; a bounded watchdog may reset only a confirmed terminal stall within the final 0.75 seconds after the video has genuinely stopped progressing. The audio element remains the sole playback clock and is never sought, reloaded or paused by this recovery layer.
+Build 74 keeps the successful Build 73 audio-clock heartbeat but isolates Track Video recovery completely from the canonical audio path. Track Video recovery no longer calls `video.load()`, no longer seeks before the real media boundary, and no longer reacts directly to `waiting`, `stalled` or `suspend`. A normal `ended` event owns that separate Track Video loop restart; a bounded watchdog may reset only a confirmed terminal stall within the final 0.75 seconds after the video has genuinely stopped progressing.
 
-`Play album` and `Open project →` remain available, and the individual Album detail page remains complete and unchanged. Build 74 is LaunchPAD frontend-only: no Track Manager change, no Worker deployment, no R2 mutation, no canonical Album schema, no migration and no `catalog/index.json` change. See [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md), [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md), [`docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md`](docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md), [`docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md`](docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md), [`docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md`](docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md), [`docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md`](docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md) and [`docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md).
+Build 75 corrects the remaining Lyrics Studio collision found during real-user Android smoke. The track cover appearing inside the Canvas frame was the Canvas video's own `poster`, proving that the Lyrics Studio video had stopped at its loop boundary. Inspection showed that Feature 11 still selected `video.lyrics-studio-canvas-video` even though Lyrics Studio already owns that Canvas/native-loop lifecycle. Feature 11 now stabilizes only `video.track-video-player`; Lyrics Studio is once again the sole owner of its Canvas. No new watchdog or third recovery layer is introduced, and the Build 73 audio-clock heartbeat remains unchanged.
 
-The Build 74 correction remains a release candidate until CI, Pages and real-user Android/mobile smoke pass. The final PHASE UX checkpoint is not created, C2.5-B is not started, C3 remains suspended, and Phase 7 is not started.
+`Play album` and `Open project →` remain available, and the individual Album detail page remains complete and unchanged. Build 75 is LaunchPAD frontend-only: no Track Manager change, no Worker deployment, no R2 mutation, no canonical Album schema, no migration and no `catalog/index.json` change. See [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md), [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md), [`docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md`](docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md), [`docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md`](docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md), [`docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md`](docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md), [`docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md`](docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md), [`docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md) and [`docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md`](docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md).
+
+The Build 75 correction remains a release candidate until CI, Pages and real-user Android/mobile smoke pass. The final PHASE UX checkpoint is not created, C2.5-B is not started, C3 remains suspended, and Phase 7 is not started.
 
 ## Production PHASE UX C2 backend
 
@@ -155,11 +157,19 @@ Exact origin, Access verification, whitelist-only metadata and stale-manifest pr
 
 See [`docs/STUDIO-VALIDATION-CORS-HOTFIX.md`](docs/STUDIO-VALIDATION-CORS-HOTFIX.md).
 
+## Build 75 highlights
+
+Build 75 is the Android Lyrics Studio ownership correction discovered by real-user smoke of Build 74. The track cover appearing inside the Canvas frame is the Canvas video's own poster, not a different component. That symptom proved the Lyrics Studio media element had stopped at the loop boundary.
+
+The root cause was overlapping ownership: Feature 11 still selected `video.lyrics-studio-canvas-video` and applied its own loop/reset/play recovery even though `lyrics-studio.js` already owns the Canvas and native loop. Build 75 narrows Feature 11 to `video.track-video-player` only. Lyrics Studio now owns its Canvas lifecycle exclusively again; no third watchdog or new Canvas retry system is added.
+
+Build 75 keeps Build 74 Track Video terminal-only recovery and the Build 73 audio-clock heartbeat. It changes no Worker, R2 object, canonical Album schema, track manifest, catalog projection, SonicTrace runtime, canonical Lyrics contract or Phase 7 scope.
+
 ## Build 74 highlights
 
 Build 74 is the second Android/mobile video-loop correction, based directly on real-user smoke of Build 73. The root cause was in the stabilization layer itself: a `timeupdate` branch restarted the video around 0.14 seconds before its natural end, and `waiting` / `stalled` recovery could call `video.load()`. On protected media, repeated reloads could create enough request churn that subsequent audio seeks also waited indefinitely.
 
-The recovery layer is now deliberately weaker and safer. It never calls `video.load()`, never seeks before the real boundary, and does not respond directly to `waiting`, `stalled` or `suspend`. The ordinary `ended` event resets the video. If Android stalls immediately before `ended`, the watchdog waits for confirmed lack of progress and only then permits a terminal reset when the video is within the final 0.75 seconds. The canonical audio element is not modified by any video recovery operation.
+The recovery layer is now deliberately weaker and safer. It never calls `video.load()`, never seeks before the real boundary, and does not respond directly to `waiting`, `stalled` or `suspend`. The ordinary `ended` event resets the separate Track Video surface. If Android stalls immediately before `ended`, the watchdog waits for confirmed lack of progress and only then permits a terminal reset when the Track Video is within the final 0.75 seconds. The canonical audio element is not modified by any Track Video recovery operation.
 
 Build 74 retains the Build 73 audio-clock heartbeat and Ninja removal. It changes no Worker, R2 object, canonical Album schema, track manifest, catalog projection, SonicTrace runtime or Phase 7 scope.
 
@@ -169,7 +179,7 @@ Build 73 is the Android/mobile media correction discovered during real-user Lyri
 
 The main audio element remains the playback source of truth. Feature 11 adds a requestAnimationFrame heartbeat while audio is playing so the already-established `timeupdate` renderer continues updating seek bars, current time, synchronized lyrics and Media Session position even when Android Chromium throttles native media events. The heartbeat does not advance or synthesize audio time; it only rereads the real `audio.currentTime` through the existing listener.
 
-The first Build 73 video-loop strategy is superseded by Build 74 after real-user smoke showed that its pre-boundary restart and automatic reload recovery could freeze the video and contaminate later protected-media seeks. The Build 73 audio-clock heartbeat and brand-art correction remain valid.
+The first Build 73 video-loop strategy is superseded by Builds 74 and 75 after real-user smoke showed that its pre-boundary restart/reload recovery and cross-ownership of Lyrics Studio Canvas could destabilize protected-media playback. The Build 73 audio-clock heartbeat and brand-art correction remain valid.
 
 Build 73 changed no Worker, R2 object, canonical Album schema, track manifest, catalog projection, SonicTrace runtime or Phase 7 scope.
 
@@ -331,7 +341,8 @@ Useful documents:
 - [`docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md`](docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md) — Build 71 explicit Era playback + initial mobile discoverability pass
 - [`docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md`](docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md) — Build 72 real-user Era affordance correction + supplied brand artwork
 - [`docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md`](docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md) — Build 73 Android/mobile audio-clock and first video-loop stability pass
-- [`docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md) — Build 74 terminal-only video-loop recovery and protected-audio isolation
+- [`docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md) — Build 74 terminal-only Track Video recovery and protected-audio isolation
+- [`docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md`](docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md) — Build 75 Lyrics Studio Canvas ownership isolation
 - [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) — safe release procedure
 - [`ROADMAP.md`](ROADMAP.md) — remaining consolidation/product work
 - [`cloudflare/README.md`](cloudflare/README.md) — Workers/R2 operations
