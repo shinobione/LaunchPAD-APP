@@ -174,24 +174,24 @@
     }, true);
 
     const audio = document.querySelector('#audio');
-    audio?.addEventListener('seeked', () => {
-      if (studioActive()) settleLyricsAfterSeek();
-    });
-    audio?.addEventListener('playing', () => {
-      if (studioActive()) settleLyricsAfterSeek();
-    });
-
-    new MutationObserver(() => {
-      if (!studioActive()) return;
-      queueMicrotask(activate);
-    }).observe(document.documentElement, { childList: true, subtree: true });
-
     if (audio) {
+      audio.addEventListener('seeked', () => {
+        if (studioActive()) settleLyricsAfterSeek();
+      });
+      audio.addEventListener('playing', () => {
+        if (studioActive()) settleLyricsAfterSeek();
+      });
+
       new MutationObserver(() => requestAnimationFrame(syncSafeArtwork)).observe(audio, {
         attributes: true,
         attributeFilter: ['data-track-id']
       });
     }
+
+    new MutationObserver(() => {
+      if (!studioActive()) return;
+      queueMicrotask(activate);
+    }).observe(document.documentElement, { childList: true, subtree: true });
 
     window.addEventListener('shinobi:route-change', () => queueMicrotask(activate));
     window.addEventListener('hashchange', () => queueMicrotask(activate));
