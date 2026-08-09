@@ -1,10 +1,11 @@
 # Studio Lyrics synchronization — Track Manager v5.15 / Bridge v1.7
 
-> Public LaunchPAD build: `2026.08.08.66` — release `studio-metadata-validation-20260808` (unchanged).
+> Public LaunchPAD build: `2026.08.09.67` — release `post-phase6-track-dna-release-date-20260809`.
+> Private Phase 6 backend deployment: run `31288949405`, source `23a7b494b89d4958f573f0889057b53a44aa23b6`, target `admin`, success.
 
 ## Authority
 
-`tracks/<slug>/lyrics.txt` remains the only authoritative lyrics object. Timestamp tags inside this file determine whether lyrics are synchronized. A separate `.lrc` file is optional export/compatibility material and never contributes to Content Health.
+`tracks/<slug>/lyrics.txt` remains the **only authoritative lyrics object**. Timestamp tags inside this file determine whether lyrics are synchronized. A separate `.lrc` file is optional export/compatibility material and never contributes to Content Health.
 
 ## Context boundary
 
@@ -42,14 +43,36 @@ Both use `text/plain;charset=UTF-8` JSON to preserve the proven simple-request t
 - finite, chronological timestamps;
 - a final timestamp no more than two seconds beyond manifest duration.
 
-The save writes only `lyrics.txt`, advances server-owned manifest revision fields, rebuilds `catalog/index.json`, rereads the manifest and lyrics object, and verifies content plus a changed ETag. Failure attempts restoration of lyrics, manifest and catalog before returning a rollback error.
+The save writes only canonical `lyrics.txt`, advances server-owned manifest revision fields, rebuilds `catalog/index.json`, rereads the manifest and lyrics object, and verifies content plus a changed ETag. Failure attempts restoration of lyrics, manifest and catalog before returning a rollback error.
+
+Client/backend canonical equality normalizes only the agreed text form: optional UTF-8 BOM removal plus `CRLF`/`CR` to `LF`. Real lyric differences remain blocking.
+
+## Native synchronization behavior
+
+The final Phase 6 LRC Maker workflow is intentionally the native flow:
+
+- **simple click** selects a lyric line only;
+- **double-click** on an existing timestamp is the explicit seek/reposition action;
+- **Space** timestamps the selected line at the current audio time, then advances selection exactly one line.
+
+This behavior is shared by standalone and embedded LRC Maker. The direct seek-on-simple-click experiment from 6.3.2 is retired.
 
 ## Explicit exclusions
 
 - no iframe;
-- no production R2 write during source validation;
-- no public Worker or LaunchPAD application version bump;
+- no production R2 write during source/build validation;
 - no manifest schema change;
 - no `.lrc` persistence requirement;
-- no SonicTrace data mutation;
-- no whole-track mutation route.
+- no SonicTrace data mutation from Lyrics;
+- no whole-track mutation route;
+- no Phase 7 work.
+
+## Production validation
+
+The authenticated production smoke test was completed after LRC Maker 6.3.4 and Studio 0.9.5 Build 20 deployment. Standalone + embedded native timing flow and guarded canonical save/reread were validated successfully.
+
+Final Phase 6 checkpoint:
+
+```text
+safety/phase6-complete-20260809-0513
+```
