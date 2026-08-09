@@ -92,9 +92,10 @@ const about = read('js/features/about/about-controller.js');
 for (const required of [
   'installBuildInfo','about-build-info','Build ${build.display','Release ${build.release',
   'function placeBuildInfo()','ABOUT_MOBILE_QUERY',"logo.insertAdjacentElement('afterend', info)",
-  'installGoldenLogo();\n  installBuildInfo();','installBuildInfoPlacementWatcher()'
+  'function installSignatureArt()',"art.src = 'assets/Lune-ShinoBiWan.png'","art.className = 'about-signature-art'",
+  'installSignatureArt();\n  installBuildInfo();','installBuildInfoPlacementWatcher()'
 ]) {
-  if (!about.includes(required)) fail(`About build information is missing ${required}.`);
+  if (!about.includes(required)) fail(`About build information/artwork is missing ${required}.`);
 }
 
 const styles = read('css/pwa.css');
@@ -117,4 +118,4 @@ if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RE
   fail('Browser regression coverage for the deduped PWA update prompt is not wired into CI.');
 }
 
-console.log(`PWA single-shot updates, decoded-buffer FFT and mobile Studio Canvas resilience are valid under ${build.display}.`);
+console.log(`PWA single-shot updates, decoded-buffer FFT, supplied About Moon art and mobile Studio Canvas resilience are valid under ${build.display}.`);
