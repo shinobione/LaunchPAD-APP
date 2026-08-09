@@ -1,8 +1,16 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.09.67` — release `post-phase6-track-dna-release-date-20260809`.
+> Current application build: `2026.08.09.68` — release `phase-ux-c2-5-a-albums-scalability-20260809`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
+
+## PHASE UX C2.5-A — Albums scalability frontend
+
+Build 68 keeps the existing Album/project presentation but makes the main Albums view scale with the catalog: tracklists are collapsed by default, each populated card exposes `Show N tracks` / `Hide tracks`, and opening one list closes the previously expanded one. The toggle uses a native button with `aria-expanded` + `aria-controls`, visible keyboard focus and a mobile full-width action layout.
+
+`Play album` and `Open project →` remain available while a card is collapsed, and the individual Album detail page remains complete and unchanged. This release is LaunchPAD frontend-only: no Track Manager change, no Worker deployment, no R2 mutation, no Album schema, no migration and no `catalog/index.json` change. See [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md).
+
+C2.5-A remains a release candidate until the real-user browser smoke passes. The final PHASE UX checkpoint is not created, C2.5-B is not started, C3 remains suspended, and Phase 7 is not started.
 
 ## Production PHASE UX C2 backend
 
@@ -10,7 +18,7 @@ Track Manager `v5.16` / Studio bridge `v1.8` is the deployed private backend. It
 
 The C2 integration accepts request-scoped observed canonical-audio duration evidence from LRC Maker `6.3.6` on the existing Lyrics validation/save routes. Real-user production smoke passed canonical playback, timestamp navigation, synchronized `lyrics.txt` save and canonical reread; the false end-of-audio blocker is gone. `lyrics.txt` remains the only canonical lyrics source and `.lrc` remains optional export/compatibility only.
 
-The deployment skipped every public Worker step, did not change LaunchPAD's public Build 67 runtime, and did not perform an automated production R2 test mutation. The public media Worker remains `v2.6`. The final PHASE UX checkpoint is not created, C3 is suspended pending C2.5, and Phase 7 is not started.
+The C2 deployment skipped every public Worker step, did not change LaunchPAD's then-current public Build 67 runtime, and did not perform an automated production R2 test mutation. The public media Worker remains `v2.6`. The final PHASE UX checkpoint is not created, C3 is suspended pending C2.5, and Phase 7 is not started.
 
 See [`docs/STUDIO-LYRICS-SYNCHRONIZATION.md`](docs/STUDIO-LYRICS-SYNCHRONIZATION.md) and [`docs/PHASE-6-PROTECTED-MEDIA-SEEK-HOTFIX.md`](docs/PHASE-6-PROTECTED-MEDIA-SEEK-HOTFIX.md).
 
@@ -131,6 +139,12 @@ Exact origin, Access verification, whitelist-only metadata and stale-manifest pr
 
 See [`docs/STUDIO-VALIDATION-CORS-HOTFIX.md`](docs/STUDIO-VALIDATION-CORS-HOTFIX.md).
 
+## Build 68 highlights
+
+Build 68 is the PHASE UX C2.5-A frontend scalability release for the main Albums view. Album/project cards render compactly with tracklists hidden by default. `Show N tracks` expands one native-button-controlled list at a time, `Hide tracks` collapses it, ARIA state/control relationships remain explicit, keyboard focus is visible, and the mobile action bar prevents button overlap.
+
+The existing album playback queue and `Open project →` route are unchanged, and individual Album detail pages still render their complete tracklists. Build 68 changes no Worker, R2 object, schema, migration, canonical Album authority, SonicTrace runtime or Phase 7 scope.
+
 ## Build 67 highlights
 
 Build 67 is a post-Phase-6 public maintenance hotfix for the Home **Track DNA** panel. The public catalog normalizer already provides `releaseDate` as a normalized ISO value. The old Track DNA formatter incorrectly appended another `T00:00:00`, producing an invalid date such as `...ZT00:00:00` and falling back to `Date TBD` even though Track Manager and the track-detail page had the correct release date.
@@ -245,6 +259,7 @@ Useful documents:
 - [`docs/STUDIO-METADATA-WRITE.md`](docs/STUDIO-METADATA-WRITE.md) — v5.11 metadata write contract
 - [`docs/STUDIO-LYRICS-WRITE.md`](docs/STUDIO-LYRICS-WRITE.md) — v5.12 canonical lyrics contract
 - [`docs/STUDIO-PHASE4-OPERATIONS.md`](docs/STUDIO-PHASE4-OPERATIONS.md) — v5.13 final Phase 4 operational contract
+- [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md) — C2.5-A public Albums scalability contract and smoke criteria
 - [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) — safe release procedure
 - [`ROADMAP.md`](ROADMAP.md) — remaining consolidation/product work
 - [`cloudflare/README.md`](cloudflare/README.md) — Workers/R2 operations

@@ -79,6 +79,34 @@ function orderedAlbums() {
   return [...configured, ...remaining];
 }
 
+function setAlbumTrackListExpanded(view, toggle, expanded) {
+  const listId = toggle.getAttribute('aria-controls');
+  const list = listId ? document.getElementById(listId) : null;
+  if (!list || !view.contains(list)) return;
+
+  const count = Number(toggle.dataset.trackCount || 0);
+  const albumTitle = toggle.dataset.albumTitle || 'album';
+  const showLabel = `Show ${count} track${count === 1 ? '' : 's'}`;
+
+  toggle.setAttribute('aria-expanded', String(expanded));
+  toggle.setAttribute('aria-label', expanded ? `Hide tracks for ${albumTitle}` : `${showLabel} for ${albumTitle}`);
+  toggle.textContent = expanded ? 'Hide tracks' : showLabel;
+  list.hidden = !expanded;
+}
+
+function installAlbumTrackToggles(view) {
+  const toggles = [...view.querySelectorAll('[data-toggle-album-tracks]')];
+
+  toggles.forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      const shouldExpand = toggle.getAttribute('aria-expanded') !== 'true';
+
+      toggles.forEach(other => setAlbumTrackListExpanded(view, other, false));
+      if (shouldExpand) setAlbumTrackListExpanded(view, toggle, true);
+    });
+  });
+}
+
 function renderAlbums() {
   const navButton = document.querySelector('.main-nav [data-view="analytics"]');
   if (navButton) {
@@ -111,6 +139,8 @@ function renderAlbums() {
       ${orderedAlbums().map(({ album, era }, albumIndex) => {
         const albumTracks = getAlbumTracks(album.id);
         const tags = [...new Set(albumTracks.flatMap(track => track.tags || [track.genre]))];
+        const trackListId = `album-track-list-${albumIndex + 1}`;
+        const showTracksLabel = `Show ${albumTracks.length} track${albumTracks.length === 1 ? '' : 's'}`;
 
         return `
           <article class="project-album" data-album-id="${escapeHtml(album.id)}">
@@ -131,8 +161,9 @@ function renderAlbums() {
             <div class="project-album-actions">
               <button class="secondary" type="button" data-play-album="${escapeHtml(album.id)}">▶ Play album</button>
               <button class="text-button" type="button" data-open-album="${escapeHtml(album.id)}">Open project →</button>
+              ${albumTracks.length ? `<button class="text-button project-album-toggle" type="button" data-toggle-album-tracks data-track-count="${albumTracks.length}" data-album-title="${escapeHtml(album.title)}" aria-expanded="false" aria-controls="${trackListId}" aria-label="${showTracksLabel} for ${escapeHtml(album.title)}">${showTracksLabel}</button>` : ''}
             </div>
-            <div class="project-track-list">
+            <div class="project-track-list" id="${trackListId}" hidden>
               ${albumTracks.map((track, trackIndex) => `
                 <button class="project-track" type="button" data-play-index="${track.index}" data-album-context="${escapeHtml(album.id)}" aria-label="Play ${escapeHtml(track.title)}">
                   <span class="track-number">${String(trackIndex + 1).padStart(2, '0')}</span>
@@ -165,6 +196,8 @@ function renderAlbums() {
     <span id="metric-tracks" hidden>${tracks.length}</span>
     <span id="metric-lyrics" hidden>${lyricCount}</span>
   `;
+
+  installAlbumTrackToggles(view);
 }
 
 function removeVisibleSearch() {
