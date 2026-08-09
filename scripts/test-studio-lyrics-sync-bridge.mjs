@@ -30,6 +30,9 @@ for (const required of [
   'timestamps-missing-lines',
   'timestamps-order',
   'timestamps-after-audio',
+  'observedAudioDuration',
+  'duration-manifest-mismatch',
+  'selectedReference: observed != null ? "observed-canonical-audio"',
   'text.includes("\\uFFFD")',
   'text.includes("\\u0000")',
   'contentType: "text/plain; charset=utf-8"',
@@ -48,4 +51,18 @@ assert.ok(!source.includes('Ãƒ'), 'Built Worker must preserve UTF-8 text and r
 assert.ok(source.includes('request.headers.get("origin") === STUDIO_ALLOWED_ORIGIN'), 'Canonical audio and context reads must keep exact credentialed CORS.');
 assert.ok(source.indexOf('await env.MEDIA_BUCKET.put(snapshot.key, proposedLyrics') < source.indexOf('const rereadLyrics = await env.MEDIA_BUCKET.get(snapshot.key)'), 'Save must precede canonical reread verification.');
 
-console.log('Lyrics Studio bridge contract passed: canonical lyrics.txt only, strict sync validation, stale protection, reread and rollback.');
+const durationHelperStart = part.indexOf('function studioLyricsDurationEvidence(');
+const durationHelperEnd = part.indexOf('\nfunction studioLyricsQuality(', durationHelperStart);
+assert.ok(durationHelperStart >= 0 && durationHelperEnd > durationHelperStart, 'Duration evidence helper must remain independently testable.');
+const durationEvidence = new Function(`const QUALITY_DURATION_MINIMUM_TOLERANCE = 3; ${part.slice(durationHelperStart, durationHelperEnd)}; return studioLyricsDurationEvidence;`)();
+const staleManifest = durationEvidence(298, 330, 303);
+assert.equal(staleManifest.selectedReference, 'observed-canonical-audio');
+assert.equal(staleManifest.mismatch, true);
+assert.equal(staleManifest.timestampWithinAudio, true, 'Observed canonical audio must prevent a false blocker from stale shorter manifest duration.');
+const trueOverflow = durationEvidence(298, 330, 333);
+assert.equal(trueOverflow.timestampWithinAudio, false, 'A timestamp beyond observed canonical audio must remain blocked.');
+const manifestFallback = durationEvidence(298, null, 301);
+assert.equal(manifestFallback.selectedReference, 'manifest');
+assert.equal(manifestFallback.timestampWithinAudio, false, 'Manifest duration remains the fallback when no observed evidence is supplied.');
+
+console.log('Lyrics Studio bridge contract passed: canonical lyrics.txt only, observed canonical-audio duration evidence, strict sync validation, stale protection, reread and rollback.');

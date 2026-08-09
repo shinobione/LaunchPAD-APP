@@ -90,7 +90,33 @@ function studioLyricsLineEvidence(text) {
   return { lineCount: lines.length, untimestampedLineCount, invalidTimestampLineCount };
 }
 
-function studioLyricsQuality(text, manifest, { requireSynchronized = false } = {}) {
+function studioLyricsObservedDuration(payload) {
+  if (payload.observedAudioDuration == null || payload.observedAudioDuration === "") return null;
+  const value = Number(payload.observedAudioDuration);
+  if (!Number.isFinite(value) || value <= 0 || value > 24 * 60 * 60) {
+    throw new Error("INPUT_observedAudioDuration doit être une durée audio positive finie.");
+  }
+  return value;
+}
+
+function studioLyricsDurationEvidence(manifestDuration, observedAudioDuration, lastTimestamp = null) {
+  const declared = Number.isFinite(Number(manifestDuration)) && Number(manifestDuration) > 0 ? Number(manifestDuration) : null;
+  const observed = Number.isFinite(Number(observedAudioDuration)) && Number(observedAudioDuration) > 0 ? Number(observedAudioDuration) : null;
+  const referenceDuration = observed ?? declared;
+  const tolerance = observed != null && declared != null ? Math.max(QUALITY_DURATION_MINIMUM_TOLERANCE, observed * 0.03) : null;
+  const mismatch = tolerance != null ? Math.abs(declared - observed) > tolerance : false;
+  return {
+    manifestDuration: declared,
+    observedAudioDuration: observed,
+    referenceDuration,
+    selectedReference: observed != null ? "observed-canonical-audio" : declared != null ? "manifest" : "unavailable",
+    tolerance,
+    mismatch,
+    timestampWithinAudio: referenceDuration == null || lastTimestamp == null || lastTimestamp <= referenceDuration + 2,
+  };
+}
+
+function studioLyricsQuality(text, manifest, { requireSynchronized = false, observedAudioDuration = null } = {}) {
   const lyricsText = String(text ?? "");
   const items = [];
   const add = (level, code, label, message, details = {}) => items.push({ level, code, label, message, ...details });
@@ -120,11 +146,14 @@ function studioLyricsQuality(text, manifest, { requireSynchronized = false } = {
     }
 
     const lastTimestamp = timestampValues[timestampValues.length - 1];
-    const referenceDuration = Number.isFinite(Number(manifest?.duration)) ? Number(manifest.duration) : null;
-    if (referenceDuration != null && lastTimestamp > referenceDuration + 2) {
-      add("error", "timestamps-after-audio", "Synchronisation", "Le dernier timestamp dépasse la fin du morceau.", { lastTimestamp, duration: referenceDuration });
-    } else if (referenceDuration != null) {
-      add("pass", "timestamps-within-audio", "Synchronisation", "Le dernier timestamp reste dans la durée du morceau.", { lastTimestamp, duration: referenceDuration });
+    const durationEvidence = studioLyricsDurationEvidence(manifest?.duration, observedAudioDuration, lastTimestamp);
+    if (durationEvidence.mismatch) {
+      add("warning", "duration-manifest-mismatch", "Durée", "La durée du manifest diffère de l’audio canonique observé ; la validation utilise l’audio chargé.", durationEvidence);
+    }
+    if (!durationEvidence.timestampWithinAudio) {
+      add("error", "timestamps-after-audio", "Synchronisation", "Le dernier timestamp dépasse la fin du morceau.", { lastTimestamp, duration: durationEvidence.referenceDuration, durationEvidence });
+    } else if (durationEvidence.referenceDuration != null) {
+      add("pass", "timestamps-within-audio", "Synchronisation", "Le dernier timestamp reste dans la durée du morceau.", { lastTimestamp, duration: durationEvidence.referenceDuration, durationEvidence });
     }
   }
 
@@ -298,13 +327,14 @@ async function getStudioTrackLyrics(slug, env, user) {
 async function validateStudioTrackLyrics(slug, request, env, user, { expectedIntent = STUDIO_LYRICS_VALIDATION_INTENT, requireSynchronized = false } = {}) {
   const payload = await readStudioLyricsPayload(request, expectedIntent);
   if (requireSynchronized && payload.trackId !== slug) throw new Error("INPUT_Le trackId Lyrics Studio ne correspond pas au slug canonique.");
+  const observedAudioDuration = studioLyricsObservedDuration(payload);
   const snapshot = await readStudioLyricsSnapshot(slug, env);
   if (snapshot.errorResponse) return snapshot.errorResponse;
   const stale = studioLyricsStaleResponse(snapshot, payload);
   if (stale) return stale;
 
   const proposedLyrics = studioLyricsProposal(payload);
-  const quality = studioLyricsQuality(proposedLyrics, snapshot.manifest, { requireSynchronized });
+  const quality = studioLyricsQuality(proposedLyrics, snapshot.manifest, { requireSynchronized, observedAudioDuration });
   const changed = proposedLyrics !== snapshot.text;
 
   return jsonResponse({
@@ -331,13 +361,14 @@ async function validateStudioTrackLyrics(slug, request, env, user, { expectedInt
 async function saveStudioTrackLyrics(slug, request, env, user, { expectedIntent = STUDIO_LYRICS_SAVE_INTENT, requireSynchronized = false } = {}) {
   const payload = await readStudioLyricsPayload(request, expectedIntent);
   if (requireSynchronized && payload.trackId !== slug) throw new Error("INPUT_Le trackId Lyrics Studio ne correspond pas au slug canonique.");
+  const observedAudioDuration = studioLyricsObservedDuration(payload);
   const snapshot = await readStudioLyricsSnapshot(slug, env);
   if (snapshot.errorResponse) return snapshot.errorResponse;
   const stale = studioLyricsStaleResponse(snapshot, payload);
   if (stale) return stale;
 
   const proposedLyrics = studioLyricsProposal(payload);
-  const quality = studioLyricsQuality(proposedLyrics, snapshot.manifest, { requireSynchronized });
+  const quality = studioLyricsQuality(proposedLyrics, snapshot.manifest, { requireSynchronized, observedAudioDuration });
   if (quality.publishable !== true) {
     return jsonResponse({
       ok: false,

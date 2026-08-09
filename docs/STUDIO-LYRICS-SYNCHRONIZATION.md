@@ -1,4 +1,6 @@
-# Studio Lyrics synchronization — Track Manager v5.15 / Bridge v1.7
+# Studio Lyrics synchronization — Track Manager v5.16 / Bridge v1.8 candidate
+
+Production remains v5.15 / bridge v1.7 until the explicit admin-only Worker deployment is completed.
 
 > Public LaunchPAD build: `2026.08.09.67` — release `post-phase6-track-dna-release-date-20260809`.
 > Private Phase 6 backend deployment: run `31288949405`, source `23a7b494b89d4958f573f0889057b53a44aa23b6`, target `admin`, success.
@@ -41,7 +43,10 @@ Both use `text/plain;charset=UTF-8` JSON to preserve the proven simple-request t
 - at least one timestamp;
 - a valid timestamp on every non-empty lyric line;
 - finite, chronological timestamps;
-- a final timestamp no more than two seconds beyond manifest duration.
+- an optional finite positive `observedAudioDuration` measured from the loaded protected canonical audio;
+- a final timestamp no more than two seconds beyond observed canonical-audio duration when supplied, otherwise manifest duration.
+
+When observed audio and manifest duration materially disagree, the validator returns a warning with both values, tolerance and selected reference. The observed value is request-scoped evidence only: Lyrics validation/save never silently rewrites manifest duration.
 
 The save writes only canonical `lyrics.txt`, advances server-owned manifest revision fields, rebuilds `catalog/index.json`, rereads the manifest and lyrics object, and verifies content plus a changed ETag. Failure attempts restoration of lyrics, manifest and catalog before returning a rollback error.
 

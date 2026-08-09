@@ -6,7 +6,7 @@ Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized
 
 ## Production Phase 6 backend
 
-Track Manager `v5.15` / Studio bridge `v1.7` is the deployed private backend used by SHINOBIWAN Studio Phase 6. It preserves the Phase 5 SonicTrace sidecars and exposes the protected contextual Lyrics workflow: canonical context read, strict synchronized-text validation, guarded save to the existing `tracks/<slug>/lyrics.txt`, and protected canonical media Range/206 reads for reliable HTML media seeking.
+Track Manager `v5.15` / Studio bridge `v1.7` remains the deployed private backend until the guarded admin-only deployment of the PHASE UX corrective candidate. Source target `v5.16` / bridge `v1.8` adds observed canonical-audio duration evidence to the existing Lyrics synchronization validation without adding a route, changing R2 schemas or mutating manifest duration as a side effect.
 
 The public media Worker remains v2.6. The Phase 6 backend is separate from this public Build 67 Track DNA maintenance hotfix. Phase 7 is not started.
 

@@ -119,10 +119,10 @@ for (const forbiddenLiteral of ['LM-IA-Analayse', 'SonicTrace', 'analysis/sonict
   assert.ok(!phase4Part.includes(forbiddenLiteral), `Phase 4 operations must not leak Phase 5/duplicate lyrics concerns: ${forbiddenLiteral}`);
 }
 
-assert.ok(built.includes('version: "5.15"'), 'Built Track Manager contract must be v5.15.');
-assert.ok(built.includes('<span class="version-pill">v5.15</span>'), 'Built Track Manager UI must report v5.15.');
-assert.ok(built.includes('const STUDIO_BRIDGE_VERSION = "1.7";'), 'Studio bridge contract must be v1.7.');
-assert.ok(built.includes('trackManagerVersion: "5.15"'), 'Studio bridge health must report Track Manager v5.15.');
+assert.ok(built.includes('version: "5.16"'), 'Built Track Manager contract must be v5.16.');
+assert.ok(built.includes('<span class="version-pill">v5.16</span>'), 'Built Track Manager UI must report v5.16.');
+assert.ok(built.includes('const STUDIO_BRIDGE_VERSION = "1.8";'), 'Studio bridge contract must be v1.8.');
+assert.ok(built.includes('trackManagerVersion: "5.16"'), 'Studio bridge health must report Track Manager v5.16.');
 assert.ok(built.includes('read: ["tracks", "track", "lyrics", "lyrics-context", "sonictrace-analysis", "sonictrace-catalog"]'), 'Studio health must expose the guarded Lyrics context read.');
 assert.ok(built.includes('validate: ["metadata", "lyrics", "lyrics-sync"]'), 'Studio health must expose specialized Lyrics synchronization validation.');
 assert.ok(built.includes('write: ["metadata", "lyrics", "lyrics-sync", "sonictrace-analysis"]'), 'Studio health must expose the guarded Lyrics synchronization save.');
@@ -164,4 +164,4 @@ assert.ok(
   'Protected canonical media must opt into the exact credentialed Studio CORS response.',
 );
 
-console.log('Studio bridge guard passed: v1.7 preserves existing capabilities and adds guarded Lyrics synchronization routes while legacy Track Manager remains same-origin protected.');
+console.log('Studio bridge guard passed: v1.8 preserves existing capabilities and adds observed canonical-audio duration evidence while legacy Track Manager remains same-origin protected.');
