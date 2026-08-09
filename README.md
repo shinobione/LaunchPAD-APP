@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.09.71` — release `phase-ux-c2-5-a-era-play-mobile-20260809`.
+> Current application build: `2026.08.09.72` — release `phase-ux-c2-5-a-era-brand-art-20260809`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -14,11 +14,15 @@ Discography Era selection creates a virtual playback context. Once a track from 
 
 Build 70 is the narrow-screen Album Focus follow-up found during real-user mobile smoke. When a lower Album is expanded on mobile/tablet, the runtime waits for the reorder/View Transition to finish and then follows the selected Album to its new position, accounting for the sticky topbar. Desktop Album Focus is unchanged; closing an Album does not force a scroll; reduced-motion preference remains respected.
 
-Build 71 polishes the **Era** workflow. Selecting exactly one Era now reveals a dedicated `Play Era · N` action. It starts the same existing virtual `era:` queue from the Era's first title instead of requiring a track card to be launched first. The button disappears again for `All eras` or any state without one unambiguous Era. On mobile, the Era selector becomes a wider snap carousel, deliberately reveals neighboring content, centers the chosen Era and includes a visible `Swipe to explore eras →` affordance so horizontal navigation is discoverable.
+Build 71 introduced explicit Era playback, but real-user smoke showed that its header placement and mobile affordance remained too subtle. The queue behavior itself was valid; the presentation was not yet sufficiently discoverable.
 
-`Play album` and `Open project →` remain available, and the individual Album detail page remains complete and unchanged. Build 71 is LaunchPAD frontend-only: no Track Manager change, no Worker deployment, no R2 mutation, no canonical Album schema, no migration and no `catalog/index.json` change. See [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md), [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md), [`docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md`](docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md) and [`docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md`](docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md).
+Build 72 moves `Play Era · N tracks` into a dedicated **Selected Era** strip directly below the carousel, reduces mobile card width so continuation is visible, adds real Previous / Next controls plus a `Swipe or use arrows to explore eras` instruction, makes the active Era visually unmistakable with a `SELECTED` badge, and recenters only after the real catalog-filter event has settled. The same reconstructible `era:` queue remains unchanged.
 
-The Build 71 refinement remains a release candidate until CI, Pages and real-user browser/mobile smoke pass. The final PHASE UX checkpoint is not created, C2.5-B is not started, C3 remains suspended, and Phase 7 is not started.
+Build 72 also promotes the supplied SHINOBIWAN artwork already stored in the repo: the compact sidebar wordmark is slightly larger and rendered with the established gold treatment, `assets/Lune-ShinoBiWan.png` replaces the generated About wordmark, and `assets/NinJa-ShinoBiWan.png` occupies the otherwise-unused third Home hero column on wide desktop only.
+
+`Play album` and `Open project →` remain available, and the individual Album detail page remains complete and unchanged. Build 72 is LaunchPAD frontend-only: no Track Manager change, no Worker deployment, no R2 mutation, no canonical Album schema, no migration and no `catalog/index.json` change. See [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md), [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md), [`docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md`](docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md), [`docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md`](docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md) and [`docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md`](docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md).
+
+The Build 72 refinement remains a release candidate until CI, Pages and real-user browser/mobile smoke pass. The final PHASE UX checkpoint is not created, C2.5-B is not started, C3 remains suspended, and Phase 7 is not started.
 
 ## Production PHASE UX C2 backend
 
@@ -147,11 +151,19 @@ Exact origin, Access verification, whitelist-only metadata and stale-manifest pr
 
 See [`docs/STUDIO-VALIDATION-CORS-HOTFIX.md`](docs/STUDIO-VALIDATION-CORS-HOTFIX.md).
 
+## Build 72 highlights
+
+Build 72 is the real-user correction to the Build 71 Era presentation. The selected Era now owns a dedicated action strip with a prominent `Play Era · N tracks` control below the carousel instead of a small action in the header. The virtual `era:` queue itself is unchanged.
+
+On mobile, the carousel now shows narrower cards, explicit Previous / Next controls, visible continuation, a strong `SELECTED` state and an instruction that mentions both swipe and arrows. Active-card centering is driven after `shinobi:catalog-filtered` settles and uses the carousel's own horizontal scroll, so it no longer depends on a premature `scrollIntoView()` call.
+
+The sidebar SHINOBIWAN identity is slightly larger and uses the established gold gradient treatment. The About card now uses the supplied `Lune-ShinoBiWan.png`; the supplied `NinJa-ShinoBiWan.png` is reserved for the wide-desktop Home hero's third column and disappears on tablet/mobile.
+
+Build 72 changes no Worker, R2 object, canonical Album schema, track manifest, catalog projection, SonicTrace runtime or Phase 7 scope.
+
 ## Build 71 highlights
 
-Build 71 adds a dedicated `Play Era · N` action whenever exactly one Discography Era is selected. The action is hidden otherwise and reuses the same reconstructible `era:` collection already supported by the shared queue engine, starting from the first track in that Era without creating an Album or persistent playlist.
-
-On mobile, Era cards are wider and scroll-snap to the viewport, the chosen Era recenters after selection, neighboring content stays partially visible, and an explicit `Swipe to explore eras →` hint makes the horizontal interaction discoverable. Reduced-motion preference disables decorative hint movement.
+Build 71 added a dedicated `Play Era · N` action whenever exactly one Discography Era was selected. The queue implementation remains the ancestry for Build 72, but real-user smoke showed that the header placement and mobile affordance were too subtle, so those presentation details are superseded by Build 72.
 
 Build 71 changes no Worker, R2 object, canonical Album schema, track manifest, catalog projection, SonicTrace runtime or Phase 7 scope.
 
@@ -294,7 +306,8 @@ Useful documents:
 - [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md) — Build 68 C2.5-A scalable Albums baseline
 - [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md) — Build 69 Album Focus + virtual Era queue refinement
 - [`docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md`](docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md) — Build 70 narrow-screen viewport follow-up
-- [`docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md`](docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md) — Build 71 explicit Era playback + mobile discoverability
+- [`docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md`](docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md) — Build 71 explicit Era playback + initial mobile discoverability pass
+- [`docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md`](docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md) — Build 72 real-user Era affordance correction + supplied brand artwork
 - [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) — safe release procedure
 - [`ROADMAP.md`](ROADMAP.md) — remaining consolidation/product work
 - [`cloudflare/README.md`](cloudflare/README.md) — Workers/R2 operations

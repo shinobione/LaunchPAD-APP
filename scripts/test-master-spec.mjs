@@ -68,7 +68,24 @@ includesAll(adminBuilder, [
 ], 'Track Manager v5.10 assembler ancestry');
 
 // Discography/Home contracts.
-includesAll(read('js/features/discography-experience.js'), ["const FILTER_GROUP_ORDER = ['genre', 'language', 'content', 'energy', 'era', 'type', 'media', 'year', 'mood']", 'mini-equalizer', 'track-card-loader'], 'Discography');
+const discography = read('js/features/discography-experience.js');
+includesAll(discography, ["const FILTER_GROUP_ORDER = ['genre', 'language', 'content', 'energy', 'era', 'type', 'media', 'year', 'mood']", 'mini-equalizer', 'track-card-loader'], 'Discography');
+includesAll(discography, [
+  'data-era-action-strip', 'data-era-selected-label', 'data-era-scroll="-1"', 'data-era-scroll="1"',
+  'function centerActiveEraOnMobile(', "window.addEventListener('shinobi:catalog-filtered'", 'centerActiveEraOnMobile(timeline)',
+  "button.textContent = `▶ Play Era · ${playback.indexes.length} tracks`"
+], 'Build 72 Era affordance');
+const discographyCss = read('css/discography-experience.css');
+includesAll(discographyCss, [
+  '.era-selected-action{', '.era-timeline-mobile-controls{', 'content:"SELECTED"', 'min-width:min(54vw,188px)',
+  '.era-can-scroll-left.era-can-scroll-right .era-timeline-track{'
+], 'Build 72 mobile Era discoverability');
+const about = read('js/features/about/about-controller.js');
+includesAll(about, ["art.src = 'assets/Lune-ShinoBiWan.png'", "art.className = 'about-signature-art'", 'installSignatureArt()'], 'About moon artwork');
+const aboutCss = read('css/about-enhancements.css');
+includesAll(aboutCss, [
+  '.brand-wordmark::after{', "mask:url('../assets/logo.png') left center / contain no-repeat", "background:url('../assets/NinJa-ShinoBiWan.png') right bottom / contain no-repeat", '.about-signature-art{'
+], 'Build 72 brand artwork');
 includesAll(read('js/features/home-editorial.js'), ["const DEFAULT_VISUAL_MODE = 'neon-shatter'", 'latestActiveTrackEntries(tracks, 1)', 'installVisualSwitcher'], 'Home editorial');
 
 // Audio Lab registry and sanctuary reference.
@@ -184,10 +201,10 @@ const worker = read('sw.js');
 includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260809-phase-ux-c2-5-a-era-play-mobile-v71');
-assert.equal(build.cache, 'shinobi-launchpad-v71');
-assert.equal(build.display, '2026.08.09.71');
-assert.equal(build.release, 'phase-ux-c2-5-a-era-play-mobile-20260809');
-assert.equal(build.revision, 'era-play-mobile-1');
+assert.equal(build.id, '20260809-phase-ux-c2-5-a-era-brand-art-v72');
+assert.equal(build.cache, 'shinobi-launchpad-v72');
+assert.equal(build.display, '2026.08.09.72');
+assert.equal(build.release, 'phase-ux-c2-5-a-era-brand-art-20260809');
+assert.equal(build.revision, 'era-brand-art-1');
 
-console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); historical v5.10 bridge ancestry and ${presetCount} sanctioned Audio Lab presets remain guarded.`);
+console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 72 Era affordance + supplied brand art and historical v5.10 bridge ancestry with ${presetCount} sanctioned Audio Lab presets remain guarded.`);

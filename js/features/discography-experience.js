@@ -4,6 +4,7 @@ import { ensureStylesheet } from '../core/assets.js';
 const FILTER_GROUP_ORDER = ['genre', 'language', 'content', 'energy', 'era', 'type', 'media', 'year', 'mood'];
 const ERA_PARAMETER = 'cf_era';
 const ERA_QUEUE_PREFIX = 'era:';
+const ERA_MOBILE_QUERY = '(max-width: 760px)';
 
 function canonical(value) {
   return String(value ?? '')
@@ -134,22 +135,30 @@ function synchronizeEraButtons(timeline) {
 }
 
 function synchronizeEraPlayAction(timeline) {
-  const button = timeline.querySelector('[data-era-play]');
-  if (!button) return;
+  const strip = timeline.querySelector('[data-era-action-strip]');
+  const button = strip?.querySelector('[data-era-play]');
+  const label = strip?.querySelector('[data-era-selected-label]');
+  const count = strip?.querySelector('[data-era-selected-count]');
+  if (!strip || !button || !label || !count) return;
+
   const playback = selectedEraPlayback();
   if (!playback) {
-    button.hidden = true;
+    strip.hidden = true;
+    strip.setAttribute('aria-hidden', 'true');
     delete button.dataset.playIndex;
     delete button.dataset.albumContext;
     delete button.dataset.queueContext;
     return;
   }
 
-  button.hidden = false;
+  strip.hidden = false;
+  strip.removeAttribute('aria-hidden');
+  label.textContent = playback.label;
+  count.textContent = `${playback.indexes.length} ${playback.indexes.length === 1 ? 'track' : 'tracks'} ready in queue`;
   button.dataset.playIndex = String(playback.indexes[0]);
   button.dataset.albumContext = playback.contextId;
   button.dataset.queueContext = 'era';
-  button.textContent = `▶ Play Era · ${playback.indexes.length}`;
+  button.textContent = `▶ Play Era · ${playback.indexes.length} tracks`;
   button.setAttribute('aria-label', `Play ${playback.label} as a ${playback.indexes.length}-track queue`);
 }
 
@@ -186,9 +195,40 @@ function clickEraFilter(value) {
   options.filter(option => option !== target && option.classList.contains('active')).forEach(option => option.click());
 }
 
-function centerEraOnMobile(button) {
-  if (!globalThis.matchMedia?.('(max-width: 760px)').matches) return;
-  requestAnimationFrame(() => button.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }));
+function updateEraScrollControls(timeline) {
+  const track = timeline.querySelector('.era-timeline-track');
+  const previous = timeline.querySelector('[data-era-scroll="-1"]');
+  const next = timeline.querySelector('[data-era-scroll="1"]');
+  if (!track || !previous || !next) return;
+  const max = Math.max(0, track.scrollWidth - track.clientWidth);
+  const atStart = track.scrollLeft <= 4;
+  const atEnd = track.scrollLeft >= max - 4;
+  previous.disabled = atStart;
+  next.disabled = atEnd;
+  timeline.classList.toggle('era-can-scroll-left', !atStart);
+  timeline.classList.toggle('era-can-scroll-right', !atEnd);
+}
+
+function centerActiveEraOnMobile(timeline, behavior = 'smooth') {
+  if (!globalThis.matchMedia?.(ERA_MOBILE_QUERY).matches) return;
+  const track = timeline.querySelector('.era-timeline-track');
+  if (!track) return;
+
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const active = timeline.querySelector('.era-timeline-item.active');
+    if (!active) return;
+    const max = Math.max(0, track.scrollWidth - track.clientWidth);
+    const desired = active.offsetLeft - ((track.clientWidth - active.offsetWidth) / 2);
+    track.scrollTo({ left: Math.max(0, Math.min(max, desired)), behavior });
+    updateEraScrollControls(timeline);
+  }));
+}
+
+function scrollEraTrack(timeline, direction) {
+  const track = timeline.querySelector('.era-timeline-track');
+  if (!track) return;
+  const distance = Math.max(170, Math.round(track.clientWidth * 0.72));
+  track.scrollBy({ left: distance * direction, behavior: 'smooth' });
 }
 
 function installEraTimeline() {
@@ -208,12 +248,9 @@ function installEraTimeline() {
   timeline.innerHTML = `
     <div class="era-timeline-heading">
       <div><span class="eyebrow">CATALOG JOURNEY</span><h2>Eras</h2></div>
-      <div class="era-timeline-heading-side">
-        <p>Choose an era to filter the discography instantly.</p>
-        <button type="button" class="era-play-button" data-era-play hidden>▶ Play Era</button>
-      </div>
+      <p>Choose an era to filter the discography instantly.</p>
     </div>
-    <div class="era-timeline-track" role="list">
+    <div class="era-timeline-track" role="list" aria-label="Musical eras">
       <button type="button" class="era-timeline-item" data-era-value="all" aria-pressed="false" role="listitem">
         <i aria-hidden="true"></i><span>All eras</span><small>${tracks.length}</small>
       </button>
@@ -222,22 +259,42 @@ function installEraTimeline() {
           <i aria-hidden="true"></i><span>${escapeHtml(era.label)}</span><small>${era.count}</small>
         </button>`).join('')}
     </div>
-    <div class="era-timeline-mobile-hint" aria-hidden="true"><span>Swipe to explore eras</span><b>→</b></div>`;
+    <div class="era-timeline-mobile-controls" data-era-scroll-controls>
+      <button type="button" data-era-scroll="-1" aria-label="Previous eras">‹</button>
+      <span>Swipe or use arrows to explore eras</span>
+      <button type="button" data-era-scroll="1" aria-label="Next eras">›</button>
+    </div>
+    <div class="era-selected-action" data-era-action-strip hidden aria-hidden="true">
+      <div class="era-selected-copy">
+        <span class="eyebrow">SELECTED ERA</span>
+        <strong data-era-selected-label></strong>
+        <small data-era-selected-count></small>
+      </div>
+      <button type="button" class="era-play-button" data-era-play>▶ Play Era</button>
+    </div>`;
+
+  const track = timeline.querySelector('.era-timeline-track');
+  track?.addEventListener('scroll', () => updateEraScrollControls(timeline), { passive: true });
 
   timeline.addEventListener('click', event => {
+    const scrollButton = event.target.closest('[data-era-scroll]');
+    if (scrollButton) {
+      scrollEraTrack(timeline, Number(scrollButton.dataset.eraScroll) < 0 ? -1 : 1);
+      return;
+    }
+
     const button = event.target.closest('[data-era-value]');
     if (!button) return;
     clickEraFilter(button.dataset.eraValue);
-    queueMicrotask(() => {
-      synchronizeEraButtons(timeline);
-      synchronizeEraPlayAction(timeline);
-      synchronizeEraPlaybackContext();
-      centerEraOnMobile(button);
-    });
   });
+
   synchronizeEraButtons(timeline);
   synchronizeEraPlayAction(timeline);
   synchronizeEraPlaybackContext();
+  requestAnimationFrame(() => {
+    updateEraScrollControls(timeline);
+    centerActiveEraOnMobile(timeline, 'auto');
+  });
   return timeline;
 }
 
@@ -312,6 +369,7 @@ export function initDiscographyExperience({ audio = document.querySelector('#aud
     if (timeline) {
       synchronizeEraButtons(timeline);
       synchronizeEraPlayAction(timeline);
+      centerActiveEraOnMobile(timeline);
     }
     synchronizeEraPlaybackContext();
   });
@@ -319,8 +377,14 @@ export function initDiscographyExperience({ audio = document.querySelector('#aud
     if (timeline) {
       synchronizeEraButtons(timeline);
       synchronizeEraPlayAction(timeline);
+      centerActiveEraOnMobile(timeline);
     }
     synchronizeEraPlaybackContext();
+  });
+  globalThis.matchMedia?.(ERA_MOBILE_QUERY).addEventListener?.('change', () => {
+    if (!timeline) return;
+    updateEraScrollControls(timeline);
+    centerActiveEraOnMobile(timeline, 'auto');
   });
 
   const library = document.querySelector('#view-library');
@@ -340,7 +404,10 @@ export function initDiscographyExperience({ audio = document.querySelector('#aud
     requestAnimationFrame(() => {
       observerScheduled = false;
       orderFilterGroups();
-      if (timeline) synchronizeEraPlayAction(timeline);
+      if (timeline) {
+        synchronizeEraPlayAction(timeline);
+        updateEraScrollControls(timeline);
+      }
       synchronizeEraPlaybackContext();
       syncPlaying();
     });
