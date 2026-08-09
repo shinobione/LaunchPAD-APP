@@ -44,6 +44,18 @@ assert.ok(
     && controller.includes('card.style.viewTransitionName'),
   'Album focus motion must use progressive View Transitions and respect reduced-motion preference.',
 );
+assert.ok(
+  controller.includes("matchMedia?.('(max-width: 1180px)')")
+    && controller.includes('transition?.finished || Promise.resolve()')
+    && controller.includes("document.querySelector('.topbar')")
+    && controller.includes('card.getBoundingClientRect().top')
+    && controller.includes('window.scrollTo({'),
+  'Narrow-screen Album focus must follow the reordered Album after the layout transition and account for the topbar.',
+);
+assert.ok(
+  controller.includes('.then(() => focusExpandedAlbumOnNarrowScreen(toggle))'),
+  'Mobile focus scrolling must run only after the Album layout transition has completed.',
+);
 
 assert.ok(
   css.includes('.project-track-list[hidden]') && css.includes('display:none!important;'),
@@ -108,4 +120,4 @@ assert.equal(eraQueue.next(), 2, 'Next must advance inside the selected Era queu
 assert.equal(eraQueue.next(), 3, 'Era queue ordering must remain deterministic.');
 assert.equal(eraQueue.next(), null, 'Era queue must stop at its end when repeat is off.');
 
-console.log('Albums/Era UX guard passed: collapsed default, focused Album layout, ARIA/keyboard, mobile, Play/Open, virtual Era queue and sequential playback preserved.');
+console.log('Albums/Era UX guard passed: collapsed default, focused Album layout, post-transition mobile focus scroll, ARIA/keyboard, Play/Open, virtual Era queue and sequential playback preserved.');
