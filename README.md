@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.09.72` — release `phase-ux-c2-5-a-era-brand-art-20260809`.
+> Current application build: `2026.08.09.73` — release `phase-ux-c2-5-a-mobile-media-stability-20260809`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -18,11 +18,13 @@ Build 71 introduced explicit Era playback, but real-user smoke showed that its h
 
 Build 72 moves `Play Era · N tracks` into a dedicated **Selected Era** strip directly below the carousel, reduces mobile card width so continuation is visible, adds real Previous / Next controls plus a `Swipe or use arrows to explore eras` instruction, makes the active Era visually unmistakable with a `SELECTED` badge, and recenters only after the real catalog-filter event has settled. The same reconstructible `era:` queue remains unchanged.
 
-Build 72 also promotes the supplied SHINOBIWAN artwork already stored in the repo: the compact sidebar wordmark is slightly larger and rendered with the established gold treatment, `assets/Lune-ShinoBiWan.png` replaces the generated About wordmark, and `assets/NinJa-ShinoBiWan.png` occupies the otherwise-unused third Home hero column on wide desktop only.
+Build 72 also promoted the supplied SHINOBIWAN artwork already stored in the repo: the compact sidebar wordmark became slightly larger and gold, `assets/Lune-ShinoBiWan.png` replaced the generated About wordmark, and an experimental wide-desktop Home Ninja treatment was introduced.
 
-`Play album` and `Open project →` remain available, and the individual Album detail page remains complete and unchanged. Build 72 is LaunchPAD frontend-only: no Track Manager change, no Worker deployment, no R2 mutation, no canonical Album schema, no migration and no `catalog/index.json` change. See [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md), [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md), [`docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md`](docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md), [`docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md`](docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md) and [`docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md`](docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md).
+Build 73 is the real-user mobile media stability correction. The experimental Ninja is removed from the Home hero because it obscured the established composition; the gold sidebar identity and About Moon remain. The audio element stays the only playback clock, while a lightweight animation-frame heartbeat prevents Android Chromium from starving the existing `timeupdate`-driven player, lyrics and Media Session UI. Track/lyrics videos now disable native looping inside the stability layer and use one explicit boundary/recovery path plus a stalled-playback watchdog, avoiding native-loop/manual-recovery races seen on mobile.
 
-The Build 72 refinement remains a release candidate until CI, Pages and real-user browser/mobile smoke pass. The final PHASE UX checkpoint is not created, C2.5-B is not started, C3 remains suspended, and Phase 7 is not started.
+`Play album` and `Open project →` remain available, and the individual Album detail page remains complete and unchanged. Build 73 is LaunchPAD frontend-only: no Track Manager change, no Worker deployment, no R2 mutation, no canonical Album schema, no migration and no `catalog/index.json` change. See [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md), [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md), [`docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md`](docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md), [`docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md`](docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md), [`docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md`](docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md) and [`docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md`](docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md).
+
+The Build 73 correction remains a release candidate until CI, Pages and real-user Android/mobile smoke pass. The final PHASE UX checkpoint is not created, C2.5-B is not started, C3 remains suspended, and Phase 7 is not started.
 
 ## Production PHASE UX C2 backend
 
@@ -151,13 +153,23 @@ Exact origin, Access verification, whitelist-only metadata and stale-manifest pr
 
 See [`docs/STUDIO-VALIDATION-CORS-HOTFIX.md`](docs/STUDIO-VALIDATION-CORS-HOTFIX.md).
 
+## Build 73 highlights
+
+Build 73 is the Android/mobile media correction discovered during real-user Lyrics Studio smoke. The Home Ninja pseudo-column is removed completely after it obscured the established Home hero; `NinJa-ShinoBiWan.png` remains only as an unused repository asset. The larger gold sidebar wordmark and About Moon art remain untouched.
+
+The main audio element remains the playback source of truth. Feature 11 now adds a requestAnimationFrame heartbeat while audio is playing so the already-established `timeupdate` renderer continues updating seek bars, current time, synchronized lyrics and Media Session position even when Android Chromium throttles native media events. The heartbeat does not advance or synthesize audio time; it only rereads the real `audio.currentTime` through the existing listener.
+
+Track detail and Lyrics Studio videos are stabilized through one explicit loop authority. Feature 11 disables native `video.loop` after hydration, owns the end-of-loop reset/replay, and watches stalled video time while real audio is playing. Pageshow and visibility restoration resynchronize visible videos without taking control of audio playback.
+
+Build 73 changes no Worker, R2 object, canonical Album schema, track manifest, catalog projection, SonicTrace runtime or Phase 7 scope.
+
 ## Build 72 highlights
 
 Build 72 is the real-user correction to the Build 71 Era presentation. The selected Era now owns a dedicated action strip with a prominent `Play Era · N tracks` control below the carousel instead of a small action in the header. The virtual `era:` queue itself is unchanged.
 
 On mobile, the carousel now shows narrower cards, explicit Previous / Next controls, visible continuation, a strong `SELECTED` state and an instruction that mentions both swipe and arrows. Active-card centering is driven after `shinobi:catalog-filtered` settles and uses the carousel's own horizontal scroll, so it no longer depends on a premature `scrollIntoView()` call.
 
-The sidebar SHINOBIWAN identity is slightly larger and uses the established gold gradient treatment. The About card now uses the supplied `Lune-ShinoBiWan.png`; the supplied `NinJa-ShinoBiWan.png` is reserved for the wide-desktop Home hero's third column and disappears on tablet/mobile.
+The sidebar SHINOBIWAN identity is slightly larger and uses the established gold gradient treatment. The About card uses the supplied `Lune-ShinoBiWan.png`. The experimental Home Ninja placement introduced in this build is superseded and removed by Build 73 after real-user review.
 
 Build 72 changes no Worker, R2 object, canonical Album schema, track manifest, catalog projection, SonicTrace runtime or Phase 7 scope.
 
@@ -308,6 +320,7 @@ Useful documents:
 - [`docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md`](docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md) — Build 70 narrow-screen viewport follow-up
 - [`docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md`](docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md) — Build 71 explicit Era playback + initial mobile discoverability pass
 - [`docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md`](docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md) — Build 72 real-user Era affordance correction + supplied brand artwork
+- [`docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md`](docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md) — Build 73 Android/mobile audio-clock and video-loop stability correction
 - [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) — safe release procedure
 - [`ROADMAP.md`](ROADMAP.md) — remaining consolidation/product work
 - [`cloudflare/README.md`](cloudflare/README.md) — Workers/R2 operations
