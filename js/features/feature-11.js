@@ -8,10 +8,15 @@ import { ensureStylesheet } from '../core/assets.js';
 
 const VIDEO_SELECTOR = 'video.track-video-player, video.lyrics-studio-canvas-video';
 const VIDEO_PLAYBACK_HANDLER = Symbol('feature11PlaybackHandler');
+const VIDEO_RECOVERY_HANDLER = Symbol('feature11RecoveryHandler');
+const VIDEO_PROGRESS_STATE = new WeakMap();
 const SHAREABLE_ROUTE_PATTERN = /^#(?:track|album|lyrics|studio)=.+/i;
 const LEGACY_DISCOGRAPHY_PATH = /\/discography\/?$/i;
 const ROUTE_TRANSITION_CLASS = 'route-entering';
 const ROUTE_TRANSITION_DURATION = 260;
+const AUDIO_CLOCK_INTERVAL = 125;
+const VIDEO_WATCHDOG_INTERVAL = 700;
+const VIDEO_STALL_THRESHOLD = 1800;
 let routeTransitionTimer = 0;
 
 function escapeHtml(value) {
@@ -167,17 +172,20 @@ function stabilizeVideo(video) {
   video.dataset.feature11Stable = 'true';
   video.muted = true;
   video.defaultMuted = true;
-  video.loop = true;
+  // Android Chromium is more reliable when the loop boundary is owned explicitly.
+  // Do not combine native `loop` with our recovery logic: the two can race at the boundary.
+  video.loop = false;
+  video.removeAttribute('loop');
   video.playsInline = true;
   video.preload = 'auto';
   video.setAttribute('muted', '');
-  video.setAttribute('loop', '');
   video.setAttribute('playsinline', '');
   video.setAttribute('webkit-playsinline', '');
   video.setAttribute('preload', 'auto');
 
   let recoveryTimer = 0;
   let lastRecovery = 0;
+  VIDEO_PROGRESS_STATE.set(video, { time: Number(video.currentTime) || 0, at: performance.now() });
 
   const visible = () => {
     const view = video.closest('.view');
@@ -187,6 +195,8 @@ function stabilizeVideo(video) {
   const ensurePlayback = reason => {
     if (!visible() || document.visibilityState === 'hidden') return;
     video.muted = true;
+    video.loop = false;
+    video.removeAttribute('loop');
     if (video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA && video.networkState !== HTMLMediaElement.NETWORK_LOADING) {
       try { video.load(); } catch {}
     }
@@ -202,17 +212,28 @@ function stabilizeVideo(video) {
     lastRecovery = now;
     window.clearTimeout(recoveryTimer);
     recoveryTimer = window.setTimeout(() => {
+      if (!visible() || document.visibilityState === 'hidden') return;
       if (!Number.isFinite(video.duration) || video.duration <= 0) {
         ensurePlayback(reason);
         return;
       }
-      if (video.ended || video.currentTime >= video.duration - 0.08) {
-        try { video.currentTime = 0.01; } catch {}
+      if (video.ended || video.currentTime >= video.duration - 0.12) {
+        try { video.currentTime = 0; } catch {}
+        VIDEO_PROGRESS_STATE.set(video, { time: 0, at: performance.now() });
       }
       ensurePlayback(reason);
     }, 20);
   };
 
+  video[VIDEO_RECOVERY_HANDLER] = recoverLoop;
+
+  video.addEventListener('play', () => {
+    video.loop = false;
+    video.removeAttribute('loop');
+  });
+  video.addEventListener('playing', () => {
+    VIDEO_PROGRESS_STATE.set(video, { time: Number(video.currentTime) || 0, at: performance.now() });
+  });
   video.addEventListener('ended', () => recoverLoop('ended'));
   video.addEventListener('stalled', () => recoverLoop('stalled'));
   video.addEventListener('waiting', () => recoverLoop('waiting'));
@@ -220,7 +241,13 @@ function stabilizeVideo(video) {
     if (video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) recoverLoop('suspend');
   });
   video.addEventListener('timeupdate', () => {
-    if (Number.isFinite(video.duration) && video.duration - video.currentTime < 0.12) recoverLoop('boundary');
+    const now = performance.now();
+    const current = Number(video.currentTime) || 0;
+    const state = VIDEO_PROGRESS_STATE.get(video);
+    if (!state || Math.abs(current - state.time) > 0.025) {
+      VIDEO_PROGRESS_STATE.set(video, { time: current, at: now });
+    }
+    if (Number.isFinite(video.duration) && video.duration - current < 0.14) recoverLoop('boundary');
   });
 }
 
@@ -264,6 +291,85 @@ function installVideoStability(audio) {
   audio?.addEventListener('playing', () => synchronizeWithAudio('audio-playing'));
   audio?.addEventListener('pause', () => synchronizeWithAudio('audio-pause'));
   audio?.addEventListener('ended', () => synchronizeWithAudio('audio-ended'));
+
+  window.setInterval(() => {
+    if (document.visibilityState === 'hidden' || audio?.paused || audio?.ended) return;
+    const now = performance.now();
+    connectedVideos().forEach(video => {
+      stabilizeVideo(video);
+      if (video.paused || video.closest('[hidden]')) return;
+      const current = Number(video.currentTime) || 0;
+      const state = VIDEO_PROGRESS_STATE.get(video) || { time: current, at: now };
+      if (Math.abs(current - state.time) > 0.025) {
+        VIDEO_PROGRESS_STATE.set(video, { time: current, at: now });
+        return;
+      }
+      if (now - state.at >= VIDEO_STALL_THRESHOLD) {
+        VIDEO_PROGRESS_STATE.set(video, { time: current, at: now });
+        video[VIDEO_RECOVERY_HANDLER]?.('watchdog');
+      }
+    });
+  }, VIDEO_WATCHDOG_INTERVAL);
+
+  window.addEventListener('pageshow', () => synchronizeWithAudio('pageshow'));
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') synchronizeWithAudio('visibility-resume');
+  });
+}
+
+function installAudioClockStability(audio) {
+  if (!audio || audio.dataset.feature11ClockStable === 'true') return;
+  audio.dataset.feature11ClockStable = 'true';
+
+  let frame = 0;
+  let lastDispatch = 0;
+
+  const refresh = () => {
+    // Keep the existing player/lyrics/media-session listeners as the only render authority.
+    // This heartbeat merely prevents Android from starving native `timeupdate` events.
+    audio.dispatchEvent(new Event('timeupdate'));
+  };
+
+  const tick = now => {
+    if (audio.paused || audio.ended) {
+      frame = 0;
+      return;
+    }
+    if (now - lastDispatch >= AUDIO_CLOCK_INTERVAL) {
+      lastDispatch = now;
+      refresh();
+    }
+    frame = requestAnimationFrame(tick);
+  };
+
+  const start = () => {
+    refresh();
+    if (!frame && !audio.paused && !audio.ended) frame = requestAnimationFrame(tick);
+  };
+
+  const stop = () => {
+    if (frame) cancelAnimationFrame(frame);
+    frame = 0;
+    refresh();
+  };
+
+  for (const eventName of ['play', 'playing', 'seeked', 'loadedmetadata', 'durationchange']) {
+    audio.addEventListener(eventName, start);
+  }
+  audio.addEventListener('pause', stop);
+  audio.addEventListener('ended', stop);
+
+  window.addEventListener('pageshow', start);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') start();
+    else if (frame) {
+      cancelAnimationFrame(frame);
+      frame = 0;
+    }
+  });
+
+  if (!audio.paused && !audio.ended) start();
+  else refresh();
 }
 
 export function initFeature11({ audio = document.querySelector('#audio') } = {}) {
@@ -273,5 +379,6 @@ export function initFeature11({ audio = document.querySelector('#audio') } = {})
   installRouteTransitions();
   renderHomeCatalogSections();
   relabelVideoUI();
+  installAudioClockStability(audio);
   installVideoStability(audio);
 }
