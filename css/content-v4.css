@@ -141,7 +141,7 @@
 .project-album{
   min-width:0;
   overflow:hidden;
-  padding:18px;
+  padding:16px;
   border:1px solid rgba(255,255,255,.09);
   border-radius:24px;
   background:
@@ -152,16 +152,16 @@
 
 .project-album-head{
   display:grid;
-  grid-template-columns:150px minmax(0,1fr);
+  grid-template-columns:132px minmax(0,1fr);
   align-items:center;
-  gap:18px;
+  gap:16px;
   min-width:0;
 }
 
 .project-album-cover{
   display:block;
-  width:150px;
-  height:150px;
+  width:132px;
+  height:132px;
   max-width:100%;
   aspect-ratio:1;
   object-fit:cover;
@@ -209,10 +209,37 @@
   white-space:nowrap;
 }
 
+.project-album-actions{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px 12px;
+  margin-top:14px;
+}
+
+.project-album-toggle{
+  min-height:36px;
+  margin-left:auto;
+  padding-inline:10px;
+  font-size:11px;
+  white-space:nowrap;
+}
+
+.project-album-toggle:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:3px;
+}
+
 .project-track-list{
   display:grid;
   gap:5px;
-  margin-top:16px;
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+
+.project-track-list[hidden]{
+  display:none!important;
 }
 
 .project-track{
@@ -321,13 +348,13 @@
   }
 
   .project-album-head{
-    grid-template-columns:96px minmax(0,1fr);
+    grid-template-columns:88px minmax(0,1fr);
     gap:13px;
   }
 
   .project-album-cover{
-    width:96px;
-    height:96px;
+    width:88px;
+    height:88px;
     border-radius:14px;
   }
 
@@ -351,9 +378,26 @@
     font-size:7px;
   }
 
+  .project-album-actions{
+    align-items:stretch;
+    gap:8px;
+  }
+
+  .project-album-actions .secondary,
+  .project-album-actions .text-button{
+    min-height:38px;
+  }
+
+  .project-album-toggle{
+    flex:1 1 100%;
+    justify-content:center;
+    margin-left:0;
+  }
+
   .project-track-list{
     gap:5px;
     margin-top:12px;
+    padding-top:12px;
   }
 
   .project-track{
