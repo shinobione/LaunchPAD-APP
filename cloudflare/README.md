@@ -24,16 +24,16 @@ Cloudflare is not an alternate source repository. GitHub `main` remains the code
 ### Private Track Manager Worker
 
 - service: `launchpad-r2-api`;
-- deployed Track Manager: **v5.15**;
-- deployed Studio bridge: **v1.7**;
-- admin-only corrective source target: **v5.16 / bridge v1.8**;
-- deployed source head: `23a7b494b89d4958f573f0889057b53a44aa23b6`;
-- protected deployment run: `31288949405`;
+- deployed Track Manager: **v5.16**;
+- deployed Studio bridge: **v1.8**;
+- deployed source head: `1bbe0293e4e17968bb7e191f58e7ae1cdd95dadf`;
+- protected deployment run: `31324447727`;
+- Worker Version ID: `5a83c6dd-cfb4-4be6-ab8d-16b5c34bdc2b`;
 - deployment target: `admin`;
 - Cloudflare Access remains mandatory;
 - binding: `MEDIA_BUCKET` → `shinobiwan-media`;
 - same-origin Track Manager UI remains the administrative fallback;
-- no public Worker redeploy was required for the final Phase 6 protected-media seek hotfix.
+- the C2 deployment skipped the public Worker and left it at `v2.6`.
 
 Private Worker source is stored as ordered parts under `cloudflare/admin-worker.parts/*.part` and assembled by `scripts/build-admin-worker.mjs`.
 
@@ -187,6 +187,19 @@ workflow     31288949405
 target       admin
 result       success
 ```
+
+PHASE UX C2 admin-only deployment proof:
+
+```text
+source head       1bbe0293e4e17968bb7e191f58e7ae1cdd95dadf
+workflow          31324447727
+target            admin
+Worker Version ID 5a83c6dd-cfb4-4be6-ab8d-16b5c34bdc2b
+result            success
+public Worker     skipped / remains v2.6
+```
+
+The subsequent real-user Lyrics smoke passed canonical audio playback, timestamp navigation, synchronized `lyrics.txt` save and canonical reread. The false end-of-audio blocker is resolved without an automatic manifest-duration repair or a second Lyrics source.
 
 Final Phase 6 operational checkpoint:
 

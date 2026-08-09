@@ -1,5 +1,15 @@
 # Changelog
 
+## Track Manager v5.16 / Studio bridge v1.8 — PHASE UX C2 production closeout
+
+- accepts optional finite positive `observedAudioDuration` evidence on the existing guarded Lyrics validate/save routes without adding a route or persisted duration field;
+- validates final timestamps against the loaded canonical audio when evidence is supplied and retains manifest duration as the fallback;
+- reports material manifest/audio disagreement without silently mutating manifest duration;
+- deployed source `1bbe0293e4e17968bb7e191f58e7ae1cdd95dadf` through admin-only workflow `31324447727`, Worker Version ID `5a83c6dd-cfb4-4be6-ab8d-16b5c34bdc2b`;
+- skipped the public Worker deployment and left public Worker `v2.6` plus LaunchPAD Build 67 unchanged;
+- records C2 real-user Lyrics smoke as **PASSED**, including canonical `lyrics.txt` save/reread and removal of the false end-of-audio blocker;
+- preserves Cloudflare Access, R2 schemas, canonical Lyrics authority, the uncreated final PHASE UX checkpoint and the Phase 7 stop line.
+
 ## Track Manager v5.15 / Studio bridge v1.7 — Phase 6 candidate
 
 - adds a protected, minimal context read for LRC Maker keyed only by canonical `trackId`;

@@ -1,6 +1,6 @@
-# Studio Lyrics synchronization — Track Manager v5.16 / Bridge v1.8 candidate
+# Studio Lyrics synchronization — Track Manager v5.16 / Bridge v1.8
 
-Production remains v5.15 / bridge v1.7 until the explicit admin-only Worker deployment is completed.
+Production runs Track Manager `v5.16` / bridge `v1.8`, deployed admin-only from `1bbe0293e4e17968bb7e191f58e7ae1cdd95dadf` by workflow `31324447727` (Worker Version ID `5a83c6dd-cfb4-4be6-ab8d-16b5c34bdc2b`). The public Worker was not deployed and remains `v2.6`.
 
 > Public LaunchPAD build: `2026.08.09.67` — release `post-phase6-track-dna-release-date-20260809`.
 > Private Phase 6 backend deployment: run `31288949405`, source `23a7b494b89d4958f573f0889057b53a44aa23b6`, target `admin`, success.
@@ -73,6 +73,14 @@ This behavior is shared by standalone and embedded LRC Maker. The direct seek-on
 - no Phase 7 work.
 
 ## Production validation
+
+The C2 real-user smoke with LRC Maker `6.3.6` passed canonical audio playback, line/timestamp navigation, synchronized canonical `lyrics.txt` save and canonical reread. The former false "last timestamp exceeds audio duration" blocker is gone. Observed duration remains request-scoped evidence and does not silently rewrite manifest duration.
+
+The canonical contract remains unchanged: `tracks/<slug>/lyrics.txt` is the only authoritative lyrics source; timestamp tags inside it define synchronization; `.lrc` remains optional export/compatibility only.
+
+The final PHASE UX checkpoint is not created, C3 is suspended pending C2.5, and Phase 7 is not started.
+
+### Historical Phase 6 validation
 
 The authenticated production smoke test was completed after LRC Maker 6.3.4 and Studio 0.9.5 Build 20 deployment. Standalone + embedded native timing flow and guarded canonical save/reread were validated successfully.
 
