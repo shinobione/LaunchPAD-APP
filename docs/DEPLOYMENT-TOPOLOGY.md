@@ -4,7 +4,9 @@
 
 ## One source of truth
 
-`main` is the only authoritative application-code source. No deployment branch, hosted editor, dashboard copy or generated bundle may become a second source of truth. Named `safety/*` branches are rollback snapshots only and are never development sources.
+`main` is the only authoritative application source. No deployment branch, hosted editor, dashboard copy or generated bundle may become a second source of truth. Named `safety/*` branches are rollback snapshots only and are never development sources.
+
+Lovable is prototype-only unless a future migration is explicitly promoted back through GitHub `main`.
 
 ```text
                          GitHub repository
