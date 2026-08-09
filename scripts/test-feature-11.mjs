@@ -73,10 +73,14 @@ for (const required of [
   "button.textContent = expanded ? 'Player' : 'Video'",
   "video.preload = 'auto'",
   "video.addEventListener('ended'",
-  "video.addEventListener('stalled'",
+  'VIDEO_TERMINAL_STALL_WINDOW',
+  "video[VIDEO_RECOVERY_HANDLER]?.('terminal-stall')",
   "audio?.addEventListener('play'",
   "audio?.addEventListener('pause'"
 ]) assert.ok(feature.includes(required), `Feature 11 app module is missing ${required}.`);
+for (const forbidden of ['video.load()', "recoverLoop('boundary')", "video.addEventListener('stalled'", "video.addEventListener('waiting'"]) {
+  assert.ok(!feature.includes(forbidden), `Feature 11 must keep video recovery isolated from protected-media reload/pre-boundary churn: ${forbidden}`);
+}
 
 const routeStyles = read('css/feature-11.css');
 for (const required of [
@@ -152,4 +156,4 @@ assert.ok(!managerClient.includes('buildCanonicalTrackSummaries'));
 assert.ok(!managerClient.includes('readManifest'));
 
 const build = assertCurrentBuild('Feature 11');
-console.log(`Milestone 2 canonical catalog ordering and Recently Added separation remain valid under Build ${build.number}.`);
+console.log(`Milestone 2 canonical catalog ordering, Recently Added separation and Build ${build.number} protected-media video isolation remain valid.`);
