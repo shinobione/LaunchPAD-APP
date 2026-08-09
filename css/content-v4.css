@@ -148,6 +148,7 @@
     radial-gradient(circle at 8% 8%,rgba(166,60,255,.12),transparent 34%),
     linear-gradient(150deg,rgba(255,255,255,.045),rgba(255,255,255,.012));
   box-shadow:0 24px 65px rgba(0,0,0,.24);
+  transition:opacity .28s ease,transform .34s cubic-bezier(.2,.75,.2,1),filter .28s ease,border-color .28s ease,box-shadow .28s ease;
 }
 
 .project-album-head{
@@ -290,6 +291,104 @@
   margin-top:18px;
 }
 
+@media(prefers-reduced-motion:no-preference){
+  ::view-transition-group(*){
+    animation-duration:.42s;
+    animation-timing-function:cubic-bezier(.2,.75,.2,1);
+  }
+}
+
+@media(min-width:1181px){
+  .album-collection.has-album-focus{
+    grid-template-columns:minmax(0,1.8fr) minmax(250px,.58fr);
+    align-items:start;
+    gap:16px;
+  }
+
+  .album-collection.has-album-focus .project-album.is-tracklist-expanded{
+    grid-column:1;
+    grid-row:1 / span 12;
+    padding:22px;
+    border-color:rgba(166,60,255,.34);
+    background:
+      radial-gradient(circle at 9% 6%,rgba(166,60,255,.2),transparent 34%),
+      linear-gradient(145deg,rgba(255,255,255,.06),rgba(255,255,255,.016));
+    box-shadow:0 34px 95px rgba(0,0,0,.38),0 0 0 1px rgba(166,60,255,.08) inset;
+  }
+
+  .album-collection.has-album-focus .project-album.is-tracklist-expanded .project-album-head{
+    grid-template-columns:190px minmax(0,1fr);
+    gap:22px;
+  }
+
+  .album-collection.has-album-focus .project-album.is-tracklist-expanded .project-album-cover{
+    width:190px;
+    height:190px;
+    border-radius:22px;
+  }
+
+  .album-collection.has-album-focus .project-album.is-tracklist-expanded .project-album-copy h2{
+    font-size:clamp(32px,3vw,48px);
+  }
+
+  .album-collection.has-album-focus .project-album:not(.is-tracklist-expanded){
+    grid-column:2;
+    padding:12px;
+    opacity:.56;
+    transform:scale(.97);
+    filter:saturate(.72);
+  }
+
+  .album-collection.has-album-focus .project-album:not(.is-tracklist-expanded):is(:hover,:focus-within){
+    opacity:.96;
+    transform:none;
+    filter:none;
+    border-color:rgba(255,255,255,.16);
+  }
+
+  .album-collection.has-album-focus .project-album:not(.is-tracklist-expanded) .project-album-head{
+    grid-template-columns:64px minmax(0,1fr);
+    gap:10px;
+  }
+
+  .album-collection.has-album-focus .project-album:not(.is-tracklist-expanded) .project-album-cover{
+    width:64px;
+    height:64px;
+    border-radius:12px;
+  }
+
+  .album-collection.has-album-focus .project-album:not(.is-tracklist-expanded) .project-album-copy small{
+    margin-bottom:3px;
+    font-size:6px;
+  }
+
+  .album-collection.has-album-focus .project-album:not(.is-tracklist-expanded) .project-album-copy h2{
+    margin-bottom:0;
+    font-size:16px;
+  }
+
+  .album-collection.has-album-focus .project-album:not(.is-tracklist-expanded) .project-album-copy p,
+  .album-collection.has-album-focus .project-album:not(.is-tracklist-expanded) .project-era-heading,
+  .album-collection.has-album-focus .project-album:not(.is-tracklist-expanded) .project-tags{
+    display:none;
+  }
+
+  .album-collection.has-album-focus .project-album:not(.is-tracklist-expanded) .project-album-actions{
+    gap:5px;
+    margin-top:9px;
+  }
+
+  .album-collection.has-album-focus .project-album:not(.is-tracklist-expanded) .project-album-actions button{
+    min-height:30px;
+    padding:5px 7px;
+    font-size:8px;
+  }
+
+  .album-collection.has-album-focus .project-album:not(.is-tracklist-expanded) .project-album-toggle{
+    margin-left:0;
+  }
+}
+
 @media(min-width:981px){
   .launchpad-banner-rail{
     width:min(38vw,560px)!important;
@@ -299,6 +398,22 @@
 @media(max-width:1180px){
   .album-collection{
     grid-template-columns:1fr;
+  }
+
+  .album-collection.has-album-focus .project-album.is-tracklist-expanded{
+    order:-1;
+    border-color:rgba(166,60,255,.3);
+    box-shadow:0 28px 78px rgba(0,0,0,.32);
+  }
+
+  .album-collection.has-album-focus .project-album:not(.is-tracklist-expanded){
+    opacity:.7;
+    transform:scale(.988);
+  }
+
+  .album-collection.has-album-focus .project-album:not(.is-tracklist-expanded):is(:hover,:focus-within){
+    opacity:1;
+    transform:none;
   }
 }
 
@@ -340,6 +455,11 @@
   .album-collection{
     grid-template-columns:1fr;
     gap:14px;
+  }
+
+  .album-collection.has-album-focus .project-album:not(.is-tracklist-expanded){
+    opacity:.82;
+    transform:none;
   }
 
   .project-album{
