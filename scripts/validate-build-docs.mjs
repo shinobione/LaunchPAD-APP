@@ -10,10 +10,10 @@ const release = /release:\s*'([^']+)'/.exec(buildConfig)?.[1];
 assert.ok(display, 'Unable to read build display from js/build-config.js.');
 assert.ok(release, 'Unable to read build release from js/build-config.js.');
 
-// Historical phase/audit Markdown files are immutable snapshots and must not be
-// rewritten on every public UI build. Keep the live build marker authoritative
-// in the two release-facing documents users and maintainers consult first.
-const livingReleaseDocs = ['README.md', 'CHANGELOG.md'];
+// README is the living release marker. CHANGELOG and historical phase/audit
+// Markdown files are timelines/snapshots and must not be rewritten merely to
+// pretend that an older document described a later public build.
+const livingReleaseDocs = ['README.md'];
 const stale = [];
 
 for (const relative of livingReleaseDocs) {
@@ -29,4 +29,4 @@ assert.deepEqual(
   `Living release docs must mention current build ${display} and release ${release}. Stale: ${stale.join(', ')}`
 );
 
-console.log(`Build documentation is coherent: ${livingReleaseDocs.join(', ')} match ${display} / ${release}.`);
+console.log(`Build documentation is coherent: ${livingReleaseDocs.join(', ')} matches ${display} / ${release}.`);
