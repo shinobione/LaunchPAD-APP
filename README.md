@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.09.75` — release `phase-ux-c2-5-a-canvas-single-owner-20260809`.
+> Current application build: `2026.08.10.76` — release `phase-ux-c2-5-a-canvas-transport-isolation-20260810`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -24,11 +24,13 @@ Build 73 removed that Ninja and introduced the Android audio-clock heartbeat. It
 
 Build 74 keeps the successful Build 73 audio-clock heartbeat but isolates Track Video recovery completely from the canonical audio path. Track Video recovery no longer calls `video.load()`, no longer seeks before the real media boundary, and no longer reacts directly to `waiting`, `stalled` or `suspend`. A normal `ended` event owns that separate Track Video loop restart; a bounded watchdog may reset only a confirmed terminal stall within the final 0.75 seconds after the video has genuinely stopped progressing.
 
-Build 75 corrects the remaining Lyrics Studio collision found during real-user Android smoke. The track cover appearing inside the Canvas frame was the Canvas video's own `poster`, proving that the Lyrics Studio video had stopped at its loop boundary. Inspection showed that Feature 11 still selected `video.lyrics-studio-canvas-video` even though Lyrics Studio already owns that Canvas/native-loop lifecycle. Feature 11 now stabilizes only `video.track-video-player`; Lyrics Studio is once again the sole owner of its Canvas. No new watchdog or third recovery layer is introduced, and the Build 73 audio-clock heartbeat remains unchanged.
+Build 75 corrected the remaining cross-owner Lyrics Studio collision found during real-user Android smoke. Feature 11 now stabilizes only `video.track-video-player`, leaving Lyrics Studio as the sole owner of its Canvas lifecycle. The real-user Build 75 smoke nevertheless proved that ownership isolation alone was insufficient: the Canvas could still enter a spinner, expose its cover/poster and leave later canonical-audio seeks waiting.
 
-`Play album` and `Open project →` remain available, and the individual Album detail page remains complete and unchanged. Build 75 is LaunchPAD frontend-only: no Track Manager change, no Worker deployment, no R2 mutation, no canonical Album schema, no migration and no `catalog/index.json` change. See [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md), [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md), [`docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md`](docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md), [`docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md`](docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md), [`docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md`](docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md), [`docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md`](docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md), [`docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md) and [`docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md`](docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md).
+Build 76 isolates the **transport**, not just the owner. Lyrics Studio fetches the short Canvas once through CORS, materializes it as a browser Blob, and loops the local `blob:` source. Canvas loop boundaries therefore no longer reopen the public Worker/R2 Range transport used by canonical audio. The old Lyrics Studio manual `ended` fallback and retry timer are removed. During an audio seek, only the decorative Canvas pauses and it resumes after the real `seeked` event; the canonical audio is never paused, reloaded or sought by Canvas code.
 
-The Build 75 correction remains a release candidate until CI, Pages and real-user Android/mobile smoke pass. The final PHASE UX checkpoint is not created, C2.5-B is not started, C3 remains suspended, and Phase 7 is not started.
+`Play album` and `Open project →` remain available, and the individual Album detail page remains complete and unchanged. Build 76 is LaunchPAD frontend-only: no Track Manager change, no Worker deployment, no R2 mutation, no canonical Album schema, no migration and no `catalog/index.json` change. See [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md), [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md), [`docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md`](docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md), [`docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md`](docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md), [`docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md`](docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md), [`docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md`](docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md), [`docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md), [`docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md`](docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md) and [`docs/PHASE-UX-C2-5-A-BUILD76-CANVAS-TRANSPORT-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD76-CANVAS-TRANSPORT-ISOLATION.md).
+
+The Build 76 correction remains a release candidate until CI, Pages and real-user Android/mobile smoke pass. The final PHASE UX checkpoint is not created, C2.5-B is not started, C3 remains suspended, and Phase 7 is not started.
 
 ## Production PHASE UX C2 backend
 
@@ -157,13 +159,23 @@ Exact origin, Access verification, whitelist-only metadata and stale-manifest pr
 
 See [`docs/STUDIO-VALIDATION-CORS-HOTFIX.md`](docs/STUDIO-VALIDATION-CORS-HOTFIX.md).
 
+## Build 76 highlights
+
+Build 76 is the Android Lyrics Studio **transport isolation** correction discovered by real-user smoke of Build 75. The screenshot sequence proved that the Canvas could play initially, enter a spinner state, expose its own cover/poster and then leave a later canonical-audio seek stuck waiting. Build 75 had fixed ownership, but not the shared remote media transport.
+
+Lyrics Studio now performs one CORS GET of the short Canvas video, converts it to a browser Blob and attaches a local `blob:` object URL to the video element. Native loop is the sole Lyrics Studio loop mechanism. The old manual `ended` fallback and stalled/autoplay retry timer are removed, so loop boundaries no longer reopen the Worker/R2 Range path used by canonical audio.
+
+During a real audio seek, only the decorative Canvas pauses without being hidden; it may resume after `seeked`. The canonical audio element remains untouched. Blob object URLs are revoked when the track/transport is reset.
+
+Build 76 changes no Worker, R2 object, canonical Album schema, track manifest, catalog projection, SonicTrace runtime, canonical Lyrics contract or Phase 7 scope.
+
 ## Build 75 highlights
 
 Build 75 is the Android Lyrics Studio ownership correction discovered by real-user smoke of Build 74. The track cover appearing inside the Canvas frame is the Canvas video's own poster, not a different component. That symptom proved the Lyrics Studio media element had stopped at the loop boundary.
 
-The root cause was overlapping ownership: Feature 11 still selected `video.lyrics-studio-canvas-video` and applied its own loop/reset/play recovery even though `lyrics-studio.js` already owns the Canvas and native loop. Build 75 narrows Feature 11 to `video.track-video-player` only. Lyrics Studio now owns its Canvas lifecycle exclusively again; no third watchdog or new Canvas retry system is added.
+The root cause found at that step was overlapping ownership: Feature 11 still selected `video.lyrics-studio-canvas-video` and applied its own loop/reset/play recovery even though `lyrics-studio.js` already owned the Canvas. Build 75 narrowed Feature 11 to `video.track-video-player` only. Real-user smoke later showed that this ownership fix alone did not eliminate the shared transport failure; Build 76 supersedes it with local-Blob Canvas transport isolation.
 
-Build 75 keeps Build 74 Track Video terminal-only recovery and the Build 73 audio-clock heartbeat. It changes no Worker, R2 object, canonical Album schema, track manifest, catalog projection, SonicTrace runtime, canonical Lyrics contract or Phase 7 scope.
+Build 75 kept Build 74 Track Video terminal-only recovery and the Build 73 audio-clock heartbeat. It changed no Worker, R2 object, canonical Album schema, track manifest, catalog projection, SonicTrace runtime, canonical Lyrics contract or Phase 7 scope.
 
 ## Build 74 highlights
 
@@ -179,7 +191,7 @@ Build 73 is the Android/mobile media correction discovered during real-user Lyri
 
 The main audio element remains the playback source of truth. Feature 11 adds a requestAnimationFrame heartbeat while audio is playing so the already-established `timeupdate` renderer continues updating seek bars, current time, synchronized lyrics and Media Session position even when Android Chromium throttles native media events. The heartbeat does not advance or synthesize audio time; it only rereads the real `audio.currentTime` through the existing listener.
 
-The first Build 73 video-loop strategy is superseded by Builds 74 and 75 after real-user smoke showed that its pre-boundary restart/reload recovery and cross-ownership of Lyrics Studio Canvas could destabilize protected-media playback. The Build 73 audio-clock heartbeat and brand-art correction remain valid.
+The first Build 73 video-loop strategy is superseded by Builds 74, 75 and 76 after real-user smoke showed that pre-boundary restart/reload recovery, cross-ownership and finally shared remote Canvas transport could destabilize protected-media playback. The Build 73 audio-clock heartbeat and brand-art correction remain valid.
 
 Build 73 changed no Worker, R2 object, canonical Album schema, track manifest, catalog projection, SonicTrace runtime or Phase 7 scope.
 
@@ -343,6 +355,7 @@ Useful documents:
 - [`docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md`](docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md) — Build 73 Android/mobile audio-clock and first video-loop stability pass
 - [`docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md) — Build 74 terminal-only Track Video recovery and protected-audio isolation
 - [`docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md`](docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md) — Build 75 Lyrics Studio Canvas ownership isolation
+- [`docs/PHASE-UX-C2-5-A-BUILD76-CANVAS-TRANSPORT-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD76-CANVAS-TRANSPORT-ISOLATION.md) — Build 76 local-Blob Canvas transport isolation and audio-seek priority
 - [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) — safe release procedure
 - [`ROADMAP.md`](ROADMAP.md) — remaining consolidation/product work
 - [`cloudflare/README.md`](cloudflare/README.md) — Workers/R2 operations

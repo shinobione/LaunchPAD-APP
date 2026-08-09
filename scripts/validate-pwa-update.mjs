@@ -79,13 +79,24 @@ if (signal.includes('captureStream(') || signal.includes('createMediaStreamSourc
 const lyricsStudio = read('js/features/lyrics-studio.js');
 for (const required of [
   "video.preload = 'auto'",
-  "video.setAttribute('autoplay', '')",
+  "video.autoplay = false",
   "video.setAttribute('webkit-playsinline', '')",
+  "const response = await fetch(track.video",
+  'URL.createObjectURL(blob)',
+  "canvasVideo.setAttribute('data-transport', 'blob')",
   "canvasVideo.addEventListener('canplay'",
-  "canvasVideo.addEventListener('ended'",
+  "audio.addEventListener('seeking'",
+  "audio.addEventListener('seeked'",
   "document.addEventListener('visibilitychange'"
 ]) {
-  if (!lyricsStudio.includes(required)) fail(`Mobile Canvas resilience is missing ${required}.`);
+  if (!lyricsStudio.includes(required)) fail(`Mobile Canvas transport resilience is missing ${required}.`);
+}
+for (const forbidden of [
+  "video.setAttribute('autoplay', '')",
+  "canvasVideo.addEventListener('ended'",
+  'function scheduleCanvasRetry'
+]) {
+  if (lyricsStudio.includes(forbidden)) fail(`Build 76 Canvas transport isolation forbids ${forbidden}.`);
 }
 
 const about = read('js/features/about/about-controller.js');
@@ -118,4 +129,4 @@ if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RE
   fail('Browser regression coverage for the deduped PWA update prompt is not wired into CI.');
 }
 
-console.log(`PWA single-shot updates, decoded-buffer FFT, supplied About Moon art and mobile Studio Canvas resilience are valid under ${build.display}.`);
+console.log(`PWA single-shot updates, decoded-buffer FFT, supplied About Moon art and local-Blob mobile Studio Canvas resilience are valid under ${build.display}.`);
