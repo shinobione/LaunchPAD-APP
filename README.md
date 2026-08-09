@@ -1,14 +1,16 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.08.66` — release `studio-metadata-validation-20260808`.
+> Current application build: `2026.08.09.67` — release `post-phase6-track-dna-release-date-20260809`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
-## Private Worker Phase 6 candidate
+## Production Phase 6 backend
 
-The current branch builds Track Manager `v5.15` / Studio bridge `v1.7` for SHINOBIWAN Studio Phase 6. It preserves the Phase 5 SonicTrace sidecars and adds a protected contextual Lyrics workflow: canonical context read, strict synchronized-text validation and guarded save to the existing `tracks/<slug>/lyrics.txt`. The public LaunchPAD application and public media Worker remain unchanged. Production stays on the deployed v5.14/v1.6 until the admin Worker is explicitly deployed and verified.
+Track Manager `v5.15` / Studio bridge `v1.7` is the deployed private backend used by SHINOBIWAN Studio Phase 6. It preserves the Phase 5 SonicTrace sidecars and exposes the protected contextual Lyrics workflow: canonical context read, strict synchronized-text validation, guarded save to the existing `tracks/<slug>/lyrics.txt`, and protected canonical media Range/206 reads for reliable HTML media seeking.
 
-See [`docs/STUDIO-LYRICS-SYNCHRONIZATION.md`](docs/STUDIO-LYRICS-SYNCHRONIZATION.md).
+The public media Worker remains v2.6. The Phase 6 backend is separate from this public Build 67 Track DNA maintenance hotfix. Phase 7 is not started.
+
+See [`docs/STUDIO-LYRICS-SYNCHRONIZATION.md`](docs/STUDIO-LYRICS-SYNCHRONIZATION.md) and [`docs/PHASE-6-PROTECTED-MEDIA-SEEK-HOTFIX.md`](docs/PHASE-6-PROTECTED-MEDIA-SEEK-HOTFIX.md).
 
 ## Source of truth
 
@@ -44,9 +46,9 @@ See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the authori
 
 ## Track Manager v5.13 / Studio bridge v1.5 — final roadmap Phase 4 backend
 
-The public LaunchPAD stays on **Build 66** and public media Worker **v2.6**. v5.13 is a private Track Manager Worker-only evolution.
+The public LaunchPAD stayed on **Build 66** while v5.13 was introduced as a private Track Manager Worker-only evolution.
 
-The existing private read, metadata and canonical lyrics contracts remain unchanged. Bridge v1.5 adds a separate `manage` capability family for the remaining Track Manager operations named by the SHINOBIWAN Studio roadmap Phase 4:
+The existing private read, metadata and canonical lyrics contracts remained unchanged. Bridge v1.5 added a separate `manage` capability family for the remaining Track Manager operations named by the SHINOBIWAN Studio roadmap Phase 4:
 
 ```json
 {
@@ -127,9 +129,17 @@ Exact origin, Access verification, whitelist-only metadata and stale-manifest pr
 
 See [`docs/STUDIO-VALIDATION-CORS-HOTFIX.md`](docs/STUDIO-VALIDATION-CORS-HOTFIX.md).
 
+## Build 67 highlights
+
+Build 67 is a post-Phase-6 public maintenance hotfix for the Home **Track DNA** panel. The public catalog normalizer already provides `releaseDate` as a normalized ISO value. The old Track DNA formatter incorrectly appended another `T00:00:00`, producing an invalid date such as `...ZT00:00:00` and falling back to `Date TBD` even though Track Manager and the track-detail page had the correct release date.
+
+Build 67 now parses the normalized value directly with `new Date(value)`. A regression guard covers both date-only and full ISO inputs, and the PWA cache namespace advances to v67 so installed/browser clients receive the corrected runtime.
+
+This hotfix changes no R2 data, Track Manager route, public media Worker, SonicTrace analysis, lyrics contract or Phase 7 scope.
+
 ## Build 66 highlights
 
-Build 66 introduced SHINOBIWAN Studio Phase 4B.1A metadata validation while the public PWA itself stayed stable. Later Track Manager revisions v5.10-v5.13 are private Worker-only backend evolutions and intentionally do not advance the public PWA build/cache.
+Build 66 introduced SHINOBIWAN Studio Phase 4B.1A metadata validation while the public PWA itself stayed stable. Later Track Manager revisions are private Worker-only backend evolutions and intentionally did not advance the public PWA build/cache until Build 67.
 
 ## Build 65 highlights
 
@@ -157,7 +167,7 @@ tracks/<slug>/lyrics.txt      # optional; may contain synchronization timestamps
 tracks/<slug>/video.<ext>     # optional
 ```
 
-Temporary v5.13 rollback material may exist during an active scoped asset transaction only under `_studio-backups/<slug>/...`; it is not canonical track data and is removed after success/compensation.
+Temporary Track Manager rollback material may exist during an active scoped asset transaction only under `_studio-backups/<slug>/...`; it is not canonical track data and is removed after success/compensation.
 
 The public application hydrates through the public Worker. Localhost/CI may use deterministic fixtures; production must not silently substitute a bundled production catalog.
 
@@ -182,16 +192,18 @@ npm run check:wrangler
 npm run check:build-docs
 ```
 
-`check:build-docs` enforces build-synchronized Markdown validation: every Markdown document must mention the active public build display and release marker.
+`check:build-docs` validates the active build marker in living release documentation. Historical phase/audit Markdown files are immutable snapshots and are no longer rewritten just to mirror a later public build number.
 
-CI checks browser navigation, PWA/service-worker behavior, Audio Lab signal contracts, catalog contracts, Cloudflare bundles, repository cleanliness, documentation/build coherence, Studio bridge security boundaries and desktop overflow regressions.
+CI checks browser navigation, PWA/service-worker behavior, Audio Lab signal contracts, catalog contracts, Cloudflare bundles, repository cleanliness, current release documentation, Studio bridge security boundaries and desktop overflow regressions.
 
-The Studio bridge guard separately proves that:
+The Studio bridge guards separately prove that:
 
 - metadata validation remains non-mutating;
 - metadata save remains media-isolated;
 - canonical lyrics remains manifest+ETag guarded;
-- v1.5 management is limited to track-create, per-asset upload/delete and explicit catalog rebuild;
+- management remains limited to track-create, per-asset upload/delete and explicit catalog rebuild;
+- Phase 6 contextual lyrics save remains specialized and canonical;
+- protected media reads retain Cloudflare Access and byte-range support;
 - whole-track deletion is not exposed;
 - legacy unrelated Track Manager writes remain same-origin.
 
@@ -199,7 +211,7 @@ The Studio bridge guard separately proves that:
 
 A public runtime build advances in one place: `js/build-config.js`.
 
-Every public build change must update all Markdown documentation to the same `display` and `release` values. Worker-only contract revisions keep the public Build 66 marker but update affected backend/integration docs.
+Every public runtime change must advance the build/cache marker and update the living release documentation. Historical phase/audit documents keep the build state they were written to describe. Worker-only contract revisions do not advance the public LaunchPAD build unless public runtime code changes.
 
 Web-host deployment, Worker deployment and R2/catalog mutation remain separate states. Do not report “deployed” without saying which state changed.
 
@@ -241,7 +253,7 @@ Useful documents:
 2. Do not edit production code only in Cloudflare, GitHub Pages, Lovable or generated `dist/` output.
 3. Temporary feature/fix branches are disposable; named `safety/*` snapshots are rollback references and must not be developed on.
 4. Advance public application versions only in `js/build-config.js`.
-5. Update every `.md` file for every new public application build; Worker-only revisions keep the public build fixed but update affected backend/integration documentation.
+5. Update living release documentation for a new public runtime build; preserve historical phase/audit docs as snapshots instead of rewriting their history.
 6. Keep Worker deployment, web deployment and R2 catalog rebuild as separate explicit states.
 7. Spectrum remains the Audio Lab reference path; every visual effect must consume the real FFT feed rather than independent loop animation.
 8. Add Audio Lab presets one at a time, with desktop and mobile budgets defined before merge.
@@ -251,4 +263,4 @@ Useful documents:
 12. New visual families should prefer distinct composition/motion language rather than repeating radial center-object patterns.
 13. Historical compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.
 14. Studio integration must remain additive and reversible: capabilities are opened one narrowly versioned route at a time, with fallback retained until replacement paths are proven.
-15. When roadmap Phase 4 is complete, stop before Phase 5 SonicTrace/Catalog Intelligence until new user instructions are provided.
+15. Phase 6 is complete and checkpointed. Phase 7 must not start without new explicit user authorization.

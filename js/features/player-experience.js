@@ -5,7 +5,7 @@ const TOGGLE_SELECTOR = '[data-action="toggle"]';
 
 function formatReleaseDate(value) {
   if (!value) return 'Date TBD';
-  const date = new Date(`${value}T00:00:00`);
+  const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return 'Date TBD';
   return new Intl.DateTimeFormat('en-GB', {
     day: '2-digit',
