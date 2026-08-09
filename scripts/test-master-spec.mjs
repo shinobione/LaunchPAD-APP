@@ -124,7 +124,7 @@ includesAll(lyricsStudioMedia, [
   "audio.addEventListener('seeked'",
   "audio.addEventListener('playing'",
   "playCanvas('audio-playing')"
-], 'Build 77 Lyrics Studio Canvas/seek isolation');
+], 'Build 77 Lyrics Studio Canvas/seek isolation ancestry');
 for (const forbiddenCanvasRecovery of [
   'function scheduleCanvasRetry',
   "playCanvas('audio-seeked')",
@@ -141,7 +141,23 @@ includesAll(lyricsEngineMedia, [
   "window.addEventListener('shinobi:seek-preview'", "window.addEventListener('shinobi:seek-commit'",
   "audio.addEventListener('seeking'", "audio.addEventListener('seeked'",
   "update(time, { behavior: 'auto', forceCenter: true, allowScroll: true })"
-], 'Build 77 Lyrics seek settlement');
+], 'Build 77 Lyrics seek settlement ancestry');
+
+const androidStudioSafe = read('js/features/android-studio-safe-mode.js');
+includesAll(androidStudioSafe, [
+  "/Android/i.test(navigator.userAgent || '')",
+  "window.matchMedia?.('(max-width:760px)')",
+  "originalShell.style.setProperty('display', 'none', 'important')",
+  "badge.textContent = 'MOBILE SAFE VISUAL'",
+  "event.target.closest?.('#lyrics-reader .lyric-line[data-time]')",
+  "window.dispatchEvent(new CustomEvent('shinobi:seek-commit'",
+  "audio.addEventListener('seeked'",
+  'settleLyricsAfterSeek()',
+  "safeImage.src = src"
+], 'Build 78 Android Studio safe mode');
+for (const forbiddenAndroidStudioMedia of ['document.createElement(\'video\')', '.load()', 'track.video', 'audio.pause()', 'audio.load()']) {
+  assert.ok(!androidStudioSafe.includes(forbiddenAndroidStudioMedia), `Build 78 Android Studio safe mode must not create a secondary media decoder or mutate the audio transport: ${forbiddenAndroidStudioMedia}`);
+}
 
 // Audio Lab registry and sanctuary reference.
 const registry = read('js/features/visual/audio-lab-registry.js');
@@ -256,10 +272,10 @@ const worker = read('sw.js');
 includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260810-phase-ux-c2-5-a-mobile-seek-canvas-v77');
-assert.equal(build.cache, 'shinobi-launchpad-v77');
-assert.equal(build.display, '2026.08.10.77');
-assert.equal(build.release, 'phase-ux-c2-5-a-mobile-seek-canvas-20260810');
-assert.equal(build.revision, 'mobile-seek-canvas-1');
+assert.equal(build.id, '20260810-phase-ux-c2-5-a-android-studio-safe-v78');
+assert.equal(build.cache, 'shinobi-launchpad-v78');
+assert.equal(build.display, '2026.08.10.78');
+assert.equal(build.release, 'phase-ux-c2-5-a-android-studio-safe-20260810');
+assert.equal(build.revision, 'android-studio-safe-1');
 
-console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 77 single-commit mobile seek, settled Lyrics auto-scroll and audio-first manual local-Blob Canvas recovery preserve Build 76 transport isolation, Build 75 ownership isolation, Build 74 Track Video recovery, Build 73 audio-clock stabilization, Build 72 Era affordance, supplied Moon/gold brand art and historical v5.10 bridge ancestry with ${presetCount} sanctioned Audio Lab presets.`);
+console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 78 isolates Android Studio from a secondary video decoder and restores deterministic lyric-line seeking while preserving Build 77 single-commit seek, Build 76 transport isolation, Build 75 ownership isolation, Build 74 Track Video recovery, Build 73 audio-clock stabilization, Build 72 Era affordance, supplied Moon/gold brand art and historical v5.10 bridge ancestry with ${presetCount} sanctioned Audio Lab presets.`);
