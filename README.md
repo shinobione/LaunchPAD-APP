@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.10.77` — release `phase-ux-c2-5-a-mobile-seek-canvas-20260810`.
+> Current application build: `2026.08.10.78` — release `phase-ux-c2-5-a-android-studio-safe-20260810`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -30,9 +30,11 @@ Build 76 isolated the Canvas **transport**: Lyrics Studio fetches the short vide
 
 Build 77 attacks those three mechanisms directly. The mobile seek range now previews position/lyrics while the finger moves but performs **one real media seek only when the gesture commits**, preventing a stream of `currentTime` changes and Range reposition requests. Lyrics synchronization pauses its scroll clock during a seek and recenters exactly once after settlement. Canvas keeps the local Blob transport but drops Android native loop; it uses a manual local-only loop, bounded decoder recovery and an audio-first circuit breaker. During a seek the decorative Canvas remains paused through `seeked` and only resumes after the canonical audio emits a real `playing` event.
 
-`Play album` and `Open project →` remain available, and the individual Album detail page remains complete and unchanged. Build 77 is LaunchPAD frontend-only: no Track Manager change, no Worker deployment, no R2 mutation, no canonical Album schema, no migration and no `catalog/index.json` change. See [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md), [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md), [`docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md`](docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md), [`docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md`](docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md), [`docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md`](docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md), [`docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md`](docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md), [`docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md), [`docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md`](docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md), [`docs/PHASE-UX-C2-5-A-BUILD76-CANVAS-TRANSPORT-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD76-CANVAS-TRANSPORT-ISOLATION.md) and [`docs/PHASE-UX-C2-5-A-BUILD77-MOBILE-SEEK-CANVAS.md`](docs/PHASE-UX-C2-5-A-BUILD77-MOBILE-SEEK-CANVAS.md).
+Real-user Build 77 smoke proved that the Android/MIUI secondary video decoder could still fail specifically inside mobile Lyrics Studio: the Canvas could go black, expose the poster/cover and leave the canonical audio/Media Session controls in a degraded state. Build 78 therefore stops treating the decorative MP4 as critical on this exact device/mode path. **Android + <=760 px + Lyrics Studio** now uses a decoder-safe animated artwork surface (`MOBILE SAFE VISUAL`) and keeps the original real Canvas video disabled. Desktop, non-Android and non-Studio video behavior remain unchanged. The same Android Studio guard also gives timestamped lyric-line taps a capture-phase single-seek contract and deterministic post-seek recentering.
 
-The Build 77 correction remains a release candidate until CI, Pages and real-user Android/mobile smoke pass. The final PHASE UX checkpoint is not created, C2.5-B is not started, C3 remains suspended, and Phase 7 is not started.
+`Play album` and `Open project →` remain available, and the individual Album detail page remains complete and unchanged. Build 78 is LaunchPAD frontend-only: no Track Manager change, no Worker deployment, no R2 mutation, no canonical Album schema, no migration and no `catalog/index.json` change. See [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md), [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md), [`docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md`](docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md), [`docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md`](docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md), [`docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md`](docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md), [`docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md`](docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md), [`docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md), [`docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md`](docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md), [`docs/PHASE-UX-C2-5-A-BUILD76-CANVAS-TRANSPORT-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD76-CANVAS-TRANSPORT-ISOLATION.md), [`docs/PHASE-UX-C2-5-A-BUILD77-MOBILE-SEEK-CANVAS.md`](docs/PHASE-UX-C2-5-A-BUILD77-MOBILE-SEEK-CANVAS.md) and [`docs/PHASE-UX-C2-5-A-BUILD78-ANDROID-STUDIO-SAFE.md`](docs/PHASE-UX-C2-5-A-BUILD78-ANDROID-STUDIO-SAFE.md).
+
+The Build 78 correction remains a release candidate until CI, Pages and real-user Android/mobile smoke pass. The final PHASE UX checkpoint is not created. C2.5-B, C3 and Phase 7 are not modified by Build 78; subsequent progression has separate user authorization and must remain isolated from this hotfix.
 
 ## Production PHASE UX C2 backend
 
@@ -160,6 +162,14 @@ v5.10 kept metadata validation non-mutating and added a CORS-safelisted `text/pl
 Exact origin, Access verification, whitelist-only metadata and stale-manifest protection remained mandatory.
 
 See [`docs/STUDIO-VALIDATION-CORS-HOTFIX.md`](docs/STUDIO-VALIDATION-CORS-HOTFIX.md).
+
+## Build 78 highlights
+
+Build 78 is the Android mobile Lyrics Studio fail-closed correction after real-user Build 77 smoke showed that a secondary MP4 decoder could still black out, fall back to its poster and leave canonical audio/Android Media Session controls degraded. On Android screens up to 760 px, **only inside Lyrics Studio**, the real Studio Canvas video is disabled and replaced with a lightweight animated current-artwork surface. The fallback creates no secondary `<video>` element and never reads the track video URL.
+
+Timestamped lyric-line taps in this mode are intercepted in capture phase so exactly one canonical seek is issued. The active line is updated by the existing lyrics engine through `shinobi:seek-commit`, then the reader performs a deterministic immediate recenter after `seeked`/`playing`. The main Build 77 single-commit slider remains unchanged.
+
+Desktop/non-Android real Canvas video, ordinary Track Video, Media Session metadata, Audio Lab, Album/Era behavior and canonical `lyrics.txt` remain unchanged. Build 78 changes no Worker, R2 object, canonical Album schema, track manifest, catalog projection, SonicTrace runtime, C3 backend or Phase 7 implementation.
 
 ## Build 77 highlights
 
@@ -367,6 +377,7 @@ Useful documents:
 - [`docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md`](docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md) — Build 75 Lyrics Studio Canvas ownership isolation
 - [`docs/PHASE-UX-C2-5-A-BUILD76-CANVAS-TRANSPORT-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD76-CANVAS-TRANSPORT-ISOLATION.md) — Build 76 local-Blob Canvas transport isolation and audio-seek priority
 - [`docs/PHASE-UX-C2-5-A-BUILD77-MOBILE-SEEK-CANVAS.md`](docs/PHASE-UX-C2-5-A-BUILD77-MOBILE-SEEK-CANVAS.md) — Build 77 single-commit seek, settled Lyrics auto-scroll and audio-first local Canvas recovery
+- [`docs/PHASE-UX-C2-5-A-BUILD78-ANDROID-STUDIO-SAFE.md`](docs/PHASE-UX-C2-5-A-BUILD78-ANDROID-STUDIO-SAFE.md) — Build 78 Android Studio decoder-safe visual fallback + timestamp-line seek guard
 - [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) — safe release procedure
 - [`ROADMAP.md`](ROADMAP.md) — remaining consolidation/product work
 - [`cloudflare/README.md`](cloudflare/README.md) — Workers/R2 operations
@@ -387,4 +398,4 @@ Useful documents:
 12. New visual families should prefer distinct composition/motion language rather than repeating radial center-object patterns.
 13. Historical compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.
 14. Studio integration must remain additive and reversible: capabilities are opened one narrowly versioned route at a time, with fallback retained until replacement paths are proven.
-15. Phase 6 is complete and checkpointed. Phase 7 must not start without new explicit user authorization.
+15. Phase 6 is complete and checkpointed. Any work beyond the PHASE UX closeout must remain separately versioned, reversible and explicitly authorized.

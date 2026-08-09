@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260810-phase-ux-c2-5-a-mobile-seek-canvas-v77',
-    cache: 'shinobi-launchpad-v77',
-    revision: 'mobile-seek-canvas-1',
-    display: '2026.08.10.77',
-    release: 'phase-ux-c2-5-a-mobile-seek-canvas-20260810'
+    id: '20260810-phase-ux-c2-5-a-android-studio-safe-v78',
+    cache: 'shinobi-launchpad-v78',
+    revision: 'android-studio-safe-1',
+    display: '2026.08.10.78',
+    release: 'phase-ux-c2-5-a-android-studio-safe-20260810'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
@@ -167,5 +167,28 @@
     document.head.appendChild(script);
   }
 
-  installNavigationStability();
+  function installAndroidStudioSafeMode() {
+    const existing = document.querySelector('script[data-android-studio-safe-mode]');
+    if (existing) {
+      if (existing.dataset.loaded === 'true') installNavigationStability();
+      else {
+        existing.addEventListener('load', installNavigationStability, { once: true });
+        existing.addEventListener('error', installNavigationStability, { once: true });
+      }
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `js/features/android-studio-safe-mode.js?v=${encodeURIComponent(config.id)}`;
+    script.async = false;
+    script.dataset.androidStudioSafeMode = 'true';
+    script.addEventListener('load', () => {
+      script.dataset.loaded = 'true';
+      installNavigationStability();
+    }, { once: true });
+    script.addEventListener('error', installNavigationStability, { once: true });
+    document.head.appendChild(script);
+  }
+
+  installAndroidStudioSafeMode();
 })();
