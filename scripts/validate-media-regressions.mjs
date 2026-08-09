@@ -52,15 +52,22 @@ for (const forbidden of ['audio?.pause()', "audio?.addEventListener('play'"]) {
 
 const feature11 = read('js/features/feature-11.js');
 for (const required of [
-  "video.addEventListener('ended'", "video.addEventListener('stalled'", "video.addEventListener('waiting'",
+  "video.addEventListener('ended'", "video.addEventListener('timeupdate'",
   "audio?.addEventListener('play'", "audio?.addEventListener('pause'", "video.preload = 'auto'",
   'video.loop = false', "video.removeAttribute('loop')", 'VIDEO_RECOVERY_HANDLER', 'VIDEO_STALL_THRESHOLD',
+  'VIDEO_TERMINAL_STALL_WINDOW', "video[VIDEO_RECOVERY_HANDLER]?.('terminal-stall')",
   'installAudioClockStability', "audio.dispatchEvent(new Event('timeupdate'))", "document.addEventListener('visibilitychange'", "window.addEventListener('pageshow'"
 ]) {
   if (!feature11.includes(required)) fail(`Feature 11 media stabilization is missing ${required}.`);
 }
+for (const forbidden of [
+  'video.load()', "video.addEventListener('stalled'", "video.addEventListener('waiting'",
+  "recoverLoop('boundary')", 'video.duration - current < 0.14'
+]) {
+  if (feature11.includes(forbidden)) fail(`Build 74 video isolation forbids pre-boundary/reload recovery: ${forbidden}.`);
+}
 if (!feature11.includes('installAudioClockStability(audio);') || !feature11.includes('installVideoStability(audio);')) {
-  fail('Feature 11 must install both the audio clock heartbeat and video recovery layers.');
+  fail('Feature 11 must install both the audio clock heartbeat and isolated video recovery layers.');
 }
 
 const lyricsStudio = read('js/features/lyrics-studio.js');
@@ -90,9 +97,9 @@ for (const required of ['shinobi-launchpad-listening-summary-v1','playedTrackIds
 }
 
 const brandCss = read('css/about-enhancements.css');
-if (brandCss.includes('NinJa-ShinoBiWan.png')) fail('Build 73 must not inject the Ninja into the Home hero composition.');
+if (brandCss.includes('NinJa-ShinoBiWan.png')) fail('Build 74 must not inject the Ninja into the Home hero composition.');
 if (!brandCss.includes("mask:url('../assets/logo.png')") || !brandCss.includes('.about-signature-art')) {
-  fail('Build 73 must preserve the gold sidebar identity and About moon artwork.');
+  fail('Build 74 must preserve the gold sidebar identity and About moon artwork.');
 }
 
-console.log('Build 73 media clock, explicit video loop recovery, Studio routing and brand-art rollback guards are valid.');
+console.log('Build 74 audio clock, terminal-only video loop isolation, Studio routing and brand-art rollback guards are valid.');
