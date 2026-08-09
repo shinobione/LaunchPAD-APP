@@ -85,19 +85,21 @@ includesAll(about, ["art.src = 'assets/Lune-ShinoBiWan.png'", "art.className = '
 const aboutCss = read('css/about-enhancements.css');
 includesAll(aboutCss, [
   '.brand-wordmark::after{', "mask:url('../assets/logo.png') left center / contain no-repeat", '.about-signature-art{'
-], 'Build 74 brand artwork');
-assert.ok(!aboutCss.includes('NinJa-ShinoBiWan.png'), 'Build 74 must keep the Ninja out of the Home hero.');
+], 'Build 75 brand artwork');
+assert.ok(!aboutCss.includes('NinJa-ShinoBiWan.png'), 'Build 75 must keep the Ninja out of the Home hero.');
 includesAll(read('js/features/home-editorial.js'), ["const DEFAULT_VISUAL_MODE = 'neon-shatter'", 'latestActiveTrackEntries(tracks, 1)', 'installVisualSwitcher'], 'Home editorial');
 
 const feature11Media = read('js/features/feature-11.js');
 includesAll(feature11Media, [
+  "const VIDEO_SELECTOR = 'video.track-video-player'",
   'VIDEO_TERMINAL_STALL_WINDOW', "video.addEventListener('ended'", "video[VIDEO_RECOVERY_HANDLER]?.('terminal-stall')",
   'installAudioClockStability', "audio.dispatchEvent(new Event('timeupdate'))"
-], 'Build 74 mobile media isolation');
+], 'Build 75 mobile media ownership boundary');
 for (const forbiddenMediaRecovery of [
-  'video.load()', "recoverLoop('boundary')", "video.addEventListener('stalled'", "video.addEventListener('waiting'"
+  'video.load()', "recoverLoop('boundary')", "video.addEventListener('stalled'", "video.addEventListener('waiting'",
+  "video.track-video-player, video.lyrics-studio-canvas-video"
 ]) {
-  assert.ok(!feature11Media.includes(forbiddenMediaRecovery), `Build 74 must not reintroduce protected-media loop churn: ${forbiddenMediaRecovery}`);
+  assert.ok(!feature11Media.includes(forbiddenMediaRecovery), `Build 75 must not reintroduce protected-media loop churn or cross-own Lyrics Studio Canvas: ${forbiddenMediaRecovery}`);
 }
 
 // Audio Lab registry and sanctuary reference.
@@ -213,10 +215,10 @@ const worker = read('sw.js');
 includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260809-phase-ux-c2-5-a-video-loop-isolation-v74');
-assert.equal(build.cache, 'shinobi-launchpad-v74');
-assert.equal(build.display, '2026.08.09.74');
-assert.equal(build.release, 'phase-ux-c2-5-a-video-loop-isolation-20260809');
-assert.equal(build.revision, 'video-loop-isolation-1');
+assert.equal(build.id, '20260809-phase-ux-c2-5-a-canvas-single-owner-v75');
+assert.equal(build.cache, 'shinobi-launchpad-v75');
+assert.equal(build.display, '2026.08.09.75');
+assert.equal(build.release, 'phase-ux-c2-5-a-canvas-single-owner-20260809');
+assert.equal(build.revision, 'canvas-single-owner-1');
 
-console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 74 protected-media video-loop isolation, Build 73 audio-clock stabilization, Build 72 Era affordance, supplied Moon/gold brand art and historical v5.10 bridge ancestry with ${presetCount} sanctioned Audio Lab presets remain guarded.`);
+console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 75 Lyrics Studio Canvas ownership isolation, Build 74 Track Video protected-media recovery, Build 73 audio-clock stabilization, Build 72 Era affordance, supplied Moon/gold brand art and historical v5.10 bridge ancestry with ${presetCount} sanctioned Audio Lab presets remain guarded.`);
