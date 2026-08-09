@@ -39,6 +39,7 @@ Runtime/UI:
 Regression/release support:
 
 - `scripts/test-albums-collapse.mjs`
+- `scripts/test-master-spec.mjs`
 - `package.json`
 - `README.md`
 - this document
@@ -81,7 +82,8 @@ Automated coverage must prove:
 - visible keyboard focus;
 - explicit mobile layout rule;
 - existing Play album routing remains present;
-- existing Open project routing remains present.
+- existing Open project routing remains present;
+- the master release guard advances coherently to Build 68 instead of pinning the prior Build 67 marker.
 
 Full repository CI remains authoritative before merge.
 
