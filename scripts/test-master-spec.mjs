@@ -85,8 +85,8 @@ includesAll(about, ["art.src = 'assets/Lune-ShinoBiWan.png'", "art.className = '
 const aboutCss = read('css/about-enhancements.css');
 includesAll(aboutCss, [
   '.brand-wordmark::after{', "mask:url('../assets/logo.png') left center / contain no-repeat", '.about-signature-art{'
-], 'Build 76 brand artwork');
-assert.ok(!aboutCss.includes('NinJa-ShinoBiWan.png'), 'Build 76 must keep the Ninja out of the Home hero.');
+], 'Build 77 brand artwork');
+assert.ok(!aboutCss.includes('NinJa-ShinoBiWan.png'), 'Build 77 must keep the Ninja out of the Home hero.');
 includesAll(read('js/features/home-editorial.js'), ["const DEFAULT_VISUAL_MODE = 'neon-shatter'", 'latestActiveTrackEntries(tracks, 1)', 'installVisualSwitcher'], 'Home editorial');
 
 const feature11Media = read('js/features/feature-11.js');
@@ -94,35 +94,54 @@ includesAll(feature11Media, [
   "const VIDEO_SELECTOR = 'video.track-video-player'",
   'VIDEO_TERMINAL_STALL_WINDOW', "video.addEventListener('ended'", "video[VIDEO_RECOVERY_HANDLER]?.('terminal-stall')",
   'installAudioClockStability', "audio.dispatchEvent(new Event('timeupdate'))"
-], 'Build 76 Track Video ownership boundary');
+], 'Build 77 Track Video ownership boundary');
 for (const forbiddenMediaRecovery of [
   'video.load()', "recoverLoop('boundary')", "video.addEventListener('stalled'", "video.addEventListener('waiting'",
   "video.track-video-player, video.lyrics-studio-canvas-video"
 ]) {
-  assert.ok(!feature11Media.includes(forbiddenMediaRecovery), `Build 76 must not reintroduce protected-media loop churn or cross-own Lyrics Studio Canvas: ${forbiddenMediaRecovery}`);
+  assert.ok(!feature11Media.includes(forbiddenMediaRecovery), `Build 77 must not reintroduce protected-media loop churn or cross-own Lyrics Studio Canvas: ${forbiddenMediaRecovery}`);
 }
 
 const lyricsStudioMedia = read('js/features/lyrics-studio.js');
 includesAll(lyricsStudioMedia, [
   "video.autoplay = false",
+  "video.loop = false",
   "const response = await fetch(track.video",
   "cache: 'force-cache'",
   'const blob = await response.blob()',
   'URL.createObjectURL(blob)',
   'URL.revokeObjectURL(canvasObjectUrl)',
   "canvasVideo.setAttribute('data-transport', 'blob')",
+  'CANVAS_LOCAL_RECOVERY_LIMIT',
+  'function scheduleLocalCanvasRecovery',
+  "canvasVideo.addEventListener('ended'",
+  "playCanvas('local-loop')",
+  'function installSingleCommitSeek()',
+  "seek.addEventListener('input', preview, { capture: true })",
+  "seek.addEventListener('pointerup', commit, { capture: true })",
+  'event.stopImmediatePropagation()',
   "audio.addEventListener('seeking'",
   "audio.addEventListener('seeked'",
-  "playCanvas('audio-seeked')"
-], 'Build 76 Lyrics Studio Canvas transport isolation');
+  "audio.addEventListener('playing'",
+  "playCanvas('audio-playing')"
+], 'Build 77 Lyrics Studio Canvas/seek isolation');
 for (const forbiddenCanvasRecovery of [
   'function scheduleCanvasRetry',
-  "canvasVideo.addEventListener('ended'",
-  "scheduleCanvasRetry('stalled')",
-  'canvasVideo.src = canvasVideo.dataset.src'
+  "playCanvas('audio-seeked')",
+  'canvasVideo.src = canvasVideo.dataset.src',
+  "video.setAttribute('loop', '')",
+  'video.loop = true'
 ]) {
-  assert.ok(!lyricsStudioMedia.includes(forbiddenCanvasRecovery), `Build 76 must keep Canvas loops local and remove remote retry/restart churn: ${forbiddenCanvasRecovery}`);
+  assert.ok(!lyricsStudioMedia.includes(forbiddenCanvasRecovery), `Build 77 must keep Canvas loops local/manual and protect audio-first seeking: ${forbiddenCanvasRecovery}`);
 }
+
+const lyricsEngineMedia = read('js/features/lyrics/lyrics-engine.js');
+includesAll(lyricsEngineMedia, [
+  'let seekInProgress = false', 'function beginSeek(time)', 'function settleSeek(time = audio.currentTime)',
+  "window.addEventListener('shinobi:seek-preview'", "window.addEventListener('shinobi:seek-commit'",
+  "audio.addEventListener('seeking'", "audio.addEventListener('seeked'",
+  "update(time, { behavior: 'auto', forceCenter: true, allowScroll: true })"
+], 'Build 77 Lyrics seek settlement');
 
 // Audio Lab registry and sanctuary reference.
 const registry = read('js/features/visual/audio-lab-registry.js');
@@ -237,10 +256,10 @@ const worker = read('sw.js');
 includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260810-phase-ux-c2-5-a-canvas-transport-isolation-v76');
-assert.equal(build.cache, 'shinobi-launchpad-v76');
-assert.equal(build.display, '2026.08.10.76');
-assert.equal(build.release, 'phase-ux-c2-5-a-canvas-transport-isolation-20260810');
-assert.equal(build.revision, 'canvas-transport-isolation-1');
+assert.equal(build.id, '20260810-phase-ux-c2-5-a-mobile-seek-canvas-v77');
+assert.equal(build.cache, 'shinobi-launchpad-v77');
+assert.equal(build.display, '2026.08.10.77');
+assert.equal(build.release, 'phase-ux-c2-5-a-mobile-seek-canvas-20260810');
+assert.equal(build.revision, 'mobile-seek-canvas-1');
 
-console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 76 local-Blob Lyrics Studio Canvas transport isolation, Build 75 ownership isolation, Build 74 Track Video protected-media recovery, Build 73 audio-clock stabilization, Build 72 Era affordance, supplied Moon/gold brand art and historical v5.10 bridge ancestry with ${presetCount} sanctioned Audio Lab presets remain guarded.`);
+console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 77 single-commit mobile seek, settled Lyrics auto-scroll and audio-first manual local-Blob Canvas recovery preserve Build 76 transport isolation, Build 75 ownership isolation, Build 74 Track Video recovery, Build 73 audio-clock stabilization, Build 72 Era affordance, supplied Moon/gold brand art and historical v5.10 bridge ancestry with ${presetCount} sanctioned Audio Lab presets.`);

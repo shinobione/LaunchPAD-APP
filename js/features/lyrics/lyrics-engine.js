@@ -51,6 +51,8 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
   let searchPromise = null;
   let syncFrame = 0;
   let lastSyncAt = 0;
+  let seekInProgress = false;
+  let seekSettleFrame = 0;
 
   const lyricsViewActive = () => $('#view-lyrics')?.classList.contains('active') === true;
   const homeViewActive = () => $('#view-home')?.classList.contains('active') === true;
@@ -142,7 +144,7 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
     return centerElementInScrollContainer($('#lyrics-reader'), element, behavior);
   }
 
-  function applyActiveLine(index, behavior = 'smooth') {
+  function applyActiveLine(index, behavior = 'smooth', { allowScroll = true } = {}) {
     activeIndex = index;
 
     if (lyricsViewActive()) {
@@ -151,13 +153,13 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
         element.classList.toggle('active', elementIndex === activeIndex);
         element.classList.toggle('past', elementIndex < activeIndex);
       });
-      if (autoScroll && activeIndex >= 0) scrollLineIntoReader(elements[activeIndex], behavior);
+      if (allowScroll && autoScroll && activeIndex >= 0) scrollLineIntoReader(elements[activeIndex], behavior);
     }
 
     if (homeViewActive()) renderHome(Math.max(0, activeIndex));
   }
 
-  function requestTimestamp(time, index, element) {
+  function requestTimestamp(time, index) {
     const readyEvents = ['loadedmetadata', 'durationchange', 'canplay'];
     let finished = false;
 
@@ -167,15 +169,16 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
 
     const applyWhenReady = () => {
       if (finished) return true;
+      seekInProgress = true;
+      stopSyncClock();
       if (!seekAudioToTimestamp(audio, time)) return false;
       finished = true;
       cleanup();
-      update(time);
-      if (autoScroll) scrollLineIntoReader(element, 'auto');
+      update(time, { behavior: 'auto', allowScroll: false });
       return true;
     };
 
-    applyActiveLine(index, 'auto');
+    applyActiveLine(index, 'auto', { allowScroll: false });
     if (!applyWhenReady()) {
       readyEvents.forEach(eventName => audio.addEventListener(eventName, applyWhenReady));
     }
@@ -211,7 +214,7 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
 
       if (Number.isFinite(line.time)) {
         button.dataset.time = String(line.time);
-        button.addEventListener('click', () => requestTimestamp(line.time, index, button));
+        button.addEventListener('click', () => requestTimestamp(line.time, index));
       }
       fragment.appendChild(button);
     });
@@ -224,6 +227,7 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
     const token = ++loadToken;
     currentLines = [];
     activeIndex = -1;
+    seekInProgress = false;
     setLoading(track);
 
     const lines = await fetchLyrics(track);
@@ -265,9 +269,10 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
       && center <= readerRect.bottom - safeInset;
   }
 
-  function update(time) {
+  function update(time, { behavior = 'smooth', forceCenter = false, allowScroll = true } = {}) {
     if (!currentLines.length) return;
     const next = findIndex(time);
+    const scrollAllowed = allowScroll && !seekInProgress;
 
     if (!syncSurfaceActive()) {
       activeIndex = next;
@@ -277,14 +282,14 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
     if (next === activeIndex) {
       if (lyricsViewActive()) {
         const activeElement = $$('#lyrics-reader .lyric-line')[activeIndex];
-        if (autoScroll && activeIndex >= 0 && !lineIsInReaderFocusZone(activeElement)) {
-          scrollLineIntoReader(activeElement);
+        if (scrollAllowed && autoScroll && activeIndex >= 0 && (forceCenter || !lineIsInReaderFocusZone(activeElement))) {
+          scrollLineIntoReader(activeElement, behavior);
         }
       }
       return;
     }
 
-    applyActiveLine(next);
+    applyActiveLine(next, behavior, { allowScroll: scrollAllowed });
   }
 
   function stopSyncClock() {
@@ -294,9 +299,9 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
   }
 
   function startSyncClock() {
-    if (syncFrame || !syncSurfaceActive()) return;
+    if (syncFrame || !syncSurfaceActive() || seekInProgress) return;
     const tick = timestamp => {
-      if (audio.paused || audio.ended || !syncSurfaceActive()) {
+      if (audio.paused || audio.ended || !syncSurfaceActive() || seekInProgress) {
         syncFrame = 0;
         return;
       }
@@ -307,6 +312,25 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
       syncFrame = requestAnimationFrame(tick);
     };
     syncFrame = requestAnimationFrame(tick);
+  }
+
+  function beginSeek(time) {
+    seekInProgress = true;
+    stopSyncClock();
+    update(time, { behavior: 'auto', allowScroll: false });
+  }
+
+  function settleSeek(time = audio.currentTime) {
+    seekInProgress = false;
+    stopSyncClock();
+    if (seekSettleFrame) cancelAnimationFrame(seekSettleFrame);
+    seekSettleFrame = requestAnimationFrame(() => {
+      seekSettleFrame = requestAnimationFrame(() => {
+        seekSettleFrame = 0;
+        update(time, { behavior: 'auto', forceCenter: true, allowScroll: true });
+        if (!audio.paused && !audio.ended) startSyncClock();
+      });
+    });
   }
 
   async function hydrateSearchIndex(onReady) {
@@ -339,12 +363,27 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
     switchView('lyrics');
   });
 
-  ['seeking', 'seeked', 'loadedmetadata', 'durationchange'].forEach(eventName => {
-    audio.addEventListener(eventName, () => update(audio.currentTime));
+  window.addEventListener('shinobi:seek-preview', event => {
+    const time = Number(event.detail?.time);
+    if (Number.isFinite(time)) beginSeek(time);
+  });
+
+  window.addEventListener('shinobi:seek-commit', event => {
+    const time = Number(event.detail?.time);
+    if (Number.isFinite(time)) beginSeek(time);
+  });
+
+  audio.addEventListener('seeking', () => beginSeek(audio.currentTime));
+  audio.addEventListener('seeked', () => settleSeek(audio.currentTime));
+  ['loadedmetadata', 'durationchange'].forEach(eventName => {
+    audio.addEventListener(eventName, () => update(audio.currentTime, { behavior: 'auto' }));
   });
   audio.addEventListener('playing', () => {
-    update(audio.currentTime);
-    startSyncClock();
+    if (seekInProgress) settleSeek(audio.currentTime);
+    else {
+      update(audio.currentTime);
+      startSyncClock();
+    }
   });
   audio.addEventListener('pause', stopSyncClock);
   audio.addEventListener('ended', stopSyncClock);
@@ -354,9 +393,9 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
       stopSyncClock();
       return;
     }
-    update(audio.currentTime);
-    if (!audio.paused && !audio.ended) startSyncClock();
-    if (lyricsViewActive() && activeIndex >= 0) applyActiveLine(activeIndex, 'auto');
+    update(audio.currentTime, { behavior: 'auto' });
+    if (!audio.paused && !audio.ended && !seekInProgress) startSyncClock();
+    if (lyricsViewActive() && activeIndex >= 0) applyActiveLine(activeIndex, 'auto', { allowScroll: !seekInProgress });
     if (homeViewActive()) renderHome(Math.max(0, activeIndex));
   });
 

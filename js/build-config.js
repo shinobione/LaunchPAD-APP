@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260810-phase-ux-c2-5-a-canvas-transport-isolation-v76',
-    cache: 'shinobi-launchpad-v76',
-    revision: 'canvas-transport-isolation-1',
-    display: '2026.08.10.76',
-    release: 'phase-ux-c2-5-a-canvas-transport-isolation-20260810'
+    id: '20260810-phase-ux-c2-5-a-mobile-seek-canvas-v77',
+    cache: 'shinobi-launchpad-v77',
+    revision: 'mobile-seek-canvas-1',
+    display: '2026.08.10.77',
+    release: 'phase-ux-c2-5-a-mobile-seek-canvas-20260810'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
