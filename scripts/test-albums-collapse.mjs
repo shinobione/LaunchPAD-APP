@@ -6,6 +6,7 @@ const controller = fs.readFileSync('js/features/content/content-controller.js', 
 const css = fs.readFileSync('css/content-v4.css', 'utf8');
 const appMain = fs.readFileSync('js/app-main.js', 'utf8');
 const discography = fs.readFileSync('js/features/discography-experience.js', 'utf8');
+const discographyCss = fs.readFileSync('css/discography-experience.css', 'utf8');
 const catalogStore = fs.readFileSync('js/core/catalog-store.js', 'utf8');
 const queueUi = fs.readFileSync('js/features/queue-ui.js', 'utf8');
 
@@ -102,6 +103,26 @@ assert.ok(
   'Era playback context must be removable and resynchronized with filter/navigation changes.',
 );
 assert.ok(
+  discography.includes('function selectedEraPlayback()')
+    && discography.includes('data-era-play hidden')
+    && discography.includes('button.textContent = `▶ Play Era · ${playback.indexes.length}`')
+    && discography.includes("button.dataset.queueContext = 'era'"),
+  'Exactly one selected Era must reveal an explicit Play Era control using the existing virtual queue context.',
+);
+assert.ok(
+  discography.includes('function centerEraOnMobile(button)')
+    && discography.includes("inline: 'center'")
+    && discography.includes('Swipe to explore eras'),
+  'Mobile Era selection must expose and follow the horizontally scrollable Era carousel.',
+);
+assert.ok(
+  discographyCss.includes('scroll-snap-type:x mandatory')
+    && discographyCss.includes('min-width:min(68vw,220px)')
+    && discographyCss.includes('.era-timeline-mobile-hint')
+    && discographyCss.includes('.era-play-button'),
+  'Mobile Era cards must be readable, snap predictably, expose the next-card affordance and keep Play Era visible.',
+);
+assert.ok(
   catalogStore.includes('export function getEraTrackIndexes(eraValue)')
     && catalogStore.includes('decodeEraQueueId(albumId)')
     && catalogStore.includes('return virtualEra ? getEraTrackIndexes(virtualEra)'),
@@ -120,4 +141,4 @@ assert.equal(eraQueue.next(), 2, 'Next must advance inside the selected Era queu
 assert.equal(eraQueue.next(), 3, 'Era queue ordering must remain deterministic.');
 assert.equal(eraQueue.next(), null, 'Era queue must stop at its end when repeat is off.');
 
-console.log('Albums/Era UX guard passed: collapsed default, focused Album layout, post-transition mobile focus scroll, ARIA/keyboard, Play/Open, virtual Era queue and sequential playback preserved.');
+console.log('Albums/Era UX guard passed: Album focus + mobile follow preserved, explicit Play Era and discoverable mobile carousel added, virtual Era queue sequencing protected.');
