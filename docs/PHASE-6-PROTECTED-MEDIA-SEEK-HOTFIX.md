@@ -1,5 +1,8 @@
 # Phase 6 — Protected media seek hotfix
 
+Current LaunchPAD public build: **2026.08.08.66**  
+Current LaunchPAD release: **studio-metadata-validation-20260808**
+
 ## Problem
 
 The embedded LRC Maker engine can select a timestamped lyric line and set the active `HTMLAudioElement.currentTime`, but the canonical protected media route previously returned the complete R2 object for every request and did not honor HTTP byte ranges.
