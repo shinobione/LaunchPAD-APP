@@ -66,7 +66,7 @@ for (const forbidden of [
   "recoverLoop('boundary')", 'video.duration - current < 0.14',
   "video.track-video-player, video.lyrics-studio-canvas-video"
 ]) {
-  if (feature11.includes(forbidden)) fail(`Build 75 video isolation forbids pre-boundary/reload/cross-owner recovery: ${forbidden}.`);
+  if (feature11.includes(forbidden)) fail(`Build 76 must keep Track Video recovery isolated from protected-media reload/pre-boundary/cross-owner churn: ${forbidden}.`);
 }
 if (!feature11.includes('installAudioClockStability(audio);') || !feature11.includes('installVideoStability(audio);')) {
   fail('Feature 11 must install both the audio clock heartbeat and isolated Track Video recovery layers.');
@@ -76,12 +76,26 @@ const lyricsStudio = read('js/features/lyrics-studio.js');
 for (const required of [
   "dataset.lyricsStudio = 'canvas'",'lyrics-studio-canvas-active',"video.className = 'lyrics-studio-canvas-video'",'video.loop = true',
   'video.muted = true','video.controls = false',"ensureStylesheet('css/track-videos.css')",'autoScrollButton','has-canvas-control','setPressed',
-  'parseRoute','routeToHash','routeMatchesCurrentStudio','syncStudioRoute','preserveStudioForCurrentTrack',"type: 'studio'","'shinobi:route-change'"
+  'parseRoute','routeToHash','routeMatchesCurrentStudio','syncStudioRoute','preserveStudioForCurrentTrack',"type: 'studio'","'shinobi:route-change'",
+  "async function prepareCanvasSource(track, reason = 'play')",
+  "const response = await fetch(track.video",
+  "cache: 'force-cache'",
+  'const blob = await response.blob()',
+  'URL.createObjectURL(blob)',
+  'URL.revokeObjectURL(canvasObjectUrl)',
+  "canvasVideo.setAttribute('data-transport', 'blob')",
+  "audio.addEventListener('seeking'",
+  "audio.addEventListener('seeked'",
+  "playCanvas('audio-seeked')"
 ]) {
-  if (!lyricsStudio.includes(required)) fail(`Lyrics Studio video and route state are missing ${required}.`);
+  if (!lyricsStudio.includes(required)) fail(`Lyrics Studio local Canvas transport or route state is missing ${required}.`);
 }
-for (const forbidden of ['requestLyricsStudio','pendingStudioTrackId','sessionStorage','shinobi-launchpad-open-studio-track']) {
-  if (lyricsStudio.includes(forbidden)) fail(`Legacy Studio handoff survived dedicated routing: ${forbidden}.`);
+for (const forbidden of [
+  'requestLyricsStudio','pendingStudioTrackId','sessionStorage','shinobi-launchpad-open-studio-track',
+  'function scheduleCanvasRetry', "canvasVideo.addEventListener('ended'",
+  "scheduleCanvasRetry('stalled')", 'canvasVideo.src = canvasVideo.dataset.src'
+]) {
+  if (lyricsStudio.includes(forbidden)) fail(`Build 76 Lyrics Studio must not reintroduce legacy handoff or remote loop/retry churn: ${forbidden}.`);
 }
 if (lyricsStudio.includes('audio.pause')) fail('Lyrics Studio video must leave the music track playing.');
 
@@ -99,9 +113,9 @@ for (const required of ['shinobi-launchpad-listening-summary-v1','playedTrackIds
 }
 
 const brandCss = read('css/about-enhancements.css');
-if (brandCss.includes('NinJa-ShinoBiWan.png')) fail('Build 75 must not inject the Ninja into the Home hero composition.');
+if (brandCss.includes('NinJa-ShinoBiWan.png')) fail('Build 76 must not inject the Ninja into the Home hero composition.');
 if (!brandCss.includes("mask:url('../assets/logo.png')") || !brandCss.includes('.about-signature-art')) {
-  fail('Build 75 must preserve the gold sidebar identity and About moon artwork.');
+  fail('Build 76 must preserve the gold sidebar identity and About moon artwork.');
 }
 
-console.log('Build 75 audio clock, single-owner Lyrics Studio Canvas boundary, Track Video recovery isolation, Studio routing and brand-art rollback guards are valid.');
+console.log('Build 76 audio clock, local-Blob Lyrics Studio Canvas transport, audio-seek priority, Track Video recovery isolation, Studio routing and brand-art rollback guards are valid.');
