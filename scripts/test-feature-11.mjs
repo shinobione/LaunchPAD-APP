@@ -71,6 +71,7 @@ for (const required of [
   'Release date unavailable',
   'CATALOG ACTIVITY',
   "button.textContent = expanded ? 'Player' : 'Video'",
+  "const VIDEO_SELECTOR = 'video.track-video-player'",
   "video.preload = 'auto'",
   "video.addEventListener('ended'",
   'VIDEO_TERMINAL_STALL_WINDOW',
@@ -78,8 +79,14 @@ for (const required of [
   "audio?.addEventListener('play'",
   "audio?.addEventListener('pause'"
 ]) assert.ok(feature.includes(required), `Feature 11 app module is missing ${required}.`);
-for (const forbidden of ['video.load()', "recoverLoop('boundary')", "video.addEventListener('stalled'", "video.addEventListener('waiting'"]) {
-  assert.ok(!feature.includes(forbidden), `Feature 11 must keep video recovery isolated from protected-media reload/pre-boundary churn: ${forbidden}`);
+for (const forbidden of [
+  'video.load()',
+  "recoverLoop('boundary')",
+  "video.addEventListener('stalled'",
+  "video.addEventListener('waiting'",
+  "video.track-video-player, video.lyrics-studio-canvas-video"
+]) {
+  assert.ok(!feature.includes(forbidden), `Feature 11 must keep video recovery isolated from protected-media reload/pre-boundary/cross-owner churn: ${forbidden}`);
 }
 
 const routeStyles = read('css/feature-11.css');
