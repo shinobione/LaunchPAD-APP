@@ -6,7 +6,9 @@ import {
 } from '../core/catalog-ordering.js';
 import { ensureStylesheet } from '../core/assets.js';
 
-const VIDEO_SELECTOR = 'video.track-video-player, video.lyrics-studio-canvas-video';
+// Lyrics Studio owns its own Canvas lifecycle. Feature 11 stabilizes only the
+// standalone Track Video surface so two independent loop owners can never race.
+const VIDEO_SELECTOR = 'video.track-video-player';
 const VIDEO_PLAYBACK_HANDLER = Symbol('feature11PlaybackHandler');
 const VIDEO_RECOVERY_HANDLER = Symbol('feature11RecoveryHandler');
 const VIDEO_PROGRESS_STATE = new WeakMap();
