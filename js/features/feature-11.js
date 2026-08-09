@@ -174,7 +174,7 @@ function stabilizeVideo(video) {
   video.muted = true;
   video.defaultMuted = true;
   // Keep one explicit loop owner, but never pre-empt the real media boundary.
-  // Most importantly: recovery is forbidden from calling video.load(), because on
+  // Most importantly: recovery must never force a media-element reload, because on
   // Android protected media a reload storm can contend with the canonical audio seek path.
   video.loop = false;
   video.removeAttribute('loop');
