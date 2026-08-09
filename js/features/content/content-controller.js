@@ -114,10 +114,27 @@ function prefersReducedMotion() {
 
 function runAlbumLayoutTransition(callback) {
   if (!prefersReducedMotion() && typeof document.startViewTransition === 'function') {
-    document.startViewTransition(callback);
-    return;
+    const transition = document.startViewTransition(callback);
+    return transition?.finished || Promise.resolve();
   }
   callback();
+  return Promise.resolve();
+}
+
+function focusExpandedAlbumOnNarrowScreen(toggle) {
+  if (!globalThis.matchMedia?.('(max-width: 1180px)').matches) return;
+  const card = toggle.closest('.project-album');
+  if (!card) return;
+
+  requestAnimationFrame(() => {
+    const topbar = document.querySelector('.topbar');
+    const topbarHeight = topbar?.getBoundingClientRect().height || 0;
+    const top = Math.max(0, window.scrollY + card.getBoundingClientRect().top - topbarHeight - 12);
+    window.scrollTo({
+      top,
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth'
+    });
+  });
 }
 
 function installAlbumTrackToggles(view) {
@@ -132,10 +149,16 @@ function installAlbumTrackToggles(view) {
     toggle.addEventListener('click', () => {
       const shouldExpand = toggle.getAttribute('aria-expanded') !== 'true';
 
-      runAlbumLayoutTransition(() => {
+      const layoutFinished = runAlbumLayoutTransition(() => {
         toggles.forEach(other => setAlbumTrackListExpanded(view, other, false));
         if (shouldExpand) setAlbumTrackListExpanded(view, toggle, true);
       });
+
+      if (shouldExpand) {
+        Promise.resolve(layoutFinished)
+          .catch(() => {})
+          .then(() => focusExpandedAlbumOnNarrowScreen(toggle));
+      }
     });
   });
 }

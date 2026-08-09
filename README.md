@@ -1,6 +1,6 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.09.69` — release `phase-ux-c2-5-a-focus-era-queue-20260809`.
+> Current application build: `2026.08.09.70` — release `phase-ux-c2-5-a-mobile-album-focus-20260809`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -12,9 +12,11 @@ Build 69 refines that accepted direction without changing the Album data model. 
 
 Discography Era selection now also creates a virtual playback context. Selecting an Era still only filters the catalog; it does not autoplay. Once a track from that Era is played, the existing queue engine resolves the Era tracks as a reconstructible `era:` collection, labels the player context `Era queue`, and keeps Next / Previous inside that Era just like Album playback.
 
-`Play album` and `Open project →` remain available, and the individual Album detail page remains complete and unchanged. Build 69 is LaunchPAD frontend-only: no Track Manager change, no Worker deployment, no R2 mutation, no canonical Album schema, no migration and no `catalog/index.json` change. See [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md) and [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md).
+Build 70 is the narrow-screen Album Focus follow-up found during real-user mobile smoke. When a lower Album is expanded on mobile/tablet, the runtime now waits for the reorder/View Transition to finish and then follows the selected Album to its new position, accounting for the sticky topbar. Desktop Album Focus is unchanged; closing an Album does not force a scroll; reduced-motion preference remains respected.
 
-The Build 69 refinement remains a release candidate until CI, Pages and real-user browser smoke pass. The final PHASE UX checkpoint is not created, C2.5-B is not started, C3 remains suspended, and Phase 7 is not started.
+`Play album` and `Open project →` remain available, and the individual Album detail page remains complete and unchanged. Build 70 is LaunchPAD frontend-only: no Track Manager change, no Worker deployment, no R2 mutation, no canonical Album schema, no migration and no `catalog/index.json` change. See [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md), [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md) and [`docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md`](docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md).
+
+The Build 70 hotfix remains a release candidate until CI, Pages and real-user browser smoke pass. The final PHASE UX checkpoint is not created, C2.5-B is not started, C3 remains suspended, and Phase 7 is not started.
 
 ## Production PHASE UX C2 backend
 
@@ -142,6 +144,14 @@ v5.10 kept metadata validation non-mutating and added a CORS-safelisted `text/pl
 Exact origin, Access verification, whitelist-only metadata and stale-manifest protection remained mandatory.
 
 See [`docs/STUDIO-VALIDATION-CORS-HOTFIX.md`](docs/STUDIO-VALIDATION-CORS-HOTFIX.md).
+
+## Build 70 highlights
+
+Build 70 fixes the mobile/tablet viewport gap discovered after Build 69: when an Album card lower in the list is expanded, the card is first reordered to the focused position and the viewport then follows that new position instead of remaining stranded near the bottom of the old layout. The topbar height is accounted for so the Album header/actions remain visible.
+
+The follow-up scroll runs only at widths up to 1180 px and only on expansion. Desktop Album Focus, Hide tracks, Album playback, Open project, Album detail and Era Queue behavior remain unchanged. Reduced-motion preference uses immediate rather than smooth scrolling.
+
+Build 70 changes no Worker, R2 object, canonical Album schema, track manifest, catalog projection, SonicTrace runtime or Phase 7 scope.
 
 ## Build 69 highlights
 
@@ -273,6 +283,7 @@ Useful documents:
 - [`docs/STUDIO-PHASE4-OPERATIONS.md`](docs/STUDIO-PHASE4-OPERATIONS.md) — v5.13 final Phase 4 operational contract
 - [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md) — Build 68 C2.5-A scalable Albums baseline
 - [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md) — Build 69 Album Focus + virtual Era queue refinement
+- [`docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md`](docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md) — Build 70 narrow-screen viewport follow-up
 - [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) — safe release procedure
 - [`ROADMAP.md`](ROADMAP.md) — remaining consolidation/product work
 - [`cloudflare/README.md`](cloudflare/README.md) — Workers/R2 operations
