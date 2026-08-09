@@ -72,7 +72,7 @@ function installBuildInfo() {
   placeBuildInfo();
 }
 
-function installGoldenLogo() {
+function installSignatureArt() {
   const card = document.querySelector('#view-about .about-card');
   if (!card) return;
 
@@ -81,19 +81,23 @@ function installGoldenLogo() {
   const wrapper = document.createElement('div');
   wrapper.className = 'about-golden-logo-wrap';
 
-  const wordmark = document.createElement('div');
-  wordmark.className = 'about-golden-wordmark';
-  wordmark.setAttribute('role', 'img');
-  wordmark.setAttribute('aria-label', 'SHINOBIWAN golden logo');
+  const art = document.createElement('img');
+  art.className = 'about-signature-art';
+  art.src = 'assets/Lune-ShinoBiWan.png';
+  art.width = 1254;
+  art.height = 1254;
+  art.loading = 'lazy';
+  art.decoding = 'async';
+  art.alt = 'SHINOBIWAN moon emblem';
 
-  wrapper.appendChild(wordmark);
+  wrapper.appendChild(art);
   card.appendChild(wrapper);
 }
 
 export function initAboutEnhancements() {
   ensureStylesheet('css/about-enhancements.css');
   installAboutSocialCards();
-  installGoldenLogo();
+  installSignatureArt();
   installBuildInfo();
   installBuildInfoPlacementWatcher();
 }
