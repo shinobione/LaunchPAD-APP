@@ -85,9 +85,20 @@ includesAll(about, ["art.src = 'assets/Lune-ShinoBiWan.png'", "art.className = '
 const aboutCss = read('css/about-enhancements.css');
 includesAll(aboutCss, [
   '.brand-wordmark::after{', "mask:url('../assets/logo.png') left center / contain no-repeat", '.about-signature-art{'
-], 'Build 73 brand artwork');
-assert.ok(!aboutCss.includes('NinJa-ShinoBiWan.png'), 'Build 73 must keep the Ninja out of the Home hero.');
+], 'Build 74 brand artwork');
+assert.ok(!aboutCss.includes('NinJa-ShinoBiWan.png'), 'Build 74 must keep the Ninja out of the Home hero.');
 includesAll(read('js/features/home-editorial.js'), ["const DEFAULT_VISUAL_MODE = 'neon-shatter'", 'latestActiveTrackEntries(tracks, 1)', 'installVisualSwitcher'], 'Home editorial');
+
+const feature11Media = read('js/features/feature-11.js');
+includesAll(feature11Media, [
+  'VIDEO_TERMINAL_STALL_WINDOW', "video.addEventListener('ended'", "video[VIDEO_RECOVERY_HANDLER]?.('terminal-stall')",
+  'installAudioClockStability', "audio.dispatchEvent(new Event('timeupdate'))"
+], 'Build 74 mobile media isolation');
+for (const forbiddenMediaRecovery of [
+  'video.load()', "recoverLoop('boundary')", "video.addEventListener('stalled'", "video.addEventListener('waiting'"
+]) {
+  assert.ok(!feature11Media.includes(forbiddenMediaRecovery), `Build 74 must not reintroduce protected-media loop churn: ${forbiddenMediaRecovery}`);
+}
 
 // Audio Lab registry and sanctuary reference.
 const registry = read('js/features/visual/audio-lab-registry.js');
@@ -202,10 +213,10 @@ const worker = read('sw.js');
 includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260809-phase-ux-c2-5-a-mobile-media-v73');
-assert.equal(build.cache, 'shinobi-launchpad-v73');
-assert.equal(build.display, '2026.08.09.73');
-assert.equal(build.release, 'phase-ux-c2-5-a-mobile-media-stability-20260809');
-assert.equal(build.revision, 'mobile-media-stability-1');
+assert.equal(build.id, '20260809-phase-ux-c2-5-a-video-loop-isolation-v74');
+assert.equal(build.cache, 'shinobi-launchpad-v74');
+assert.equal(build.display, '2026.08.09.74');
+assert.equal(build.release, 'phase-ux-c2-5-a-video-loop-isolation-20260809');
+assert.equal(build.revision, 'video-loop-isolation-1');
 
-console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 73 mobile media stability, Build 72 Era affordance, supplied Moon/gold brand art and historical v5.10 bridge ancestry with ${presetCount} sanctioned Audio Lab presets remain guarded.`);
+console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 74 protected-media video-loop isolation, Build 73 audio-clock stabilization, Build 72 Era affordance, supplied Moon/gold brand art and historical v5.10 bridge ancestry with ${presetCount} sanctioned Audio Lab presets remain guarded.`);

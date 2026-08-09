@@ -15,8 +15,9 @@ const LEGACY_DISCOGRAPHY_PATH = /\/discography\/?$/i;
 const ROUTE_TRANSITION_CLASS = 'route-entering';
 const ROUTE_TRANSITION_DURATION = 260;
 const AUDIO_CLOCK_INTERVAL = 125;
-const VIDEO_WATCHDOG_INTERVAL = 700;
-const VIDEO_STALL_THRESHOLD = 1800;
+const VIDEO_WATCHDOG_INTERVAL = 500;
+const VIDEO_STALL_THRESHOLD = 1200;
+const VIDEO_TERMINAL_STALL_WINDOW = 0.75;
 let routeTransitionTimer = 0;
 
 function escapeHtml(value) {
@@ -172,8 +173,9 @@ function stabilizeVideo(video) {
   video.dataset.feature11Stable = 'true';
   video.muted = true;
   video.defaultMuted = true;
-  // Android Chromium is more reliable when the loop boundary is owned explicitly.
-  // Do not combine native `loop` with our recovery logic: the two can race at the boundary.
+  // Keep one explicit loop owner, but never pre-empt the real media boundary.
+  // Most importantly: recovery must never force a media-element reload, because on
+  // Android protected media a reload storm can contend with the canonical audio seek path.
   video.loop = false;
   video.removeAttribute('loop');
   video.playsInline = true;
@@ -192,14 +194,18 @@ function stabilizeVideo(video) {
     return video.isConnected && !video.closest('[hidden]') && (!view || view.classList.contains('active'));
   };
 
+  const rememberProgress = () => {
+    VIDEO_PROGRESS_STATE.set(video, {
+      time: Number(video.currentTime) || 0,
+      at: performance.now()
+    });
+  };
+
   const ensurePlayback = reason => {
     if (!visible() || document.visibilityState === 'hidden') return;
     video.muted = true;
     video.loop = false;
     video.removeAttribute('loop');
-    if (video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA && video.networkState !== HTMLMediaElement.NETWORK_LOADING) {
-      try { video.load(); } catch {}
-    }
     const result = video.play();
     Promise.resolve(result).catch(error => console.info(`Track video recovery (${reason}) awaits a gesture.`, error));
   };
@@ -208,7 +214,7 @@ function stabilizeVideo(video) {
 
   const recoverLoop = reason => {
     const now = performance.now();
-    if (now - lastRecovery < 180) return;
+    if (now - lastRecovery < 700) return;
     lastRecovery = now;
     window.clearTimeout(recoveryTimer);
     recoveryTimer = window.setTimeout(() => {
@@ -217,9 +223,12 @@ function stabilizeVideo(video) {
         ensurePlayback(reason);
         return;
       }
-      if (video.ended || video.currentTime >= video.duration - 0.12) {
+
+      const remaining = Math.max(0, video.duration - (Number(video.currentTime) || 0));
+      const terminalRecovery = reason === 'ended' || reason === 'terminal-stall';
+      if (terminalRecovery && (video.ended || remaining <= VIDEO_TERMINAL_STALL_WINDOW)) {
         try { video.currentTime = 0; } catch {}
-        VIDEO_PROGRESS_STATE.set(video, { time: 0, at: performance.now() });
+        rememberProgress();
       }
       ensurePlayback(reason);
     }, 20);
@@ -231,15 +240,14 @@ function stabilizeVideo(video) {
     video.loop = false;
     video.removeAttribute('loop');
   });
-  video.addEventListener('playing', () => {
-    VIDEO_PROGRESS_STATE.set(video, { time: Number(video.currentTime) || 0, at: performance.now() });
-  });
+  video.addEventListener('playing', rememberProgress);
+  video.addEventListener('seeked', rememberProgress);
+  video.addEventListener('canplay', rememberProgress);
   video.addEventListener('ended', () => recoverLoop('ended'));
-  video.addEventListener('stalled', () => recoverLoop('stalled'));
-  video.addEventListener('waiting', () => recoverLoop('waiting'));
-  video.addEventListener('suspend', () => {
-    if (video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) recoverLoop('suspend');
-  });
+
+  // waiting/stalled/suspend are informative only. They must never seek, reload or
+  // recursively mutate the media resource. The bounded watchdog below may recover
+  // only a confirmed terminal stall, after the video has genuinely stopped moving.
   video.addEventListener('timeupdate', () => {
     const now = performance.now();
     const current = Number(video.currentTime) || 0;
@@ -247,7 +255,6 @@ function stabilizeVideo(video) {
     if (!state || Math.abs(current - state.time) > 0.025) {
       VIDEO_PROGRESS_STATE.set(video, { time: current, at: now });
     }
-    if (Number.isFinite(video.duration) && video.duration - current < 0.14) recoverLoop('boundary');
   });
 }
 
@@ -304,9 +311,14 @@ function installVideoStability(audio) {
         VIDEO_PROGRESS_STATE.set(video, { time: current, at: now });
         return;
       }
-      if (now - state.at >= VIDEO_STALL_THRESHOLD) {
-        VIDEO_PROGRESS_STATE.set(video, { time: current, at: now });
-        video[VIDEO_RECOVERY_HANDLER]?.('watchdog');
+      if (now - state.at < VIDEO_STALL_THRESHOLD) return;
+
+      VIDEO_PROGRESS_STATE.set(video, { time: current, at: now });
+      const remaining = Number.isFinite(video.duration)
+        ? Math.max(0, video.duration - current)
+        : Number.POSITIVE_INFINITY;
+      if (remaining <= VIDEO_TERMINAL_STALL_WINDOW) {
+        video[VIDEO_RECOVERY_HANDLER]?.('terminal-stall');
       }
     });
   }, VIDEO_WATCHDOG_INTERVAL);
