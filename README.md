@@ -1,16 +1,20 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.09.68` — release `phase-ux-c2-5-a-albums-scalability-20260809`.
+> Current application build: `2026.08.09.69` — release `phase-ux-c2-5-a-focus-era-queue-20260809`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
 ## PHASE UX C2.5-A — Albums scalability frontend
 
-Build 68 keeps the existing Album/project presentation but makes the main Albums view scale with the catalog: tracklists are collapsed by default, each populated card exposes `Show N tracks` / `Hide tracks`, and opening one list closes the previously expanded one. The toggle uses a native button with `aria-expanded` + `aria-controls`, visible keyboard focus and a mobile full-width action layout.
+Build 68 established the scalable Albums baseline: tracklists are collapsed by default, each populated card exposes `Show N tracks` / `Hide tracks`, opening one list closes the previously expanded one, and the toggle keeps native keyboard behavior with `aria-expanded` + `aria-controls`. Real-user visual review confirmed that this presentation is substantially cleaner than the previous always-expanded page.
 
-`Play album` and `Open project →` remain available while a card is collapsed, and the individual Album detail page remains complete and unchanged. This release is LaunchPAD frontend-only: no Track Manager change, no Worker deployment, no R2 mutation, no Album schema, no migration and no `catalog/index.json` change. See [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md).
+Build 69 refines that accepted direction without changing the Album data model. `Show N tracks` now promotes the selected Album into an animated **Album Focus** layout: on wide desktop the active project occupies the dominant panel while sibling Albums move into a compact, still-clickable dock; narrower layouts keep the active Album first without forcing a fragile side rail. View Transitions are progressive-only and reduced-motion aware.
 
-C2.5-A remains a release candidate until the real-user browser smoke passes. The final PHASE UX checkpoint is not created, C2.5-B is not started, C3 remains suspended, and Phase 7 is not started.
+Discography Era selection now also creates a virtual playback context. Selecting an Era still only filters the catalog; it does not autoplay. Once a track from that Era is played, the existing queue engine resolves the Era tracks as a reconstructible `era:` collection, labels the player context `Era queue`, and keeps Next / Previous inside that Era just like Album playback.
+
+`Play album` and `Open project →` remain available, and the individual Album detail page remains complete and unchanged. Build 69 is LaunchPAD frontend-only: no Track Manager change, no Worker deployment, no R2 mutation, no canonical Album schema, no migration and no `catalog/index.json` change. See [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md) and [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md).
+
+The Build 69 refinement remains a release candidate until CI, Pages and real-user browser smoke pass. The final PHASE UX checkpoint is not created, C2.5-B is not started, C3 remains suspended, and Phase 7 is not started.
 
 ## Production PHASE UX C2 backend
 
@@ -139,6 +143,14 @@ Exact origin, Access verification, whitelist-only metadata and stale-manifest pr
 
 See [`docs/STUDIO-VALIDATION-CORS-HOTFIX.md`](docs/STUDIO-VALIDATION-CORS-HOTFIX.md).
 
+## Build 69 highlights
+
+Build 69 is the C2.5-A UX refinement for **Album Focus + Era Queue**. Expanding a tracklist gives the active Album visual priority while keeping sibling Albums accessible in a compact dock on wide screens; narrower layouts move the focused project to the top instead. The layout uses progressive View Transitions when available and respects reduced-motion preferences.
+
+Discography Era filters now double as a virtual playback collection boundary: selecting a single Era attaches an `era:` queue context to its track play controls, the existing catalog resolver reconstructs Era membership from track metadata, and the shared queue/player handles sequential playback without creating or persisting an Album object.
+
+Build 69 changes no Worker, R2 object, canonical Album schema, track manifest, catalog projection, SonicTrace runtime or Phase 7 scope.
+
 ## Build 68 highlights
 
 Build 68 is the PHASE UX C2.5-A frontend scalability release for the main Albums view. Album/project cards render compactly with tracklists hidden by default. `Show N tracks` expands one native-button-controlled list at a time, `Hide tracks` collapses it, ARIA state/control relationships remain explicit, keyboard focus is visible, and the mobile action bar prevents button overlap.
@@ -259,7 +271,8 @@ Useful documents:
 - [`docs/STUDIO-METADATA-WRITE.md`](docs/STUDIO-METADATA-WRITE.md) — v5.11 metadata write contract
 - [`docs/STUDIO-LYRICS-WRITE.md`](docs/STUDIO-LYRICS-WRITE.md) — v5.12 canonical lyrics contract
 - [`docs/STUDIO-PHASE4-OPERATIONS.md`](docs/STUDIO-PHASE4-OPERATIONS.md) — v5.13 final Phase 4 operational contract
-- [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md) — C2.5-A public Albums scalability contract and smoke criteria
+- [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md) — Build 68 C2.5-A scalable Albums baseline
+- [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md) — Build 69 Album Focus + virtual Era queue refinement
 - [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) — safe release procedure
 - [`ROADMAP.md`](ROADMAP.md) — remaining consolidation/product work
 - [`cloudflare/README.md`](cloudflare/README.md) — Workers/R2 operations
