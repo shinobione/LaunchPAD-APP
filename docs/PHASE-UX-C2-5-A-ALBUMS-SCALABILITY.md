@@ -41,7 +41,6 @@ Regression/release support:
 - `scripts/test-albums-collapse.mjs`
 - `package.json`
 - `README.md`
-- `CHANGELOG.md`
 - this document
 
 ## Safety boundary
