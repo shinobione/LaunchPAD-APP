@@ -25,19 +25,6 @@
   filter:drop-shadow(0 8px 18px rgba(0,0,0,.34)) drop-shadow(0 0 12px rgba(232,184,77,.16));
 }
 
-.launchpad-hero .hero-body::after{
-  content:"";
-  align-self:end;
-  justify-self:end;
-  width:min(24vw,280px);
-  height:min(34vw,370px);
-  margin:0 -6px -18px 0;
-  background:url('../assets/NinJa-ShinoBiWan.png') right bottom / contain no-repeat;
-  filter:drop-shadow(0 18px 35px rgba(0,0,0,.46)) drop-shadow(0 0 22px rgba(166,27,38,.16));
-  opacity:.8;
-  pointer-events:none;
-}
-
 #view-about .about-card{
   grid-template-columns:minmax(220px,280px) minmax(320px,1fr) minmax(260px,430px)!important;
   align-items:center!important;
@@ -124,10 +111,6 @@
 }
 
 @media(max-width:1180px) and (min-width:761px){
-  .launchpad-hero .hero-body::after{
-    display:none;
-  }
-
   #view-about .about-card{
     grid-template-columns:220px minmax(0,1fr)!important;
   }
@@ -151,10 +134,6 @@
   .brand-wordmark::after{
     width:176px!important;
     height:52px!important;
-  }
-
-  .launchpad-hero .hero-body::after{
-    display:none;
   }
 
   #view-about .about-card{
