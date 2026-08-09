@@ -69,14 +69,13 @@ Regression/release support:
 - `scripts/test-albums-collapse.mjs`
 - `scripts/test-master-spec.mjs`
 - `README.md`
-- `CHANGELOG.md`
 - this document
 
 ## Safety boundary
 
 Pre-change rollback reference:
 
-`safe​ty/pre-c2-5-a-refinements-20260809-2007`
+`safety/pre-c2-5-a-refinements-20260809-2007`
 
 created from LaunchPAD production head:
 
