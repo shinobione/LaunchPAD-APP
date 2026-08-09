@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {
   centeredScrollTop,
   centerElementInScrollContainer,
@@ -78,4 +79,33 @@ assert.equal(seekAudioToTimestamp(unreadyAudio, 18), false);
 assert.equal(unreadyAudio.currentTime, 0);
 assert.equal(seekAudioToTimestamp(readyAudio, Number.NaN), false);
 
-console.log('Lyrics auto-scroll and timestamp seeking use deterministic reader and media readiness checks.');
+const engineSource = fs.readFileSync('js/features/lyrics/lyrics-engine.js', 'utf8');
+for (const marker of [
+  'let seekInProgress = false',
+  'function beginSeek(time)',
+  'function settleSeek(time = audio.currentTime)',
+  "window.addEventListener('shinobi:seek-preview'",
+  "window.addEventListener('shinobi:seek-commit'",
+  "audio.addEventListener('seeking'",
+  "audio.addEventListener('seeked'",
+  "update(time, { behavior: 'auto', forceCenter: true, allowScroll: true })",
+  'if (syncFrame || !syncSurfaceActive() || seekInProgress) return;'
+]) {
+  assert.ok(engineSource.includes(marker), `Build 77 Lyrics seek settlement is missing ${marker}.`);
+}
+assert.ok(!engineSource.includes("['seeking', 'seeked', 'loadedmetadata', 'durationchange']"), 'Build 77 must not collapse seeking and seeked into the old shared scroll handler.');
+
+const studioSource = fs.readFileSync('js/features/lyrics-studio.js', 'utf8');
+for (const marker of [
+  'function installSingleCommitSeek()',
+  "seek.addEventListener('input', preview, { capture: true })",
+  "seek.addEventListener('pointerup', commit, { capture: true })",
+  "seek.addEventListener('change', commit, { capture: true })",
+  'event.stopImmediatePropagation()',
+  "window.dispatchEvent(new CustomEvent('shinobi:seek-preview'",
+  "window.dispatchEvent(new CustomEvent('shinobi:seek-commit'"
+]) {
+  assert.ok(studioSource.includes(marker), `Build 77 single-commit seek is missing ${marker}.`);
+}
+
+console.log('Lyrics auto-scroll, timestamp seeking and Build 77 single-commit seek settlement are regression-protected.');
