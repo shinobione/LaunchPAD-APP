@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260808-studio-metadata-validation-v66',
-    cache: 'shinobi-launchpad-v66',
-    revision: 'studio-metadata-validation-1',
-    display: '2026.08.08.66',
-    release: 'studio-metadata-validation-20260808'
+    id: '20260809-post-phase6-track-dna-release-date-v67',
+    cache: 'shinobi-launchpad-v67',
+    revision: 'track-dna-release-date-1',
+    display: '2026.08.09.67',
+    release: 'post-phase6-track-dna-release-date-20260809'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
