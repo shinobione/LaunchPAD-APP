@@ -42,14 +42,14 @@ if (injections.length) {
 // trackManagerVersion: "5.11"
 // const STUDIO_BRIDGE_VERSION = "1.3";
 // write: ["metadata"]
-const staleVersions = ['4.5','4.6','4.7','4.8','4.9','5.0','5.1','5.2','5.3','5.4','5.5','5.6','5.7','5.8','5.9','5.10','5.11','5.12','5.13','5.14'];
+const staleVersions = ['4.5','4.6','4.7','4.8','4.9','5.0','5.1','5.2','5.3','5.4','5.5','5.6','5.7','5.8','5.9','5.10','5.11','5.12','5.13','5.14','5.15'];
 for (const stale of staleVersions) {
-  source = source.replaceAll(`version: "${stale}"`, 'version: "5.15"');
-  source = source.replaceAll(`<span class="version-pill">v${stale}</span>`, '<span class="version-pill">v5.15</span>');
-  source = source.replaceAll(`version.textContent='v${stale}'`, "version.textContent='v5.15'");
+  source = source.replaceAll(`version: "${stale}"`, 'version: "5.16"');
+  source = source.replaceAll(`<span class="version-pill">v${stale}</span>`, '<span class="version-pill">v5.16</span>');
+  source = source.replaceAll(`version.textContent='v${stale}'`, "version.textContent='v5.16'");
 }
-source = source.replaceAll('trackManagerVersion: "5.8"', 'trackManagerVersion: "5.15"');
-source = source.replace('const STUDIO_BRIDGE_VERSION = "1.0";', 'const STUDIO_BRIDGE_VERSION = "1.7";');
+source = source.replaceAll('trackManagerVersion: "5.8"', 'trackManagerVersion: "5.16"');
+source = source.replace('const STUDIO_BRIDGE_VERSION = "1.0";', 'const STUDIO_BRIDGE_VERSION = "1.8";');
 source = source.replace(
   'read: ["tracks", "track"],\n            write: [],',
   'read: ["tracks", "track", "lyrics", "lyrics-context", "sonictrace-analysis", "sonictrace-catalog"],\n            validate: ["metadata", "lyrics", "lyrics-sync"],\n            write: ["metadata", "lyrics", "lyrics-sync", "sonictrace-analysis"],\n            manage: ["track-create", "assets", "catalog-rebuild"],'
@@ -115,8 +115,8 @@ for (const serverOnlySymbol of ['buildCanonicalTrackSummaries', 'readManifest', 
 }
 
 for (const required of [
-  'version: "5.15"',
-  '<span class="version-pill">v5.15</span>',
+  'version: "5.16"',
+  '<span class="version-pill">v5.16</span>',
   'const ADMIN_HTML = String.raw`',
   'function parseLyricsTxtMetadata(text)',
   'async function inspectTrackQuality(',
@@ -138,8 +138,8 @@ for (const required of [
   "modal.id='batchImportModal'",
   'thumbnail.webp',
   'const STUDIO_ALLOWED_ORIGIN = "https://shinobione.github.io"',
-  'const STUDIO_BRIDGE_VERSION = "1.7"',
-  'trackManagerVersion: "5.15"',
+  'const STUDIO_BRIDGE_VERSION = "1.8"',
+  'trackManagerVersion: "5.16"',
   'url.pathname === "/api/studio/health"',
   'url.pathname === "/api/studio/tracks"',
   'STUDIO_METADATA_VALIDATION_INTENT',
