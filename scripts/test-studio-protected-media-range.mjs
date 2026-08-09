@@ -4,8 +4,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-const injectionPath = 'cloudflare/admin-worker.parts/25-phase6-protected-media-range.inject.part';
-const source = fs.readFileSync(injectionPath, 'utf8');
+const sourcePath = 'cloudflare/admin-worker.parts/03h-phase6-protected-media-range.part';
+const source = fs.readFileSync(sourcePath, 'utf8');
 
 const rangeBody = source.match(
   /function phase6ParseSingleByteRange\(rangeHeader, size\) \{([\s\S]*?)\n\}\n\nfunction phase6ProtectedMediaHeaders/,
