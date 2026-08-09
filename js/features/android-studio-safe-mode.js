@@ -199,6 +199,7 @@
     activate();
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true });
-  else install();
+  // build-config loads this guard from the fully parsed end-of-body bootstrap.
+  // Arm it immediately so the observer exists before app-main creates Studio controls.
+  install();
 })();
