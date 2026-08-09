@@ -65,7 +65,7 @@ includesAll(adminBuilder, [
   'assertStudioMetadataValidationRequest(request)',
   'else enforceSameOrigin(request, url)',
   'validateStudioTrackMetadata(studioMetadataValidationRoute[1], request, env, user)'
-], 'Track Manager v5.10 assembler');
+], 'Track Manager v5.10 assembler ancestry');
 
 // Discography/Home contracts.
 includesAll(read('js/features/discography-experience.js'), ["const FILTER_GROUP_ORDER = ['genre', 'language', 'content', 'energy', 'era', 'type', 'media', 'year', 'mood']", 'mini-equalizer', 'track-card-loader'], 'Discography');
@@ -184,10 +184,10 @@ const worker = read('sw.js');
 includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260808-studio-metadata-validation-v66');
-assert.equal(build.cache, 'shinobi-launchpad-v66');
-assert.equal(build.display, '2026.08.08.66');
-assert.equal(build.release, 'studio-metadata-validation-20260808');
-assert.equal(build.revision, 'studio-metadata-validation-1');
+assert.equal(build.id, '20260809-post-phase6-track-dna-release-date-v67');
+assert.equal(build.cache, 'shinobi-launchpad-v67');
+assert.equal(build.display, '2026.08.09.67');
+assert.equal(build.release, 'post-phase6-track-dna-release-date-20260809');
+assert.equal(build.revision, 'track-dna-release-date-1');
 
-console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}) with current Track Manager v5.10, Studio metadata validation-only bridge v1.2 and ${presetCount} sanctioned Audio Lab presets.`);
+console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); historical v5.10 bridge ancestry and ${presetCount} sanctioned Audio Lab presets remain guarded.`);
