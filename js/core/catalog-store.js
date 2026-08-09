@@ -2,6 +2,7 @@ import { albums as sourceAlbums, journeyEras as sourceJourneyEras } from '../cat
 import { normalizeTrackSchema } from './catalog-schema.js';
 
 const ALLOWED_LANGUAGES = ['French', 'English', 'Vietnamese'];
+const ERA_QUEUE_PREFIX = 'era:';
 
 export const albums = sourceAlbums;
 export const journeyEras = sourceJourneyEras;
@@ -10,6 +11,26 @@ export const tracks = [];
 const albumById = new Map(albums.map(album => [album.id, album]));
 const trackById = new Map();
 const trackIndexById = new Map();
+
+function canonicalEraValue(value) {
+  return String(value ?? '')
+    .normalize('NFKC')
+    .replace(/[\u00a0\u2007\u202f]/g, ' ')
+    .replace(/[\s_\u2010-\u2015\u2212-]+/g, ' ')
+    .trim()
+    .toLocaleLowerCase('en');
+}
+
+function decodeEraQueueId(value) {
+  const id = String(value ?? '');
+  if (!id.startsWith(ERA_QUEUE_PREFIX)) return null;
+  const encoded = id.slice(ERA_QUEUE_PREFIX.length);
+  try {
+    return canonicalEraValue(decodeURIComponent(encoded));
+  } catch {
+    return canonicalEraValue(encoded);
+  }
+}
 
 function rebuildTrackIndexes() {
   trackById.clear();
@@ -90,7 +111,18 @@ export function getAlbum(albumId) { return albumById.get(albumId) || null; }
 export function getTrack(trackId) { return trackById.get(trackId) || null; }
 export function getTrackIndex(trackId) { return trackIndexById.has(trackId) ? trackIndexById.get(trackId) : -1; }
 export function getAlbumTracks(albumId) { return tracks.map((track, index) => ({ ...track, index })).filter(track => track.albumId === albumId); }
-export function getAlbumTrackIndexes(albumId) { return getAlbumTracks(albumId).map(track => track.index); }
+export function getEraTrackIndexes(eraValue) {
+  const expected = canonicalEraValue(eraValue);
+  if (!expected) return [];
+  return tracks
+    .map((track, index) => ({ track, index }))
+    .filter(({ track }) => canonicalEraValue(track?.remoteMetadata?.era || track?.era) === expected)
+    .map(({ index }) => index);
+}
+export function getAlbumTrackIndexes(albumId) {
+  const virtualEra = decodeEraQueueId(albumId);
+  return virtualEra ? getEraTrackIndexes(virtualEra) : getAlbumTracks(albumId).map(track => track.index);
+}
 export function getCatalogTags() { return [...new Set(tracks.flatMap(track => Array.isArray(track.tags) ? track.tags : [track.genre]).filter(Boolean))]; }
 export function getGenreCounts() { return tracks.reduce((counts, track) => { counts[track.genre] = (counts[track.genre] || 0) + 1; return counts; }, {}); }
 
