@@ -108,7 +108,7 @@ for (const forbidden of [
 ]) {
   if (lyricsStudio.includes(forbidden)) fail(`Build 77 Lyrics Studio must not reintroduce native-loop/remote-loop/retry churn: ${forbidden}.`);
 }
-if (lyricsStudio.includes('audio.pause')) fail('Lyrics Studio video must leave the music track playing.');
+if (/\baudio\s*\.\s*pause\s*\(/.test(lyricsStudio)) fail('Lyrics Studio video must leave the music track playing.');
 
 const lyricsEngine = read('js/features/lyrics/lyrics-engine.js');
 for (const required of [
