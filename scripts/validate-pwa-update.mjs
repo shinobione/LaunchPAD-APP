@@ -80,23 +80,32 @@ const lyricsStudio = read('js/features/lyrics-studio.js');
 for (const required of [
   "video.preload = 'auto'",
   "video.autoplay = false",
+  "video.loop = false",
   "video.setAttribute('webkit-playsinline', '')",
   "const response = await fetch(track.video",
   'URL.createObjectURL(blob)',
   "canvasVideo.setAttribute('data-transport', 'blob')",
   "canvasVideo.addEventListener('canplay'",
+  "canvasVideo.addEventListener('ended'",
+  'CANVAS_LOCAL_RECOVERY_LIMIT',
+  'function installSingleCommitSeek()',
+  "seek.addEventListener('input', preview, { capture: true })",
+  "seek.addEventListener('pointerup', commit, { capture: true })",
   "audio.addEventListener('seeking'",
   "audio.addEventListener('seeked'",
+  "audio.addEventListener('playing'",
+  "playCanvas('audio-playing')",
   "document.addEventListener('visibilitychange'"
 ]) {
-  if (!lyricsStudio.includes(required)) fail(`Mobile Canvas transport resilience is missing ${required}.`);
+  if (!lyricsStudio.includes(required)) fail(`Mobile Build 77 Canvas/seek resilience is missing ${required}.`);
 }
 for (const forbidden of [
   "video.setAttribute('autoplay', '')",
-  "canvasVideo.addEventListener('ended'",
-  'function scheduleCanvasRetry'
+  "video.setAttribute('loop', '')",
+  'function scheduleCanvasRetry',
+  "playCanvas('audio-seeked')"
 ]) {
-  if (lyricsStudio.includes(forbidden)) fail(`Build 76 Canvas transport isolation forbids ${forbidden}.`);
+  if (lyricsStudio.includes(forbidden)) fail(`Build 77 Canvas/audio priority forbids ${forbidden}.`);
 }
 
 const about = read('js/features/about/about-controller.js');
@@ -129,4 +138,4 @@ if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RE
   fail('Browser regression coverage for the deduped PWA update prompt is not wired into CI.');
 }
 
-console.log(`PWA single-shot updates, decoded-buffer FFT, supplied About Moon art and local-Blob mobile Studio Canvas resilience are valid under ${build.display}.`);
+console.log(`PWA single-shot updates, decoded-buffer FFT, supplied About Moon art and Build 77 audio-first mobile Studio Canvas/seek resilience are valid under ${build.display}.`);
