@@ -53,9 +53,14 @@ for (const forbidden of ['audio?.pause()', "audio?.addEventListener('play'"]) {
 const feature11 = read('js/features/feature-11.js');
 for (const required of [
   "video.addEventListener('ended'", "video.addEventListener('stalled'", "video.addEventListener('waiting'",
-  "audio?.addEventListener('play'", "audio?.addEventListener('pause'", "video.preload = 'auto'"
+  "audio?.addEventListener('play'", "audio?.addEventListener('pause'", "video.preload = 'auto'",
+  'video.loop = false', "video.removeAttribute('loop')", 'VIDEO_RECOVERY_HANDLER', 'VIDEO_STALL_THRESHOLD',
+  'installAudioClockStability', "audio.dispatchEvent(new Event('timeupdate'))", "document.addEventListener('visibilitychange'", "window.addEventListener('pageshow'"
 ]) {
-  if (!feature11.includes(required)) fail(`Feature 11 video synchronization is missing ${required}.`);
+  if (!feature11.includes(required)) fail(`Feature 11 media stabilization is missing ${required}.`);
+}
+if (!feature11.includes('installAudioClockStability(audio);') || !feature11.includes('installVideoStability(audio);')) {
+  fail('Feature 11 must install both the audio clock heartbeat and video recovery layers.');
 }
 
 const lyricsStudio = read('js/features/lyrics-studio.js');
@@ -84,4 +89,10 @@ for (const required of ['shinobi-launchpad-listening-summary-v1','playedTrackIds
   if (!listeningSummary.includes(required)) fail(`Listening summary is missing ${required}.`);
 }
 
-console.log('Feature 11 media labels, video recovery, Studio routing and persistent media regressions are valid.');
+const brandCss = read('css/about-enhancements.css');
+if (brandCss.includes('NinJa-ShinoBiWan.png')) fail('Build 73 must not inject the Ninja into the Home hero composition.');
+if (!brandCss.includes("mask:url('../assets/logo.png')") || !brandCss.includes('.about-signature-art')) {
+  fail('Build 73 must preserve the gold sidebar identity and About moon artwork.');
+}
+
+console.log('Build 73 media clock, explicit video loop recovery, Studio routing and brand-art rollback guards are valid.');
