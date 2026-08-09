@@ -79,6 +79,19 @@ function orderedAlbums() {
   return [...configured, ...remaining];
 }
 
+function synchronizeAlbumFocus(view, toggle, expanded) {
+  const card = toggle.closest('.project-album');
+  const collection = card?.closest('.album-collection');
+  if (!card || !collection || !view.contains(collection)) return;
+
+  card.classList.toggle('is-tracklist-expanded', expanded);
+  const focusedCard = collection.querySelector('.project-album.is-tracklist-expanded');
+  collection.classList.toggle('has-album-focus', Boolean(focusedCard));
+
+  if (focusedCard) collection.dataset.focusedAlbumId = focusedCard.dataset.albumId || '';
+  else delete collection.dataset.focusedAlbumId;
+}
+
 function setAlbumTrackListExpanded(view, toggle, expanded) {
   const listId = toggle.getAttribute('aria-controls');
   const list = listId ? document.getElementById(listId) : null;
@@ -92,17 +105,37 @@ function setAlbumTrackListExpanded(view, toggle, expanded) {
   toggle.setAttribute('aria-label', expanded ? `Hide tracks for ${albumTitle}` : `${showLabel} for ${albumTitle}`);
   toggle.textContent = expanded ? 'Hide tracks' : showLabel;
   list.hidden = !expanded;
+  synchronizeAlbumFocus(view, toggle, expanded);
+}
+
+function prefersReducedMotion() {
+  return Boolean(globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+}
+
+function runAlbumLayoutTransition(callback) {
+  if (!prefersReducedMotion() && typeof document.startViewTransition === 'function') {
+    document.startViewTransition(callback);
+    return;
+  }
+  callback();
 }
 
 function installAlbumTrackToggles(view) {
   const toggles = [...view.querySelectorAll('[data-toggle-album-tracks]')];
+  const cards = [...view.querySelectorAll('.project-album[data-album-id]')];
+
+  cards.forEach((card, index) => {
+    card.style.viewTransitionName = `album-card-${index + 1}`;
+  });
 
   toggles.forEach(toggle => {
     toggle.addEventListener('click', () => {
       const shouldExpand = toggle.getAttribute('aria-expanded') !== 'true';
 
-      toggles.forEach(other => setAlbumTrackListExpanded(view, other, false));
-      if (shouldExpand) setAlbumTrackListExpanded(view, toggle, true);
+      runAlbumLayoutTransition(() => {
+        toggles.forEach(other => setAlbumTrackListExpanded(view, other, false));
+        if (shouldExpand) setAlbumTrackListExpanded(view, toggle, true);
+      });
     });
   });
 }

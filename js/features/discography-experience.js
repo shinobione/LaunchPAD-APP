@@ -3,6 +3,7 @@ import { ensureStylesheet } from '../core/assets.js';
 
 const FILTER_GROUP_ORDER = ['genre', 'language', 'content', 'energy', 'era', 'type', 'media', 'year', 'mood'];
 const ERA_PARAMETER = 'cf_era';
+const ERA_QUEUE_PREFIX = 'era:';
 
 function canonical(value) {
   return String(value ?? '')
@@ -103,6 +104,11 @@ function currentEraValues() {
   return new Set(url.searchParams.getAll(ERA_PARAMETER).map(canonical).filter(Boolean));
 }
 
+function eraQueueId(value) {
+  const normalized = canonical(value);
+  return normalized ? `${ERA_QUEUE_PREFIX}${encodeURIComponent(normalized)}` : null;
+}
+
 function synchronizeEraButtons(timeline) {
   const selected = currentEraValues();
   timeline.querySelectorAll('[data-era-value]').forEach(button => {
@@ -110,6 +116,28 @@ function synchronizeEraButtons(timeline) {
     const active = value === 'all' ? selected.size === 0 : selected.has(value);
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
+  });
+}
+
+function synchronizeEraPlaybackContext() {
+  const selected = [...currentEraValues()];
+  const selectedEra = selected.length === 1 ? selected[0] : null;
+  const contextId = selectedEra ? eraQueueId(selectedEra) : null;
+
+  document.querySelectorAll('#library-grid .album-card[data-index]').forEach(card => {
+    const button = card.querySelector('.play-overlay[data-play-index]');
+    if (!button) return;
+    const track = tracks[Number(card.dataset.index)];
+    const trackEra = canonical(track?.remoteMetadata?.era || track?.era);
+    const belongsToEra = Boolean(contextId && selectedEra === trackEra);
+
+    if (belongsToEra) {
+      button.dataset.albumContext = contextId;
+      button.dataset.queueContext = 'era';
+    } else {
+      delete button.dataset.albumContext;
+      delete button.dataset.queueContext;
+    }
   });
 }
 
@@ -157,9 +185,13 @@ function installEraTimeline() {
     const button = event.target.closest('[data-era-value]');
     if (!button) return;
     clickEraFilter(button.dataset.eraValue);
-    queueMicrotask(() => synchronizeEraButtons(timeline));
+    queueMicrotask(() => {
+      synchronizeEraButtons(timeline);
+      synchronizeEraPlaybackContext();
+    });
   });
   synchronizeEraButtons(timeline);
+  synchronizeEraPlaybackContext();
   return timeline;
 }
 
@@ -232,8 +264,12 @@ export function initDiscographyExperience({ audio = document.querySelector('#aud
   window.addEventListener('shinobi:catalog-filtered', () => {
     orderFilterGroups();
     if (timeline) synchronizeEraButtons(timeline);
+    synchronizeEraPlaybackContext();
   });
-  window.addEventListener('popstate', () => timeline && synchronizeEraButtons(timeline));
+  window.addEventListener('popstate', () => {
+    if (timeline) synchronizeEraButtons(timeline);
+    synchronizeEraPlaybackContext();
+  });
 
   const library = document.querySelector('#view-library');
   if (!library) return;
@@ -252,6 +288,7 @@ export function initDiscographyExperience({ audio = document.querySelector('#aud
     requestAnimationFrame(() => {
       observerScheduled = false;
       orderFilterGroups();
+      synchronizeEraPlaybackContext();
       syncPlaying();
     });
   });

@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260809-phase-ux-c2-5-a-albums-scalability-v68',
-    cache: 'shinobi-launchpad-v68',
-    revision: 'albums-scalability-1',
-    display: '2026.08.09.68',
-    release: 'phase-ux-c2-5-a-albums-scalability-20260809'
+    id: '20260809-phase-ux-c2-5-a-focus-era-queue-v69',
+    cache: 'shinobi-launchpad-v69',
+    revision: 'album-focus-era-queue-1',
+    display: '2026.08.09.69',
+    release: 'phase-ux-c2-5-a-focus-era-queue-20260809'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;

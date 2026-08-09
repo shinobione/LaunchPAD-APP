@@ -13,6 +13,12 @@ function shuffled(values) {
   return result;
 }
 
+function normalizeQueueContext(nextContext = { type: 'catalog', id: 'all' }) {
+  const context = { ...nextContext };
+  if (context.type === 'album' && String(context.id || '').startsWith('era:')) context.type = 'era';
+  return context;
+}
+
 export function createQueueController({ allIndexes }) {
   const listeners = new Set();
   const catalogIndexes = uniqueIndexes(allIndexes);
@@ -70,7 +76,7 @@ export function createQueueController({ allIndexes }) {
 
   function setContext(indexes, currentIndex = indexes[0], nextContext = { type: 'catalog', id: 'all' }) {
     baseQueue = uniqueIndexes(indexes);
-    context = { ...nextContext };
+    context = normalizeQueueContext(nextContext);
     rebuild(currentIndex);
     emit();
     return current();

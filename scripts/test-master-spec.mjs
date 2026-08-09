@@ -184,10 +184,10 @@ const worker = read('sw.js');
 includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260809-phase-ux-c2-5-a-albums-scalability-v68');
-assert.equal(build.cache, 'shinobi-launchpad-v68');
-assert.equal(build.display, '2026.08.09.68');
-assert.equal(build.release, 'phase-ux-c2-5-a-albums-scalability-20260809');
-assert.equal(build.revision, 'albums-scalability-1');
+assert.equal(build.id, '20260809-phase-ux-c2-5-a-focus-era-queue-v69');
+assert.equal(build.cache, 'shinobi-launchpad-v69');
+assert.equal(build.display, '2026.08.09.69');
+assert.equal(build.release, 'phase-ux-c2-5-a-focus-era-queue-20260809');
+assert.equal(build.revision, 'album-focus-era-queue-1');
 
 console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); historical v5.10 bridge ancestry and ${presetCount} sanctioned Audio Lab presets remain guarded.`);
