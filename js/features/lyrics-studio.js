@@ -11,6 +11,11 @@ function currentTrack(audio) {
   return getTrack(audio?.dataset.trackId || '') || null;
 }
 
+function androidMobileStudioCanvasDisabled() {
+  return /Android/i.test(navigator.userAgent || '')
+    && Boolean(window.matchMedia?.('(max-width:760px)')?.matches);
+}
+
 function createStudioCanvas() {
   const shell = document.createElement('div');
   shell.className = 'lyrics-studio-canvas';
@@ -111,8 +116,10 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   trackPanel.prepend(panelToggle);
 
   const mobileStudioQuery = window.matchMedia?.('(max-width:760px)');
+  const androidCanvasDisabled = androidMobileStudioCanvasDisabled();
   let savedScrollY = 0;
-  let canvasEnabled = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  let canvasEnabled = !androidCanvasDisabled
+    && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   let mobilePanelCollapsed = false;
   let canvasObjectUrl = '';
   let canvasLoadPromise = null;
@@ -219,11 +226,23 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
     canvasShell.hidden = true;
     canvasShell.setAttribute('aria-hidden', 'true');
     view.classList.remove('lyrics-studio-canvas-active');
-    canvasShell.dataset.playback = 'idle';
-    setCanvasBadge('SPOTIFY CANVAS');
+    canvasShell.dataset.playback = androidCanvasDisabled ? 'disabled' : 'idle';
+    setCanvasBadge(androidCanvasDisabled ? 'MOBILE SAFE VISUAL' : 'SPOTIFY CANVAS');
   }
 
   function loadCanvas(track) {
+    if (androidCanvasDisabled) {
+      canvasShell.dataset.trackId = track?.id || '';
+      canvasVideo.dataset.src = '';
+      canvasVideo.removeAttribute('poster');
+      canvasShell.hidden = true;
+      canvasShell.setAttribute('aria-hidden', 'true');
+      canvasShell.dataset.playback = 'disabled';
+      view.classList.remove('lyrics-studio-canvas-active');
+      setCanvasBadge('MOBILE SAFE VISUAL');
+      return false;
+    }
+
     if (!track?.video) {
       canvasShell.dataset.trackId = '';
       canvasVideo.dataset.src = '';
@@ -256,7 +275,7 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   }
 
   async function prepareCanvasSource(track, reason = 'play') {
-    if (!track?.video) return false;
+    if (androidCanvasDisabled || !track?.video) return false;
     if (canvasObjectUrl && canvasVideo.getAttribute('data-transport') === 'blob') return true;
     if (canvasFailedTrackId === track.id && !canRetryCanvas(reason)) return false;
     if (canvasLoadPromise && canvasLoadTrackId === track.id) return canvasLoadPromise;
@@ -321,6 +340,10 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   }
 
   async function playCanvas(reason = 'play') {
+    if (androidCanvasDisabled) {
+      pauseCanvas();
+      return;
+    }
     const track = currentTrack(audio);
     if (!loadCanvas(track) || !canvasEnabled || !view.classList.contains('lyrics-studio-mode')) {
       pauseCanvas();
@@ -356,6 +379,7 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
 
   async function restartLocalCanvas(reason = 'local-recovery') {
     clearCanvasLocalRecovery();
+    if (androidCanvasDisabled) return false;
     if (!canvasEnabled || canvasPausedForAudioSeek || canvasShell.hidden) return false;
     if (!view.classList.contains('lyrics-studio-mode')) return false;
     if (canvasVideo.getAttribute('data-transport') !== 'blob' || !canvasObjectUrl) return false;
@@ -399,6 +423,7 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   }
 
   function scheduleLocalCanvasRecovery(reason = 'local-stall') {
+    if (androidCanvasDisabled) return;
     if (canvasLocalRecoveryTimer || canvasPausedForAudioSeek || canvasShell.hidden) return;
     if (canvasVideo.getAttribute('data-transport') !== 'blob') return;
     canvasLocalRecoveryTimer = window.setTimeout(() => {
@@ -411,7 +436,7 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   function syncCanvasTrack() {
     const hasCanvas = loadCanvas(currentTrack(audio));
     const studioOpen = view.classList.contains('lyrics-studio-mode');
-    canvasButton.hidden = !hasCanvas || !studioOpen;
+    canvasButton.hidden = androidCanvasDisabled || !hasCanvas || !studioOpen;
     updateControlsLayout();
     setCanvasButtonState();
     updatePanelToggleLabel();
@@ -586,6 +611,7 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   });
 
   canvasButton.addEventListener('click', () => {
+    if (androidCanvasDisabled) return;
     canvasEnabled = !canvasEnabled;
     if (canvasEnabled) canvasLocalRecoveryCount = 0;
     setCanvasButtonState();
@@ -616,22 +642,26 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
     setCanvasBadge('SPOTIFY CANVAS');
   });
   canvasVideo.addEventListener('ended', () => {
+    if (androidCanvasDisabled) return;
     if (!canvasEnabled || canvasPausedForAudioSeek || canvasShell.hidden) return;
     if (canvasVideo.getAttribute('data-transport') !== 'blob') return;
     try { canvasVideo.currentTime = 0; } catch {}
     playCanvas('local-loop');
   });
   canvasVideo.addEventListener('waiting', () => {
+    if (androidCanvasDisabled) return;
     canvasShell.dataset.playback = 'buffering';
     setCanvasBadge('CANVAS BUFFERING');
     scheduleLocalCanvasRecovery('waiting');
   });
   canvasVideo.addEventListener('stalled', () => {
+    if (androidCanvasDisabled) return;
     canvasShell.dataset.playback = 'stalled';
     setCanvasBadge('CANVAS STALLED');
     scheduleLocalCanvasRecovery('stalled');
   });
   canvasVideo.addEventListener('error', () => {
+    if (androidCanvasDisabled) return;
     canvasShell.dataset.playback = 'error';
     setCanvasBadge('CANVAS RECOVERY');
     scheduleLocalCanvasRecovery('error');
@@ -644,6 +674,7 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   });
 
   view.addEventListener('pointerdown', () => {
+    if (androidCanvasDisabled) return;
     if (canvasEnabled && !canvasShell.hidden && canvasVideo.paused && !canvasPausedForAudioSeek) playCanvas('studio-gesture');
   }, { passive: true });
 
@@ -668,6 +699,7 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
     });
 
     audio.addEventListener('seeking', () => {
+      if (androidCanvasDisabled) return;
       if (canvasShell.hidden || canvasVideo.paused) return;
       canvasPausedForAudioSeek = true;
       clearCanvasLocalRecovery();
@@ -677,12 +709,14 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
     });
 
     audio.addEventListener('seeked', () => {
+      if (androidCanvasDisabled) return;
       if (!canvasPausedForAudioSeek) return;
       canvasShell.dataset.playback = 'audio-buffer';
       setCanvasBadge(audio.paused ? 'CANVAS PAUSED' : 'AUDIO BUFFER');
     });
 
     audio.addEventListener('playing', () => {
+      if (androidCanvasDisabled) return;
       if (!canvasPausedForAudioSeek) return;
       canvasPausedForAudioSeek = false;
       if (canvasEnabled && view.classList.contains('lyrics-studio-mode') && !canvasShell.hidden) {
@@ -714,10 +748,12 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   });
 
   window.addEventListener('pageshow', () => {
+    if (androidCanvasDisabled) return;
     if (canvasEnabled && view.classList.contains('lyrics-studio-mode') && !canvasPausedForAudioSeek) playCanvas('pageshow');
   });
 
   document.addEventListener('visibilitychange', () => {
+    if (androidCanvasDisabled) return;
     if (document.hidden) {
       clearCanvasLocalRecovery();
       canvasVideo.pause();
@@ -728,7 +764,7 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
 
   window.addEventListener('pagehide', () => {
     pauseCanvas();
-    resetCanvasTransport();
+    if (!androidCanvasDisabled) resetCanvasTransport();
     canvasButton.hidden = true;
     updateControlsLayout();
     trackPanel.classList.remove('lyrics-track-panel-collapsed');
