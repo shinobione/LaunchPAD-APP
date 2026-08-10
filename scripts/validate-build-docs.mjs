@@ -21,6 +21,10 @@ const candidateDocs = new Map([
   [
     'phase-ux-c2-5-a-android-studio-media-teardown-20260810',
     'docs/PHASE-UX-C2-5-A-BUILD81-ANDROID-STUDIO-MEDIA-TEARDOWN.md'
+  ],
+  [
+    'phase-ux-c2-5-a-mini-player-action-routing-20260810',
+    'docs/PHASE-UX-C2-5-A-BUILD82-MINI-PLAYER-ACTION-ROUTING.md'
   ]
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
