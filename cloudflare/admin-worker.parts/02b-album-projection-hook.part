@@ -1,0 +1,48 @@
+
+// C2.5-B is intentionally read/projection-only.
+// No Album write route is introduced here. Canonical Album mutations remain behind C2.5-C.
+const writeCatalogIndexTracksOnly = writeCatalogIndex;
+writeCatalogIndex = async function writeCatalogIndexWithAlbums(bucket) {
+  const trackIndex = await writeCatalogIndexTracksOnly(bucket);
+  const publishedTrackIds = new Set((trackIndex.tracks || []).map(track => track.slug).filter(Boolean));
+  const albums = await buildPublishedAlbumProjection(bucket, publishedTrackIds);
+  const index = {
+    ...trackIndex,
+    albumCount: albums.length,
+    albums,
+  };
+
+  await bucket.put(CATALOG_INDEX_KEY, JSON.stringify(index, null, 2) + "\n", {
+    httpMetadata: {
+      contentType: "application/json; charset=utf-8",
+      cacheControl: "public, max-age=60, stale-while-revalidate=300",
+    },
+    customMetadata: {
+      kind: "catalog-index",
+      generatedAt: index.generatedAt,
+      count: String(index.count),
+      albumCount: String(index.albumCount),
+    },
+  });
+  return index;
+};
+
+const listTracksWithoutAlbumReadModel = listTracks;
+listTracks = async function listTracksWithAlbums(env) {
+  const trackResponse = await listTracksWithoutAlbumReadModel(env);
+  const payload = await trackResponse.json();
+  const albumObjects = await listAllObjects(env.MEDIA_BUCKET, ALBUMS_PREFIX);
+  const albums = await buildCanonicalAlbumSummaries(albumObjects, env.MEDIA_BUCKET);
+  const albumTotals = albums.reduce((acc, album) => {
+    acc.total += 1;
+    acc[album.status] = (acc[album.status] || 0) + 1;
+    acc.trackRefs += album.trackIds.length;
+    return acc;
+  }, { total: 0, published: 0, draft: 0, archived: 0, trackRefs: 0 });
+
+  return jsonResponse({
+    ...payload,
+    albums,
+    albumTotals,
+  }, trackResponse.status);
+};
