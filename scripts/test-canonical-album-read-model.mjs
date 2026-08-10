@@ -80,11 +80,19 @@ assert.equal(result.canonical, 0);
 assert.equal(hasCanonicalAlbum('ghost-signal'), false);
 assert.equal(getAlbum('coal-to-diamond').title, 'Coal to Diamond', 'Removing the optional canonical projection must restore legacy fallback without data migration.');
 
+const buildConfig = fs.readFileSync('js/build-config.js', 'utf8');
 const remoteSource = fs.readFileSync('js/core/remote-catalog.js', 'utf8');
 const adminReadModel = fs.readFileSync('cloudflare/admin-worker.parts/02a-album-read-model.part', 'utf8');
 const projectionHook = fs.readFileSync('cloudflare/admin-worker.parts/02b-album-projection-hook.part', 'utf8');
 const trackCatalog = fs.readFileSync('cloudflare/admin-worker.parts/02-catalog.part', 'utf8');
 const publicWorker = fs.readFileSync('cloudflare/public-worker.js', 'utf8');
+
+for (const marker of [
+  "id: '20260810-phase-ux-c2-5-b-canonical-album-read-model-v88'",
+  "cache: 'shinobi-launchpad-v88'",
+  "display: '2026.08.10.88'",
+  "release: 'phase-ux-c2-5-b-canonical-album-read-model-20260810'",
+]) assert.ok(buildConfig.includes(marker), `Build 88 release marker is missing ${marker}.`);
 
 for (const marker of [
   'payload.albums',
@@ -118,4 +126,4 @@ assert.ok(!adminReadModel.includes('async function deleteAlbum'), 'C2.5-B must n
 assert.ok(!projectionHook.includes('request.method'), 'C2.5-B projection hook must not introduce a write route.');
 assert.ok(!publicWorker.includes('url.pathname === "/albums"'), 'LaunchPAD public canonical Album consumption belongs to C2.5-F, not C2.5-B.');
 
-console.log('C2.5-B canonical Album read model passed: schema, stable ordered membership, legacy fallback, private read projection, no Album write surface, no public-consumption cutover.');
+console.log('Build 88 / C2.5-B canonical Album read model passed: schema, stable ordered membership, legacy fallback, private read projection, no Album write surface, no public-consumption cutover.');
