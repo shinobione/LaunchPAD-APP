@@ -57,7 +57,7 @@ for (const required of [
   "audio?.addEventListener('play'", "audio?.addEventListener('pause'", "video.preload = 'auto'",
   'video.loop = false', "video.removeAttribute('loop')", 'VIDEO_RECOVERY_HANDLER', 'VIDEO_STALL_THRESHOLD',
   'VIDEO_TERMINAL_STALL_WINDOW', "video[VIDEO_RECOVERY_HANDLER]?.('terminal-stall')",
-  'installAudioClockStability', "audio.dispatchEvent(new Event('timeupdate'))", "document.addEventListener('visibilitychange'", "window.addEventListener('pageshow'"
+  'installAudioClockStability', "audio.dispatchEvent(new Event('timeupdate'))"
 ]) {
   if (!feature11.includes(required)) fail(`Feature 11 media stabilization is missing ${required}.`);
 }
@@ -66,7 +66,7 @@ for (const forbidden of [
   "recoverLoop('boundary')", 'video.duration - current < 0.14',
   "video.track-video-player, video.lyrics-studio-canvas-video"
 ]) {
-  if (feature11.includes(forbidden)) fail(`Build 77 must keep Track Video recovery isolated from protected-media reload/pre-boundary/cross-owner churn: ${forbidden}.`);
+  if (feature11.includes(forbidden)) fail(`Track Video recovery must stay isolated from protected-media reload/pre-boundary/cross-owner churn: ${forbidden}.`);
 }
 if (!feature11.includes('installAudioClockStability(audio);') || !feature11.includes('installVideoStability(audio);')) {
   fail('Feature 11 must install both the audio clock heartbeat and isolated Track Video recovery layers.');
@@ -74,41 +74,61 @@ if (!feature11.includes('installAudioClockStability(audio);') || !feature11.incl
 
 const lyricsStudio = read('js/features/lyrics-studio.js');
 for (const required of [
-  "dataset.lyricsStudio = 'canvas'",'lyrics-studio-canvas-active',"video.className = 'lyrics-studio-canvas-video'",'video.loop = false',
+  "dataset.lyricsStudio = 'canvas'",'lyrics-studio-canvas-active',"video.className = 'lyrics-studio-canvas-video'",
+  "video.autoplay = false",'video.loop = true',"video.setAttribute('loop', '')","video.preload = 'none'",
   'video.muted = true','video.controls = false',"ensureStylesheet('css/track-videos.css')",'autoScrollButton','has-canvas-control','setPressed',
   'parseRoute','routeToHash','routeMatchesCurrentStudio','syncStudioRoute','preserveStudioForCurrentTrack',"type: 'studio'","'shinobi:route-change'",
-  "async function prepareCanvasSource(track, reason = 'play')",
-  "const response = await fetch(track.video",
-  "cache: 'force-cache'",
-  'const blob = await response.blob()',
-  'URL.createObjectURL(blob)',
-  'URL.revokeObjectURL(canvasObjectUrl)',
-  "canvasVideo.setAttribute('data-transport', 'blob')",
-  'CANVAS_LOCAL_RECOVERY_LIMIT',
-  'function scheduleLocalCanvasRecovery',
-  "canvasVideo.addEventListener('ended'",
-  "playCanvas('local-loop')",
+  'canvasVideo.src = canvasVideo.dataset.src','canvasVideo.load()','canvasVideo.play()',
+  "canvasVideo.addEventListener('playing'", "canvasVideo.addEventListener('error'",
   'function installSingleCommitSeek()',
   "seek.addEventListener('input', preview, { capture: true })",
   "seek.addEventListener('pointerup', commit, { capture: true })",
   'event.stopImmediatePropagation()',
   "window.dispatchEvent(new CustomEvent('shinobi:seek-preview'",
-  "window.dispatchEvent(new CustomEvent('shinobi:seek-commit'",
-  "audio.addEventListener('seeking'",
-  "audio.addEventListener('seeked'",
-  "audio.addEventListener('playing'",
-  "playCanvas('audio-playing')"
+  "window.dispatchEvent(new CustomEvent('shinobi:seek-commit'"
 ]) {
-  if (!lyricsStudio.includes(required)) fail(`Lyrics Studio Build 77 seek/Canvas isolation is missing ${required}.`);
+  if (!lyricsStudio.includes(required)) fail(`Lyrics Studio Build 83 native-loop/single-commit contract is missing ${required}.`);
 }
 for (const forbidden of [
   'requestLyricsStudio','pendingStudioTrackId','sessionStorage','shinobi-launchpad-open-studio-track',
-  'function scheduleCanvasRetry', "playCanvas('audio-seeked')", 'canvasVideo.src = canvasVideo.dataset.src',
-  "video.setAttribute('loop', '')", 'video.loop = true'
+  'CANVAS_LOCAL_RECOVERY_LIMIT','CANVAS_LOCAL_STALL_GRACE_MS','prepareCanvasSource(','scheduleLocalCanvasRecovery','restartLocalCanvas',
+  'URL.createObjectURL','URL.revokeObjectURL',"fetch(track.video", "data-transport', 'blob'",
+  "canvasVideo.addEventListener('ended'", "canvasVideo.addEventListener('waiting'", "canvasVideo.addEventListener('stalled'",
+  "playCanvas('local-loop')", "playCanvas('audio-playing')", "audio.addEventListener('seeking'", "audio.addEventListener('seeked'",
+  "audio.addEventListener('playing'", 'androidMobileStudioCanvasDisabled', 'androidCanvasDisabled', 'MOBILE SAFE VISUAL',
+  "window.addEventListener('pageshow'", "document.addEventListener('visibilitychange'"
 ]) {
-  if (lyricsStudio.includes(forbidden)) fail(`Build 77 Lyrics Studio must not reintroduce native-loop/remote-loop/retry churn: ${forbidden}.`);
+  if (lyricsStudio.includes(forbidden)) fail(`Build 83 Lyrics Studio must not reintroduce multi-owner/recovery/Blob lifecycle churn: ${forbidden}.`);
 }
 if (/\baudio\s*\.\s*pause\s*\(/.test(lyricsStudio)) fail('Lyrics Studio video must leave the music track playing.');
+
+const smartCanvas = read('js/features/smart-canvas.js');
+if (!smartCanvas.includes("const CANVAS_SELECTOR = 'video.track-video-player';")) {
+  fail('Smart Canvas must be scoped to Track Video only in Build 83.');
+}
+if (smartCanvas.includes("video.track-video-player, video.lyrics-studio-canvas-video")) {
+  fail('Smart Canvas must never own the Lyrics Studio Canvas after Build 83.');
+}
+
+const uiController = read('js/features/ui/ui-controller.js');
+for (const required of [
+  "ensureStylesheet('css/player-routing-v83.css')",
+  "currentTrack.removeAttribute('data-view-target')",
+  "identity.className = 'current-track-identity'",
+  "identity.dataset.viewTarget = 'lyrics'",
+  "identity.setAttribute('role', 'button')",
+  "identity.setAttribute('tabindex', '0')"
+]) {
+  if (!uiController.includes(required)) fail(`Build 83 mini-player routing boundary is missing ${required}.`);
+}
+if (uiController.includes("currentTrack.dataset.viewTarget = 'lyrics'")) {
+  fail('The full mini-player container must not be a Lyrics route target in Build 83.');
+}
+
+const mobileLyricsRouting = read('js/ui-polish-v62.js');
+for (const retiredWorkaround of ['INTERACTIVE_SELECTOR', 'nestedInteractiveControl', 'if (nestedInteractiveControl(event.target, entry)) return;']) {
+  if (mobileLyricsRouting.includes(retiredWorkaround)) fail(`Build 82 routing workaround must be removed after the structural Build 83 fix: ${retiredWorkaround}.`);
+}
 
 const lyricsEngine = read('js/features/lyrics/lyrics-engine.js');
 for (const required of [
@@ -117,7 +137,7 @@ for (const required of [
   "window.addEventListener('shinobi:seek-preview'", "window.addEventListener('shinobi:seek-commit'", "audio.addEventListener('seeking'", "audio.addEventListener('seeked'",
   "update(time, { behavior: 'auto', forceCenter: true, allowScroll: true })"
 ]) {
-  if (!lyricsEngine.includes(required)) fail(`Lyrics reader Build 77 settled-seek state is missing ${required}.`);
+  if (!lyricsEngine.includes(required)) fail(`Lyrics reader settled-seek state is missing ${required}.`);
 }
 for (const forbidden of ['scrollIntoView', 'element.offsetTop -']) {
   if (lyricsEngine.includes(forbidden)) fail(`Lyrics auto-scroll must stay relative to its reader instead of the page: ${forbidden}.`);
@@ -134,4 +154,4 @@ if (!brandCss.includes("mask:url('../assets/logo.png')") || !brandCss.includes('
   fail('Build 77 must preserve the gold sidebar identity and About moon artwork.');
 }
 
-console.log('Build 77 single-commit media seek, settled Lyrics auto-scroll, manual local-Blob Canvas loop, audio-first seek priority and Track Video isolation guards are valid.');
+console.log('Build 83 surgical rollback guards are valid: mini-player route identity is structural, Lyrics Studio owns one native-loop Canvas, Smart Canvas excludes Studio, and single-commit audio seeking remains protected.');
