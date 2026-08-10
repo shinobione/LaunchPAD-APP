@@ -1,5 +1,6 @@
 import { mergeRemoteAlbums, mergeRemoteTracks } from './catalog-store.js';
-import { normalizeAlbumSchema, normalizeTrackSchema } from './catalog-schema.js';
+import { normalizeTrackSchema } from './catalog-schema.js';
+import { normalizeAlbumSchema } from './catalog-schema.js';
 
 const DEFAULT_API_URL = 'https://launchpad-media.jerryquinet.workers.dev';
 const FETCH_TIMEOUT_MS = 4500;
