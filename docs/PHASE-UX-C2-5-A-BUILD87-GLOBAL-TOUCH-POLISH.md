@@ -5,61 +5,59 @@ Release: `phase-ux-c2-5-a-global-touch-polish-20260810`
 Cache: `shinobi-launchpad-v87`
 Safety: `safety/pre-build87-global-touch-polish-20260810-2045`
 
-## Input réel utilisateur
+## Real-user validation
 
-Build 86 a été validé sur Android/PWA pour les points fonctionnels principaux :
-- Show Track Canvas : loop seamless ;
-- Track Video : loop seamless ;
-- Track page action temporaire : supprimée ;
-- Favoris : ajout/retrait et rafraîchissement visuel OK ;
-- Queue : OK ;
-- gros rectangle tactile du mini-player : disparu ;
-- seek : OK.
+**Status: REAL-USER SMOKE PASS — 2026-08-10.**
 
-Le seul défaut résiduel relevé sur Build 86 est cosmétique : en vue Collapsed, la cover ne réapparaît plus à la jonction de loop mais un très bref fond noir peut rester visible. Le moteur Canvas n'est pas modifié dans Build 87.
+Build 87 has been validated on Android/PWA after the Build 86 functional media/player fixes. The global touch-highlight suppression is accepted and the preserved functional surfaces remained operational during the smoke.
 
-## Objectif Build 87
+Validated:
+- Show Track Canvas loop behavior;
+- Collapsed Studio behavior;
+- Track Video loop;
+- Favorites add/remove;
+- Queue;
+- seek;
+- removal of the large native touch-selection rectangle across LaunchPAD;
+- Home / Music / filters / cards / navigation / Lyrics / Audio Lab / Track Page interactions.
 
-Généraliser à tout LaunchPAD le comportement tactile propre validé dans le mini-player Build 86 : supprimer le tap-highlight / grand rectangle de sélection Chromium-WebKit sans casser les contrôles, les états actifs ni l'accessibilité clavier.
+The brief black paint frame previously observable at a native Canvas loop boundary in Collapsed mode remains a cosmetic note only and did not block the smoke.
 
-## Implémentation
+## Objective
 
-Nouvelle couche CSS `css/global-touch-polish-v87.css` :
-- sur périphériques `hover:none` ou `pointer:coarse`, désactive `-webkit-tap-highlight-color` sur l'interface ;
-- ne désactive PAS `user-select` globalement, afin de préserver la sélection de texte et les usages Lyrics ;
-- neutralise l'outline uniquement sur `:focus:not(:focus-visible)` des éléments interactifs ;
-- conserve donc les styles `:focus-visible` existants pour clavier / navigation assistée.
+Generalize to all LaunchPAD the clean touch behavior validated in the Build 86 mini-player: suppress the Chromium/WebKit tap highlight / large selection rectangle without breaking controls, active states or keyboard accessibility.
 
-La feuille est injectée par `js/build-config.js` après les couches Build 85 et Build 86.
+## Implementation
 
-## Sanctuarisation
+Layer `css/global-touch-polish-v87.css`:
+- on `hover:none` or `pointer:coarse` devices, disables `-webkit-tap-highlight-color` across the interface;
+- does NOT globally disable `user-select`, preserving text selection and Lyrics workflows;
+- neutralizes outlines only on `:focus:not(:focus-visible)` interactive elements;
+- preserves existing `:focus-visible` keyboard/assistive-navigation affordances.
 
-Build 87 ne modifie pas :
-- `js/features/lyrics-studio.js` ;
-- `js/features/studio-loop-parity-v85.js` ;
-- `js/features/track-videos.js` ;
-- `js/features/library-memory.js` ;
-- `js/features/queue-ui.js` ;
-- audio / vidéo / MediaSession ;
-- Worker Cloudflare ;
-- R2 ;
-- Track Manager ;
-- SonicTrace ;
+The stylesheet is installed by `js/build-config.js` after the Build 85 and Build 86 layers.
+
+## Sanctuarization
+
+Build 87 does not modify:
+- `js/features/lyrics-studio.js`;
+- `js/features/studio-loop-parity-v85.js`;
+- `js/features/track-videos.js`;
+- `js/features/library-memory.js`;
+- `js/features/queue-ui.js`;
+- audio / video / MediaSession;
+- Cloudflare Worker;
+- R2;
+- Track Manager;
+- SonicTrace;
 - C2.5-B+ / C3 / Phase 7.
 
-Aucune nouvelle propriété `play`, `pause`, `load`, `src` ou `currentTime` n'est introduite par Build 87.
+No new `play`, `pause`, `load`, `src` or `currentTime` manipulation is introduced by Build 87.
 
-## Smoke attendu
+## Closeout
 
-Sur Android/PWA :
-1. parcourir Home, Music, Lyrics, Audio Lab et Track Page ;
-2. toucher boutons, liens, cartes, filtres, tabs, favoris et queue ;
-3. vérifier l'absence de gros rectangle natif de sélection ;
-4. vérifier que les actions fonctionnent toujours ;
-5. revalider Show Track / Collapsed / seek / Track Video.
+C2.5-A is now **REAL-USER VALIDATED**.
 
-Sur desktop clavier :
-- utiliser Tab / Shift+Tab ;
-- vérifier que les éléments qui avaient déjà un `:focus-visible` conservent leur focus visible.
+Next authorized slice: **C2.5-B — Canonical Album Read Model**.
 
-Build 87 est une couche de présentation candidate jusqu'au smoke réel utilisateur.
+Final PHASE UX checkpoint remains **NOT CREATED**. Phase 7 remains **NOT STARTED**.
