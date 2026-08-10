@@ -140,10 +140,89 @@
 
   document.querySelectorAll('link[rel="stylesheet"]').forEach(normalizeStylesheet);
   new MutationObserver(records => {
-    for (const record of records) {
-      record.addedNodes.forEach(node => {
-        if (node instanceof HTMLLinkElement) normalizeStylesheet(node);
-      });
+    records.forEach(record => record.addedNodes.forEach(node => {
+      if (node instanceof HTMLLinkElement) normalizeStylesheet(node);
+      else if (node instanceof Element) node.querySelectorAll('link[rel="stylesheet"]').forEach(normalizeStylesheet);
+    }));
+  }).observe(document.head, { childList: true, subtree: true });
+
+  function installAppEngine() {
+    if (document.querySelector('script[data-shinobi-engine]')) return;
+    const script = document.createElement('script');
+    script.src = `js/app-engine-recovery.js?v=${encodeURIComponent(config.id)}`;
+    script.async = false;
+    script.dataset.shinobiEngine = 'true';
+    document.head.appendChild(script);
+  }
+
+  function installVisualCardExportGuard() {
+    const existing = document.querySelector('script[data-visual-card-export-guard]');
+    if (existing) {
+      if (existing.dataset.loaded === 'true') installAppEngine();
+      else {
+        existing.addEventListener('load', installAppEngine, { once: true });
+        existing.addEventListener('error', installAppEngine, { once: true });
+      }
+      return;
     }
-  }).observe(document.head, { childList: true });
+
+    const script = document.createElement('script');
+    script.src = `js/visual-card-export-guard.js?v=${encodeURIComponent(config.id)}`;
+    script.async = false;
+    script.dataset.visualCardExportGuard = 'true';
+    script.addEventListener('load', () => {
+      script.dataset.loaded = 'true';
+      installAppEngine();
+    }, { once: true });
+    script.addEventListener('error', installAppEngine, { once: true });
+    document.head.appendChild(script);
+  }
+
+  function installNavigationStability() {
+    const existing = document.querySelector('script[data-navigation-stability-v39]');
+    if (existing) {
+      if (existing.dataset.loaded === 'true') installVisualCardExportGuard();
+      else {
+        existing.addEventListener('load', installVisualCardExportGuard, { once: true });
+        existing.addEventListener('error', installVisualCardExportGuard, { once: true });
+      }
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `js/navigation-stability-v39.js?v=${encodeURIComponent(config.id)}`;
+    script.async = false;
+    script.dataset.navigationStabilityV39 = 'true';
+    script.addEventListener('load', () => {
+      script.dataset.loaded = 'true';
+      installVisualCardExportGuard();
+    }, { once: true });
+    script.addEventListener('error', installVisualCardExportGuard, { once: true });
+    document.head.appendChild(script);
+  }
+
+  function installAndroidStudioSafeMode() {
+    const existing = document.querySelector('script[data-android-studio-safe-mode]');
+    if (existing) {
+      if (existing.dataset.loaded === 'true') installNavigationStability();
+      else {
+        existing.addEventListener('load', installNavigationStability, { once: true });
+        existing.addEventListener('error', installNavigationStability, { once: true });
+      }
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `js/features/android-studio-safe-mode.js?v=${encodeURIComponent(config.id)}`;
+    script.async = false;
+    script.dataset.androidStudioSafeMode = 'true';
+    script.addEventListener('load', () => {
+      script.dataset.loaded = 'true';
+      installNavigationStability();
+    }, { once: true });
+    script.addEventListener('error', installNavigationStability, { once: true });
+    document.head.appendChild(script);
+  }
+
+  installAndroidStudioSafeMode();
 })();
