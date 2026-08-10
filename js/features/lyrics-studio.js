@@ -50,6 +50,15 @@ function createMobileTrackToggle() {
   return button;
 }
 
+function createMobileTrackOpen() {
+  const button = document.createElement('button');
+  button.className = 'lyrics-mobile-track-open';
+  button.type = 'button';
+  button.hidden = true;
+  button.textContent = 'Open track →';
+  return button;
+}
+
 function setPressed(button, pressed) {
   if (!button) return;
   button.setAttribute('aria-pressed', String(pressed));
@@ -80,6 +89,7 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   previousControls?.remove();
   view.querySelector('.lyrics-studio-canvas')?.remove();
   view.querySelector('.lyrics-mobile-track-toggle')?.remove();
+  view.querySelector('.lyrics-mobile-track-open')?.remove();
 
   const controls = document.createElement('div');
   controls.className = 'lyrics-studio-controls';
@@ -103,11 +113,13 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   head.appendChild(controls);
 
   const panelToggle = createMobileTrackToggle();
+  const openTrackButton = createMobileTrackOpen();
   const canvasShell = createStudioCanvas();
   const canvasVideo = canvasShell.querySelector('video');
   const canvasBadge = canvasShell.querySelector('.lyrics-studio-canvas-badge');
   trackPanel.prepend(canvasShell);
   trackPanel.prepend(panelToggle);
+  trackPanel.append(openTrackButton);
 
   const mobileStudioQuery = window.matchMedia?.('(max-width:760px)');
   let savedScrollY = 0;
@@ -130,6 +142,10 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
       'aria-label',
       `${collapsed ? 'Show' : 'Collapse'} track details${track?.title ? ` for ${track.title}` : ''}`
     );
+    openTrackButton.setAttribute(
+      'aria-label',
+      `Open track details${track?.title ? ` for ${track.title}` : ''}`
+    );
   }
 
   function resetMobileTrackPanelScroll() {
@@ -143,15 +159,16 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
     trackPanel.classList.toggle('lyrics-track-panel-collapsed', apply);
     view.classList.toggle('lyrics-studio-track-collapsed', apply);
     panelToggle.hidden = !isMobileStudio();
+    openTrackButton.hidden = !isMobileStudio() || apply;
     updatePanelToggleLabel();
 
     if (!apply && isMobileStudio()) {
+      // Build 84: expanding Show Track is a layout-only transition.
+      // The already-playing native-loop Canvas must not receive another play()
+      // call or any other media lifecycle command here.
       resetMobileTrackPanelScroll();
-      window.setTimeout(() => {
-        resetMobileTrackPanelScroll();
-        if (canvasEnabled) playCanvas();
-        if (recenter) centerActiveLyric();
-      }, 0);
+      window.setTimeout(resetMobileTrackPanelScroll, 0);
+      if (recenter) window.setTimeout(centerActiveLyric, 0);
       return;
     }
 
@@ -347,6 +364,7 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
     trackPanel.classList.remove('lyrics-track-panel-collapsed');
     view.classList.remove('lyrics-studio-track-collapsed');
     panelToggle.hidden = true;
+    openTrackButton.hidden = true;
     view.classList.remove('lyrics-studio-mode');
     document.body.classList.remove('lyrics-studio-open');
     setModeButtonState(false);
@@ -429,7 +447,17 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   });
 
   panelToggle.addEventListener('click', () => {
-    setMobilePanelCollapsed(!trackPanel.classList.contains('lyrics-track-panel-collapsed'));
+    setMobilePanelCollapsed(
+      !trackPanel.classList.contains('lyrics-track-panel-collapsed'),
+      { recenter: false }
+    );
+  });
+
+  openTrackButton.addEventListener('click', () => {
+    const track = currentTrack(audio);
+    if (!track) return;
+    setStudioMode(false, { restoreScroll: false });
+    dispatchRouteHash(routeToHash({ type: 'track', id: track.id }));
   });
 
   // Native loop is the sole Canvas loop owner. These listeners only expose
@@ -481,7 +509,7 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
 
   mobileStudioQuery?.addEventListener?.('change', () => {
     if (!view.classList.contains('lyrics-studio-mode')) return;
-    setMobilePanelCollapsed(mobileStudioQuery.matches ? mobilePanelCollapsed : false);
+    setMobilePanelCollapsed(mobileStudioQuery.matches ? mobilePanelCollapsed : false, { recenter: false });
   });
 
   window.addEventListener(ROUTE_CHANGE_EVENT, () => {
@@ -499,6 +527,7 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
     trackPanel.classList.remove('lyrics-track-panel-collapsed');
     view.classList.remove('lyrics-studio-track-collapsed');
     panelToggle.hidden = true;
+    openTrackButton.hidden = true;
     view.classList.remove('lyrics-studio-mode');
     document.body.classList.remove('lyrics-studio-open');
   });
