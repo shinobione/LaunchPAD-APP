@@ -10,10 +10,13 @@ const release = /release:\s*'([^']+)'/.exec(buildConfig)?.[1];
 assert.ok(display, 'Unable to read build display from js/build-config.js.');
 assert.ok(release, 'Unable to read build release from js/build-config.js.');
 
-// README is the living release marker. CHANGELOG and historical phase/audit
-// Markdown files are timelines/snapshots and must not be rewritten merely to
-// pretend that an older document described a later public build.
-const livingReleaseDocs = ['README.md'];
+// README remains the accepted-release marker. Emergency real-device candidates
+// may use a dedicated release document until their smoke passes, so the README
+// never claims a broken Android build is accepted before the user validates it.
+const build80Candidate = 'docs/PHASE-UX-C2-5-A-BUILD80-ANDROID-STUDIO-PASSIVE-GUARD.md';
+const livingReleaseDocs = release === 'phase-ux-c2-5-a-android-studio-passive-canvas-guard-20260810'
+  ? [build80Candidate]
+  : ['README.md'];
 const stale = [];
 
 for (const relative of livingReleaseDocs) {
