@@ -10,9 +10,9 @@ const savePartPath = 'cloudflare/admin-worker.parts/03e-studio-metadata-save.par
 const lyricsPartPath = 'cloudflare/admin-worker.parts/03f-studio-lyrics.part';
 const phase4PartPath = 'cloudflare/admin-worker.parts/03g-studio-phase4-ops.part';
 const albumPartPaths = [
-  'cloudflare/admin-worker.parts/02c-album-write-core.part',
-  'cloudflare/admin-worker.parts/02d-album-membership.part',
-  'cloudflare/admin-worker.parts/02e-album-assets.part',
+  'cloudflare/admin-worker.parts/03-z3-album-write-core.part',
+  'cloudflare/admin-worker.parts/03-z4-album-membership.part',
+  'cloudflare/admin-worker.parts/03-z5-album-assets.part',
 ];
 const runtime = fs.readFileSync(runtimePath, 'utf8');
 const validationPart = fs.readFileSync(validationPartPath, 'utf8');

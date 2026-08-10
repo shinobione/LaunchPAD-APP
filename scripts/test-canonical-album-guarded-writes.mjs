@@ -2,15 +2,45 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const writePart = [
-  'cloudflare/admin-worker.parts/02c-album-write-core.part',
-  'cloudflare/admin-worker.parts/02d-album-membership.part',
-  'cloudflare/admin-worker.parts/02e-album-assets.part',
-].map(path => fs.readFileSync(path, 'utf8')).join('\n');
-const readPart = fs.readFileSync('cloudflare/admin-worker.parts/02a-album-read-model.part', 'utf8');
-const projectionPart = fs.readFileSync('cloudflare/admin-worker.parts/02b-album-projection-hook.part', 'utf8');
+const albumPartPaths = [
+  'cloudflare/admin-worker.parts/03-z3-album-write-core.part',
+  'cloudflare/admin-worker.parts/03-z4-album-membership.part',
+  'cloudflare/admin-worker.parts/03-z5-album-assets.part',
+];
+const writePart = albumPartPaths.map(path => fs.readFileSync(path, 'utf8')).join('\n');
+const readPart = fs.readFileSync('cloudflare/admin-worker.parts/03-z1-album-read-model.part', 'utf8');
+const projectionPart = fs.readFileSync('cloudflare/admin-worker.parts/03-z2-album-projection-hook.part', 'utf8');
 const builder = fs.readFileSync('scripts/build-admin-worker.mjs', 'utf8');
 const deployWorkflow = fs.readFileSync('.github/workflows/deploy-cloudflare.yml', 'utf8');
+
+// The Track Manager source parts are historical byte/chunk boundaries, not safe module boundaries.
+// 02-catalog.part ends inside parseTimestampedLyrics() and 03-helpers.part resumes/closes it.
+// Canonical Album parts MUST therefore sort after 03-helpers.part, where server top-level scope is restored,
+// and before 03a-quality.part. This guard exists because the previous 02a..02e names produced a syntactically
+// valid Worker whose Album declarations were nested inside parseTimestampedLyrics() and unavailable to fetch().
+const sortedSourceParts = fs.readdirSync('cloudflare/admin-worker.parts')
+  .filter(filename => filename.endsWith('.part') && !filename.includes('.inject.'))
+  .sort((left, right) => left.localeCompare(right, 'en', { numeric: true }));
+const helpersIndex = sortedSourceParts.indexOf('03-helpers.part');
+const qualityIndex = sortedSourceParts.indexOf('03a-quality.part');
+assert.ok(helpersIndex >= 0 && qualityIndex > helpersIndex, 'Historical helper/quality source boundaries must remain discoverable.');
+for (const filename of [
+  '03-z1-album-read-model.part',
+  '03-z2-album-projection-hook.part',
+  '03-z3-album-write-core.part',
+  '03-z4-album-membership.part',
+  '03-z5-album-assets.part',
+]) {
+  const index = sortedSourceParts.indexOf(filename);
+  assert.ok(index > helpersIndex && index < qualityIndex, `${filename} must stay at server top level after 03-helpers.part and before 03a-quality.part.`);
+}
+for (const forbiddenNestedName of [
+  '02a-album-read-model.part',
+  '02b-album-projection-hook.part',
+  '02c-album-write-core.part',
+  '02d-album-membership.part',
+  '02e-album-assets.part',
+]) assert.equal(sortedSourceParts.includes(forbiddenNestedName), false, `${forbiddenNestedName} would reintroduce the nested Album runtime-scope regression.`);
 
 for (const required of [
   'const STUDIO_ALBUM_CREATE_INTENT = "album-create-v1";',
@@ -119,4 +149,4 @@ assert.throws(() => helpers.normalizeStudioAlbumTrackIds(['Track A']), /trackId 
 assert.deepEqual(JSON.parse(JSON.stringify(helpers.studioAlbumInsertAt(['a', 'b', 'c'], 'c', 0))), ['c', 'a', 'b']);
 assert.deepEqual(JSON.parse(JSON.stringify(helpers.studioAlbumInsertAt(['a', 'b'], 'c', 99))), ['a', 'b', 'c']);
 
-console.log('C2.5-C guarded Album writes protect immutable IDs, strict metadata inputs, stale revisions, membership conflicts, publish quality, asset rollback, reorder revision stability and manual deployment boundaries.');
+console.log('C2.5-C guarded Album writes protect immutable IDs, strict metadata inputs, stale revisions, membership conflicts, publish quality, asset rollback, reorder revision stability, top-level runtime scope and manual deployment boundaries.');

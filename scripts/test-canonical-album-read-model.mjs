@@ -82,8 +82,8 @@ assert.equal(getAlbum('coal-to-diamond').title, 'Coal to Diamond', 'Removing the
 
 const buildConfig = fs.readFileSync('js/build-config.js', 'utf8');
 const remoteSource = fs.readFileSync('js/core/remote-catalog.js', 'utf8');
-const adminReadModel = fs.readFileSync('cloudflare/admin-worker.parts/02a-album-read-model.part', 'utf8');
-const projectionHook = fs.readFileSync('cloudflare/admin-worker.parts/02b-album-projection-hook.part', 'utf8');
+const adminReadModel = fs.readFileSync('cloudflare/admin-worker.parts/03-z1-album-read-model.part', 'utf8');
+const projectionHook = fs.readFileSync('cloudflare/admin-worker.parts/03-z2-album-projection-hook.part', 'utf8');
 const trackCatalog = fs.readFileSync('cloudflare/admin-worker.parts/02-catalog.part', 'utf8');
 const publicWorker = fs.readFileSync('cloudflare/public-worker.js', 'utf8');
 
