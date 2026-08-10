@@ -28,6 +28,6 @@ assert.ok(!source.includes('manifest.assets.sonictrace'), 'SonicTrace must not b
 assert.ok(!source.includes('Ã'), 'Built Worker must preserve UTF-8 user-facing text and reject mojibake.');
 assert.ok(source.indexOf('await env.MEDIA_BUCKET.put(historyKey') < source.indexOf('await env.MEDIA_BUCKET.put(latestKey'), 'History must be persisted before latest.');
 assert.ok(source.includes('rollback.latestRestored = true'), 'Latest rollback verification is required.');
-assert.ok(deployWorkflow.includes("EXPECTED_ADMIN_VERSION: '5.16'"), 'Protected deployment must verify Track Manager v5.16.');
+assert.ok(deployWorkflow.includes("EXPECTED_ADMIN_VERSION: '5.17'"), 'Protected deployment must verify current Track Manager v5.17.');
 
-console.log('Studio SonicTrace bridge contract is trackId-bound, UTF-8 clean, versioned, append-only and rollback guarded.');
+console.log('Studio SonicTrace bridge contract remains trackId-bound, UTF-8 clean, versioned, append-only and rollback guarded under the current Track Manager release.');
