@@ -1,0 +1,21 @@
+@media(max-width:760px){
+  #view-lyrics.lyrics-studio-mode .lyrics-mobile-track-open{
+    width:auto!important;
+    max-width:100%;
+    margin-top:4px!important;
+    margin-left:auto!important;
+    justify-self:end!important;
+    padding-inline:10px;
+    font-size:8px;
+    color:#bfeff7;
+    border-color:rgba(62,224,255,.14);
+    background:rgba(62,224,255,.035);
+  }
+
+  #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active
+  .lyrics-track-panel:not(.lyrics-track-panel-collapsed)
+  .lyrics-mobile-track-open{
+    grid-column:1/-1;
+    justify-self:end!important;
+  }
+}
