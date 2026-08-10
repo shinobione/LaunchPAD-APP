@@ -1,10 +1,21 @@
 # PHASE UX — C2.5-B Canonical Album Read Model
 
-**Status:** IMPLEMENTED ON FEATURE BRANCH — DRAFT PR / CI / REVIEW PENDING  
+**Status:** IMPLEMENTED + CI GREEN — DRAFT HELD FOR BUILD 79 REAL-DEVICE SMOKE  
 **Production LaunchPAD remains:** Build 79  
 **Production Track Manager remains:** v5.16 / Studio bridge v1.8  
 **Safety checkpoint:** `safety/pre-c2-5-b-canonical-album-read-model-20260810-0238`  
-**Feature branch:** `feature/c2-5-b-canonical-album-read-model`
+**Feature branch:** `feature/c2-5-b-canonical-album-read-model`  
+**Draft PR:** `#184`
+
+## Validation state
+
+Final pre-closeout implementation head `f5ad0d43135a419b6ab333df3e24dd2bcc22b476` passed:
+
+- Validate Launchpad — run `31345443304` — SUCCESS;
+- Validate Horizontal Overflow — run `31345443287` — SUCCESS;
+- Validate Cloudflare Workers — run `31345443294` — SUCCESS.
+
+The PR remains Draft by design. No merge, Pages build, Worker deployment or R2 mutation is authorized before the independent Build 79 Android smoke.
 
 ## Why C2.5-B exists
 
@@ -163,8 +174,8 @@ The current LaunchPAD Build 79 must also remain independently smoke-testable on 
 
 ## Merge/deploy policy
 
-This feature should remain a **Draft PR until LaunchPAD Build 79 passes real-device Android smoke**.
+This feature must remain a **Draft PR until LaunchPAD Build 79 passes real-device Android smoke**.
 
-Even after merge, an admin Worker deployment must remain a distinct, explicit operation. The code itself performs no automatic production mutation or migration.
+After that smoke, C2.5-B still requires a final diff/head review before Ready/merge. A merge does not imply a Worker deployment. Any admin Worker deployment remains a distinct, explicit operation with its own verification.
 
 C2.5-C — guarded Album writes — requires separate authorization and safety review.
