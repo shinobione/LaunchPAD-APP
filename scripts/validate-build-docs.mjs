@@ -11,11 +11,20 @@ assert.ok(display, 'Unable to read build display from js/build-config.js.');
 assert.ok(release, 'Unable to read build release from js/build-config.js.');
 
 // README remains the accepted-release marker. Emergency real-device candidates
-// may use a dedicated release document until their smoke passes, so the README
-// never claims a broken Android build is accepted before the user validates it.
-const build80Candidate = 'docs/PHASE-UX-C2-5-A-BUILD80-ANDROID-STUDIO-PASSIVE-GUARD.md';
-const livingReleaseDocs = release === 'phase-ux-c2-5-a-android-studio-passive-canvas-guard-20260810'
-  ? [build80Candidate]
+// use a dedicated release document until their smoke passes, so README never
+// claims a broken Android build is accepted before real-user validation.
+const candidateDocs = new Map([
+  [
+    'phase-ux-c2-5-a-android-studio-passive-canvas-guard-20260810',
+    'docs/PHASE-UX-C2-5-A-BUILD80-ANDROID-STUDIO-PASSIVE-GUARD.md'
+  ],
+  [
+    'phase-ux-c2-5-a-android-studio-media-teardown-20260810',
+    'docs/PHASE-UX-C2-5-A-BUILD81-ANDROID-STUDIO-MEDIA-TEARDOWN.md'
+  ]
+]);
+const livingReleaseDocs = candidateDocs.has(release)
+  ? [candidateDocs.get(release)]
   : ['README.md'];
 const stale = [];
 
