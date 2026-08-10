@@ -37,6 +37,10 @@ const candidateDocs = new Map([
   [
     'phase-ux-c2-5-a-studio-loop-parity-20260810',
     'docs/PHASE-UX-C2-5-A-BUILD85-STUDIO-LOOP-PARITY.md'
+  ],
+  [
+    'phase-ux-c2-5-a-mobile-player-ui-polish-20260810',
+    'docs/PHASE-UX-C2-5-A-BUILD86-MOBILE-PLAYER-UI-POLISH.md'
   ]
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
