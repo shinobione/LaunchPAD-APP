@@ -29,6 +29,10 @@ const candidateDocs = new Map([
   [
     'phase-ux-c2-5-a-surgical-rollback-20260810',
     'docs/PHASE-UX-C2-5-A-BUILD83-SURGICAL-ROLLBACK.md'
+  ],
+  [
+    'phase-ux-c2-5-a-show-track-isolation-20260810',
+    'docs/PHASE-UX-C2-5-A-BUILD84-SHOW-TRACK-ISOLATION.md'
   ]
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
