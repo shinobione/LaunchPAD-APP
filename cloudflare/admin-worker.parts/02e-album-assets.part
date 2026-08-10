@@ -1,0 +1,190 @@
+
+async function uploadStudioAlbumAsset(albumId, kind, request, env, user) {
+  if (!STUDIO_ALBUM_ASSET_KINDS.has(kind)) throw new Error("INPUT_Type d'asset Album invalide.");
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (contentLength && contentLength > MAX_UPLOAD_BYTES + MAX_BODY_OVERHEAD) throw new Error("UPLOAD_Envoi trop volumineux.");
+  const formData = await request.formData();
+  if (formData.get("intent") !== STUDIO_ALBUM_ASSET_UPLOAD_INTENT) throw new Error("AUTH_Intention Album invalide.");
+  const existing = await readAlbumManifest(env.MEDIA_BUCKET, albumId);
+  if (!existing) return jsonResponse({ ok: false, error: "Album introuvable." }, 404);
+  const stale = studioAlbumStaleResponse(existing, formData.get("expectedUpdatedAt"));
+  if (stale) return stale;
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size <= 0) throw new Error("UPLOAD_Fichier manquant.");
+  validateUploadFile(file, kind);
+  if (kind === "thumbnail" && (file.size > MAX_THUMBNAIL_BYTES || getExtension(file.name) !== "webp" || (file.type && file.type !== "image/webp"))) {
+    throw new Error("UPLOAD_La miniature Album doit être un WebP de moins de 2 Mo.");
+  }
+
+  const extension = kind === "thumbnail" ? "webp" : normalizedExtension(file.name, file.type, kind);
+  const relativePath = kind === "thumbnail" ? "thumbnail/thumbnail.webp" : `cover/cover.${extension}`;
+  const newKey = albumPrefix(albumId) + relativePath;
+  const oldRelativePath = existing.assets?.[kind] || null;
+  const oldKey = oldRelativePath ? albumPrefix(albumId) + oldRelativePath : null;
+  const oldObject = oldKey ? await env.MEDIA_BUCKET.get(oldKey) : null;
+  const backupKey = oldObject ? studioAlbumBackupKey(albumId, kind) : null;
+  let backupWritten = false;
+  let newWritten = false;
+  let manifestWritten = false;
+
+  try {
+    if (oldObject && backupKey) backupWritten = await studioBackupObject(env.MEDIA_BUCKET, oldObject, backupKey);
+    await env.MEDIA_BUCKET.put(newKey, file.stream(), {
+      httpMetadata: {
+        contentType: file.type || guessContentType(extension),
+        cacheControl: "public, max-age=31536000, immutable",
+      },
+      customMetadata: {
+        kind: `album-${kind}`,
+        albumId,
+        originalName: String(file.name || relativePath).slice(0, 300),
+        uploadedBy: String(user.email || "authorized-user").slice(0, 200),
+        uploadedAt: new Date().toISOString(),
+        studioIntent: STUDIO_ALBUM_ASSET_UPLOAD_INTENT,
+      },
+    });
+    newWritten = true;
+    if (oldKey && oldKey !== newKey) await env.MEDIA_BUCKET.delete(oldKey);
+
+    const proposed = nextAlbumManifest(existing, {}, user, { assets: { ...existing.assets, [kind]: relativePath } });
+    const quality = await inspectCanonicalAlbumQuality(env.MEDIA_BUCKET, proposed);
+    if (proposed.status === "published" && quality.publishable !== true) {
+      const error = new Error("QUALITY_BLOCKED_Asset Album refusé.");
+      error.quality = quality;
+      throw error;
+    }
+    await writeAlbumManifest(env.MEDIA_BUCKET, proposed);
+    manifestWritten = true;
+    const index = await writeCatalogIndex(env.MEDIA_BUCKET);
+    const [reread, rereadObject] = await Promise.all([
+      readAlbumManifest(env.MEDIA_BUCKET, albumId),
+      env.MEDIA_BUCKET.get(newKey),
+    ]);
+    if (!reread || reread.updatedAt !== proposed.updatedAt || reread.assets?.[kind] !== relativePath || !rereadObject) {
+      throw new Error("SAVE_VERIFY_Asset Album non vérifié.");
+    }
+    await studioDeleteBackup(env.MEDIA_BUCKET, backupKey);
+    return jsonResponse({
+      ok: true,
+      saved: true,
+      albumId,
+      kind,
+      path: relativePath,
+      size: rereadObject.size,
+      contentType: rereadObject.httpMetadata?.contentType || file.type || guessContentType(extension),
+      etag: rereadObject.etag || null,
+      previousUpdatedAt: existing.updatedAt || null,
+      updatedAt: reread.updatedAt || null,
+      quality,
+      catalogRebuilt: true,
+      catalogGeneratedAt: index.generatedAt || null,
+      albumCount: index.albumCount || 0,
+      authenticatedEmail: user.email || null,
+    });
+  } catch (error) {
+    const rollback = { assetRestored: !oldObject, manifestRestored: !manifestWritten, catalogRestored: false, backupRemoved: false };
+    try {
+      if (oldObject && backupWritten && backupKey && oldKey) {
+        await studioRestoreBackup(env.MEDIA_BUCKET, backupKey, oldKey);
+        rollback.assetRestored = true;
+      } else if (!oldObject && newWritten) {
+        await env.MEDIA_BUCKET.delete(newKey);
+        rollback.assetRestored = true;
+      }
+      if (oldObject && oldKey !== newKey && newWritten) {
+        try { await env.MEDIA_BUCKET.delete(newKey); } catch {}
+      }
+    } catch (rollbackError) { console.error("Album asset rollback failed", rollbackError); }
+    try {
+      if (manifestWritten) await writeAlbumManifest(env.MEDIA_BUCKET, existing);
+      rollback.manifestRestored = true;
+    } catch (rollbackError) { console.error("Album asset manifest rollback failed", rollbackError); }
+    if (rollback.assetRestored && rollback.manifestRestored) {
+      try { await writeCatalogIndex(env.MEDIA_BUCKET); rollback.catalogRestored = true; }
+      catch (rollbackError) { console.error("Album asset catalog rollback failed", rollbackError); }
+    }
+    await studioDeleteBackup(env.MEDIA_BUCKET, backupKey);
+    rollback.backupRemoved = true;
+    const qualityBlocked = String(error?.message || "").startsWith("QUALITY_BLOCKED_");
+    return jsonResponse({
+      ok: false,
+      error: qualityBlocked ? "Asset Album refusé par le contrôle qualité." : "Remplacement asset Album annulé après échec de publication ou vérification.",
+      code: qualityBlocked ? "ALBUM_QUALITY_BLOCKED" : "ALBUM_ASSET_ROLLBACK",
+      quality: error?.quality || null,
+      rollback,
+      currentUpdatedAt: existing.updatedAt || null,
+    }, qualityBlocked ? 409 : 500);
+  }
+}
+
+async function deleteStudioAlbumAsset(albumId, kind, request, env, user) {
+  if (!STUDIO_ALBUM_ASSET_KINDS.has(kind)) throw new Error("INPUT_Type d'asset Album invalide.");
+  const payload = await readStudioAlbumJsonPayload(request, STUDIO_ALBUM_ASSET_DELETE_INTENT);
+  const existing = await readAlbumManifest(env.MEDIA_BUCKET, albumId);
+  if (!existing) return jsonResponse({ ok: false, error: "Album introuvable." }, 404);
+  const stale = studioAlbumStaleResponse(existing, payload.expectedUpdatedAt);
+  if (stale) return stale;
+  const relativePath = existing.assets?.[kind] || null;
+  if (!relativePath) return jsonResponse({ ok: false, error: "Asset Album absent.", code: "ALBUM_ASSET_MISSING", albumId, kind }, 409);
+  const key = albumPrefix(albumId) + relativePath;
+  const object = await env.MEDIA_BUCKET.get(key);
+  if (!object) return jsonResponse({ ok: false, error: "Le manifest Album référence un asset R2 absent.", code: "ALBUM_ASSET_R2_MISSING" }, 409);
+  const proposed = nextAlbumManifest(existing, {}, user, { assets: { ...existing.assets, [kind]: null } });
+  const proposedQuality = await inspectCanonicalAlbumQuality(env.MEDIA_BUCKET, proposed);
+  if (proposed.status === "published" && proposedQuality.publishable !== true) {
+    return jsonResponse({ ok: false, error: "Suppression bloquée car l'Album publié deviendrait non publiable. Passe l'Album en draft d'abord.", code: "ALBUM_QUALITY_BLOCKED", quality: proposedQuality, currentUpdatedAt: existing.updatedAt || null }, 409);
+  }
+
+  const backupKey = studioAlbumBackupKey(albumId, kind);
+  let backupWritten = false;
+  let assetDeleted = false;
+  let manifestWritten = false;
+  try {
+    backupWritten = await studioBackupObject(env.MEDIA_BUCKET, object, backupKey);
+    await env.MEDIA_BUCKET.delete(key);
+    assetDeleted = true;
+    await writeAlbumManifest(env.MEDIA_BUCKET, proposed);
+    manifestWritten = true;
+    const index = await writeCatalogIndex(env.MEDIA_BUCKET);
+    const [reread, rereadObject] = await Promise.all([
+      readAlbumManifest(env.MEDIA_BUCKET, albumId),
+      env.MEDIA_BUCKET.get(key),
+    ]);
+    if (!reread || reread.updatedAt !== proposed.updatedAt || reread.assets?.[kind] || rereadObject) {
+      throw new Error("SAVE_VERIFY_Suppression asset Album non vérifiée.");
+    }
+    const quality = await inspectCanonicalAlbumQuality(env.MEDIA_BUCKET, reread);
+    await studioDeleteBackup(env.MEDIA_BUCKET, backupKey);
+    return jsonResponse({
+      ok: true,
+      deleted: true,
+      albumId,
+      kind,
+      path: relativePath,
+      previousUpdatedAt: existing.updatedAt || null,
+      updatedAt: reread.updatedAt || null,
+      quality,
+      catalogRebuilt: true,
+      catalogGeneratedAt: index.generatedAt || null,
+      albumCount: index.albumCount || 0,
+      authenticatedEmail: user.email || null,
+    });
+  } catch (error) {
+    const rollback = { assetRestored: false, manifestRestored: !manifestWritten, catalogRestored: false, backupRemoved: false };
+    if (assetDeleted && backupWritten) {
+      try { await studioRestoreBackup(env.MEDIA_BUCKET, backupKey, key); rollback.assetRestored = true; }
+      catch (rollbackError) { console.error("Album asset delete rollback failed", rollbackError); }
+    }
+    try {
+      if (manifestWritten) await writeAlbumManifest(env.MEDIA_BUCKET, existing);
+      rollback.manifestRestored = true;
+    } catch (rollbackError) { console.error("Album asset delete manifest rollback failed", rollbackError); }
+    if (rollback.assetRestored && rollback.manifestRestored) {
+      try { await writeCatalogIndex(env.MEDIA_BUCKET); rollback.catalogRestored = true; }
+      catch (rollbackError) { console.error("Album asset delete catalog rollback failed", rollbackError); }
+    }
+    await studioDeleteBackup(env.MEDIA_BUCKET, backupKey);
+    rollback.backupRemoved = true;
+    return jsonResponse({ ok: false, error: "Suppression asset Album annulée après échec de publication ou vérification.", code: "ALBUM_ASSET_DELETE_ROLLBACK", rollback, currentUpdatedAt: existing.updatedAt || null }, 500);
+  }
+}

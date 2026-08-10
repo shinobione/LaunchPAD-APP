@@ -1,7 +1,8 @@
 # SHINOBIWAN LaunchPAD
 
-> Current accepted application build: `2026.08.10.87` — release `phase-ux-c2-5-a-global-touch-polish-20260810`.  
-> Current development candidate: `2026.08.10.88` — `PHASE UX C2.5-B · Canonical Album Read Model`.
+> Current public application build: `2026.08.10.88` — release `phase-ux-c2-5-b-canonical-album-read-model-20260810`.  
+> Last real-user accepted mobile/player baseline: `2026.08.10.87` — `PHASE UX C2.5-A · Global Touch Polish`.  
+> Current private backend candidate: Track Manager `v5.17` / Studio bridge `v1.9` — `PHASE UX C2.5-C · Guarded Canonical Album Writes` (**source only; not deployed**).
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -43,7 +44,7 @@ See the C2.5-A release documents through [`docs/PHASE-UX-C2-5-A-BUILD87-GLOBAL-T
 
 ## PHASE UX C2.5-B — Canonical Album Read Model
 
-Build 88 is the current development candidate. It starts from the accepted Build 87 line and establishes the **read/projection layer only** for first-class Albums:
+Build 88 is the current public application build and the merged C2.5-B architecture baseline. It starts from the accepted Build 87 line and establishes the **read/projection layer only** for first-class Albums:
 
 ```text
 albums/<album-id>/manifest.json
@@ -53,9 +54,28 @@ albums/<album-id>/thumbnail/thumbnail.webp
 
 When a canonical Album exists, ordered `album.trackIds` is the intended membership/order authority. Existing track `album.id/title` remains compatibility cache during migration, and current hardcoded Albums remain fallback until each project is migrated. `catalog/index.json` remains a rebuildable `schemaVersion: 1` projection.
 
-Build 88 introduces no Album create/edit/delete/reorder route, no production R2 Album object, no Album artwork migration, no Singles conversion and no public `/albums` Worker cutover. See [`docs/PHASE-UX-C2-5-B-BUILD88-CANONICAL-ALBUM-READ-MODEL.md`](docs/PHASE-UX-C2-5-B-BUILD88-CANONICAL-ALBUM-READ-MODEL.md).
+C2.5-B was merged and published to GitHub Pages without deploying the private Worker and without creating a production R2 Album object. See [`docs/PHASE-UX-C2-5-B-BUILD88-CANONICAL-ALBUM-READ-MODEL.md`](docs/PHASE-UX-C2-5-B-BUILD88-CANONICAL-ALBUM-READ-MODEL.md).
 
-The final PHASE UX checkpoint remains **NOT CREATED**. C2.5-C/D/E/F remain not started, C3 SonicTrace Deep Audio work remains suspended during C2.5, and Phase 7 remains **NOT STARTED**.
+## PHASE UX C2.5-C — Guarded Canonical Album Writes
+
+C2.5-C is the current **private backend candidate**, not a new public PWA build. Public LaunchPAD therefore remains Build 88 while Track Manager advances in source to `v5.17` and Studio bridge to `v1.9`.
+
+The candidate adds protected Studio routes for:
+
+- Album list/read;
+- draft Album creation with immutable canonical ID;
+- strict metadata save with stale `expectedUpdatedAt` protection;
+- ordered `album.trackIds` membership save;
+- guarded cross-Album move/reorder with independent source/target revisions;
+- cover/thumbnail upload and delete with R2 backup, canonical reread and rollback.
+
+The write layer rejects duplicate canonical ownership, blocks invalid published Album states, avoids track-manifest revision churn on pure reorder, and keeps the track manifest `album.id/title` only as a transitional compatibility cache. No whole-Album deletion route is introduced.
+
+CI includes both static contract guards and an in-memory R2 transaction smoke covering draft creation, stale no-write behavior, ownership conflict, reorder stability, cross-Album movement and rollback after simulated catalog publication failure.
+
+**C2.5-C source is not deployed at this point and has not mutated production R2.** See [`docs/PHASE-UX-C2-5-C-GUARDED-ALBUM-WRITES.md`](docs/PHASE-UX-C2-5-C-GUARDED-ALBUM-WRITES.md) and [`CHANGELOG-C2-5-C-TM5-17.md`](CHANGELOG-C2-5-C-TM5-17.md).
+
+The final PHASE UX checkpoint remains **NOT CREATED**. C2.5-D/E/F remain not started, C3 SonicTrace Deep Audio work remains suspended during C2.5, and Phase 7 remains **NOT STARTED**.
 
 ## Production PHASE UX C2 backend
 
@@ -328,9 +348,9 @@ albums/<album-id>/cover/<filename>
 albums/<album-id>/thumbnail/thumbnail.webp
 ```
 
-No production Album object is created merely by merging the C2.5-B read model.
+No production Album object is created merely by merging the C2.5-B read model or the currently undeployed C2.5-C source. Album creation/mutation can occur only after an explicit private Worker deployment and a guarded authorized request.
 
-Temporary Track Manager rollback material may exist during an active scoped asset transaction only under `_studio-backups/<slug>/...`; it is not canonical track data and is removed after success/compensation.
+Temporary Track Manager rollback material may exist during an active scoped asset transaction only under `_studio-backups/<slug>/...` or `_studio-backups/albums/<album-id>/...`; it is not canonical catalog data and is removed after success/compensation.
 
 The public application hydrates through the public Worker. Localhost/CI may use deterministic fixtures; production must not silently substitute a bundled production catalog.
 
@@ -355,7 +375,7 @@ npm run check:wrangler
 npm run check:build-docs
 ```
 
-`check:build-docs` validates the active build marker in living release documentation. Historical phase/audit Markdown files are immutable snapshots and are no longer rewritten just to mirror a later public build number.
+`check:build-docs` validates the active public build marker in living release documentation. Historical phase/audit Markdown files are immutable snapshots and are no longer rewritten just to mirror a later public build number.
 
 CI checks browser navigation, PWA/service-worker behavior, Audio Lab signal contracts, catalog contracts, Cloudflare bundles, repository cleanliness, current release documentation, Studio bridge security boundaries and desktop overflow regressions.
 
@@ -364,19 +384,19 @@ The Studio bridge guards separately prove that:
 - metadata validation remains non-mutating;
 - metadata save remains media-isolated;
 - canonical lyrics remains manifest+ETag guarded;
-- management remains limited to track-create, per-asset upload/delete and explicit catalog rebuild;
+- track management remains limited to track-create, per-asset upload/delete and explicit catalog rebuild;
 - Phase 6 contextual lyrics save remains specialized and canonical;
 - protected media reads retain Cloudflare Access and byte-range support;
 - whole-track deletion is not exposed;
 - legacy unrelated Track Manager writes remain same-origin.
 
-C2.5-B additionally guards canonical Album schema/read/projection semantics while explicitly forbidding Album write/delete routes and public canonical Album cutover.
+C2.5-B additionally guards canonical Album schema/read/projection semantics. C2.5-C adds guards for immutable Album IDs, strict metadata, stale revisions, canonical ownership conflicts, ordered membership, no-revision-churn reorder, published-Album quality, asset rollback, source/target move guards and the continued absence of whole-Album deletion. A separate in-memory transaction smoke executes the mutation logic without touching production R2.
 
 ## Release discipline
 
 A public runtime build advances in one place: `js/build-config.js`.
 
-Every public runtime change must advance the build/cache marker and update the living release documentation. Historical phase/audit documents keep the build state they were written to describe. Worker-only contract revisions do not advance the public LaunchPAD build unless public runtime code changes.
+Every public runtime change must advance the build/cache marker and update the living release documentation. Historical phase/audit documents keep the build state they were written to describe. **Worker-only contract revisions do not advance the public LaunchPAD build unless public runtime code changes.** C2.5-C therefore keeps LaunchPAD on Build 88 while versioning the private backend independently as Track Manager 5.17 / Studio bridge 1.9.
 
 Web-host deployment, Worker deployment and R2/catalog mutation remain separate states. Do not report “deployed” without saying which state changed.
 
@@ -429,7 +449,9 @@ Useful documents:
 - [`docs/PHASE-UX-C2-5-A-BUILD86-MOBILE-PLAYER-UI-POLISH.md`](docs/PHASE-UX-C2-5-A-BUILD86-MOBILE-PLAYER-UI-POLISH.md) — Build 86 mobile player UI/action polish
 - [`docs/PHASE-UX-C2-5-A-BUILD87-GLOBAL-TOUCH-POLISH.md`](docs/PHASE-UX-C2-5-A-BUILD87-GLOBAL-TOUCH-POLISH.md) — Build 87 global touch polish, real-user validated
 - [`docs/PHASE-UX-C2-5-A-BUILD87-REAL-USER-SMOKE-PASS.md`](docs/PHASE-UX-C2-5-A-BUILD87-REAL-USER-SMOKE-PASS.md) — explicit Build 87 smoke closeout
-- [`docs/PHASE-UX-C2-5-B-BUILD88-CANONICAL-ALBUM-READ-MODEL.md`](docs/PHASE-UX-C2-5-B-BUILD88-CANONICAL-ALBUM-READ-MODEL.md) — Build 88 C2.5-B candidate contract
+- [`docs/PHASE-UX-C2-5-B-BUILD88-CANONICAL-ALBUM-READ-MODEL.md`](docs/PHASE-UX-C2-5-B-BUILD88-CANONICAL-ALBUM-READ-MODEL.md) — Build 88 C2.5-B merged contract
+- [`docs/PHASE-UX-C2-5-C-GUARDED-ALBUM-WRITES.md`](docs/PHASE-UX-C2-5-C-GUARDED-ALBUM-WRITES.md) — C2.5-C Track Manager 5.17 / Studio bridge 1.9 guarded-write contract
+- [`CHANGELOG-C2-5-C-TM5-17.md`](CHANGELOG-C2-5-C-TM5-17.md) — C2.5-C backend candidate changelog
 - [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) — safe release procedure
 - [`ROADMAP.md`](ROADMAP.md) — remaining consolidation/product work
 - [`cloudflare/README.md`](cloudflare/README.md) — Workers/R2 operations
@@ -439,7 +461,7 @@ Useful documents:
 1. `main` is the only source of truth.
 2. Do not edit production code only in Cloudflare, GitHub Pages, Lovable or generated `dist/` output.
 3. Temporary feature/fix branches are disposable; named `safety/*` snapshots are rollback references and must not be developed on.
-4. Advance public application versions only in `js/build-config.js`.
+4. Advance public application versions only in `js/build-config.js`; version private Worker/bridge contracts independently when public runtime does not change.
 5. Update living release documentation for a new public runtime build; preserve historical phase/audit docs as snapshots instead of rewriting their history.
 6. Keep Worker deployment, web deployment and R2 catalog rebuild as separate explicit states.
 7. Spectrum remains the Audio Lab reference path; every visual effect must consume the real FFT feed rather than independent loop animation.
@@ -451,3 +473,4 @@ Useful documents:
 13. Historical compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.
 14. Studio integration must remain additive and reversible: capabilities are opened one narrowly versioned route at a time, with fallback retained until replacement paths are proven.
 15. Phase 6 is complete and checkpointed. Any work beyond the PHASE UX closeout must remain separately versioned, reversible and explicitly authorized.
+16. Canonical Album creation/mutation remains behind Track Manager; Studio must never write Album R2 objects directly.
