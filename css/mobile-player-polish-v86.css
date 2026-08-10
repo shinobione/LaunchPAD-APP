@@ -1,0 +1,89 @@
+/* Build 86 — Android/mobile Studio visual and mini-player polish.
+   This layer is deliberately presentation-only:
+   - no audio/video lifecycle ownership;
+   - no src/currentTime/play/pause/load mutations;
+   - no Worker/R2/backend changes. */
+
+@media (max-width:760px){
+  /*
+    Build 62 placed the current cover directly behind the Studio Canvas as a
+    loading fallback. Build 85 removed the <video> poster, but the physical
+    cover underlay could still flash through for a paint frame at the native
+    loop boundary. Keep the layout cell, but remove that underlay whenever the
+    Canvas is active. Canvas-off keeps the normal cover unchanged.
+  */
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active
+  .lyrics-track-panel .lyrics-cover-wrap{
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+  }
+
+  body #view-lyrics.lyrics-studio-mode.lyrics-studio-canvas-active
+  .lyrics-track-panel .lyrics-studio-canvas{
+    background:#020105!important;
+  }
+
+  /* Build 84 escape hatch is no longer part of the visible Show Track UX. */
+  body #view-lyrics.lyrics-studio-mode .lyrics-mobile-track-open{
+    display:none!important;
+  }
+
+  /*
+    Android tap/focus paint must stay scoped to the control that was touched.
+    Do not let Chromium paint a large selection rectangle across the mini-player.
+  */
+  body footer.player-bar .current-track,
+  body footer.player-bar .current-track-identity,
+  body footer.player-bar .mobile-favorite-trigger,
+  body footer.player-bar .mobile-queue-trigger{
+    -webkit-tap-highlight-color:transparent!important;
+    -webkit-user-select:none;
+    user-select:none;
+  }
+
+  body footer.player-bar .current-track-identity:focus,
+  body footer.player-bar .mobile-favorite-trigger:focus,
+  body footer.player-bar .mobile-queue-trigger:focus{
+    outline:none!important;
+  }
+
+  /* Keep a compact keyboard focus treatment if a real focus-visible device is used. */
+  body footer.player-bar .mobile-favorite-trigger:focus-visible,
+  body footer.player-bar .mobile-queue-trigger:focus-visible{
+    outline:none!important;
+    box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 54%,#fff 12%,transparent)!important;
+  }
+}
+
+/*
+  Touch browsers can retain :hover after a tap. The old mobile favorite CSS
+  gave :hover and .active exactly the same appearance, so removing a favorite
+  could be functionally correct while still looking active. On coarse/no-hover
+  pointers, :hover returns to the neutral state; only .active owns the saved
+  favorite appearance.
+*/
+@media (max-width:760px) and (hover:none), (max-width:760px) and (pointer:coarse){
+  body footer.player-bar .mobile-favorite-trigger:hover{
+    color:rgba(255,255,255,.72)!important;
+    border-color:rgba(255,255,255,.12)!important;
+    background:rgba(7,5,14,.72)!important;
+    box-shadow:none!important;
+    transform:none!important;
+  }
+
+  body footer.player-bar .mobile-favorite-trigger.active,
+  body footer.player-bar .mobile-favorite-trigger.active:hover{
+    color:#fff!important;
+    border-color:color-mix(in srgb,var(--accent) 58%,transparent)!important;
+    background:color-mix(in srgb,var(--accent) 38%,rgba(7,5,14,.82))!important;
+    box-shadow:0 0 20px color-mix(in srgb,var(--accent) 26%,transparent)!important;
+  }
+
+  body footer.player-bar .mobile-queue-trigger:hover{
+    color:#9e96b2!important;
+    border-color:rgba(255,255,255,.08)!important;
+    background:rgba(255,255,255,.035)!important;
+    transform:none!important;
+  }
+}
