@@ -184,6 +184,18 @@ includesAll(libraryMemory, [
 ], 'Build 81 dynamic Favorites catalog membership');
 assert.ok(!libraryMemory.includes('const trackIds = new Set('), 'Build 81 Favorites must not freeze the catalog membership at module load.');
 
+const mobileLyricsRouting = read('js/ui-polish-v62.js');
+includesAll(mobileLyricsRouting, [
+  'const INTERACTIVE_SELECTOR =',
+  'function nestedInteractiveControl(target, entry)',
+  'control !== entry && entry.contains(control)',
+  'if (nestedInteractiveControl(event.target, entry)) return;'
+], 'Build 82 nested mini-player action routing');
+assert.ok(
+  mobileLyricsRouting.indexOf('if (nestedInteractiveControl(event.target, entry)) return;') < mobileLyricsRouting.indexOf('event.preventDefault();'),
+  'Build 82 must release nested mini-player controls before mobile Lyrics routing consumes the click.'
+);
+
 const lyricsEngineMedia = read('js/features/lyrics/lyrics-engine.js');
 includesAll(lyricsEngineMedia, [
   'let seekInProgress = false', 'function beginSeek(time)', 'function settleSeek(time = audio.currentTime)',
@@ -325,10 +337,10 @@ const worker = read('sw.js');
 includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260810-phase-ux-c2-5-a-android-studio-media-teardown-v81');
-assert.equal(build.cache, 'shinobi-launchpad-v81');
-assert.equal(build.display, '2026.08.10.81');
-assert.equal(build.release, 'phase-ux-c2-5-a-android-studio-media-teardown-20260810');
-assert.equal(build.revision, 'android-studio-media-teardown-1');
+assert.equal(build.id, '20260810-phase-ux-c2-5-a-mini-player-action-routing-v82');
+assert.equal(build.cache, 'shinobi-launchpad-v82');
+assert.equal(build.display, '2026.08.10.82');
+assert.equal(build.release, 'phase-ux-c2-5-a-mini-player-action-routing-20260810');
+assert.equal(build.revision, 'mini-player-action-routing-1');
 
-console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 81 disables Android Lyrics Studio Canvas at source, tears down Track video decoders on route exit, keeps Queue above Studio without scroll focus jumps, and makes Favorites honor dynamically merged catalog tracks while preserving Build 80 entry stability, Build 77 single-commit seek, prior media isolation ancestry, supplied Moon/gold brand art and historical v5.10 bridge ancestry with ${presetCount} sanctioned Audio Lab presets.`);
+console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 82 releases nested Favorite/Queue/transport controls from the mobile Lyrics capture router before it can force Studio navigation, while preserving Build 81 Android Canvas disable, Track video teardown, Queue stacking/focus and dynamic Favorites membership, Build 77 single-commit seek, prior media isolation ancestry, supplied Moon/gold brand art and historical v5.10 bridge ancestry with ${presetCount} sanctioned Audio Lab presets.`);

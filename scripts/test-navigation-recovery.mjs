@@ -39,6 +39,22 @@ assert.ok(router.includes("if (route.type === 'track')"), 'Dedicated track route
 assert.ok(router.includes('announceRoute(route);'), 'Track routes must still announce route state.');
 assert.ok(!router.includes('isPassiveTrackDetail'), 'The generic router must not depend on the old passive-track history gate.');
 
+const mobilePolish = fs.readFileSync('js/ui-polish-v62.js', 'utf8');
+for (const required of [
+  'const INTERACTIVE_SELECTOR =',
+  'function nestedInteractiveControl(target, entry)',
+  'control !== entry && entry.contains(control)',
+  'if (nestedInteractiveControl(event.target, entry)) return;'
+]) {
+  assert.ok(mobilePolish.includes(required), `Mobile Lyrics routing must preserve nested player actions: ${required}.`);
+}
+const nestedActionGuard = mobilePolish.indexOf('if (nestedInteractiveControl(event.target, entry)) return;');
+const mobileRoutePreventDefault = mobilePolish.indexOf('event.preventDefault();');
+assert.ok(
+  nestedActionGuard >= 0 && mobileRoutePreventDefault > nestedActionGuard,
+  'Nested player controls must escape the mobile Lyrics capture router before it prevents/stops the click.'
+);
+
 const stability = fs.readFileSync('css/ui-stability-v39.css', 'utf8');
 assert.ok(stability.includes('body[data-viewed-track-theme] #view-track,'), 'Track detail outer frame suppression must remain enabled.');
 assert.ok(stability.includes('height:clamp(330px,43dvh,430px);'), 'Audio Lab must remain viewport-aware on desktop.');
@@ -49,4 +65,4 @@ assert.ok(worker.includes("'./js/app-engine-recovery.js'"), 'The recovery bootst
 assert.ok(worker.includes("url.pathname.endsWith('/js/app-engine-recovery.js')"), 'The recovery bootstrap must bypass stale caches.');
 assert.ok(worker.includes("fetch(request, { cache: 'no-store' })"), 'The recovery bootstrap must be fetched without cache reuse.');
 
-console.log(`Navigation renders dedicated track routes once and keeps the runtime cache-safe under Build ${build.number}.`);
+console.log(`Navigation renders dedicated track routes once, preserves nested mini-player actions, and keeps the runtime cache-safe under Build ${build.number}.`);
