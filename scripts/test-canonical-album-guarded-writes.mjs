@@ -38,6 +38,8 @@ for (const required of [
   'sourceAlbumId',
   'expectedSourceUpdatedAt',
   'expectedTargetUpdatedAt',
+  'trackNeedsCacheUpdate',
+  'if (trackAfter)',
 ]) {
   assert.ok(writePart.includes(required), `Guarded Album write contract missing: ${required}`);
 }
@@ -82,20 +84,39 @@ assert.ok(!deployWorkflow.includes('\n  push:'), 'Production Worker deployment m
 
 const slugify = value => String(value || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
   .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 120);
-const context = vm.createContext({ console, slugify });
+const normalizeColor = value => {
+  const clean = String(value || '').trim();
+  return /^#[0-9a-f]{6}$/i.test(clean) ? clean.toLowerCase() : null;
+};
+const context = vm.createContext({
+  console,
+  slugify,
+  normalizeColor,
+  STATUS_VALUES: new Set(['draft', 'published', 'archived']),
+  ALBUM_TYPE_VALUES: new Set(['album', 'ep', 'collection']),
+});
 vm.runInContext(`${writePart}\nglobalThis.__albumWriteTests = { normalizeStudioAlbumMetadataPatch, normalizeStudioAlbumTrackIds, studioAlbumInsertAt };`, context);
 const helpers = context.__albumWriteTests;
 
 assert.deepEqual(
-  JSON.parse(JSON.stringify(helpers.normalizeStudioAlbumMetadataPatch({ title: 'Ghost Signal', type: 'album', accent: '#AABBCC' }))),
-  { title: 'Ghost Signal', type: 'album', accent: '#AABBCC' },
+  JSON.parse(JSON.stringify(helpers.normalizeStudioAlbumMetadataPatch({ title: '  Ghost Signal  ', type: 'EP', status: 'draft', year: '2026', releaseDate: '2026-08-10', accent: '#AABBCC' }))),
+  { title: 'Ghost Signal', type: 'ep', status: 'draft', year: 2026, releaseDate: '2026-08-10', accent: '#aabbcc' },
+);
+assert.deepEqual(
+  JSON.parse(JSON.stringify(helpers.normalizeStudioAlbumMetadataPatch({ year: '', releaseDate: '', accent: '', accent2: null }))),
+  { year: null, releaseDate: null, accent: null, accent2: null },
 );
 assert.throws(() => helpers.normalizeStudioAlbumMetadataPatch({ id: 'mutable-id' }), /Champs Album non autorisés/);
 assert.throws(() => helpers.normalizeStudioAlbumMetadataPatch({ title: '   ' }), /titre Album est requis/);
+assert.throws(() => helpers.normalizeStudioAlbumMetadataPatch({ type: 'banana' }), /Type Album invalide/);
+assert.throws(() => helpers.normalizeStudioAlbumMetadataPatch({ status: 'public-ish' }), /Statut Album invalide/);
+assert.throws(() => helpers.normalizeStudioAlbumMetadataPatch({ year: 'twenty' }), /Année Album invalide/);
+assert.throws(() => helpers.normalizeStudioAlbumMetadataPatch({ releaseDate: 'not-a-date' }), /Date de sortie Album invalide/);
+assert.throws(() => helpers.normalizeStudioAlbumMetadataPatch({ accent: 'cyan' }), /Couleur Album invalide/);
 assert.deepEqual(JSON.parse(JSON.stringify(helpers.normalizeStudioAlbumTrackIds(['track-a', 'track-b']))), ['track-a', 'track-b']);
 assert.throws(() => helpers.normalizeStudioAlbumTrackIds(['track-a', 'track-a']), /doublons/);
 assert.throws(() => helpers.normalizeStudioAlbumTrackIds(['Track A']), /trackId canonique invalide/);
 assert.deepEqual(JSON.parse(JSON.stringify(helpers.studioAlbumInsertAt(['a', 'b', 'c'], 'c', 0))), ['c', 'a', 'b']);
 assert.deepEqual(JSON.parse(JSON.stringify(helpers.studioAlbumInsertAt(['a', 'b'], 'c', 99))), ['a', 'b', 'c']);
 
-console.log('C2.5-C guarded Album writes protect immutable IDs, stale revisions, membership conflicts, publish quality, asset rollback and manual deployment boundaries.');
+console.log('C2.5-C guarded Album writes protect immutable IDs, strict metadata inputs, stale revisions, membership conflicts, publish quality, asset rollback, reorder revision stability and manual deployment boundaries.');
