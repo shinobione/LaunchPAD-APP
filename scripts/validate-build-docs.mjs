@@ -49,10 +49,6 @@ const candidateDocs = new Map([
   [
     'phase-ux-c2-5-b-canonical-album-read-model-20260810',
     'docs/PHASE-UX-C2-5-B-BUILD88-CANONICAL-ALBUM-READ-MODEL.md'
-  ],
-  [
-    'phase-ux-c2-5-c-guarded-album-writes-20260810',
-    'docs/PHASE-UX-C2-5-C-BUILD89-GUARDED-ALBUM-WRITES.md'
   ]
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
