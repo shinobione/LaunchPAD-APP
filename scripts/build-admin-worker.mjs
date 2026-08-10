@@ -180,7 +180,7 @@ for (const required of [
   'expectedLyricsEtag',
   'code: "STALE_LYRICS"',
   'code: "QUALITY_BLOCKED"',
-  'code: "STALE_ALBUM"',
+  'code = "STALE_ALBUM"',
   'code: "ALBUM_MEMBERSHIP_CONFLICT"',
   'code: "ALBUM_QUALITY_BLOCKED"',
   'rollback.lyricsRestored',
