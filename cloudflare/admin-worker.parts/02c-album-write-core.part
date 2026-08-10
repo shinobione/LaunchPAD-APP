@@ -1,0 +1,338 @@
+
+const STUDIO_ALBUM_CREATE_INTENT = "album-create-v1";
+const STUDIO_ALBUM_METADATA_SAVE_INTENT = "album-metadata-save-v1";
+const STUDIO_ALBUM_MEMBERSHIP_SAVE_INTENT = "album-membership-save-v1";
+const STUDIO_ALBUM_TRACK_MOVE_INTENT = "album-track-move-v1";
+const STUDIO_ALBUM_ASSET_UPLOAD_INTENT = "album-asset-upload-v1";
+const STUDIO_ALBUM_ASSET_DELETE_INTENT = "album-asset-delete-v1";
+const STUDIO_ALBUM_METADATA_FIELDS = Object.freeze([
+  "title",
+  "type",
+  "status",
+  "year",
+  "releaseDate",
+  "description",
+  "heading",
+  "accent",
+  "accent2",
+]);
+const STUDIO_ALBUM_METADATA_FIELD_SET = new Set(STUDIO_ALBUM_METADATA_FIELDS);
+const STUDIO_ALBUM_ASSET_KINDS = new Set(["cover", "thumbnail"]);
+const STUDIO_ALBUM_MAX_JSON_BYTES = 128 * 1024;
+
+function studioAlbumsCollectionMatch(pathname) {
+  return String(pathname || "") === "/api/studio/albums";
+}
+
+function studioAlbumReadMatch(pathname) {
+  return String(pathname || "").match(/^\/api\/studio\/albums\/([a-z0-9][a-z0-9-]{0,119})$/);
+}
+
+function studioAlbumMetadataSaveMatch(pathname) {
+  return String(pathname || "").match(/^\/api\/studio\/albums\/([a-z0-9][a-z0-9-]{0,119})\/metadata\/save$/);
+}
+
+function studioAlbumMembershipSaveMatch(pathname) {
+  return String(pathname || "").match(/^\/api\/studio\/albums\/([a-z0-9][a-z0-9-]{0,119})\/tracks\/save$/);
+}
+
+function studioAlbumTrackMoveMatch(pathname) {
+  return String(pathname || "").match(/^\/api\/studio\/albums\/([a-z0-9][a-z0-9-]{0,119})\/tracks\/move$/);
+}
+
+function studioAlbumAssetUploadMatch(pathname) {
+  return String(pathname || "").match(/^\/api\/studio\/albums\/([a-z0-9][a-z0-9-]{0,119})\/assets\/(cover|thumbnail)\/upload$/);
+}
+
+function studioAlbumAssetDeleteMatch(pathname) {
+  return String(pathname || "").match(/^\/api\/studio\/albums\/([a-z0-9][a-z0-9-]{0,119})\/assets\/(cover|thumbnail)\/delete$/);
+}
+
+function assertStudioAlbumOperationRequest(request, mode) {
+  const origin = request.headers.get("origin");
+  if (origin !== STUDIO_ALLOWED_ORIGIN) throw new Error("AUTH_Origine Studio refusée.");
+  const contentType = studioMetadataContentType(request);
+  if (mode === "upload") {
+    if (contentType !== "multipart/form-data") throw new Error("INPUT_L'upload Album attend multipart/form-data.");
+    return;
+  }
+  if (contentType !== "text/plain") throw new Error("INPUT_L'opération Album attend text/plain JSON.");
+}
+
+async function readStudioAlbumJsonPayload(request, expectedIntent) {
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (contentLength && contentLength > STUDIO_ALBUM_MAX_JSON_BYTES) throw new Error("INPUT_Payload Album trop volumineux.");
+  let payload;
+  try { payload = JSON.parse(await request.text()); }
+  catch { throw new Error("INPUT_JSON Album invalide."); }
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new Error("INPUT_Payload Album invalide.");
+  if (payload.intent !== expectedIntent) throw new Error("AUTH_Intention Album invalide.");
+  return payload;
+}
+
+function normalizeStudioAlbumMetadataPatch(input) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("INPUT_Métadonnées Album invalides.");
+  const unknown = Object.keys(input).filter(key => !STUDIO_ALBUM_METADATA_FIELD_SET.has(key));
+  if (unknown.length) throw new Error("INPUT_Champs Album non autorisés: " + unknown.join(", ") + ".");
+  const patch = {};
+  for (const field of STUDIO_ALBUM_METADATA_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(input, field)) patch[field] = input[field];
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, "title") && !String(patch.title || "").trim()) {
+    throw new Error("INPUT_Le titre Album est requis.");
+  }
+  return patch;
+}
+
+function studioAlbumStaleResponse(manifest, expectedUpdatedAt, code = "STALE_ALBUM") {
+  const expected = String(expectedUpdatedAt || "").trim();
+  if (!expected) throw new Error("INPUT_expectedUpdatedAt est requis.");
+  if (expected !== String(manifest.updatedAt || "")) {
+    return jsonResponse({
+      ok: false,
+      error: "L'Album a changé depuis son chargement.",
+      code,
+      currentUpdatedAt: manifest.updatedAt || null,
+    }, 409);
+  }
+  return null;
+}
+
+function studioAlbumBackupKey(albumId, kind) {
+  const token = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + "-" + Math.random().toString(16).slice(2);
+  return `_studio-backups/albums/${albumId}/${kind}-${token}`;
+}
+
+async function writeAlbumManifest(bucket, input) {
+  const manifest = normalizeAlbumManifest(input);
+  const key = albumPrefix(manifest.id) + ALBUM_MANIFEST_NAME;
+  await bucket.put(key, JSON.stringify(manifest, null, 2) + "\n", {
+    httpMetadata: {
+      contentType: "application/json; charset=utf-8",
+      cacheControl: "private, no-store",
+    },
+    customMetadata: {
+      kind: "album-manifest",
+      albumId: manifest.id,
+      status: manifest.status,
+      updatedAt: manifest.updatedAt,
+    },
+  });
+  return manifest;
+}
+
+function nextAlbumManifest(existing, patch, user, extra = {}) {
+  return normalizeAlbumManifest({
+    ...existing,
+    ...patch,
+    ...extra,
+    id: existing.id,
+    trackIds: extra.trackIds ?? existing.trackIds,
+    assets: extra.assets ?? existing.assets,
+    createdAt: existing.createdAt,
+    updatedAt: new Date().toISOString(),
+    updatedBy: String(user.email || "authorized-user"),
+  });
+}
+
+async function inspectCanonicalAlbumQuality(bucket, manifest) {
+  const objects = await listAllObjects(bucket, albumPrefix(manifest.id));
+  const assets = albumAssetStateFromObjects(objects, manifest);
+  const trackStates = [];
+  for (const trackId of manifest.trackIds) {
+    const track = await readManifest(bucket, trackId);
+    trackStates.push({
+      trackId,
+      exists: Boolean(track),
+      status: track?.status || null,
+      title: track?.title || null,
+    });
+  }
+  const checks = [
+    { id: "title", ok: Boolean(String(manifest.title || "").trim()), message: "Titre Album présent" },
+    { id: "trackIds", ok: manifest.trackIds.length > 0, message: "Tracklist non vide" },
+    { id: "cover", ok: Boolean(assets.cover?.present), message: "Cover Album présente" },
+    { id: "trackRefs", ok: trackStates.every(track => track.exists), message: "Tous les trackIds existent" },
+    { id: "publishedTracks", ok: trackStates.every(track => track.exists && track.status === "published"), message: "Tous les titres sont publiés" },
+  ];
+  return {
+    publishable: checks.every(check => check.ok),
+    checks,
+    assets,
+    tracks: trackStates,
+  };
+}
+
+function studioAlbumTrackCacheManifest(track, album, user) {
+  return normalizeManifest({
+    ...track,
+    slug: track.slug,
+    album: { id: album.id, title: album.title },
+    assets: track.assets,
+    migration: track.migration,
+    createdAt: track.createdAt,
+    updatedAt: new Date().toISOString(),
+    updatedBy: String(user.email || "authorized-user"),
+  });
+}
+
+function studioAlbumSinglesCacheManifest(track, user) {
+  return normalizeManifest({
+    ...track,
+    slug: track.slug,
+    album: { id: "singles", title: "Singles" },
+    assets: track.assets,
+    migration: track.migration,
+    createdAt: track.createdAt,
+    updatedAt: new Date().toISOString(),
+    updatedBy: String(user.email || "authorized-user"),
+  });
+}
+
+async function rollbackAlbumManifestAndTracks(bucket, albumEntries, trackEntries) {
+  const result = { albumsRestored: true, tracksRestored: true, catalogRestored: false };
+  for (const entry of albumEntries) {
+    try {
+      if (entry.before) await writeAlbumManifest(bucket, entry.before);
+      else await bucket.delete(albumPrefix(entry.id) + ALBUM_MANIFEST_NAME);
+    } catch (error) {
+      result.albumsRestored = false;
+      console.error("Album rollback failed", entry.id, error);
+    }
+  }
+  for (const entry of trackEntries) {
+    try { await writeManifest(bucket, entry.before); }
+    catch (error) {
+      result.tracksRestored = false;
+      console.error("Album track-cache rollback failed", entry.id, error);
+    }
+  }
+  if (result.albumsRestored && result.tracksRestored) {
+    try { await writeCatalogIndex(bucket); result.catalogRestored = true; }
+    catch (error) { console.error("Album catalog rollback failed", error); }
+  }
+  return result;
+}
+
+async function createStudioAlbum(request, env, user) {
+  const payload = await readStudioAlbumJsonPayload(request, STUDIO_ALBUM_CREATE_INTENT);
+  const input = payload.album && typeof payload.album === "object" && !Array.isArray(payload.album) ? payload.album : {};
+  const rawId = String(input.id || "").trim();
+  const id = slugify(rawId);
+  if (!id || id !== rawId) throw new Error("INPUT_Album id canonique invalide.");
+  const existing = await readAlbumManifest(env.MEDIA_BUCKET, id);
+  if (existing) return jsonResponse({ ok: false, error: "Cet Album existe déjà.", code: "ALBUM_EXISTS", albumId: id }, 409);
+
+  const { id: _ignoredId, trackIds: _ignoredTrackIds, assets: _ignoredAssets, createdAt: _ignoredCreatedAt, updatedAt: _ignoredUpdatedAt, updatedBy: _ignoredUpdatedBy, schemaVersion: _ignoredSchemaVersion, ...metadataInput } = input;
+  const patch = normalizeStudioAlbumMetadataPatch(metadataInput);
+  const now = new Date().toISOString();
+  const manifest = normalizeAlbumManifest({
+    ...patch,
+    id,
+    status: "draft",
+    trackIds: [],
+    assets: { cover: null, thumbnail: null },
+    createdAt: now,
+    updatedAt: now,
+    updatedBy: String(user.email || "authorized-user"),
+  });
+
+  let manifestWritten = false;
+  try {
+    await writeAlbumManifest(env.MEDIA_BUCKET, manifest);
+    manifestWritten = true;
+    const index = await writeCatalogIndex(env.MEDIA_BUCKET);
+    const reread = await readAlbumManifest(env.MEDIA_BUCKET, id);
+    if (!reread || reread.updatedAt !== manifest.updatedAt || reread.id !== id || reread.status !== "draft") {
+      throw new Error("SAVE_VERIFY_Album créé non vérifié.");
+    }
+    return jsonResponse({
+      ok: true,
+      created: true,
+      albumId: id,
+      album: reread,
+      catalogRebuilt: true,
+      catalogGeneratedAt: index.generatedAt || null,
+      albumCount: index.albumCount || 0,
+      authenticatedEmail: user.email || null,
+    }, 201);
+  } catch (error) {
+    const rollback = { manifestRemoved: !manifestWritten, catalogRestored: false };
+    if (manifestWritten) {
+      try { await env.MEDIA_BUCKET.delete(albumPrefix(id) + ALBUM_MANIFEST_NAME); rollback.manifestRemoved = true; }
+      catch (rollbackError) { console.error("Album create rollback failed", rollbackError); }
+      try { await writeCatalogIndex(env.MEDIA_BUCKET); rollback.catalogRestored = true; }
+      catch (rollbackError) { console.error("Album create catalog rollback failed", rollbackError); }
+    }
+    console.error("Album create failed", error);
+    return jsonResponse({ ok: false, error: "Création Album annulée après échec de publication ou vérification.", code: "ALBUM_CREATE_ROLLBACK", rollback }, 500);
+  }
+}
+
+async function saveStudioAlbumMetadata(albumId, request, env, user) {
+  const payload = await readStudioAlbumJsonPayload(request, STUDIO_ALBUM_METADATA_SAVE_INTENT);
+  const existing = await readAlbumManifest(env.MEDIA_BUCKET, albumId);
+  if (!existing) return jsonResponse({ ok: false, error: "Album introuvable." }, 404);
+  const stale = studioAlbumStaleResponse(existing, payload.expectedUpdatedAt);
+  if (stale) return stale;
+  const patch = normalizeStudioAlbumMetadataPatch(payload.metadata || {});
+  const proposed = nextAlbumManifest(existing, patch, user);
+  const quality = await inspectCanonicalAlbumQuality(env.MEDIA_BUCKET, proposed);
+  if (proposed.status === "published" && quality.publishable !== true) {
+    return jsonResponse({
+      ok: false,
+      error: "Publication Album bloquée par le contrôle qualité.",
+      code: "ALBUM_QUALITY_BLOCKED",
+      quality,
+      currentUpdatedAt: existing.updatedAt || null,
+    }, 409);
+  }
+
+  const titleChanged = proposed.title !== existing.title;
+  const trackEntries = [];
+  if (titleChanged) {
+    for (const trackId of existing.trackIds) {
+      const track = await readManifest(env.MEDIA_BUCKET, trackId);
+      if (!track) continue;
+      trackEntries.push({ id: trackId, before: track, after: studioAlbumTrackCacheManifest(track, proposed, user) });
+    }
+  }
+
+  let albumWritten = false;
+  let tracksWritten = 0;
+  try {
+    await writeAlbumManifest(env.MEDIA_BUCKET, proposed);
+    albumWritten = true;
+    for (const entry of trackEntries) {
+      await writeManifest(env.MEDIA_BUCKET, entry.after);
+      tracksWritten += 1;
+    }
+    const index = await writeCatalogIndex(env.MEDIA_BUCKET);
+    const reread = await readAlbumManifest(env.MEDIA_BUCKET, albumId);
+    if (!reread || reread.updatedAt !== proposed.updatedAt || reread.id !== existing.id || reread.title !== proposed.title) {
+      throw new Error("SAVE_VERIFY_Métadonnées Album non vérifiées.");
+    }
+    return jsonResponse({
+      ok: true,
+      saved: true,
+      albumId,
+      previousUpdatedAt: existing.updatedAt || null,
+      updatedAt: reread.updatedAt || null,
+      album: reread,
+      quality,
+      trackCachesUpdated: tracksWritten,
+      catalogRebuilt: true,
+      catalogGeneratedAt: index.generatedAt || null,
+      albumCount: index.albumCount || 0,
+      authenticatedEmail: user.email || null,
+    });
+  } catch (error) {
+    const rollback = await rollbackAlbumManifestAndTracks(
+      env.MEDIA_BUCKET,
+      albumWritten ? [{ id: albumId, before: existing }] : [],
+      trackEntries.slice(0, tracksWritten),
+    );
+    console.error("Album metadata save failed", error);
+    return jsonResponse({ ok: false, error: "Sauvegarde Album annulée après échec de publication ou vérification.", code: "ALBUM_METADATA_ROLLBACK", rollback, currentUpdatedAt: existing.updatedAt || null }, 500);
+  }
+}
