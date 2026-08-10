@@ -124,7 +124,7 @@ includesAll(lyricsStudioMedia, [
   "routeToHash({ type: 'track', id: track.id })",
   'setStudioMode(false, { restoreScroll: false })',
   '{ recenter: false }'
-], 'Build 84 Lyrics Studio native-loop/single-commit/Show Track contract');
+], 'Build 84 base Lyrics Studio native-loop/single-commit/Show Track contract');
 for (const forbiddenCanvasRecovery of [
   'CANVAS_LOCAL_RECOVERY_LIMIT',
   'CANVAS_LOCAL_STALL_GRACE_MS',
@@ -149,12 +149,28 @@ for (const forbiddenCanvasRecovery of [
   "window.addEventListener('pageshow'",
   "document.addEventListener('visibilitychange'"
 ]) {
-  assert.ok(!lyricsStudioMedia.includes(forbiddenCanvasRecovery), `Build 84 must keep Lyrics Studio under one native-loop owner: ${forbiddenCanvasRecovery}`);
+  assert.ok(!lyricsStudioMedia.includes(forbiddenCanvasRecovery), `Build 85 must keep Lyrics Studio under one native-loop owner: ${forbiddenCanvasRecovery}`);
 }
 const mobilePanelStart = lyricsStudioMedia.indexOf('function setMobilePanelCollapsed(');
 const mobilePanelEnd = lyricsStudioMedia.indexOf('\n  function setCanvasButtonState', mobilePanelStart);
-assert.ok(mobilePanelStart >= 0 && mobilePanelEnd > mobilePanelStart, 'Build 84 mobile panel transition is missing.');
-assert.ok(!lyricsStudioMedia.slice(mobilePanelStart, mobilePanelEnd).includes('playCanvas('), 'Build 84 Show Track must never touch Canvas playback.');
+assert.ok(mobilePanelStart >= 0 && mobilePanelEnd > mobilePanelStart, 'Build 84/85 mobile panel transition is missing.');
+assert.ok(!lyricsStudioMedia.slice(mobilePanelStart, mobilePanelEnd).includes('playCanvas('), 'Build 84/85 Show Track must never touch Canvas playback.');
+
+const loopParity = read('js/features/studio-loop-parity-v85.js');
+includesAll(loopParity, [
+  "const CANVAS_SELECTOR = 'video.lyrics-studio-canvas-video'",
+  "video.preload = 'auto'",
+  "video.setAttribute('preload', 'auto')",
+  "video.removeAttribute('poster')",
+  "video.dataset.loopParity = 'track-video-v1'",
+  "video.addEventListener('loadeddata'",
+  "video.addEventListener('playing'",
+  "attributeFilter: ['poster']",
+  "button.textContent = 'Track page →'"
+], 'Build 85 passive Studio loop parity');
+for (const forbiddenParityOwnership of ['.play(', '.pause(', '.load(', '.currentTime', '.src =']) {
+  assert.ok(!loopParity.includes(forbiddenParityOwnership), `Build 85 loop parity must remain passive: ${forbiddenParityOwnership}`);
+}
 
 const smartCanvas = read('js/features/smart-canvas.js');
 includesAll(smartCanvas, ["const CANVAS_SELECTOR = 'video.track-video-player';", 'new IntersectionObserver', "reason: 'another-canvas-started'"] , 'Build 83 Track-only Smart Canvas');
@@ -191,7 +207,9 @@ includesAll(mobileStudioCss, [
   'width:36px',
   'height:64px'
 ], 'Build 84 Queue stacking and stable mobile Show Track Canvas geometry');
-assert.ok(!mobileStudioCss.includes('grid-template-columns:minmax(92px,116px) minmax(0,1fr)'), 'Build 84 must not enlarge the mobile Canvas surface on Show Track.');
+assert.ok(!mobileStudioCss.includes('grid-template-columns:minmax(92px,116px) minmax(0,1fr)'), 'Build 84/85 must not enlarge the mobile Canvas surface on Show Track.');
+const loopParityCss = read('css/studio-loop-parity-v85.css');
+includesAll(loopParityCss, ['.lyrics-mobile-track-open{', 'width:auto!important', 'justify-self:end!important'], 'Build 85 compact Track page action');
 
 const libraryMemory = read('js/features/library-memory.js');
 includesAll(libraryMemory, [
@@ -362,11 +380,19 @@ includesAll(read('css/pwa.css'), [
 const worker = read('sw.js');
 includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'"], 'PWA shell');
 
-const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260810-phase-ux-c2-5-a-show-track-isolation-v84');
-assert.equal(build.cache, 'shinobi-launchpad-v84');
-assert.equal(build.display, '2026.08.10.84');
-assert.equal(build.release, 'phase-ux-c2-5-a-show-track-isolation-20260810');
-assert.equal(build.revision, 'show-track-isolation-1');
+const buildSource = read('js/build-config.js');
+includesAll(buildSource, [
+  'installStudioLoopParity',
+  "'css/studio-loop-parity-v85.css'",
+  '`js/features/studio-loop-parity-v85.js?v=${encodeURIComponent(config.id)}`',
+  "script.dataset.studioLoopParityV85 = 'true'"
+], 'Build 85 loop parity bootstrap');
 
-console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 84 keeps Build 83 structural mini-player isolation and single-owner native Lyrics Studio Canvas, while making mobile Show Track layout-only with stable Canvas geometry and explicit Track navigation. Build 81 Track video teardown, Queue stacking/focus and dynamic Favorites membership, Build 77 single-commit seek and settled Lyrics autoscroll, supplied Moon/gold brand art and historical v5.10 bridge ancestry remain protected with ${presetCount} sanctioned Audio Lab presets.`);
+const build = assertCurrentBuild('Master specification/current release');
+assert.equal(build.id, '20260810-phase-ux-c2-5-a-studio-loop-parity-v85');
+assert.equal(build.cache, 'shinobi-launchpad-v85');
+assert.equal(build.display, '2026.08.10.85');
+assert.equal(build.release, 'phase-ux-c2-5-a-studio-loop-parity-20260810');
+assert.equal(build.revision, 'studio-loop-parity-1');
+
+console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 85 preserves Build 84 layout-only Show Track and Build 83 single-owner native Lyrics Studio Canvas while passively matching Track Video preload/poster presentation for seamless Android loop boundaries. Track-page navigation remains explicit but visually demoted. Build 81 Track video teardown, Queue stacking/focus and dynamic Favorites membership, Build 77 single-commit seek and settled Lyrics autoscroll, supplied Moon/gold brand art and historical v5.10 bridge ancestry remain protected with ${presetCount} sanctioned Audio Lab presets.`);
