@@ -7,6 +7,7 @@ const studio = read('js/features/lyrics-studio.js');
 const css = read('css/mobile-studio.css');
 const parity = read('js/features/studio-loop-parity-v85.js');
 const parityCss = read('css/studio-loop-parity-v85.css');
+const polish = read('css/mobile-player-polish-v86.css');
 const build = read('js/build-config.js');
 const worker = read('sw.js');
 
@@ -33,7 +34,7 @@ const collapseEnd = studio.indexOf('\n  function setCanvasButtonState', collapse
 if (collapseStart < 0 || collapseEnd < 0) fail('Unable to isolate setMobilePanelCollapsed().');
 const collapseBody = studio.slice(collapseStart, collapseEnd);
 if (collapseBody.includes('playCanvas(')) {
-  fail('Build 84/85 Show Track must remain layout-only and must never call playCanvas().');
+  fail('Build 84+ Show Track must remain layout-only and must never call playCanvas().');
 }
 
 for (const required of [
@@ -56,7 +57,7 @@ for (const required of [
 }
 
 if (css.includes('grid-template-columns:minmax(92px,116px) minmax(0,1fr)')) {
-  fail('Build 84/85 must not enlarge the Android Canvas compositor surface when Show Track expands.');
+  fail('Build 84+ must not enlarge the Android Canvas compositor surface when Show Track expands.');
 }
 
 for (const required of [
@@ -78,19 +79,34 @@ for (const forbidden of ['.play(', '.pause(', '.load(', '.currentTime', '.src ='
 }
 
 for (const required of ['.lyrics-mobile-track-open{', 'width:auto!important', 'justify-self:end!important']) {
-  if (!parityCss.includes(required)) fail(`Build 85 Track page action styling is missing ${required}.`);
+  if (!parityCss.includes(required)) fail(`Build 85 Track page action styling ancestry is missing ${required}.`);
+}
+
+for (const required of [
+  '.lyrics-track-panel .lyrics-cover-wrap',
+  'opacity:0!important',
+  'visibility:hidden!important',
+  '.lyrics-mobile-track-open',
+  'display:none!important',
+  '-webkit-tap-highlight-color:transparent!important',
+  '.mobile-favorite-trigger.active:hover',
+  '.mobile-queue-trigger:hover'
+]) {
+  if (!polish.includes(required)) fail(`Build 86 mobile UI polish is missing ${required}.`);
 }
 
 for (const required of [
   "'css/studio-loop-parity-v85.css'",
   '`js/features/studio-loop-parity-v85.js?v=${encodeURIComponent(config.id)}`',
-  "script.dataset.studioLoopParityV85 = 'true'"
+  "script.dataset.studioLoopParityV85 = 'true'",
+  "'css/mobile-player-polish-v86.css'",
+  'installMobilePlayerPolish()'
 ]) {
-  if (!build.includes(required)) fail(`Build 85 bootstrap is missing ${required}.`);
+  if (!build.includes(required)) fail(`Build 86 bootstrap is missing ${required}.`);
 }
 
 if (!worker.includes("'./css/mobile-studio.css'")) {
   fail('Mobile Studio stylesheet is missing from the PWA shell.');
 }
 
-console.log('Build 85 guards mobile Studio: Show Track stays layout-only, Canvas parity removes poster flash without owning playback, and Track-page navigation is visually demoted but preserved.');
+console.log('Build 86 guards mobile Studio presentation: Show Track stays layout-only, native Canvas ownership stays unchanged, the cover underlay cannot flash through, Track-page escape UI is hidden, and mini-player touch state is scoped to its controls.');
