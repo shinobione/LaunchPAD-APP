@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260810-phase-ux-c2-5-a-android-studio-media-teardown-v81',
-    cache: 'shinobi-launchpad-v81',
-    revision: 'android-studio-media-teardown-1',
-    display: '2026.08.10.81',
-    release: 'phase-ux-c2-5-a-android-studio-media-teardown-20260810'
+    id: '20260810-phase-ux-c2-5-a-mini-player-action-routing-v82',
+    cache: 'shinobi-launchpad-v82',
+    revision: 'mini-player-action-routing-1',
+    display: '2026.08.10.82',
+    release: 'phase-ux-c2-5-a-mini-player-action-routing-20260810'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
