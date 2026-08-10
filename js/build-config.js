@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260810-phase-ux-c2-5-a-show-track-isolation-v84',
-    cache: 'shinobi-launchpad-v84',
-    revision: 'show-track-isolation-1',
-    display: '2026.08.10.84',
-    release: 'phase-ux-c2-5-a-show-track-isolation-20260810'
+    id: '20260810-phase-ux-c2-5-a-studio-loop-parity-v85',
+    cache: 'shinobi-launchpad-v85',
+    revision: 'studio-loop-parity-1',
+    display: '2026.08.10.85',
+    release: 'phase-ux-c2-5-a-studio-loop-parity-20260810'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
@@ -71,6 +71,21 @@
     ensureBuildStylesheet('link[data-ui-stability-v39]', 'css/ui-stability-v39.css', 'uiStabilityV39');
   }
 
+  function installStudioLoopParity() {
+    ensureBuildStylesheet(
+      'link[data-studio-loop-parity-v85]',
+      'css/studio-loop-parity-v85.css',
+      'studioLoopParityV85'
+    );
+
+    if (document.querySelector('script[data-studio-loop-parity-v85]')) return;
+    const script = document.createElement('script');
+    script.src = `js/features/studio-loop-parity-v85.js?v=${encodeURIComponent(config.id)}`;
+    script.async = false;
+    script.dataset.studioLoopParityV85 = 'true';
+    document.head.appendChild(script);
+  }
+
   function findEquivalentStylesheet(link, url) {
     return [...document.querySelectorAll('link[rel="stylesheet"]')].find(candidate => {
       if (candidate === link) return false;
@@ -103,6 +118,7 @@
   installAppIconLinks();
   installTypographyStylesheet();
   installStabilityStylesheet();
+  installStudioLoopParity();
 
   document.querySelectorAll('link[rel="stylesheet"]').forEach(normalizeStylesheet);
   new MutationObserver(records => {

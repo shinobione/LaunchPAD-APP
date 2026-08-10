@@ -5,6 +5,9 @@ const fail = message => { throw new Error(message); };
 
 const studio = read('js/features/lyrics-studio.js');
 const css = read('css/mobile-studio.css');
+const parity = read('js/features/studio-loop-parity-v85.js');
+const parityCss = read('css/studio-loop-parity-v85.css');
+const build = read('js/build-config.js');
 const worker = read('sw.js');
 
 for (const required of [
@@ -30,7 +33,7 @@ const collapseEnd = studio.indexOf('\n  function setCanvasButtonState', collapse
 if (collapseStart < 0 || collapseEnd < 0) fail('Unable to isolate setMobilePanelCollapsed().');
 const collapseBody = studio.slice(collapseStart, collapseEnd);
 if (collapseBody.includes('playCanvas(')) {
-  fail('Build 84 Show Track must be layout-only and must never call playCanvas().');
+  fail('Build 84/85 Show Track must remain layout-only and must never call playCanvas().');
 }
 
 for (const required of [
@@ -53,11 +56,41 @@ for (const required of [
 }
 
 if (css.includes('grid-template-columns:minmax(92px,116px) minmax(0,1fr)')) {
-  fail('Build 84 must not enlarge the Android Canvas compositor surface when Show Track expands.');
+  fail('Build 84/85 must not enlarge the Android Canvas compositor surface when Show Track expands.');
+}
+
+for (const required of [
+  "const CANVAS_SELECTOR = 'video.lyrics-studio-canvas-video'",
+  "video.preload = 'auto'",
+  "video.setAttribute('preload', 'auto')",
+  "video.removeAttribute('poster')",
+  "video.dataset.loopParity = 'track-video-v1'",
+  "video.addEventListener('loadeddata'",
+  "video.addEventListener('playing'",
+  "attributeFilter: ['poster']",
+  "button.textContent = 'Track page →'"
+]) {
+  if (!parity.includes(required)) fail(`Build 85 passive loop parity guard is missing ${required}.`);
+}
+
+for (const forbidden of ['.play(', '.pause(', '.load(', '.currentTime', '.src =']) {
+  if (parity.includes(forbidden)) fail(`Build 85 loop parity guard must not become a media owner: ${forbidden}.`);
+}
+
+for (const required of ['.lyrics-mobile-track-open{', 'width:auto!important', 'justify-self:end!important']) {
+  if (!parityCss.includes(required)) fail(`Build 85 Track page action styling is missing ${required}.`);
+}
+
+for (const required of [
+  "'css/studio-loop-parity-v85.css'",
+  '`js/features/studio-loop-parity-v85.js?v=${encodeURIComponent(config.id)}`',
+  "script.dataset.studioLoopParityV85 = 'true'"
+]) {
+  if (!build.includes(required)) fail(`Build 85 bootstrap is missing ${required}.`);
 }
 
 if (!worker.includes("'./css/mobile-studio.css'")) {
   fail('Mobile Studio stylesheet is missing from the PWA shell.');
 }
 
-console.log('Build 84 guards mobile Studio: Show Track is layout-only, Canvas geometry stays stable and explicit Track navigation is available.');
+console.log('Build 85 guards mobile Studio: Show Track stays layout-only, Canvas parity removes poster flash without owning playback, and Track-page navigation is visually demoted but preserved.');
