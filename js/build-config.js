@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260810-phase-ux-c2-5-a-global-touch-polish-v87',
-    cache: 'shinobi-launchpad-v87',
-    revision: 'global-touch-polish-1',
-    display: '2026.08.10.87',
-    release: 'phase-ux-c2-5-a-global-touch-polish-20260810'
+    id: '20260810-phase-ux-c2-5-b-canonical-album-read-model-v88',
+    cache: 'shinobi-launchpad-v88',
+    revision: 'canonical-album-read-model-1',
+    display: '2026.08.10.88',
+    release: 'phase-ux-c2-5-b-canonical-album-read-model-20260810'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
