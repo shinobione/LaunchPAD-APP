@@ -166,7 +166,8 @@ async function moveStudioAlbumTrack(targetAlbumId, request, env, user) {
     return jsonResponse({ ok: false, error: "Déplacement refusé car l'Album source publié deviendrait non publiable.", code: "ALBUM_QUALITY_BLOCKED", albumId: source.id, quality: sourceQuality }, 409);
   }
 
-  const trackAfter = studioAlbumTrackCacheManifest(track, proposedTarget, user);
+  const trackNeedsCacheUpdate = track.album?.id !== proposedTarget.id || track.album?.title !== proposedTarget.title;
+  const trackAfter = trackNeedsCacheUpdate ? studioAlbumTrackCacheManifest(track, proposedTarget, user) : null;
   const albumEntries = [{ id: target.id, before: target, after: proposedTarget }];
   if (source && source.id !== target.id) albumEntries.unshift({ id: source.id, before: source, after: proposedSource });
   let albumsWritten = 0;
@@ -176,8 +177,10 @@ async function moveStudioAlbumTrack(targetAlbumId, request, env, user) {
       await writeAlbumManifest(env.MEDIA_BUCKET, entry.after);
       albumsWritten += 1;
     }
-    await writeManifest(env.MEDIA_BUCKET, trackAfter);
-    trackWritten = true;
+    if (trackAfter) {
+      await writeManifest(env.MEDIA_BUCKET, trackAfter);
+      trackWritten = true;
+    }
     const index = await writeCatalogIndex(env.MEDIA_BUCKET);
     const [targetReread, sourceReread, trackReread] = await Promise.all([
       readAlbumManifest(env.MEDIA_BUCKET, target.id),
@@ -198,6 +201,7 @@ async function moveStudioAlbumTrack(targetAlbumId, request, env, user) {
       sourceTrackIds: sourceReread?.trackIds || null,
       targetUpdatedAt: targetReread.updatedAt || null,
       sourceUpdatedAt: sourceReread?.updatedAt || null,
+      trackCacheUpdated: trackWritten,
       quality: { target: targetQuality, source: sourceQuality },
       catalogRebuilt: true,
       catalogGeneratedAt: index.generatedAt || null,
