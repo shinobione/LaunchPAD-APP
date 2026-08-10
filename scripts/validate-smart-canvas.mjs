@@ -10,6 +10,7 @@ const fail = message => {
 };
 
 for (const marker of [
+  "const CANVAS_SELECTOR = 'video.track-video-player';",
   "document.addEventListener('visibilitychange'",
   'new IntersectionObserver',
   "queryMedia('(prefers-reduced-motion: reduce)')",
@@ -28,6 +29,9 @@ for (const marker of [
   if (!manager.includes(marker)) fail(`Smart Canvas manager is missing ${marker}.`);
 }
 
+if (manager.includes('video.lyrics-studio-canvas-video')) {
+  fail('Build 83 Smart Canvas must not register or own Lyrics Studio Canvas.');
+}
 if (!engine.includes("import(versioned('./features/smart-canvas.js'))")) {
   fail('The app engine does not load the Smart Canvas manager.');
 }
@@ -52,4 +56,4 @@ for (const marker of [
   if (!test.includes(marker)) fail(`Smart Canvas browser coverage is missing ${marker}.`);
 }
 
-console.log('Smart Canvas lifecycle, resource release and audio isolation are covered.');
+console.log('Smart Canvas lifecycle stays Track-Video-only; Lyrics Studio Canvas ownership is isolated.');
