@@ -26,6 +26,14 @@
     padding-bottom:0!important;
   }
 
+  body.lyrics-studio-open .queue-panel{
+    z-index:620!important;
+  }
+
+  body.lyrics-studio-open.queue-open::before{
+    z-index:619!important;
+  }
+
   #view-lyrics.lyrics-studio-mode{
     width:100vw!important;
     height:100dvh!important;
