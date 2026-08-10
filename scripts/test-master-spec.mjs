@@ -149,7 +149,7 @@ for (const forbiddenCanvasRecovery of [
   "window.addEventListener('pageshow'",
   "document.addEventListener('visibilitychange'"
 ]) {
-  assert.ok(!lyricsStudioMedia.includes(forbiddenCanvasRecovery), `Build 86 must keep Lyrics Studio under one native-loop owner: ${forbiddenCanvasRecovery}`);
+  assert.ok(!lyricsStudioMedia.includes(forbiddenCanvasRecovery), `Build 87 must keep Lyrics Studio under one native-loop owner: ${forbiddenCanvasRecovery}`);
 }
 const mobilePanelStart = lyricsStudioMedia.indexOf('function setMobilePanelCollapsed(');
 const mobilePanelEnd = lyricsStudioMedia.indexOf('\n  function setCanvasButtonState', mobilePanelStart);
@@ -222,6 +222,19 @@ includesAll(mobilePlayerPolish, [
   '.mobile-favorite-trigger.active:hover',
   '.mobile-queue-trigger:hover'
 ], 'Build 86 mobile player/UI presentation guard');
+
+const globalTouchPolish = read('css/global-touch-polish-v87.css');
+includesAll(globalTouchPolish, [
+  '@media (hover:none), (pointer:coarse)',
+  'body *',
+  '-webkit-tap-highlight-color:transparent!important',
+  ':focus:not(:focus-visible)',
+  '[role="button"]',
+  '[role="link"]',
+  '[tabindex]'
+], 'Build 87 global touch presentation guard');
+assert.ok(!globalTouchPolish.includes('user-select:none'), 'Build 87 must preserve global text selection.');
+assert.ok(!/\*\s*\{[^}]*outline\s*:\s*none/i.test(globalTouchPolish), 'Build 87 must never globally erase all focus outlines.');
 
 const libraryMemory = read('js/features/library-memory.js');
 includesAll(libraryMemory, [
@@ -404,14 +417,17 @@ includesAll(buildSource, [
   '`js/features/studio-loop-parity-v85.js?v=${encodeURIComponent(config.id)}`',
   "script.dataset.studioLoopParityV85 = 'true'",
   'installMobilePlayerPolish',
-  "'css/mobile-player-polish-v86.css'"
-], 'Build 86 loop parity + mobile player polish bootstrap');
+  "'css/mobile-player-polish-v86.css'",
+  'installGlobalTouchPolish',
+  "'css/global-touch-polish-v87.css'",
+  "'globalTouchPolishV87'"
+], 'Build 87 loop parity + mobile player + global touch polish bootstrap');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260810-phase-ux-c2-5-a-mobile-player-ui-polish-v86');
-assert.equal(build.cache, 'shinobi-launchpad-v86');
-assert.equal(build.display, '2026.08.10.86');
-assert.equal(build.release, 'phase-ux-c2-5-a-mobile-player-ui-polish-20260810');
-assert.equal(build.revision, 'mobile-player-ui-polish-1');
+assert.equal(build.id, '20260810-phase-ux-c2-5-a-global-touch-polish-v87');
+assert.equal(build.cache, 'shinobi-launchpad-v87');
+assert.equal(build.display, '2026.08.10.87');
+assert.equal(build.release, 'phase-ux-c2-5-a-global-touch-polish-20260810');
+assert.equal(build.revision, 'global-touch-polish-1');
 
-console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 86 preserves Build 85 passive Canvas parity and Build 84 layout-only Show Track while removing the physical cover underlay during active Canvas playback, hiding the temporary Track-page escape action and scoping Android touch/focus visuals to the actual mini-player controls. Build 81 Track video teardown, Queue stacking/focus and dynamic Favorites membership, Build 77 single-commit seek and settled Lyrics autoscroll, supplied Moon/gold brand art and historical v5.10 bridge ancestry remain protected with ${presetCount} sanctioned Audio Lab presets.`);
+console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 87 preserves Build 86 mobile player fixes, Build 85 passive Canvas parity and Build 84 layout-only Show Track while extending the validated Android touch-highlight suppression across LaunchPAD without disabling text selection or keyboard focus-visible accessibility. Build 81 Track video teardown, Queue stacking/focus and dynamic Favorites membership, Build 77 single-commit seek and settled Lyrics autoscroll, supplied Moon/gold brand art and historical v5.10 bridge ancestry remain protected with ${presetCount} sanctioned Audio Lab presets.`);
