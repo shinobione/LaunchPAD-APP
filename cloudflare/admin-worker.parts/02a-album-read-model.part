@@ -1,0 +1,158 @@
+
+const ALBUMS_PREFIX = "albums/";
+const ALBUM_MANIFEST_NAME = "manifest.json";
+const ALBUM_TYPE_VALUES = new Set(["album", "ep", "collection"]);
+const ALBUM_ASSET_KINDS = ["cover", "thumbnail"];
+
+function albumPrefix(albumId) {
+  return ALBUMS_PREFIX + albumId + "/";
+}
+
+function safeAlbumAssetPath(value, kind) {
+  if (!value) return null;
+  const clean = String(value).replace(/\\/g, "/").replace(/^\/+/, "");
+  if (!clean || clean.includes("..")) return null;
+  if (kind === "cover" && !/^cover\/[a-zA-Z0-9._-]+$/.test(clean)) return null;
+  if (kind === "thumbnail" && clean !== "thumbnail/thumbnail.webp") return null;
+  return clean.slice(0, 220);
+}
+
+function normalizeAlbumManifest(input) {
+  const id = slugify(input?.id || "");
+  if (!id) throw new Error("INPUT_Album id invalide.");
+  const status = STATUS_VALUES.has(input?.status) ? input.status : "draft";
+  const type = ALBUM_TYPE_VALUES.has(String(input?.type || "").toLowerCase())
+    ? String(input.type).toLowerCase()
+    : "album";
+  const year = Number.isInteger(Number(input?.year)) ? Number(input.year) : null;
+  const trackIds = [...new Set((Array.isArray(input?.trackIds) ? input.trackIds : [])
+    .map(trackId => slugify(trackId))
+    .filter(Boolean))];
+  const assets = input?.assets && typeof input.assets === "object" ? input.assets : {};
+  return {
+    schemaVersion: 1,
+    id,
+    title: String(input?.title || titleFromSlug(id)).trim(),
+    type,
+    status,
+    year,
+    releaseDate: input?.releaseDate || null,
+    description: cleanNullable(input?.description),
+    heading: cleanNullable(input?.heading || input?.editorialHeading),
+    trackIds,
+    accent: normalizeColor(input?.accent),
+    accent2: normalizeColor(input?.accent2),
+    assets: {
+      cover: safeAlbumAssetPath(assets.cover, "cover"),
+      thumbnail: safeAlbumAssetPath(assets.thumbnail, "thumbnail"),
+    },
+    createdAt: input?.createdAt || new Date().toISOString(),
+    updatedAt: input?.updatedAt || new Date().toISOString(),
+    updatedBy: cleanNullable(input?.updatedBy),
+  };
+}
+
+async function readAlbumManifest(bucket, albumId) {
+  const id = slugify(albumId);
+  if (!id) return null;
+  const object = await bucket.get(albumPrefix(id) + ALBUM_MANIFEST_NAME);
+  if (!object) return null;
+  try {
+    const parsed = JSON.parse(await object.text());
+    if (parsed?.schemaVersion !== 1 || slugify(parsed?.id) !== id) return null;
+    return normalizeAlbumManifest(parsed);
+  } catch {
+    return null;
+  }
+}
+
+function albumAssetStateFromObjects(objects, manifest) {
+  const byKey = new Map(objects.map(object => [object.key, object]));
+  return Object.fromEntries(ALBUM_ASSET_KINDS.map(kind => {
+    const relativePath = manifest.assets?.[kind] || null;
+    const key = relativePath ? albumPrefix(manifest.id) + relativePath : null;
+    const object = key ? byKey.get(key) : null;
+    return [kind, relativePath ? {
+      present: Boolean(object),
+      path: relativePath,
+      key,
+      size: object?.size || 0,
+      contentType: object?.httpMetadata?.contentType || guessContentType(getExtension(relativePath)),
+      etag: object?.etag || null,
+      uploaded: object?.uploaded?.toISOString?.() || null,
+    } : null];
+  }));
+}
+
+async function buildCanonicalAlbumSummaries(objects, bucket) {
+  const manifestObjects = objects.filter(object => object.key.endsWith("/" + ALBUM_MANIFEST_NAME));
+  const albums = [];
+  for (const object of manifestObjects) {
+    const albumId = object.key.slice(ALBUMS_PREFIX.length, -(ALBUM_MANIFEST_NAME.length + 1));
+    const manifest = await readAlbumManifest(bucket, albumId);
+    if (!manifest) continue;
+    const scoped = objects.filter(item => item.key.startsWith(albumPrefix(albumId)));
+    albums.push({
+      ...manifest,
+      assetState: albumAssetStateFromObjects(scoped, manifest),
+    });
+  }
+  albums.sort((a, b) => {
+    const aDate = Date.parse(a.releaseDate || "") || 0;
+    const bDate = Date.parse(b.releaseDate || "") || 0;
+    if (aDate !== bDate) return bDate - aDate;
+    if ((a.year || 0) !== (b.year || 0)) return (b.year || 0) - (a.year || 0);
+    return a.title.localeCompare(b.title, "fr", { sensitivity: "base" });
+  });
+  return albums;
+}
+
+async function listAlbums(env) {
+  const objects = await listAllObjects(env.MEDIA_BUCKET, ALBUMS_PREFIX);
+  const albums = await buildCanonicalAlbumSummaries(objects, env.MEDIA_BUCKET);
+  const totals = albums.reduce((acc, album) => {
+    acc.total += 1;
+    acc[album.status] = (acc[album.status] || 0) + 1;
+    acc.trackRefs += album.trackIds.length;
+    return acc;
+  }, { total: 0, published: 0, draft: 0, archived: 0, trackRefs: 0 });
+  return jsonResponse({ ok: true, albums, totals });
+}
+
+async function getAlbumReadModel(albumId, env) {
+  const manifest = await readAlbumManifest(env.MEDIA_BUCKET, albumId);
+  if (!manifest) return jsonResponse({ ok: false, error: "Album introuvable." }, 404);
+  const objects = await listAllObjects(env.MEDIA_BUCKET, albumPrefix(manifest.id));
+  return jsonResponse({
+    ok: true,
+    album: {
+      manifest,
+      assets: albumAssetStateFromObjects(objects, manifest),
+    },
+  });
+}
+
+async function buildPublishedAlbumProjection(bucket, publishedTrackIds) {
+  const objects = await listAllObjects(bucket, ALBUMS_PREFIX);
+  const manifests = await buildCanonicalAlbumSummaries(objects, bucket);
+  const allowedTrackIds = publishedTrackIds instanceof Set ? publishedTrackIds : new Set();
+  return manifests
+    .filter(album => album.status === "published")
+    .map(album => ({
+      schemaVersion: 1,
+      id: album.id,
+      title: album.title,
+      type: album.type,
+      status: album.status,
+      year: album.year,
+      releaseDate: album.releaseDate,
+      description: album.description,
+      heading: album.heading,
+      trackIds: album.trackIds.filter(trackId => allowedTrackIds.has(trackId)),
+      accent: album.accent,
+      accent2: album.accent2,
+      assets: album.assets,
+      createdAt: album.createdAt,
+      updatedAt: album.updatedAt,
+    }));
+}
