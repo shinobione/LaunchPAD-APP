@@ -1,14 +1,27 @@
 import { albums as sourceAlbums, journeyEras as sourceJourneyEras } from '../catalog.js';
-import { normalizeTrackSchema } from './catalog-schema.js';
+import {
+  CANONICAL_ALBUM_STATUSES,
+  CANONICAL_ALBUM_TYPES,
+  normalizeAlbumSchema,
+  normalizeTrackSchema,
+} from './catalog-schema.js';
 
 const ALLOWED_LANGUAGES = ['French', 'English', 'Vietnamese'];
 const ERA_QUEUE_PREFIX = 'era:';
 
-export const albums = sourceAlbums;
+const legacyAlbums = sourceAlbums.map((album, index) => normalizeAlbumSchema({
+  ...album,
+  status: 'published',
+  source: 'legacy-catalog-js',
+}, index));
+
+export const albums = [...legacyAlbums];
+export const canonicalAlbums = [];
 export const journeyEras = sourceJourneyEras;
 export const tracks = [];
 
-const albumById = new Map(albums.map(album => [album.id, album]));
+const canonicalAlbumById = new Map();
+const albumById = new Map();
 const trackById = new Map();
 const trackIndexById = new Map();
 
@@ -32,6 +45,20 @@ function decodeEraQueueId(value) {
   }
 }
 
+function rebuildAlbumIndexes() {
+  canonicalAlbumById.clear();
+  canonicalAlbums.forEach(album => canonicalAlbumById.set(album.id, album));
+
+  albumById.clear();
+  legacyAlbums.forEach(album => albumById.set(album.id, album));
+  canonicalAlbums.forEach(album => albumById.set(album.id, album));
+
+  const effective = legacyAlbums.map(album => canonicalAlbumById.get(album.id) || album);
+  const legacyIds = new Set(legacyAlbums.map(album => album.id));
+  effective.push(...canonicalAlbums.filter(album => !legacyIds.has(album.id)));
+  albums.splice(0, albums.length, ...effective);
+}
+
 function rebuildTrackIndexes() {
   trackById.clear();
   trackIndexById.clear();
@@ -42,6 +69,7 @@ function rebuildTrackIndexes() {
 }
 
 export function reindexCatalog() {
+  rebuildAlbumIndexes();
   rebuildTrackIndexes();
   return tracks;
 }
@@ -61,7 +89,24 @@ function mergeSearchText(track) {
   ].filter(Boolean).join(' ').toLowerCase();
 }
 
+rebuildAlbumIndexes();
 rebuildTrackIndexes();
+
+export function mergeRemoteAlbums(remoteAlbums = []) {
+  const normalized = Array.isArray(remoteAlbums)
+    ? remoteAlbums
+      .map((album, index) => normalizeAlbumSchema({ ...album, source: album?.source || 'cloudflare-r2' }, index))
+      .filter(album => album.id)
+    : [];
+
+  canonicalAlbums.splice(0, canonicalAlbums.length, ...normalized);
+  rebuildAlbumIndexes();
+  return {
+    canonical: canonicalAlbums.length,
+    effective: albums.length,
+    legacyFallback: albums.filter(album => !canonicalAlbumById.has(album.id)).length,
+  };
+}
 
 export function mergeRemoteTracks(remoteTracks = []) {
   if (!Array.isArray(remoteTracks) || remoteTracks.length === 0) {
@@ -103,14 +148,27 @@ export function mergeRemoteTracks(remoteTracks = []) {
     added += 1;
   });
 
-  reindexCatalog();
+  rebuildTrackIndexes();
   return { added, updated, total: tracks.length };
 }
 
 export function getAlbum(albumId) { return albumById.get(albumId) || null; }
+export function getCanonicalAlbum(albumId) { return canonicalAlbumById.get(albumId) || null; }
+export function hasCanonicalAlbum(albumId) { return canonicalAlbumById.has(albumId); }
 export function getTrack(trackId) { return trackById.get(trackId) || null; }
 export function getTrackIndex(trackId) { return trackIndexById.has(trackId) ? trackIndexById.get(trackId) : -1; }
-export function getAlbumTracks(albumId) { return tracks.map((track, index) => ({ ...track, index })).filter(track => track.albumId === albumId); }
+export function getAlbumTracks(albumId) {
+  const canonical = canonicalAlbumById.get(albumId);
+  if (canonical) {
+    return canonical.trackIds
+      .map(trackId => {
+        const index = getTrackIndex(trackId);
+        return index >= 0 ? { ...tracks[index], index } : null;
+      })
+      .filter(Boolean);
+  }
+  return tracks.map((track, index) => ({ ...track, index })).filter(track => track.albumId === albumId);
+}
 export function getEraTrackIndexes(eraValue) {
   const expected = canonicalEraValue(eraValue);
   if (!expected) return [];
@@ -162,15 +220,21 @@ export function validateCatalogRuntime() {
   const albumIds = new Set();
   const trackIds = new Set();
   const allowedLanguages = new Set(ALLOWED_LANGUAGES);
+  const allowedAlbumTypes = new Set(CANONICAL_ALBUM_TYPES);
+  const allowedAlbumStatuses = new Set(CANONICAL_ALBUM_STATUSES);
   const hexPattern = /^#[0-9a-f]{6}$/i;
   const keyPattern = /^[A-G](?:#|b)? (?:major|minor)$/i;
 
   albums.forEach((album, index) => {
+    const canonical = canonicalAlbumById.has(album.id);
     if (!album?.id) errors.push(`Album ${index + 1}: missing id.`);
     if (!album?.title) errors.push(`Album ${album?.id || index + 1}: missing title.`);
     if (albumIds.has(album.id)) errors.push(`Duplicate album id: ${album.id}.`);
     albumIds.add(album.id);
-    if (!album.cover) errors.push(`Album ${album.id}: missing cover.`);
+    if (canonical && !allowedAlbumTypes.has(album.type)) errors.push(`Album ${album.id}: unsupported canonical type "${album.type}".`);
+    if (canonical && !allowedAlbumStatuses.has(album.status)) errors.push(`Album ${album.id}: unsupported canonical status "${album.status}".`);
+    if (album.status === 'published' && !album.cover) errors.push(`Album ${album.id}: missing cover.`);
+    if (canonical && !Array.isArray(album.trackIds)) errors.push(`Album ${album.id}: trackIds must be an ordered array.`);
   });
 
   tracks.forEach((track, index) => {
@@ -205,6 +269,19 @@ export function validateCatalogRuntime() {
 
     ['accent', 'accent2'].forEach(field => { if (track[field] && !hexPattern.test(track[field])) errors.push(`${label}: ${field} must be a six-digit hex colour.`); });
     if (!track.lyrics) warnings.push(`${label}: lyrics unavailable.`);
+  });
+
+  canonicalAlbums.forEach(album => {
+    album.trackIds.forEach(trackId => {
+      if (!trackIds.has(trackId)) errors.push(`Album ${album.id}: unknown trackId "${trackId}" in canonical order.`);
+    });
+  });
+
+  tracks.forEach(track => {
+    const canonical = canonicalAlbumById.get(track.albumId);
+    if (canonical && !canonical.trackIds.includes(track.id)) {
+      warnings.push(`${track.id}: compatibility album cache points to ${canonical.id}, but canonical album.trackIds does not contain the track.`);
+    }
   });
 
   return { errors, warnings, valid: errors.length === 0 };
