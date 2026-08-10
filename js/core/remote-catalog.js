@@ -1,5 +1,5 @@
-import { mergeRemoteTracks } from './catalog-store.js';
-import { normalizeTrackSchema } from './catalog-schema.js';
+import { mergeRemoteAlbums, mergeRemoteTracks } from './catalog-store.js';
+import { normalizeAlbumSchema, normalizeTrackSchema } from './catalog-schema.js';
 
 const DEFAULT_API_URL = 'https://launchpad-media.jerryquinet.workers.dev';
 const FETCH_TIMEOUT_MS = 4500;
@@ -61,6 +61,14 @@ function buildSearchText(track) {
   return [track.title, track.genre, ...(track.tags || []), track.mood, track.album,
     ...(track.languages || []), track.remoteMetadata?.era, ...(track.remoteMetadata?.themes || [])]
     .filter(Boolean).join(' ').toLowerCase();
+}
+
+function mapRemoteAlbum(item, importIndex = 0) {
+  if (!item?.id) return null;
+  return normalizeAlbumSchema({
+    ...item,
+    source: 'cloudflare-r2',
+  }, importIndex);
 }
 
 function mapRemoteTrack(item, activeApiUrl = DEFAULT_API_URL, importIndex = 0) {
@@ -133,11 +141,15 @@ function mapRemoteTrack(item, activeApiUrl = DEFAULT_API_URL, importIndex = 0) {
   return track;
 }
 
-export async function fetchRemoteTracks({ apiUrl = globalThis.SHINOBIWAN_MEDIA_API || DEFAULT_API_URL, timeoutMs = FETCH_TIMEOUT_MS } = {}) {
+async function fetchRemoteCatalogPayload({ apiUrl = globalThis.SHINOBIWAN_MEDIA_API || DEFAULT_API_URL, timeoutMs = FETCH_TIMEOUT_MS } = {}) {
   if (shouldUseCatalogFixture()) {
     const { catalogFixture } = await import('../catalog-fixture.js');
-    return catalogFixture.map((track, index) => normalizeTrackSchema({ ...track }, index));
+    return {
+      albums: [],
+      tracks: catalogFixture.map((track, index) => normalizeTrackSchema({ ...track }, index)),
+    };
   }
+
   const normalizedApiUrl = normalizeApiUrl(apiUrl);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -148,13 +160,35 @@ export async function fetchRemoteTracks({ apiUrl = globalThis.SHINOBIWAN_MEDIA_A
     if (!response.ok) throw new Error(`Remote catalog request failed with HTTP ${response.status}.`);
     const payload = await response.json();
     if (!payload?.ok || !Array.isArray(payload.tracks)) throw new Error('Remote catalog response is invalid.');
-    return payload.tracks.map((item, index) => mapRemoteTrack(item, normalizedApiUrl, index)).filter(Boolean);
+    return {
+      albums: Array.isArray(payload.albums)
+        ? payload.albums.map((item, index) => mapRemoteAlbum(item, index)).filter(Boolean)
+        : [],
+      tracks: payload.tracks.map((item, index) => mapRemoteTrack(item, normalizedApiUrl, index)).filter(Boolean),
+    };
   } finally {
     clearTimeout(timeout);
   }
 }
 
+export async function fetchRemoteTracks(options = {}) {
+  const payload = await fetchRemoteCatalogPayload(options);
+  return payload.tracks;
+}
+
+export async function fetchRemoteAlbums(options = {}) {
+  const payload = await fetchRemoteCatalogPayload(options);
+  return payload.albums;
+}
+
 export async function hydrateRemoteCatalog(options = {}) {
-  const remoteTracks = await fetchRemoteTracks(options);
-  return { ...mergeRemoteTracks(remoteTracks), remoteCount: remoteTracks.length };
+  const remote = await fetchRemoteCatalogPayload(options);
+  const albumResult = mergeRemoteAlbums(remote.albums);
+  const trackResult = mergeRemoteTracks(remote.tracks);
+  return {
+    ...trackResult,
+    remoteCount: remote.tracks.length,
+    remoteAlbumCount: remote.albums.length,
+    albumResult,
+  };
 }
