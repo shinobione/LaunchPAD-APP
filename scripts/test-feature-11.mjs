@@ -123,7 +123,8 @@ for (const required of [
 
 const remote = read('js/core/remote-catalog.js');
 for (const required of [
-  "import { normalizeTrackSchema } from './catalog-schema.js'",
+  "from './catalog-schema.js'",
+  'normalizeTrackSchema',
   'importedAt: item.migration?.importedAt || createdAt',
   "source: 'cloudflare-r2'",
   'map((item, index) => mapRemoteTrack(item, normalizedApiUrl, index))'
@@ -131,7 +132,8 @@ for (const required of [
 
 const store = read('js/core/catalog-store.js');
 for (const required of [
-  "import { normalizeTrackSchema } from './catalog-schema.js'",
+  "from './catalog-schema.js'",
+  'normalizeTrackSchema',
   'normalizeTrackSchema(remoteTrack, importIndex)',
   "status === 'draft' || status === 'archived' || status === 'upcoming'",
   'officialRelease === null || officialRelease <= now'

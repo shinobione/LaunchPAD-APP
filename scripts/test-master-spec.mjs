@@ -424,10 +424,6 @@ includesAll(buildSource, [
 ], 'Build 87 loop parity + mobile player + global touch polish bootstrap');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260810-phase-ux-c2-5-a-global-touch-polish-v87');
-assert.equal(build.cache, 'shinobi-launchpad-v87');
-assert.equal(build.display, '2026.08.10.87');
-assert.equal(build.release, 'phase-ux-c2-5-a-global-touch-polish-20260810');
-assert.equal(build.revision, 'global-touch-polish-1');
+assert.ok(build.number >= 87, `Master specification requires Build 87 ancestry or newer, got Build ${build.number}.`);
 
-console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 87 preserves Build 86 mobile player fixes, Build 85 passive Canvas parity and Build 84 layout-only Show Track while extending the validated Android touch-highlight suppression across LaunchPAD without disabling text selection or keyboard focus-visible accessibility. Build 81 Track video teardown, Queue stacking/focus and dynamic Favorites membership, Build 77 single-commit seek and settled Lyrics autoscroll, supplied Moon/gold brand art and historical v5.10 bridge ancestry remain protected with ${presetCount} sanctioned Audio Lab presets.`);
+console.log(`LaunchPAD master specification is regression-protected under current Build ${build.number} (${build.release}); Build 87 global touch polish, Build 86 mobile player fixes, Build 85 passive Canvas parity and Build 84 layout-only Show Track remain inherited contracts instead of freezing the repository forever on Build 87. Build 81 Track video teardown, Queue stacking/focus and dynamic Favorites membership, Build 77 single-commit seek and settled Lyrics autoscroll, supplied Moon/gold brand art and historical v5.10 bridge ancestry remain protected with ${presetCount} sanctioned Audio Lab presets.`);
