@@ -3,8 +3,8 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const source = [
-  'cloudflare/admin-worker.parts/02c-album-write-core.part',
-  'cloudflare/admin-worker.parts/02d-album-membership.part',
+  'cloudflare/admin-worker.parts/03-z3-album-write-core.part',
+  'cloudflare/admin-worker.parts/03-z4-album-membership.part',
 ].map(path => fs.readFileSync(path, 'utf8')).join('\n');
 
 const clone = value => value == null ? value : JSON.parse(JSON.stringify(value));
