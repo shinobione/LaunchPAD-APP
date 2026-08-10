@@ -135,6 +135,55 @@ for (const forbiddenCanvasRecovery of [
   assert.ok(!lyricsStudioMedia.includes(forbiddenCanvasRecovery), `Build 77 must keep Canvas loops local/manual and protect audio-first seeking: ${forbiddenCanvasRecovery}`);
 }
 
+includesAll(lyricsStudioMedia, [
+  'function androidMobileStudioCanvasDisabled()',
+  "&& Boolean(window.matchMedia?.('(max-width:760px)')?.matches)",
+  'const androidCanvasDisabled = androidMobileStudioCanvasDisabled()',
+  'let canvasEnabled = !androidCanvasDisabled',
+  "canvasShell.dataset.playback = 'disabled'",
+  "setCanvasBadge('MOBILE SAFE VISUAL')",
+  'if (androidCanvasDisabled || !track?.video) return false',
+  'canvasButton.hidden = androidCanvasDisabled || !hasCanvas || !studioOpen'
+], 'Build 81 source-level Android Studio Canvas disable');
+
+const trackVideos = read('js/features/track-videos.js');
+includesAll(trackVideos, [
+  'function releaseVideoDecoder(video, panel)',
+  "video.removeAttribute('src')",
+  'function teardownTrackVideoRoute(view)',
+  'if (!view || currentTrack()) return',
+  "window.addEventListener('hashchange', syncRouteVideoState)",
+  "window.addEventListener('shinobi:route-change', syncRouteVideoState)",
+  'releaseVideoDecoder(video, panel)',
+  'openStudioRoute(studioButton.dataset.trackStudioAction)'
+], 'Build 81 Track route video decoder teardown');
+
+const queueUi = read('js/features/queue-ui.js');
+includesAll(queueUi, [
+  'function focusWithoutScroll(element)',
+  "element?.focus?.({ preventScroll: true })",
+  "focusWithoutScroll(panel.querySelector('[data-queue-action=\"close\"]'))",
+  'focusWithoutScroll(lastFocused)'
+], 'Build 81 Studio-safe Queue focus');
+
+const mobileStudioCss = read('css/mobile-studio.css');
+includesAll(mobileStudioCss, [
+  'body.lyrics-studio-open .queue-panel{',
+  'z-index:620!important',
+  'body.lyrics-studio-open.queue-open::before{',
+  'z-index:619!important'
+], 'Build 81 Queue stacking above Studio');
+
+const libraryMemory = read('js/features/library-memory.js');
+includesAll(libraryMemory, [
+  'const hasTrackId = trackId => typeof trackId === \'string\' && getTrackIndex(trackId) >= 0',
+  'raw.favorites.filter(hasTrackId)',
+  'raw.history.filter(hasTrackId)',
+  'if (!hasTrackId(trackId)) return',
+  'return hasTrackId(audio.dataset.trackId) ? audio.dataset.trackId : null'
+], 'Build 81 dynamic Favorites catalog membership');
+assert.ok(!libraryMemory.includes('const trackIds = new Set('), 'Build 81 Favorites must not freeze the catalog membership at module load.');
+
 const lyricsEngineMedia = read('js/features/lyrics/lyrics-engine.js');
 includesAll(lyricsEngineMedia, [
   'let seekInProgress = false', 'function beginSeek(time)', 'function settleSeek(time = audio.currentTime)',
@@ -147,25 +196,20 @@ const androidStudioSafe = read('js/features/android-studio-safe-mode.js');
 includesAll(androidStudioSafe, [
   "/Android/i.test(navigator.userAgent || '')",
   "window.matchMedia?.('(max-width:760px)')",
-  'globalThis.__shinobiAndroidStudioFetchGuard',
-  'const nativeFetch = globalThis.fetch.bind(globalThis)',
-  'function isLyricsStudioCanvasRequest(input)',
-  "video = studioView()?.querySelector('video.lyrics-studio-canvas-video')",
-  "video?.dataset?.src",
-  "content:\"MOBILE SAFE VISUAL\"",
-  "Android Lyrics Studio Canvas disabled by decoder safety guard.",
-  'return Promise.reject(error)'
-], 'Build 80 passive Android Studio Canvas guard');
+  'globalThis.__shinobiAndroidStudioSourceGuard = true'
+], 'Build 81 inert Android Studio bootstrap marker');
 for (const forbiddenAndroidStudioMutation of [
   'MutationObserver',
   'cloneNode(',
   'replaceWith(',
   'insertBefore(',
+  'globalThis.fetch =',
+  'nativeFetch',
   'document.createElement(\'video\')',
   'audio.pause()',
   'audio.load()'
 ]) {
-  assert.ok(!androidStudioSafe.includes(forbiddenAndroidStudioMutation), `Build 80 Android Studio guard must stay passive and must not mutate Studio controls/media ownership: ${forbiddenAndroidStudioMutation}`);
+  assert.ok(!androidStudioSafe.includes(forbiddenAndroidStudioMutation), `Build 81 Android Studio bootstrap must stay inert: ${forbiddenAndroidStudioMutation}`);
 }
 
 // Audio Lab registry and sanctuary reference.
@@ -281,10 +325,10 @@ const worker = read('sw.js');
 includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260810-phase-ux-c2-5-a-android-studio-passive-canvas-guard-v80');
-assert.equal(build.cache, 'shinobi-launchpad-v80');
-assert.equal(build.display, '2026.08.10.80');
-assert.equal(build.release, 'phase-ux-c2-5-a-android-studio-passive-canvas-guard-20260810');
-assert.equal(build.revision, 'android-studio-passive-canvas-guard-1');
+assert.equal(build.id, '20260810-phase-ux-c2-5-a-android-studio-media-teardown-v81');
+assert.equal(build.cache, 'shinobi-launchpad-v81');
+assert.equal(build.display, '2026.08.10.81');
+assert.equal(build.release, 'phase-ux-c2-5-a-android-studio-media-teardown-20260810');
+assert.equal(build.revision, 'android-studio-media-teardown-1');
 
-console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 80 removes the invasive Android Studio DOM replacement path and blocks only the decorative Canvas fetch on Android mobile, while preserving Build 77 single-commit seek, Build 76 transport isolation, Build 75 ownership isolation, Build 74 Track Video recovery, Build 73 audio-clock stabilization, Build 72 Era affordance, supplied Moon/gold brand art and historical v5.10 bridge ancestry with ${presetCount} sanctioned Audio Lab presets.`);
+console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 81 disables Android Lyrics Studio Canvas at source, tears down Track video decoders on route exit, keeps Queue above Studio without scroll focus jumps, and makes Favorites honor dynamically merged catalog tracks while preserving Build 80 entry stability, Build 77 single-commit seek, prior media isolation ancestry, supplied Moon/gold brand art and historical v5.10 bridge ancestry with ${presetCount} sanctioned Audio Lab presets.`);
