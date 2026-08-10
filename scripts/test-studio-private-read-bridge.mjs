@@ -9,11 +9,17 @@ const validationPartPath = 'cloudflare/admin-worker.parts/03d-studio-metadata-va
 const savePartPath = 'cloudflare/admin-worker.parts/03e-studio-metadata-save.part';
 const lyricsPartPath = 'cloudflare/admin-worker.parts/03f-studio-lyrics.part';
 const phase4PartPath = 'cloudflare/admin-worker.parts/03g-studio-phase4-ops.part';
+const albumPartPaths = [
+  'cloudflare/admin-worker.parts/02c-album-write-core.part',
+  'cloudflare/admin-worker.parts/02d-album-membership.part',
+  'cloudflare/admin-worker.parts/02e-album-assets.part',
+];
 const runtime = fs.readFileSync(runtimePath, 'utf8');
 const validationPart = fs.readFileSync(validationPartPath, 'utf8');
 const savePart = fs.readFileSync(savePartPath, 'utf8');
 const lyricsPart = fs.readFileSync(lyricsPartPath, 'utf8');
 const phase4Part = fs.readFileSync(phase4PartPath, 'utf8');
+const albumParts = albumPartPaths.map(file => fs.readFileSync(file, 'utf8')).join('\n');
 const builtPath = path.join(os.tmpdir(), 'launchpad-studio-bridge-test-worker.js');
 
 const build = spawnSync(process.execPath, ['scripts/build-admin-worker.mjs', builtPath], { encoding: 'utf8' });
@@ -119,16 +125,41 @@ for (const forbiddenLiteral of ['LM-IA-Analayse', 'SonicTrace', 'analysis/sonict
   assert.ok(!phase4Part.includes(forbiddenLiteral), `Phase 4 operations must not leak Phase 5/duplicate lyrics concerns: ${forbiddenLiteral}`);
 }
 
-assert.ok(built.includes('version: "5.16"'), 'Built Track Manager contract must be v5.16.');
-assert.ok(built.includes('<span class="version-pill">v5.16</span>'), 'Built Track Manager UI must report v5.16.');
-assert.ok(built.includes('const STUDIO_BRIDGE_VERSION = "1.8";'), 'Studio bridge contract must be v1.8.');
-assert.ok(built.includes('trackManagerVersion: "5.16"'), 'Studio bridge health must report Track Manager v5.16.');
-assert.ok(built.includes('read: ["tracks", "track", "lyrics", "lyrics-context", "sonictrace-analysis", "sonictrace-catalog"]'), 'Studio health must expose the guarded Lyrics context read.');
+for (const required of [
+  'const STUDIO_ALBUM_CREATE_INTENT = "album-create-v1";',
+  'const STUDIO_ALBUM_METADATA_SAVE_INTENT = "album-metadata-save-v1";',
+  'const STUDIO_ALBUM_MEMBERSHIP_SAVE_INTENT = "album-membership-save-v1";',
+  'const STUDIO_ALBUM_TRACK_MOVE_INTENT = "album-track-move-v1";',
+  'const STUDIO_ALBUM_ASSET_UPLOAD_INTENT = "album-asset-upload-v1";',
+  'const STUDIO_ALBUM_ASSET_DELETE_INTENT = "album-asset-delete-v1";',
+  'expectedUpdatedAt',
+  'code = "STALE_ALBUM"',
+  'ALBUM_MEMBERSHIP_CONFLICT',
+  'ALBUM_QUALITY_BLOCKED',
+  'rollbackAlbumManifestAndTracks',
+  '_studio-backups/albums/',
+  'await writeCatalogIndex(env.MEDIA_BUCKET)',
+]) assert.ok(albumParts.includes(required), `C2.5-C Album bridge contract missing: ${required}`);
+assert.ok(!/function\s+deleteStudioAlbum\s*\(/.test(albumParts), 'C2.5-C must not introduce whole-Album deletion.');
+
+assert.ok(built.includes('version: "5.17"'), 'Built Track Manager contract must be v5.17.');
+assert.ok(built.includes('<span class="version-pill">v5.17</span>'), 'Built Track Manager UI must report v5.17.');
+assert.ok(built.includes('const STUDIO_BRIDGE_VERSION = "1.9";'), 'Studio bridge contract must be v1.9.');
+assert.ok(built.includes('trackManagerVersion: "5.17"'), 'Studio bridge health must report Track Manager v5.17.');
+assert.ok(built.includes('read: ["tracks", "track", "albums", "album", "lyrics", "lyrics-context", "sonictrace-analysis", "sonictrace-catalog"]'), 'Studio health must expose canonical Album reads.');
 assert.ok(built.includes('validate: ["metadata", "lyrics", "lyrics-sync"]'), 'Studio health must expose specialized Lyrics synchronization validation.');
-assert.ok(built.includes('write: ["metadata", "lyrics", "lyrics-sync", "sonictrace-analysis"]'), 'Studio health must expose the guarded Lyrics synchronization save.');
-assert.ok(built.includes('manage: ["track-create", "assets", "catalog-rebuild"]'), 'Studio health must expose the final Phase 4 manage capabilities separately.');
+assert.ok(built.includes('write: ["metadata", "lyrics", "lyrics-sync", "sonictrace-analysis"]'), 'Studio health must preserve guarded write capabilities.');
+assert.ok(built.includes('manage: ["track-create", "assets", "catalog-rebuild", "album-create", "album-metadata", "album-membership", "album-move", "album-assets"]'), 'Studio health must expose Album management separately.');
 
 for (const routeCall of [
+  'await listAlbums(env)',
+  'await getAlbumReadModel(studioAlbumReadRoute[1], env)',
+  'await createStudioAlbum(request, env, user)',
+  'await saveStudioAlbumMetadata(studioAlbumMetadataSaveRoute[1], request, env, user)',
+  'await saveStudioAlbumMembership(studioAlbumMembershipSaveRoute[1], request, env, user)',
+  'await moveStudioAlbumTrack(studioAlbumTrackMoveRoute[1], request, env, user)',
+  'await uploadStudioAlbumAsset(studioAlbumAssetUploadRoute[1], studioAlbumAssetUploadRoute[2], request, env, user)',
+  'await deleteStudioAlbumAsset(studioAlbumAssetDeleteRoute[1], studioAlbumAssetDeleteRoute[2], request, env, user)',
   'await getStudioTrackLyrics(studioLyricsReadRoute[1], env, user)',
   'await getStudioLyricsContext(studioLyricsContextRoute[1], env, user)',
   'await validateStudioTrackLyrics(studioLyricsValidationRoute[1], request, env, user)',
@@ -145,6 +176,12 @@ for (const routeCall of [
 
 const authIndex = built.indexOf('const user = await verifyAccessJwt(request, env);');
 for (const guardedRoute of [
+  'await createStudioAlbum(request, env, user)',
+  'await saveStudioAlbumMetadata(studioAlbumMetadataSaveRoute[1], request, env, user)',
+  'await saveStudioAlbumMembership(studioAlbumMembershipSaveRoute[1], request, env, user)',
+  'await moveStudioAlbumTrack(studioAlbumTrackMoveRoute[1], request, env, user)',
+  'await uploadStudioAlbumAsset(studioAlbumAssetUploadRoute[1], studioAlbumAssetUploadRoute[2], request, env, user)',
+  'await deleteStudioAlbumAsset(studioAlbumAssetDeleteRoute[1], studioAlbumAssetDeleteRoute[2], request, env, user)',
   'await getStudioTrackLyrics(studioLyricsReadRoute[1], env, user)',
   'await saveStudioTrackLyrics(studioLyricsSaveRoute[1], request, env, user)',
   'await createStudioTrack(request, env, user)',
@@ -164,4 +201,4 @@ assert.ok(
   'Protected canonical media must opt into the exact credentialed Studio CORS response.',
 );
 
-console.log('Studio bridge guard passed: v1.8 preserves existing capabilities and adds observed canonical-audio duration evidence while legacy Track Manager remains same-origin protected.');
+console.log('Studio bridge guard passed: v1.9 preserves Phase 4/5/6 contracts and adds guarded canonical Album read/write capabilities behind Access JWT and exact-origin Studio checks.');
