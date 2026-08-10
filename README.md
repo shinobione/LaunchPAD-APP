@@ -1,6 +1,7 @@
 # SHINOBIWAN LaunchPAD
 
-> Current application build: `2026.08.10.79` — release `phase-ux-c2-5-a-android-studio-recursion-hotfix-20260810`.
+> Current accepted application build: `2026.08.10.87` — release `phase-ux-c2-5-a-global-touch-polish-20260810`.  
+> Current development candidate: `2026.08.10.88` — `PHASE UX C2.5-B · Canonical Album Read Model`.
 
 Installable music PWA for the SHINOBIWAN catalog: playback, albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
@@ -32,11 +33,29 @@ Build 77 attacks those three mechanisms directly. The mobile seek range now prev
 
 Real-user Build 77 smoke proved that the Android/MIUI secondary video decoder could still fail specifically inside mobile Lyrics Studio: the Canvas could go black, expose the poster/cover and leave the canonical audio/Media Session controls in a degraded state. Build 78 therefore stops treating the decorative MP4 as critical on this exact device/mode path. **Android + <=760 px + Lyrics Studio** uses a decoder-safe animated artwork surface (`MOBILE SAFE VISUAL`) and keeps the original real Canvas video disabled. Desktop, non-Android and non-Studio video behavior remain unchanged. The same Android Studio guard also gives timestamped lyric-line taps a capture-phase single-seek contract and deterministic post-seek recentering.
 
-The first real-user Build 78 smoke exposed a critical integration regression: entering Lyrics Studio on Android could crash the application. Build 79 fixes that crash without reverting the decoder-safe strategy. The safe replacement Canvas control is now excluded from the original-control selector, marked before insertion, and reused instead of recursively cloned. DOM-triggered activation is deduplicated and explicitly protected against re-entry, eliminating the self-sustaining replacement loop while preserving the no-secondary-video contract.
+The first real-user Build 78 smoke exposed a critical integration regression: entering Lyrics Studio on Android could crash the application. Build 79 fixed that recursion/crash, but subsequent real-device passes showed that the safe-visual approach itself was too invasive for the established Studio/player ownership model.
 
-`Play album` and `Open project →` remain available, and the individual Album detail page remains complete and unchanged. Build 79 is LaunchPAD frontend-only: no Track Manager change, no Worker deployment, no R2 mutation, no canonical Album schema, no migration and no `catalog/index.json` change. See [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md), [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md), [`docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md`](docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md), [`docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md`](docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md), [`docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md`](docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md), [`docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md`](docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md), [`docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md), [`docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md`](docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md), [`docs/PHASE-UX-C2-5-A-BUILD76-CANVAS-TRANSPORT-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD76-CANVAS-TRANSPORT-ISOLATION.md), [`docs/PHASE-UX-C2-5-A-BUILD77-MOBILE-SEEK-CANVAS.md`](docs/PHASE-UX-C2-5-A-BUILD77-MOBILE-SEEK-CANVAS.md), [`docs/PHASE-UX-C2-5-A-BUILD78-ANDROID-STUDIO-SAFE.md`](docs/PHASE-UX-C2-5-A-BUILD78-ANDROID-STUDIO-SAFE.md) and [`docs/PHASE-UX-C2-5-A-BUILD79-ANDROID-STUDIO-RECURSION.md`](docs/PHASE-UX-C2-5-A-BUILD79-ANDROID-STUDIO-RECURSION.md).
+Builds 80–84 progressively removed those invasive guards and isolated the remaining routing/ownership issues instead of adding more media recovery. Build 83 restored the simple single-owner Lyrics Studio Canvas model and separated mini-player Favorite/Queue actions from Studio routing; Build 84 isolated `Show Track` from Canvas playback commands and scroll recentering. Builds 85–86 then locked the final passive Studio loop parity and mobile player action polish without taking ownership of canonical audio/video lifecycle. Build 87 added only the global Android/Chromium touch-highlight cleanup while preserving those validated media contracts.
 
-The Build 79 correction remains a release candidate until CI, Pages and real-user Android/mobile smoke pass. The final PHASE UX checkpoint is not created. C2.5-B, C3 and Phase 7 are not modified by Build 79; subsequent progression has separate user authorization and must remain isolated from this hotfix.
+**Build 87 passed real-user Android/PWA smoke on 2026-08-10.** The touch-selection rectangles are removed across LaunchPAD and the inherited Show Track / Collapsed / Track Video / Favorites / Queue / seek behavior remained functional. C2.5-A is therefore REAL-USER VALIDATED. The brief black paint frame noted at one native Canvas loop boundary remains a cosmetic note only and did not block acceptance.
+
+See the C2.5-A release documents through [`docs/PHASE-UX-C2-5-A-BUILD87-GLOBAL-TOUCH-POLISH.md`](docs/PHASE-UX-C2-5-A-BUILD87-GLOBAL-TOUCH-POLISH.md) and the explicit smoke record [`docs/PHASE-UX-C2-5-A-BUILD87-REAL-USER-SMOKE-PASS.md`](docs/PHASE-UX-C2-5-A-BUILD87-REAL-USER-SMOKE-PASS.md).
+
+## PHASE UX C2.5-B — Canonical Album Read Model
+
+Build 88 is the current development candidate. It starts from the accepted Build 87 line and establishes the **read/projection layer only** for first-class Albums:
+
+```text
+albums/<album-id>/manifest.json
+albums/<album-id>/cover/<filename>
+albums/<album-id>/thumbnail/thumbnail.webp
+```
+
+When a canonical Album exists, ordered `album.trackIds` is the intended membership/order authority. Existing track `album.id/title` remains compatibility cache during migration, and current hardcoded Albums remain fallback until each project is migrated. `catalog/index.json` remains a rebuildable `schemaVersion: 1` projection.
+
+Build 88 introduces no Album create/edit/delete/reorder route, no production R2 Album object, no Album artwork migration, no Singles conversion and no public `/albums` Worker cutover. See [`docs/PHASE-UX-C2-5-B-BUILD88-CANONICAL-ALBUM-READ-MODEL.md`](docs/PHASE-UX-C2-5-B-BUILD88-CANONICAL-ALBUM-READ-MODEL.md).
+
+The final PHASE UX checkpoint remains **NOT CREATED**. C2.5-C/D/E/F remain not started, C3 SonicTrace Deep Audio work remains suspended during C2.5, and Phase 7 remains **NOT STARTED**.
 
 ## Production PHASE UX C2 backend
 
@@ -44,7 +63,7 @@ Track Manager `v5.16` / Studio bridge `v1.8` is the deployed private backend. It
 
 The C2 integration accepts request-scoped observed canonical-audio duration evidence from LRC Maker `6.3.6` on the existing Lyrics validation/save routes. Real-user production smoke passed canonical playback, timestamp navigation, synchronized `lyrics.txt` save and canonical reread; the false end-of-audio blocker is gone. `lyrics.txt` remains the only canonical lyrics source and `.lrc` remains optional export/compatibility only.
 
-The C2 deployment skipped every public Worker step, did not change LaunchPAD's then-current public Build 67 runtime, and did not perform an automated production R2 test mutation. The public media Worker remains `v2.6`. The final PHASE UX checkpoint is not created, C3 is suspended pending C2.5, and Phase 7 is not started.
+The C2 deployment skipped every public Worker step, did not change LaunchPAD's then-current public Build 67 runtime, and did not perform an automated production R2 test mutation. The public media Worker remains `v2.6`.
 
 See [`docs/STUDIO-LYRICS-SYNCHRONIZATION.md`](docs/STUDIO-LYRICS-SYNCHRONIZATION.md) and [`docs/PHASE-6-PROTECTED-MEDIA-SEEK-HOTFIX.md`](docs/PHASE-6-PROTECTED-MEDIA-SEEK-HOTFIX.md).
 
@@ -301,6 +320,16 @@ tracks/<slug>/lyrics.txt      # optional; may contain synchronization timestamps
 tracks/<slug>/video.<ext>     # optional
 ```
 
+Reserved first-class Album paths introduced by C2.5-B are:
+
+```text
+albums/<album-id>/manifest.json
+albums/<album-id>/cover/<filename>
+albums/<album-id>/thumbnail/thumbnail.webp
+```
+
+No production Album object is created merely by merging the C2.5-B read model.
+
 Temporary Track Manager rollback material may exist during an active scoped asset transaction only under `_studio-backups/<slug>/...`; it is not canonical track data and is removed after success/compensation.
 
 The public application hydrates through the public Worker. Localhost/CI may use deterministic fixtures; production must not silently substitute a bundled production catalog.
@@ -340,6 +369,8 @@ The Studio bridge guards separately prove that:
 - protected media reads retain Cloudflare Access and byte-range support;
 - whole-track deletion is not exposed;
 - legacy unrelated Track Manager writes remain same-origin.
+
+C2.5-B additionally guards canonical Album schema/read/projection semantics while explicitly forbidding Album write/delete routes and public canonical Album cutover.
 
 ## Release discipline
 
@@ -389,6 +420,16 @@ Useful documents:
 - [`docs/PHASE-UX-C2-5-A-BUILD77-MOBILE-SEEK-CANVAS.md`](docs/PHASE-UX-C2-5-A-BUILD77-MOBILE-SEEK-CANVAS.md) — Build 77 single-commit seek, settled Lyrics auto-scroll and audio-first local Canvas recovery
 - [`docs/PHASE-UX-C2-5-A-BUILD78-ANDROID-STUDIO-SAFE.md`](docs/PHASE-UX-C2-5-A-BUILD78-ANDROID-STUDIO-SAFE.md) — Build 78 Android Studio decoder-safe visual fallback + timestamp-line seek guard
 - [`docs/PHASE-UX-C2-5-A-BUILD79-ANDROID-STUDIO-RECURSION.md`](docs/PHASE-UX-C2-5-A-BUILD79-ANDROID-STUDIO-RECURSION.md) — Build 79 Android Studio safe-control recursion/crash hotfix
+- [`docs/PHASE-UX-C2-5-A-BUILD80-ANDROID-STUDIO-PASSIVE-GUARD.md`](docs/PHASE-UX-C2-5-A-BUILD80-ANDROID-STUDIO-PASSIVE-GUARD.md) — Build 80 passive Android Studio guard
+- [`docs/PHASE-UX-C2-5-A-BUILD81-ANDROID-STUDIO-MEDIA-TEARDOWN.md`](docs/PHASE-UX-C2-5-A-BUILD81-ANDROID-STUDIO-MEDIA-TEARDOWN.md) — Build 81 media teardown / queue / favorites follow-up
+- [`docs/PHASE-UX-C2-5-A-BUILD82-MINI-PLAYER-ACTION-ROUTING.md`](docs/PHASE-UX-C2-5-A-BUILD82-MINI-PLAYER-ACTION-ROUTING.md) — Build 82 mini-player action routing pass
+- [`docs/PHASE-UX-C2-5-A-BUILD83-SURGICAL-ROLLBACK.md`](docs/PHASE-UX-C2-5-A-BUILD83-SURGICAL-ROLLBACK.md) — Build 83 surgical rollback to a single-owner Studio Canvas
+- [`docs/PHASE-UX-C2-5-A-BUILD84-SHOW-TRACK-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD84-SHOW-TRACK-ISOLATION.md) — Build 84 Show Track isolation
+- [`docs/PHASE-UX-C2-5-A-BUILD85-STUDIO-LOOP-PARITY.md`](docs/PHASE-UX-C2-5-A-BUILD85-STUDIO-LOOP-PARITY.md) — Build 85 passive Studio loop parity
+- [`docs/PHASE-UX-C2-5-A-BUILD86-MOBILE-PLAYER-UI-POLISH.md`](docs/PHASE-UX-C2-5-A-BUILD86-MOBILE-PLAYER-UI-POLISH.md) — Build 86 mobile player UI/action polish
+- [`docs/PHASE-UX-C2-5-A-BUILD87-GLOBAL-TOUCH-POLISH.md`](docs/PHASE-UX-C2-5-A-BUILD87-GLOBAL-TOUCH-POLISH.md) — Build 87 global touch polish, real-user validated
+- [`docs/PHASE-UX-C2-5-A-BUILD87-REAL-USER-SMOKE-PASS.md`](docs/PHASE-UX-C2-5-A-BUILD87-REAL-USER-SMOKE-PASS.md) — explicit Build 87 smoke closeout
+- [`docs/PHASE-UX-C2-5-B-BUILD88-CANONICAL-ALBUM-READ-MODEL.md`](docs/PHASE-UX-C2-5-B-BUILD88-CANONICAL-ALBUM-READ-MODEL.md) — Build 88 C2.5-B candidate contract
 - [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) — safe release procedure
 - [`ROADMAP.md`](ROADMAP.md) — remaining consolidation/product work
 - [`cloudflare/README.md`](cloudflare/README.md) — Workers/R2 operations
