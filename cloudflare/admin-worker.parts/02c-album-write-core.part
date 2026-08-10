@@ -75,12 +75,58 @@ function normalizeStudioAlbumMetadataPatch(input) {
   const unknown = Object.keys(input).filter(key => !STUDIO_ALBUM_METADATA_FIELD_SET.has(key));
   if (unknown.length) throw new Error("INPUT_Champs Album non autorisés: " + unknown.join(", ") + ".");
   const patch = {};
-  for (const field of STUDIO_ALBUM_METADATA_FIELDS) {
+
+  if (Object.prototype.hasOwnProperty.call(input, "title")) {
+    const title = String(input.title || "").trim();
+    if (!title) throw new Error("INPUT_Le titre Album est requis.");
+    patch.title = title;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(input, "type")) {
+    const type = String(input.type || "").trim().toLowerCase();
+    if (!ALBUM_TYPE_VALUES.has(type)) throw new Error("INPUT_Type Album invalide.");
+    patch.type = type;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(input, "status")) {
+    const status = String(input.status || "").trim().toLowerCase();
+    if (!STATUS_VALUES.has(status)) throw new Error("INPUT_Statut Album invalide.");
+    patch.status = status;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(input, "year")) {
+    if (input.year === null || input.year === "") patch.year = null;
+    else {
+      const year = Number(input.year);
+      if (!Number.isInteger(year) || year < 1000 || year > 9999) throw new Error("INPUT_Année Album invalide.");
+      patch.year = year;
+    }
+  }
+
+  if (Object.prototype.hasOwnProperty.call(input, "releaseDate")) {
+    if (input.releaseDate === null || String(input.releaseDate || "").trim() === "") patch.releaseDate = null;
+    else {
+      const releaseDate = String(input.releaseDate).trim();
+      if (!Number.isFinite(Date.parse(releaseDate))) throw new Error("INPUT_Date de sortie Album invalide.");
+      patch.releaseDate = releaseDate;
+    }
+  }
+
+  for (const field of ["accent", "accent2"]) {
+    if (!Object.prototype.hasOwnProperty.call(input, field)) continue;
+    if (input[field] === null || String(input[field] || "").trim() === "") {
+      patch[field] = null;
+      continue;
+    }
+    const color = normalizeColor(input[field]);
+    if (!color) throw new Error("INPUT_Couleur Album invalide: " + field + ".");
+    patch[field] = color;
+  }
+
+  for (const field of ["description", "heading"]) {
     if (Object.prototype.hasOwnProperty.call(input, field)) patch[field] = input[field];
   }
-  if (Object.prototype.hasOwnProperty.call(patch, "title") && !String(patch.title || "").trim()) {
-    throw new Error("INPUT_Le titre Album est requis.");
-  }
+
   return patch;
 }
 
