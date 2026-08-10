@@ -5,14 +5,32 @@ Release: `phase-ux-c2-5-b-canonical-album-read-model-20260810`
 Cache: `shinobi-launchpad-v88`
 Safety: `safety/pre-c2-5-b-build88-20260810-2143`
 Feature branch: `feature/c2-5-b-canonical-album-read-model-build88`
+PR: `#193`
+Merge: `dd0a7e8c218ccba1d4693779d5c5ef16605292c6`
+Pages run: `31427116914` — SUCCESS
 
 ## Status
 
-**CANDIDATE — implementation branch.**
+**IMPLEMENTED + MERGED + GITHUB PAGES SUCCESS.**
 
-Build 87 / C2.5-A is REAL-USER VALIDATED and is the accepted production baseline for this slice.
+Build 87 / C2.5-A remains the real-user-validated behavioral baseline inherited by this release. Build 88 adds the C2.5-B Album read/projection foundation without reopening the validated player/mobile/media surfaces.
 
-The earlier Draft PR #184 is intentionally superseded as an implementation vehicle because it diverged heavily from current `main` after the Build 79→87 mobile/player work. Its Album design is reused selectively, not merged wholesale.
+The final PR head `f20991bcf5ae38c3b2a771280d882004c7341ba5` passed:
+
+- Validate Launchpad — `31427015869` — SUCCESS;
+- Validate Cloudflare Workers — `31427015881` — SUCCESS;
+- Validate Horizontal Overflow — `31427015882` — SUCCESS.
+
+Post-merge `main` validation also passed:
+
+- Validate Launchpad — `31427116242` — SUCCESS;
+- Validate Cloudflare Workers — `31427116737` — SUCCESS;
+- Validate Horizontal Overflow — `31427116820` — SUCCESS;
+- Deploy LaunchPAD to GitHub Pages — `31427116914` — SUCCESS.
+
+**No Cloudflare Worker was deployed and no production R2 object was mutated by C2.5-B.** The production private Worker therefore remains the previously validated Track Manager v5.16 / Studio bridge v1.8 deployment until a separate explicit backend deployment decision is made.
+
+The earlier Draft PR #184 is closed as **SUPERSEDED** because it was based on Build 79 and had diverged substantially from the Build 87 line. Its useful Album design was selectively rebuilt on the fresh Build 88 branch rather than rebased/merged wholesale.
 
 ## Goal
 
@@ -71,6 +89,8 @@ C2.5-B adds R2 Album manifest/asset readers and extends the private track-list r
 
 No Album POST / PUT / PATCH / DELETE route is introduced.
 
+The Worker source change is merged but remains **undeployed** at this checkpoint. This is intentional: source merge, Worker deployment and R2 mutation are separate states.
+
 ## `catalog/index.json` projection
 
 The catalog index remains `schemaVersion: 1`.
@@ -88,11 +108,13 @@ This is a rebuildable projection only. `albums/<id>/manifest.json` remains the p
 
 Only published canonical Albums are projected, and their `trackIds` are filtered to track ids already present in the published track projection.
 
+Because the C2.5-B Worker source is not deployed and no canonical Album exists in production, no production `catalog/index.json` mutation occurred during this slice.
+
 ## Browser fallback behavior
 
 LaunchPAD can hydrate an optional `albums[]` projection if one appears in the existing catalog payload. If absent, behavior remains based on the current hardcoded Albums.
 
-This means Build 88 remains compatible with today's production payload, where canonical Albums do not yet exist.
+This keeps Build 88 compatible with today's production payload, where canonical Albums do not yet exist.
 
 ## Singles
 
@@ -131,10 +153,14 @@ Build 88 does NOT:
 - absence of Album write/delete routes;
 - absence of public canonical Album cutover.
 
-## Promotion policy
+Historical Build 87 and master-spec guards were also made ancestry-safe so later builds preserve those protections without freezing the current release number forever.
 
-Build 88 must pass full CI before Ready/merge.
+## Next roadmap boundary
 
-A merge does **not** authorize an admin Worker deployment. Worker deployment remains a distinct explicit step because the code contains new private read/projection capability.
+C2.5-B implementation is complete at the code/read-model layer.
 
-C2.5-C guarded Album writes requires separate implementation, documentation, CI and authorization.
+**Next: C2.5-C — guarded Album writes / membership / order / assets.**
+
+C2.5-C is the first slice that intentionally introduces a production-capable Album write surface. It requires a separate safety checkpoint, versioning, tests, PR/CI and explicit deployment/mutation discipline.
+
+C3 SonicTrace remains suspended during C2.5. Final PHASE UX checkpoint remains NOT CREATED. Phase 7 remains NOT STARTED.
