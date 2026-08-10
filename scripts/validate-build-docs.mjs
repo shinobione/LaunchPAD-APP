@@ -41,6 +41,10 @@ const candidateDocs = new Map([
   [
     'phase-ux-c2-5-a-mobile-player-ui-polish-20260810',
     'docs/PHASE-UX-C2-5-A-BUILD86-MOBILE-PLAYER-UI-POLISH.md'
+  ],
+  [
+    'phase-ux-c2-5-a-global-touch-polish-20260810',
+    'docs/PHASE-UX-C2-5-A-BUILD87-GLOBAL-TOUCH-POLISH.md'
   ]
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
