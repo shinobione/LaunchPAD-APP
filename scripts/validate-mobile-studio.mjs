@@ -17,7 +17,7 @@ for (const required of [
   'centerElementInScrollContainer',
   'resetMobileTrackPanelScroll',
   "trackPanel.scrollTo({ top: 0, left: 0, behavior: 'auto' })",
-  "openTrackButton.textContent = 'Open track →'",
+  "button.textContent = 'Open track →'",
   "routeToHash({ type: 'track', id: track.id })",
   'setStudioMode(false, { restoreScroll: false })',
   '{ recenter: false }'
