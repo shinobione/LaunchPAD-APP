@@ -149,12 +149,12 @@ for (const forbiddenCanvasRecovery of [
   "window.addEventListener('pageshow'",
   "document.addEventListener('visibilitychange'"
 ]) {
-  assert.ok(!lyricsStudioMedia.includes(forbiddenCanvasRecovery), `Build 85 must keep Lyrics Studio under one native-loop owner: ${forbiddenCanvasRecovery}`);
+  assert.ok(!lyricsStudioMedia.includes(forbiddenCanvasRecovery), `Build 86 must keep Lyrics Studio under one native-loop owner: ${forbiddenCanvasRecovery}`);
 }
 const mobilePanelStart = lyricsStudioMedia.indexOf('function setMobilePanelCollapsed(');
 const mobilePanelEnd = lyricsStudioMedia.indexOf('\n  function setCanvasButtonState', mobilePanelStart);
-assert.ok(mobilePanelStart >= 0 && mobilePanelEnd > mobilePanelStart, 'Build 84/85 mobile panel transition is missing.');
-assert.ok(!lyricsStudioMedia.slice(mobilePanelStart, mobilePanelEnd).includes('playCanvas('), 'Build 84/85 Show Track must never touch Canvas playback.');
+assert.ok(mobilePanelStart >= 0 && mobilePanelEnd > mobilePanelStart, 'Build 84+ mobile panel transition is missing.');
+assert.ok(!lyricsStudioMedia.slice(mobilePanelStart, mobilePanelEnd).includes('playCanvas('), 'Build 84+ Show Track must never touch Canvas playback.');
 
 const loopParity = read('js/features/studio-loop-parity-v85.js');
 includesAll(loopParity, [
@@ -167,7 +167,7 @@ includesAll(loopParity, [
   "video.addEventListener('playing'",
   "attributeFilter: ['poster']",
   "button.textContent = 'Track page →'"
-], 'Build 85 passive Studio loop parity');
+], 'Build 85 passive Studio loop parity ancestry');
 for (const forbiddenParityOwnership of ['.play(', '.pause(', '.load(', '.currentTime', '.src =']) {
   assert.ok(!loopParity.includes(forbiddenParityOwnership), `Build 85 loop parity must remain passive: ${forbiddenParityOwnership}`);
 }
@@ -207,9 +207,21 @@ includesAll(mobileStudioCss, [
   'width:36px',
   'height:64px'
 ], 'Build 84 Queue stacking and stable mobile Show Track Canvas geometry');
-assert.ok(!mobileStudioCss.includes('grid-template-columns:minmax(92px,116px) minmax(0,1fr)'), 'Build 84/85 must not enlarge the mobile Canvas surface on Show Track.');
+assert.ok(!mobileStudioCss.includes('grid-template-columns:minmax(92px,116px) minmax(0,1fr)'), 'Build 84+ must not enlarge the mobile Canvas surface on Show Track.');
 const loopParityCss = read('css/studio-loop-parity-v85.css');
-includesAll(loopParityCss, ['.lyrics-mobile-track-open{', 'width:auto!important', 'justify-self:end!important'], 'Build 85 compact Track page action');
+includesAll(loopParityCss, ['.lyrics-mobile-track-open{', 'width:auto!important', 'justify-self:end!important'], 'Build 85 compact Track page action ancestry');
+
+const mobilePlayerPolish = read('css/mobile-player-polish-v86.css');
+includesAll(mobilePlayerPolish, [
+  '.lyrics-track-panel .lyrics-cover-wrap',
+  'opacity:0!important',
+  'visibility:hidden!important',
+  '.lyrics-mobile-track-open',
+  'display:none!important',
+  '-webkit-tap-highlight-color:transparent!important',
+  '.mobile-favorite-trigger.active:hover',
+  '.mobile-queue-trigger:hover'
+], 'Build 86 mobile player/UI presentation guard');
 
 const libraryMemory = read('js/features/library-memory.js');
 includesAll(libraryMemory, [
@@ -217,8 +229,13 @@ includesAll(libraryMemory, [
   'raw.favorites.filter(hasTrackId)',
   'raw.history.filter(hasTrackId)',
   'if (!hasTrackId(trackId)) return',
-  'return hasTrackId(audio.dataset.trackId) ? audio.dataset.trackId : null'
-], 'Build 81 dynamic Favorites catalog membership');
+  'return hasTrackId(audio.dataset.trackId) ? audio.dataset.trackId : null',
+  'renderView();',
+  'decorateCards();',
+  'updateButtons();',
+  "button.classList.toggle('active', active)",
+  "button.setAttribute('aria-pressed', String(active))"
+], 'Build 86 dynamic Favorites state/visual refresh ancestry');
 assert.ok(!libraryMemory.includes('const trackIds = new Set('), 'Build 81 Favorites must not freeze the catalog membership at module load.');
 
 const uiController = read('js/features/ui/ui-controller.js');
@@ -385,14 +402,16 @@ includesAll(buildSource, [
   'installStudioLoopParity',
   "'css/studio-loop-parity-v85.css'",
   '`js/features/studio-loop-parity-v85.js?v=${encodeURIComponent(config.id)}`',
-  "script.dataset.studioLoopParityV85 = 'true'"
-], 'Build 85 loop parity bootstrap');
+  "script.dataset.studioLoopParityV85 = 'true'",
+  'installMobilePlayerPolish',
+  "'css/mobile-player-polish-v86.css'"
+], 'Build 86 loop parity + mobile player polish bootstrap');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260810-phase-ux-c2-5-a-studio-loop-parity-v85');
-assert.equal(build.cache, 'shinobi-launchpad-v85');
-assert.equal(build.display, '2026.08.10.85');
-assert.equal(build.release, 'phase-ux-c2-5-a-studio-loop-parity-20260810');
-assert.equal(build.revision, 'studio-loop-parity-1');
+assert.equal(build.id, '20260810-phase-ux-c2-5-a-mobile-player-ui-polish-v86');
+assert.equal(build.cache, 'shinobi-launchpad-v86');
+assert.equal(build.display, '2026.08.10.86');
+assert.equal(build.release, 'phase-ux-c2-5-a-mobile-player-ui-polish-20260810');
+assert.equal(build.revision, 'mobile-player-ui-polish-1');
 
-console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 85 preserves Build 84 layout-only Show Track and Build 83 single-owner native Lyrics Studio Canvas while passively matching Track Video preload/poster presentation for seamless Android loop boundaries. Track-page navigation remains explicit but visually demoted. Build 81 Track video teardown, Queue stacking/focus and dynamic Favorites membership, Build 77 single-commit seek and settled Lyrics autoscroll, supplied Moon/gold brand art and historical v5.10 bridge ancestry remain protected with ${presetCount} sanctioned Audio Lab presets.`);
+console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 86 preserves Build 85 passive Canvas parity and Build 84 layout-only Show Track while removing the physical cover underlay during active Canvas playback, hiding the temporary Track-page escape action and scoping Android touch/focus visuals to the actual mini-player controls. Build 81 Track video teardown, Queue stacking/focus and dynamic Favorites membership, Build 77 single-commit seek and settled Lyrics autoscroll, supplied Moon/gold brand art and historical v5.10 bridge ancestry remain protected with ${presetCount} sanctioned Audio Lab presets.`);
