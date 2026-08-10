@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260810-phase-ux-c2-5-a-mobile-player-ui-polish-v86',
-    cache: 'shinobi-launchpad-v86',
-    revision: 'mobile-player-ui-polish-1',
-    display: '2026.08.10.86',
-    release: 'phase-ux-c2-5-a-mobile-player-ui-polish-20260810'
+    id: '20260810-phase-ux-c2-5-a-global-touch-polish-v87',
+    cache: 'shinobi-launchpad-v87',
+    revision: 'global-touch-polish-1',
+    display: '2026.08.10.87',
+    release: 'phase-ux-c2-5-a-global-touch-polish-20260810'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
@@ -94,6 +94,14 @@
     );
   }
 
+  function installGlobalTouchPolish() {
+    ensureBuildStylesheet(
+      'link[data-global-touch-polish-v87]',
+      'css/global-touch-polish-v87.css',
+      'globalTouchPolishV87'
+    );
+  }
+
   function findEquivalentStylesheet(link, url) {
     return [...document.querySelectorAll('link[rel="stylesheet"]')].find(candidate => {
       if (candidate === link) return false;
@@ -128,6 +136,7 @@
   installStabilityStylesheet();
   installStudioLoopParity();
   installMobilePlayerPolish();
+  installGlobalTouchPolish();
 
   document.querySelectorAll('link[rel="stylesheet"]').forEach(normalizeStylesheet);
   new MutationObserver(records => {
