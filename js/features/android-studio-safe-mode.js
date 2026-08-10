@@ -11,6 +11,8 @@
   let safeButton = null;
   let safeShell = null;
   let safeImage = null;
+  let activationScheduled = false;
+  let activating = false;
 
   function studioView() {
     return document.querySelector('#view-lyrics');
@@ -102,23 +104,23 @@
   function disableOriginalCanvasAndReplaceControl() {
     const view = studioView();
     if (!view) return false;
+
     const originalShell = view.querySelector('.lyrics-studio-canvas:not(.android-studio-safe-canvas)');
-    const originalButton = view.querySelector('[data-lyrics-studio="canvas"]');
-    if (!originalButton) return false;
+    const originalButton = view.querySelector('[data-lyrics-studio="canvas"]:not([data-android-safe-control="true"])');
 
-    if (!originalButton.dataset.androidSafeDetached) {
-      if (originalButton.getAttribute('aria-pressed') !== 'false') {
-        internalCanvasToggle = true;
-        originalButton.click();
-        internalCanvasToggle = false;
-      }
-
+    if (originalButton) {
       const replacement = originalButton.cloneNode(true);
       replacement.dataset.androidSafeControl = 'true';
+      replacement.dataset.androidSafeDetached = 'true';
       replacement.removeAttribute('hidden');
       replacement.hidden = false;
-      originalButton.dataset.androidSafeDetached = 'true';
-      originalButton.replaceWith(replacement);
+
+      if (originalButton.getAttribute('aria-pressed') !== 'false') {
+        internalCanvasToggle = true;
+        try { originalButton.click(); } finally { internalCanvasToggle = false; }
+      }
+
+      if (originalButton.isConnected) originalButton.replaceWith(replacement);
       safeButton = replacement;
       safeButton.addEventListener('click', event => {
         event.preventDefault();
@@ -140,16 +142,31 @@
 
     ensureSafeShell();
     syncSafeArtwork();
-    return true;
+    return Boolean(safeButton || originalShell || safeShell);
   }
 
   function activate() {
-    if (!studioActive()) {
-      if (safeShell) safeShell.hidden = true;
-      return;
+    if (activating) return;
+    activating = true;
+    try {
+      if (!studioActive()) {
+        if (safeShell) safeShell.hidden = true;
+        return;
+      }
+      disableOriginalCanvasAndReplaceControl();
+      syncSafeArtwork();
+    } finally {
+      activating = false;
     }
-    disableOriginalCanvasAndReplaceControl();
-    syncSafeArtwork();
+  }
+
+  function scheduleActivate() {
+    if (activationScheduled) return;
+    activationScheduled = true;
+    queueMicrotask(() => {
+      activationScheduled = false;
+      activate();
+    });
   }
 
   function install() {
@@ -190,12 +207,12 @@
 
     new MutationObserver(() => {
       if (!studioActive()) return;
-      queueMicrotask(activate);
+      scheduleActivate();
     }).observe(document.documentElement, { childList: true, subtree: true });
 
-    window.addEventListener('shinobi:route-change', () => queueMicrotask(activate));
-    window.addEventListener('hashchange', () => queueMicrotask(activate));
-    window.addEventListener('pageshow', () => queueMicrotask(activate));
+    window.addEventListener('shinobi:route-change', scheduleActivate);
+    window.addEventListener('hashchange', scheduleActivate);
+    window.addEventListener('pageshow', scheduleActivate);
     activate();
   }
 
