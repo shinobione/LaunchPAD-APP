@@ -86,6 +86,30 @@ function loadAndPlay(video, panel) {
     });
 }
 
+function releaseVideoDecoder(video, panel) {
+  if (!video) return;
+  try { video.pause(); } catch {}
+  video.removeAttribute('src');
+  try { video.load(); } catch {}
+  syncLoopControl(panel, false);
+}
+
+function teardownTrackVideoRoute(view) {
+  if (!view || currentTrack()) return;
+  view.querySelectorAll('[data-track-video-panel]').forEach(panel => {
+    const trackId = panel.dataset.trackVideoPanel || '';
+    const { button, hero, video } = videoElements(view, trackId);
+    releaseVideoDecoder(video, panel);
+    panel.hidden = true;
+    hero?.classList.remove('has-track-canvas');
+    if (button) {
+      button.setAttribute('aria-expanded', 'false');
+      button.textContent = 'Video';
+      delete button.dataset.mobileReady;
+    }
+  });
+}
+
 function installStudioEntry(view, track) {
   if (!view || !track?.lyrics) return;
   const actions = view.querySelector('.track-detail-actions');
@@ -183,6 +207,7 @@ export function initTrackVideos() {
   function hydrate() {
     const track = currentTrack();
     if (track) installTrackEnhancements(view, track);
+    else teardownTrackVideoRoute(view);
   }
 
   function scheduleHydration() {
@@ -190,10 +215,17 @@ export function initTrackVideos() {
     hydrationTimer = window.setTimeout(hydrate, 0);
   }
 
+  function syncRouteVideoState() {
+    if (!currentTrack()) teardownTrackVideoRoute(view);
+    scheduleHydration();
+  }
+
   document.addEventListener('click', event => {
     const studioButton = event.target.closest?.('[data-track-studio-action]');
     if (studioButton) {
       event.preventDefault();
+      const { panel, video } = videoElements(view, studioButton.dataset.trackStudioAction);
+      releaseVideoDecoder(video, panel);
       openStudioRoute(studioButton.dataset.trackStudioAction);
       return;
     }
@@ -237,13 +269,15 @@ export function initTrackVideos() {
   }, true);
 
   new MutationObserver(scheduleHydration).observe(view, { childList: true, subtree: true });
-  window.addEventListener('hashchange', scheduleHydration);
-  window.addEventListener('popstate', scheduleHydration);
+  window.addEventListener('hashchange', syncRouteVideoState);
+  window.addEventListener('popstate', syncRouteVideoState);
+  window.addEventListener('shinobi:route-change', syncRouteVideoState);
 
   const mediaQuery = window.matchMedia(MOBILE_VIDEO_QUERY);
   mediaQuery.addEventListener?.('change', () => {
     const track = currentTrack();
     if (track) syncResponsiveVideo(view, track.id, { resetMobile: true });
+    else teardownTrackVideoRoute(view);
   });
 
   scheduleHydration();

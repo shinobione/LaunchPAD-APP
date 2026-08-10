@@ -44,9 +44,11 @@ const lyricsStudio = read('js/features/lyrics-studio.js');
 for (const required of [
   "const trackPanel = stage?.querySelector('.lyrics-track-panel')",
   'trackPanel.prepend(canvasShell)',
-  'canvasButton.hidden = !hasCanvas || !studioOpen'
+  'canvasButton.hidden = androidCanvasDisabled || !hasCanvas || !studioOpen',
+  'function androidMobileStudioCanvasDisabled()',
+  'const androidCanvasDisabled = androidMobileStudioCanvasDisabled()'
 ]) {
-  if (!lyricsStudio.includes(required)) fail(`Studio background video integration is missing ${required}.`);
+  if (!lyricsStudio.includes(required)) fail(`Studio background video integration/safe-disable is missing ${required}.`);
 }
 if (lyricsStudio.includes('stage.prepend(canvasShell)')) fail('Studio background video must live inside the existing track panel, not as a third stage column.');
 
@@ -55,4 +57,4 @@ for (const required of ["video: media('thick', 'video', 'video.mp4')","videoCont
   if (!fixture.includes(required)) fail(`CI cannot exercise the THICK video without ${required}.`);
 }
 
-console.log('Desktop Video Player is visible while mobile keeps its compact Video/Player toggle and bounded layout.');
+console.log('Desktop Video Player remains visible while Android mobile Studio disables its Canvas source and keeps the compact Track Video/Player route layout bounded.');

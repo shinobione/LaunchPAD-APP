@@ -5,9 +5,9 @@ const STORAGE_KEY = 'shinobi-launchpad-memory-v1';
 const HISTORY_LIMIT = 12;
 const VALID_REPEAT = new Set(['off', 'all', 'one']);
 const VALID_VISUALS = new Set(['orbital', 'circle', 'spectrum', 'constellation', 'vortex', 'pulse', 'nebula']);
-const trackIds = new Set(tracks.map(track => track.id));
 
 const clamp = (value, minimum, maximum) => Math.min(maximum, Math.max(minimum, value));
+const hasTrackId = trackId => typeof trackId === 'string' && getTrackIndex(trackId) >= 0;
 
 function escapeHtml(value) {
   return String(value)
@@ -34,16 +34,16 @@ function defaults() {
 function normalize(raw = {}) {
   const fallback = defaults();
   const favorites = Array.isArray(raw.favorites)
-    ? [...new Set(raw.favorites.filter(id => trackIds.has(id)))]
+    ? [...new Set(raw.favorites.filter(hasTrackId))]
     : fallback.favorites;
   const history = Array.isArray(raw.history)
-    ? [...new Set(raw.history.filter(id => trackIds.has(id)))].slice(0, HISTORY_LIMIT)
+    ? [...new Set(raw.history.filter(hasTrackId))].slice(0, HISTORY_LIMIT)
     : fallback.history;
 
   return {
     favorites,
     history,
-    lastTrackId: trackIds.has(raw.lastTrackId) ? raw.lastTrackId : null,
+    lastTrackId: hasTrackId(raw.lastTrackId) ? raw.lastTrackId : null,
     lastPosition: Number.isFinite(Number(raw.lastPosition)) ? Math.max(0, Number(raw.lastPosition)) : 0,
     volume: Number.isFinite(Number(raw.volume)) ? clamp(Number(raw.volume), 0, 1) : fallback.volume,
     shuffle: Boolean(raw.shuffle),
@@ -278,7 +278,7 @@ export function initLibraryMemory({ audio = document.querySelector('#audio') } =
   }
 
   function toggleFavorite(trackId) {
-    if (!trackIds.has(trackId)) return;
+    if (!hasTrackId(trackId)) return;
     state.favorites = isFavorite(trackId)
       ? state.favorites.filter(id => id !== trackId)
       : [trackId, ...state.favorites];
@@ -292,7 +292,7 @@ export function initLibraryMemory({ audio = document.querySelector('#audio') } =
   }
 
   function recordHistory(trackId) {
-    if (!trackIds.has(trackId)) return;
+    if (!hasTrackId(trackId)) return;
     state.history = [trackId, ...state.history.filter(id => id !== trackId)].slice(0, HISTORY_LIMIT);
     state.lastTrackId = trackId;
     save();
@@ -300,7 +300,7 @@ export function initLibraryMemory({ audio = document.querySelector('#audio') } =
   }
 
   function currentTrackId() {
-    return trackIds.has(audio.dataset.trackId) ? audio.dataset.trackId : null;
+    return hasTrackId(audio.dataset.trackId) ? audio.dataset.trackId : null;
   }
 
   function persistPosition(force = false) {
@@ -473,4 +473,3 @@ export function initLibraryMemory({ audio = document.querySelector('#audio') } =
     }
   };
 }
-

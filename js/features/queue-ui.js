@@ -58,13 +58,18 @@ export function createQueueUI({ tracks, queue, onSelect, onShareCurrent }) {
 
   let lastFocused = null;
 
+  function focusWithoutScroll(element) {
+    try { element?.focus?.({ preventScroll: true }); }
+    catch { element?.focus?.(); }
+  }
+
   function setOpen(open) {
     if (open) lastFocused = document.activeElement;
     panel.classList.toggle('open', open);
     panel.setAttribute('aria-hidden', String(!open));
     document.body.classList.toggle('queue-open', open);
-    if (open) panel.querySelector('[data-queue-action="close"]')?.focus();
-    else lastFocused?.focus?.();
+    if (open) focusWithoutScroll(panel.querySelector('[data-queue-action="close"]'));
+    else focusWithoutScroll(lastFocused);
   }
 
   function render(state) {
@@ -138,4 +143,3 @@ export function createQueueUI({ tracks, queue, onSelect, onShareCurrent }) {
   queue.subscribe(render);
   return { close: () => setOpen(false), render };
 }
-
