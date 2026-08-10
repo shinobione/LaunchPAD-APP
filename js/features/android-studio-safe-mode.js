@@ -11,8 +11,8 @@
   let safeButton = null;
   let safeShell = null;
   let safeImage = null;
-  let activationScheduled = false;
   let activating = false;
+  let activationGeneration = 0;
 
   function studioView() {
     return document.querySelector('#view-lyrics');
@@ -89,15 +89,22 @@
     const cover = document.querySelector('#lyrics-cover');
     const src = cover?.currentSrc || cover?.src || '';
     if (safeImage && src && safeImage.src !== src) safeImage.src = src;
+
     if (safeShell) {
-      safeShell.hidden = !safeEnabled || !studioActive();
-      safeShell.setAttribute('aria-hidden', String(safeShell.hidden));
+      const hidden = !safeEnabled || !studioActive();
+      if (safeShell.hidden !== hidden) safeShell.hidden = hidden;
+      const ariaHidden = String(hidden);
+      if (safeShell.getAttribute('aria-hidden') !== ariaHidden) safeShell.setAttribute('aria-hidden', ariaHidden);
     }
+
     if (safeButton) {
-      safeButton.setAttribute('aria-pressed', String(safeEnabled));
-      safeButton.classList.toggle('active', safeEnabled);
-      safeButton.textContent = safeEnabled ? 'Canvas on' : 'Canvas off';
-      safeButton.title = 'Android Studio uses a decoder-safe animated visual so audio playback remains authoritative.';
+      const pressed = String(safeEnabled);
+      if (safeButton.getAttribute('aria-pressed') !== pressed) safeButton.setAttribute('aria-pressed', pressed);
+      if (safeButton.classList.contains('active') !== safeEnabled) safeButton.classList.toggle('active', safeEnabled);
+      const label = safeEnabled ? 'Canvas on' : 'Canvas off';
+      if (safeButton.textContent !== label) safeButton.textContent = label;
+      const title = 'Android Studio uses a decoder-safe animated visual so audio playback remains authoritative.';
+      if (safeButton.title !== title) safeButton.title = title;
     }
   }
 
@@ -150,23 +157,24 @@
     activating = true;
     try {
       if (!studioActive()) {
-        if (safeShell) safeShell.hidden = true;
+        if (safeShell && !safeShell.hidden) safeShell.hidden = true;
         return;
       }
       disableOriginalCanvasAndReplaceControl();
-      syncSafeArtwork();
     } finally {
       activating = false;
     }
   }
 
-  function scheduleActivate() {
-    if (activationScheduled) return;
-    activationScheduled = true;
-    queueMicrotask(() => {
-      activationScheduled = false;
+  function scheduleActivationBurst() {
+    const generation = ++activationGeneration;
+    const run = () => {
+      if (generation !== activationGeneration) return;
       activate();
-    });
+    };
+
+    requestAnimationFrame(run);
+    for (const delay of [80, 220, 600, 1200]) setTimeout(run, delay);
   }
 
   function install() {
@@ -205,18 +213,15 @@
       });
     }
 
-    new MutationObserver(() => {
-      if (!studioActive()) return;
-      scheduleActivate();
-    }).observe(document.documentElement, { childList: true, subtree: true });
-
-    window.addEventListener('shinobi:route-change', scheduleActivate);
-    window.addEventListener('hashchange', scheduleActivate);
-    window.addEventListener('pageshow', scheduleActivate);
-    activate();
+    window.addEventListener('shinobi:route-change', scheduleActivationBurst);
+    window.addEventListener('hashchange', scheduleActivationBurst);
+    window.addEventListener('pageshow', scheduleActivationBurst);
+    scheduleActivationBurst();
   }
 
-  // build-config loads this guard from the fully parsed end-of-body bootstrap.
-  // Arm it immediately so the observer exists before app-main creates Studio controls.
+  // Build 80 deliberately avoids a subtree MutationObserver. Build 79 proved that
+  // a global childList watcher can be re-triggered by the safe UI's own DOM writes.
+  // Route/page lifecycle events plus a finite activation burst cover asynchronous
+  // Studio rendering without creating an unbounded observer -> mutation feedback loop.
   install();
 })();
