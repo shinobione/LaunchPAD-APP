@@ -417,3 +417,60 @@ tests/                        Browser regression fixtures
 docs/                         Operational and architecture documentation
 .github/workflows/            CI and deployment workflows
 ```
+
+Useful documents:
+
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — runtime/module structure
+- [`CHANGELOG.md`](CHANGELOG.md) — recent public build history
+- [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) — canonical hosting/deployment topology
+- [`docs/SHINOBIWAN-STUDIO-CONTRACT.md`](docs/SHINOBIWAN-STUDIO-CONTRACT.md) — Studio integration contract
+- [`docs/STUDIO-VALIDATION-CORS-HOTFIX.md`](docs/STUDIO-VALIDATION-CORS-HOTFIX.md) — v5.10 browser validation transport hotfix
+- [`docs/STUDIO-METADATA-WRITE.md`](docs/STUDIO-METADATA-WRITE.md) — v5.11 metadata write contract
+- [`docs/STUDIO-LYRICS-WRITE.md`](docs/STUDIO-LYRICS-WRITE.md) — v5.12 canonical lyrics contract
+- [`docs/STUDIO-PHASE4-OPERATIONS.md`](docs/STUDIO-PHASE4-OPERATIONS.md) — v5.13 final Phase 4 operational contract
+- [`docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md`](docs/PHASE-UX-C2-5-A-ALBUMS-SCALABILITY.md) — Build 68 C2.5-A scalable Albums baseline
+- [`docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md`](docs/PHASE-UX-C2-5-A-ALBUM-FOCUS-ERA-QUEUE.md) — Build 69 Album Focus + virtual Era queue refinement
+- [`docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md`](docs/PHASE-UX-C2-5-A-MOBILE-ALBUM-FOCUS-HOTFIX.md) — Build 70 narrow-screen viewport follow-up
+- [`docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md`](docs/PHASE-UX-C2-5-A-ERA-PLAY-MOBILE.md) — Build 71 explicit Era playback + initial mobile discoverability pass
+- [`docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md`](docs/PHASE-UX-C2-5-A-BUILD72-ERA-BRAND-ART.md) — Build 72 real-user Era affordance correction + supplied brand artwork
+- [`docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md`](docs/PHASE-UX-C2-5-A-BUILD73-MOBILE-MEDIA-STABILITY.md) — Build 73 Android/mobile audio-clock and first video-loop stability pass
+- [`docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD74-VIDEO-LOOP-ISOLATION.md) — Build 74 terminal-only Track Video recovery and protected-audio isolation
+- [`docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md`](docs/PHASE-UX-C2-5-A-BUILD75-CANVAS-SINGLE-OWNER.md) — Build 75 Lyrics Studio Canvas ownership isolation
+- [`docs/PHASE-UX-C2-5-A-BUILD76-CANVAS-TRANSPORT-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD76-CANVAS-TRANSPORT-ISOLATION.md) — Build 76 local-Blob Canvas transport isolation and audio-seek priority
+- [`docs/PHASE-UX-C2-5-A-BUILD77-MOBILE-SEEK-CANVAS.md`](docs/PHASE-UX-C2-5-A-BUILD77-MOBILE-SEEK-CANVAS.md) — Build 77 single-commit seek, settled Lyrics auto-scroll and audio-first local Canvas recovery
+- [`docs/PHASE-UX-C2-5-A-BUILD78-ANDROID-STUDIO-SAFE.md`](docs/PHASE-UX-C2-5-A-BUILD78-ANDROID-STUDIO-SAFE.md) — Build 78 Android Studio decoder-safe visual fallback + timestamp-line seek guard
+- [`docs/PHASE-UX-C2-5-A-BUILD79-ANDROID-STUDIO-RECURSION.md`](docs/PHASE-UX-C2-5-A-BUILD79-ANDROID-STUDIO-RECURSION.md) — Build 79 Android Studio safe-control recursion/crash hotfix
+- [`docs/PHASE-UX-C2-5-A-BUILD80-ANDROID-STUDIO-PASSIVE-GUARD.md`](docs/PHASE-UX-C2-5-A-BUILD80-ANDROID-STUDIO-PASSIVE-GUARD.md) — Build 80 passive Android Studio guard
+- [`docs/PHASE-UX-C2-5-A-BUILD81-ANDROID-STUDIO-MEDIA-TEARDOWN.md`](docs/PHASE-UX-C2-5-A-BUILD81-ANDROID-STUDIO-MEDIA-TEARDOWN.md) — Build 81 media teardown / queue / favorites follow-up
+- [`docs/PHASE-UX-C2-5-A-BUILD82-MINI-PLAYER-ACTION-ROUTING.md`](docs/PHASE-UX-C2-5-A-BUILD82-MINI-PLAYER-ACTION-ROUTING.md) — Build 82 mini-player action routing pass
+- [`docs/PHASE-UX-C2-5-A-BUILD83-SURGICAL-ROLLBACK.md`](docs/PHASE-UX-C2-5-A-BUILD83-SURGICAL-ROLLBACK.md) — Build 83 surgical rollback to a single-owner Studio Canvas
+- [`docs/PHASE-UX-C2-5-A-BUILD84-SHOW-TRACK-ISOLATION.md`](docs/PHASE-UX-C2-5-A-BUILD84-SHOW-TRACK-ISOLATION.md) — Build 84 Show Track isolation
+- [`docs/PHASE-UX-C2-5-A-BUILD85-STUDIO-LOOP-PARITY.md`](docs/PHASE-UX-C2-5-A-BUILD85-STUDIO-LOOP-PARITY.md) — Build 85 passive Studio loop parity
+- [`docs/PHASE-UX-C2-5-A-BUILD86-MOBILE-PLAYER-UI-POLISH.md`](docs/PHASE-UX-C2-5-A-BUILD86-MOBILE-PLAYER-UI-POLISH.md) — Build 86 mobile player UI/action polish
+- [`docs/PHASE-UX-C2-5-A-BUILD87-GLOBAL-TOUCH-POLISH.md`](docs/PHASE-UX-C2-5-A-BUILD87-GLOBAL-TOUCH-POLISH.md) — Build 87 global touch polish, real-user validated
+- [`docs/PHASE-UX-C2-5-A-BUILD87-REAL-USER-SMOKE-PASS.md`](docs/PHASE-UX-C2-5-A-BUILD87-REAL-USER-SMOKE-PASS.md) — explicit Build 87 smoke closeout
+- [`docs/PHASE-UX-C2-5-B-BUILD88-CANONICAL-ALBUM-READ-MODEL.md`](docs/PHASE-UX-C2-5-B-BUILD88-CANONICAL-ALBUM-READ-MODEL.md) — Build 88 C2.5-B merged contract
+- [`docs/PHASE-UX-C2-5-C-GUARDED-ALBUM-WRITES.md`](docs/PHASE-UX-C2-5-C-GUARDED-ALBUM-WRITES.md) — C2.5-C Track Manager 5.17 / Studio bridge 1.9 guarded-write contract
+- [`CHANGELOG-C2-5-C-TM5-17.md`](CHANGELOG-C2-5-C-TM5-17.md) — C2.5-C backend candidate changelog
+- [`RELEASE-CHECKLIST.md`](RELEASE-CHECKLIST.md) — safe release procedure
+- [`ROADMAP.md`](ROADMAP.md) — remaining consolidation/product work
+- [`cloudflare/README.md`](cloudflare/README.md) — Workers/R2 operations
+
+## Repository rules
+
+1. `main` is the only source of truth.
+2. Do not edit production code only in Cloudflare, GitHub Pages, Lovable or generated `dist/` output.
+3. Temporary feature/fix branches are disposable; named `safety/*` snapshots are rollback references and must not be developed on.
+4. Advance public application versions only in `js/build-config.js`; version private Worker/bridge contracts independently when public runtime does not change.
+5. Update living release documentation for a new public runtime build; preserve historical phase/audit docs as snapshots instead of rewriting their history.
+6. Keep Worker deployment, web deployment and R2 catalog rebuild as separate explicit states.
+7. Spectrum remains the Audio Lab reference path; every visual effect must consume the real FFT feed rather than independent loop animation.
+8. Add Audio Lab presets one at a time, with desktop and mobile budgets defined before merge.
+9. Prefer deterministic, signal-derived geometry over random particles when a visual must remain cheap on mobile.
+10. Continuous movement and transient impact must stay separate: groove energy owns travel; detected onset creates a post-pose impact with reserved visual headroom.
+11. Motion memory/kinetic phase must stop when the real audio target disappears and must never become an autonomous screensaver.
+12. New visual families should prefer distinct composition/motion language rather than repeating radial center-object patterns.
+13. Historical compatibility files still wired into boot/deployment are removed only through dedicated refactors, not cosmetic cleanup.
+14. Studio integration must remain additive and reversible: capabilities are opened one narrowly versioned route at a time, with fallback retained until replacement paths are proven.
+15. Phase 6 is complete and checkpointed. Any work beyond the PHASE UX closeout must remain separately versioned, reversible and explicitly authorized.
+16. Canonical Album creation/mutation remains behind Track Manager; Studio must never write Album R2 objects directly.
