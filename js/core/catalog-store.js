@@ -1,10 +1,6 @@
 import { albums as sourceAlbums, journeyEras as sourceJourneyEras } from '../catalog.js';
-import {
-  CANONICAL_ALBUM_STATUSES,
-  CANONICAL_ALBUM_TYPES,
-  normalizeAlbumSchema,
-  normalizeTrackSchema
-} from './catalog-schema.js';
+import { normalizeTrackSchema } from './catalog-schema.js';
+import { CANONICAL_ALBUM_STATUSES, CANONICAL_ALBUM_TYPES, normalizeAlbumSchema } from './catalog-schema.js';
 
 const ALLOWED_LANGUAGES = ['French', 'English', 'Vietnamese'];
 const ERA_QUEUE_PREFIX = 'era:';
