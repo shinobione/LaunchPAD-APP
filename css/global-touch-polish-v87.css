@@ -1,0 +1,35 @@
+/* Build 87 — global touch highlight polish.
+   Presentation-only layer: remove Chromium/WebKit touch selection rectangles
+   across LaunchPAD without removing keyboard focus-visible affordances. */
+
+@media (hover:none), (pointer:coarse){
+  /*
+    Android/Chromium can paint a large tap-highlight rectangle around the
+    nearest clickable/focusable ancestor. Suppress that native paint globally;
+    component hover/active/pressed states remain owned by their existing CSS.
+  */
+  html,
+  body,
+  body *{
+    -webkit-tap-highlight-color:transparent!important;
+  }
+
+  /*
+    Pointer/touch focus should not add a second browser outline on top of the
+    app's component state. :focus-visible is deliberately excluded so keyboard
+    and assistive navigation keep their existing visible focus treatment.
+  */
+  body :where(
+    a,
+    button,
+    [role="button"],
+    [role="link"],
+    [tabindex],
+    summary,
+    input,
+    select,
+    textarea
+  ):focus:not(:focus-visible){
+    outline:none!important;
+  }
+}
