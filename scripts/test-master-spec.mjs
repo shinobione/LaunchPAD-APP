@@ -120,7 +120,7 @@ includesAll(lyricsStudioMedia, [
   "window.dispatchEvent(new CustomEvent('shinobi:seek-preview'",
   "window.dispatchEvent(new CustomEvent('shinobi:seek-commit'",
   'lyrics-mobile-track-open',
-  "openTrackButton.textContent = 'Open track →'",
+  "button.textContent = 'Open track →'",
   "routeToHash({ type: 'track', id: track.id })",
   'setStudioMode(false, { restoreScroll: false })',
   '{ recenter: false }'
