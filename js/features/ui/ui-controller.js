@@ -3,6 +3,7 @@ import { ensureStylesheet } from '../../core/assets.js';
 export function installExtendedUI() {
   ensureStylesheet('css/lyrics.css');
   ensureStylesheet('css/fixes-v2.css');
+  ensureStylesheet('css/player-routing-v83.css');
 
   const mainNav = document.querySelector('.main-nav');
   const albumsNav = mainNav?.querySelector('[data-view="analytics"]');
@@ -91,10 +92,37 @@ export function installExtendedUI() {
 
   const currentTrack = document.querySelector('.current-track');
   if (currentTrack) {
-    currentTrack.dataset.viewTarget = 'lyrics';
-    currentTrack.setAttribute('role', 'button');
-    currentTrack.setAttribute('tabindex', '0');
-    currentTrack.setAttribute('aria-label', 'Show lyrics for the current track');
+    // Build 83: the mini-player container is no longer a navigation target.
+    // Only the cover/title identity surface owns the Lyrics/Studio route so
+    // sibling Favorite/Queue controls remain naturally independent.
+    currentTrack.removeAttribute('data-view-target');
+    currentTrack.removeAttribute('role');
+    currentTrack.removeAttribute('tabindex');
+    currentTrack.removeAttribute('aria-label');
+
+    let identity = currentTrack.querySelector('.current-track-identity');
+    if (!identity) {
+      const cover = currentTrack.querySelector('#player-cover');
+      const title = currentTrack.querySelector('#player-title');
+      const copy = title?.parentElement;
+
+      identity = document.createElement('div');
+      identity.className = 'current-track-identity';
+      identity.dataset.viewTarget = 'lyrics';
+      identity.setAttribute('role', 'button');
+      identity.setAttribute('tabindex', '0');
+      identity.setAttribute('aria-label', 'Show lyrics for the current track');
+
+      currentTrack.insertBefore(identity, currentTrack.firstChild);
+      if (cover) identity.appendChild(cover);
+      if (copy && copy !== identity) identity.appendChild(copy);
+
+      identity.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        identity.click();
+      });
+    }
   }
 
   if (!document.querySelector('#view-lyrics')) {

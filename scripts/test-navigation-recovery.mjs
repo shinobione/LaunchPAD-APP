@@ -39,21 +39,33 @@ assert.ok(router.includes("if (route.type === 'track')"), 'Dedicated track route
 assert.ok(router.includes('announceRoute(route);'), 'Track routes must still announce route state.');
 assert.ok(!router.includes('isPassiveTrackDetail'), 'The generic router must not depend on the old passive-track history gate.');
 
-const mobilePolish = fs.readFileSync('js/ui-polish-v62.js', 'utf8');
+const uiController = fs.readFileSync('js/features/ui/ui-controller.js', 'utf8');
 for (const required of [
-  'const INTERACTIVE_SELECTOR =',
-  'function nestedInteractiveControl(target, entry)',
-  'control !== entry && entry.contains(control)',
-  'if (nestedInteractiveControl(event.target, entry)) return;'
+  "currentTrack.removeAttribute('data-view-target')",
+  "identity.className = 'current-track-identity'",
+  "identity.dataset.viewTarget = 'lyrics'",
+  "identity.setAttribute('role', 'button')",
+  "identity.setAttribute('tabindex', '0')"
 ]) {
-  assert.ok(mobilePolish.includes(required), `Mobile Lyrics routing must preserve nested player actions: ${required}.`);
+  assert.ok(uiController.includes(required), `Build 83 mini-player route boundary is missing ${required}.`);
 }
-const nestedActionGuard = mobilePolish.indexOf('if (nestedInteractiveControl(event.target, entry)) return;');
-const mobileRoutePreventDefault = mobilePolish.indexOf('event.preventDefault();');
 assert.ok(
-  nestedActionGuard >= 0 && mobileRoutePreventDefault > nestedActionGuard,
-  'Nested player controls must escape the mobile Lyrics capture router before it prevents/stops the click.'
+  !uiController.includes("currentTrack.dataset.viewTarget = 'lyrics'"),
+  'The full mini-player container must not become a Lyrics route target.'
 );
+
+const mobilePolish = fs.readFileSync('js/ui-polish-v62.js', 'utf8');
+for (const retired of ['INTERACTIVE_SELECTOR', 'nestedInteractiveControl', 'if (nestedInteractiveControl(event.target, entry)) return;']) {
+  assert.ok(!mobilePolish.includes(retired), `Build 82 nested-action workaround must stay retired: ${retired}.`);
+}
+assert.ok(
+  mobilePolish.includes('[data-view-target="lyrics"]'),
+  'Mobile Lyrics routing must still recognize explicit Lyrics route surfaces.'
+);
+
+const playerRouting = fs.readFileSync('css/player-routing-v83.css', 'utf8');
+assert.ok(playerRouting.includes('.current-track-identity{'), 'Mini-player identity route styling must remain present.');
+assert.ok(playerRouting.includes('.current-track-identity:focus-visible{'), 'Mini-player identity route must remain keyboard-visible.');
 
 const stability = fs.readFileSync('css/ui-stability-v39.css', 'utf8');
 assert.ok(stability.includes('body[data-viewed-track-theme] #view-track,'), 'Track detail outer frame suppression must remain enabled.');
@@ -62,7 +74,8 @@ assert.ok(stability.includes('.now-playing-card-badge-v39'), 'NOW PLAYING card a
 
 const worker = fs.readFileSync('sw.js', 'utf8');
 assert.ok(worker.includes("'./js/app-engine-recovery.js'"), 'The recovery bootstrap must be part of the PWA shell.');
+assert.ok(worker.includes("'./css/player-routing-v83.css'"), 'Build 83 mini-player routing styles must be part of the PWA shell.');
 assert.ok(worker.includes("url.pathname.endsWith('/js/app-engine-recovery.js')"), 'The recovery bootstrap must bypass stale caches.');
 assert.ok(worker.includes("fetch(request, { cache: 'no-store' })"), 'The recovery bootstrap must be fetched without cache reuse.');
 
-console.log(`Navigation renders dedicated track routes once, preserves nested mini-player actions, and keeps the runtime cache-safe under Build ${build.number}.`);
+console.log(`Navigation renders dedicated track routes once, isolates mini-player action controls structurally, and keeps the runtime cache-safe under Build ${build.number}.`);

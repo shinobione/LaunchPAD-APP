@@ -25,6 +25,10 @@ const candidateDocs = new Map([
   [
     'phase-ux-c2-5-a-mini-player-action-routing-20260810',
     'docs/PHASE-UX-C2-5-A-BUILD82-MINI-PLAYER-ACTION-ROUTING.md'
+  ],
+  [
+    'phase-ux-c2-5-a-surgical-rollback-20260810',
+    'docs/PHASE-UX-C2-5-A-BUILD83-SURGICAL-ROLLBACK.md'
   ]
 ]);
 const livingReleaseDocs = candidateDocs.has(release)

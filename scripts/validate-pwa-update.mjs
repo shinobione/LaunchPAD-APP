@@ -78,34 +78,46 @@ if (signal.includes('captureStream(') || signal.includes('createMediaStreamSourc
 
 const lyricsStudio = read('js/features/lyrics-studio.js');
 for (const required of [
-  "video.preload = 'auto'",
+  "video.preload = 'none'",
   "video.autoplay = false",
-  "video.loop = false",
+  'video.loop = true',
+  "video.setAttribute('loop', '')",
   "video.setAttribute('webkit-playsinline', '')",
-  "const response = await fetch(track.video",
-  'URL.createObjectURL(blob)',
-  "canvasVideo.setAttribute('data-transport', 'blob')",
-  "canvasVideo.addEventListener('canplay'",
-  "canvasVideo.addEventListener('ended'",
-  'CANVAS_LOCAL_RECOVERY_LIMIT',
+  'canvasVideo.src = canvasVideo.dataset.src',
+  'canvasVideo.load()',
+  "canvasVideo.addEventListener('playing'",
   'function installSingleCommitSeek()',
   "seek.addEventListener('input', preview, { capture: true })",
-  "seek.addEventListener('pointerup', commit, { capture: true })",
-  "audio.addEventListener('seeking'",
-  "audio.addEventListener('seeked'",
-  "audio.addEventListener('playing'",
-  "playCanvas('audio-playing')",
-  "document.addEventListener('visibilitychange'"
+  "seek.addEventListener('pointerup', commit, { capture: true })"
 ]) {
-  if (!lyricsStudio.includes(required)) fail(`Mobile Build 77 Canvas/seek resilience is missing ${required}.`);
+  if (!lyricsStudio.includes(required)) fail(`Mobile Build 83 native Canvas/single-commit resilience is missing ${required}.`);
 }
 for (const forbidden of [
   "video.setAttribute('autoplay', '')",
-  "video.setAttribute('loop', '')",
-  'function scheduleCanvasRetry',
-  "playCanvas('audio-seeked')"
+  'CANVAS_LOCAL_RECOVERY_LIMIT',
+  'scheduleLocalCanvasRecovery',
+  'restartLocalCanvas',
+  'prepareCanvasSource(',
+  'URL.createObjectURL',
+  "fetch(track.video",
+  "canvasVideo.addEventListener('ended'",
+  "canvasVideo.addEventListener('stalled'",
+  "canvasVideo.addEventListener('waiting'",
+  "audio.addEventListener('seeking'",
+  "audio.addEventListener('seeked'",
+  "playCanvas('audio-playing')",
+  'androidMobileStudioCanvasDisabled',
+  'MOBILE SAFE VISUAL'
 ]) {
-  if (lyricsStudio.includes(forbidden)) fail(`Build 77 Canvas/audio priority forbids ${forbidden}.`);
+  if (lyricsStudio.includes(forbidden)) fail(`Build 83 native Canvas ownership forbids ${forbidden}.`);
+}
+
+const smartCanvas = read('js/features/smart-canvas.js');
+if (!smartCanvas.includes("const CANVAS_SELECTOR = 'video.track-video-player';")) {
+  fail('Smart Canvas must stay scoped to Track Video after the Studio Canvas rollback.');
+}
+if (smartCanvas.includes("video.track-video-player, video.lyrics-studio-canvas-video")) {
+  fail('Smart Canvas must not register the Lyrics Studio video.');
 }
 
 const about = read('js/features/about/about-controller.js');
@@ -138,4 +150,4 @@ if (!visualRunner.includes('PWA UPDATE READY DEFER AUDIO LATER SESSION SINGLE RE
   fail('Browser regression coverage for the deduped PWA update prompt is not wired into CI.');
 }
 
-console.log(`PWA single-shot updates, decoded-buffer FFT, supplied About Moon art and Build 77 audio-first mobile Studio Canvas/seek resilience are valid under ${build.display}.`);
+console.log(`PWA updates, decoded-buffer FFT, supplied About Moon art and Build 83 single-owner native Lyrics Studio Canvas are valid under ${build.display}.`);

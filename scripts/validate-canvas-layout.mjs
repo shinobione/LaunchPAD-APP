@@ -44,17 +44,38 @@ const lyricsStudio = read('js/features/lyrics-studio.js');
 for (const required of [
   "const trackPanel = stage?.querySelector('.lyrics-track-panel')",
   'trackPanel.prepend(canvasShell)',
-  'canvasButton.hidden = androidCanvasDisabled || !hasCanvas || !studioOpen',
-  'function androidMobileStudioCanvasDisabled()',
-  'const androidCanvasDisabled = androidMobileStudioCanvasDisabled()'
+  'canvasButton.hidden = !hasCanvas || !studioOpen',
+  "video.loop = true",
+  "video.setAttribute('loop', '')",
+  "video.preload = 'none'",
+  'canvasVideo.src = canvasVideo.dataset.src'
 ]) {
-  if (!lyricsStudio.includes(required)) fail(`Studio background video integration/safe-disable is missing ${required}.`);
+  if (!lyricsStudio.includes(required)) fail(`Build 83 Studio native Canvas integration is missing ${required}.`);
 }
-if (lyricsStudio.includes('stage.prepend(canvasShell)')) fail('Studio background video must live inside the existing track panel, not as a third stage column.');
+for (const forbidden of [
+  'stage.prepend(canvasShell)',
+  'androidMobileStudioCanvasDisabled',
+  'androidCanvasDisabled',
+  'MOBILE SAFE VISUAL',
+  'URL.createObjectURL',
+  "fetch(track.video",
+  "canvasVideo.addEventListener('ended'",
+  "canvasVideo.addEventListener('stalled'"
+]) {
+  if (lyricsStudio.includes(forbidden)) fail(`Build 83 Studio Canvas must not restore rejected ownership/layout path: ${forbidden}.`);
+}
+
+const smartCanvas = read('js/features/smart-canvas.js');
+if (!smartCanvas.includes("const CANVAS_SELECTOR = 'video.track-video-player';")) {
+  fail('Smart Canvas must remain Track-Video-only.');
+}
+if (smartCanvas.includes('video.lyrics-studio-canvas-video')) {
+  fail('Smart Canvas must not own or release the Studio Canvas.');
+}
 
 const fixture = read('js/catalog-fixture.js');
 for (const required of ["video: media('thick', 'video', 'video.mp4')","videoContentType: 'video/mp4'","videoFilename: 'video.mp4'"]) {
   if (!fixture.includes(required)) fail(`CI cannot exercise the THICK video without ${required}.`);
 }
 
-console.log('Desktop Video Player remains visible while Android mobile Studio disables its Canvas source and keeps the compact Track Video/Player route layout bounded.');
+console.log('Desktop Track Video remains bounded while Build 83 restores a single-owner native-loop Lyrics Studio Canvas inside the existing track panel.');

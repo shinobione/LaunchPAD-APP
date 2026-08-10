@@ -99,52 +99,57 @@ for (const forbiddenMediaRecovery of [
   'video.load()', "recoverLoop('boundary')", "video.addEventListener('stalled'", "video.addEventListener('waiting'",
   "video.track-video-player, video.lyrics-studio-canvas-video"
 ]) {
-  assert.ok(!feature11Media.includes(forbiddenMediaRecovery), `Build 77 must not reintroduce protected-media loop churn or cross-own Lyrics Studio Canvas: ${forbiddenMediaRecovery}`);
+  assert.ok(!feature11Media.includes(forbiddenMediaRecovery), `Track Video recovery must not reintroduce protected-media reload/pre-boundary/cross-owner churn: ${forbiddenMediaRecovery}`);
 }
 
 const lyricsStudioMedia = read('js/features/lyrics-studio.js');
 includesAll(lyricsStudioMedia, [
   "video.autoplay = false",
-  "video.loop = false",
-  "const response = await fetch(track.video",
-  "cache: 'force-cache'",
-  'const blob = await response.blob()',
-  'URL.createObjectURL(blob)',
-  'URL.revokeObjectURL(canvasObjectUrl)',
-  "canvasVideo.setAttribute('data-transport', 'blob')",
-  'CANVAS_LOCAL_RECOVERY_LIMIT',
-  'function scheduleLocalCanvasRecovery',
-  "canvasVideo.addEventListener('ended'",
-  "playCanvas('local-loop')",
+  'video.loop = true',
+  "video.setAttribute('loop', '')",
+  "video.preload = 'none'",
+  'canvasVideo.src = canvasVideo.dataset.src',
+  'canvasVideo.load()',
+  'canvasVideo.play()',
+  "canvasVideo.addEventListener('playing'",
+  "canvasVideo.addEventListener('error'",
   'function installSingleCommitSeek()',
   "seek.addEventListener('input', preview, { capture: true })",
   "seek.addEventListener('pointerup', commit, { capture: true })",
   'event.stopImmediatePropagation()',
+  "window.dispatchEvent(new CustomEvent('shinobi:seek-preview'",
+  "window.dispatchEvent(new CustomEvent('shinobi:seek-commit'"
+], 'Build 83 Lyrics Studio native-loop/single-commit contract');
+for (const forbiddenCanvasRecovery of [
+  'CANVAS_LOCAL_RECOVERY_LIMIT',
+  'CANVAS_LOCAL_STALL_GRACE_MS',
+  'prepareCanvasSource(',
+  'scheduleLocalCanvasRecovery',
+  'restartLocalCanvas',
+  'URL.createObjectURL',
+  'URL.revokeObjectURL',
+  "fetch(track.video",
+  "canvasVideo.setAttribute('data-transport', 'blob')",
+  "canvasVideo.addEventListener('ended'",
+  "canvasVideo.addEventListener('waiting'",
+  "canvasVideo.addEventListener('stalled'",
+  "playCanvas('local-loop')",
+  "playCanvas('audio-playing')",
   "audio.addEventListener('seeking'",
   "audio.addEventListener('seeked'",
   "audio.addEventListener('playing'",
-  "playCanvas('audio-playing')"
-], 'Build 77 Lyrics Studio Canvas/seek isolation ancestry');
-for (const forbiddenCanvasRecovery of [
-  'function scheduleCanvasRetry',
-  "playCanvas('audio-seeked')",
-  'canvasVideo.src = canvasVideo.dataset.src',
-  "video.setAttribute('loop', '')",
-  'video.loop = true'
+  'androidMobileStudioCanvasDisabled',
+  'androidCanvasDisabled',
+  'MOBILE SAFE VISUAL',
+  "window.addEventListener('pageshow'",
+  "document.addEventListener('visibilitychange'"
 ]) {
-  assert.ok(!lyricsStudioMedia.includes(forbiddenCanvasRecovery), `Build 77 must keep Canvas loops local/manual and protect audio-first seeking: ${forbiddenCanvasRecovery}`);
+  assert.ok(!lyricsStudioMedia.includes(forbiddenCanvasRecovery), `Build 83 must keep Lyrics Studio under one native-loop owner: ${forbiddenCanvasRecovery}`);
 }
 
-includesAll(lyricsStudioMedia, [
-  'function androidMobileStudioCanvasDisabled()',
-  "&& Boolean(window.matchMedia?.('(max-width:760px)')?.matches)",
-  'const androidCanvasDisabled = androidMobileStudioCanvasDisabled()',
-  'let canvasEnabled = !androidCanvasDisabled',
-  "canvasShell.dataset.playback = 'disabled'",
-  "setCanvasBadge('MOBILE SAFE VISUAL')",
-  'if (androidCanvasDisabled || !track?.video) return false',
-  'canvasButton.hidden = androidCanvasDisabled || !hasCanvas || !studioOpen'
-], 'Build 81 source-level Android Studio Canvas disable');
+const smartCanvas = read('js/features/smart-canvas.js');
+includesAll(smartCanvas, ["const CANVAS_SELECTOR = 'video.track-video-player';", 'new IntersectionObserver', "reason: 'another-canvas-started'"] , 'Build 83 Track-only Smart Canvas');
+assert.ok(!smartCanvas.includes('video.lyrics-studio-canvas-video'), 'Smart Canvas must never register the Lyrics Studio Canvas after Build 83.');
 
 const trackVideos = read('js/features/track-videos.js');
 includesAll(trackVideos, [
@@ -184,17 +189,24 @@ includesAll(libraryMemory, [
 ], 'Build 81 dynamic Favorites catalog membership');
 assert.ok(!libraryMemory.includes('const trackIds = new Set('), 'Build 81 Favorites must not freeze the catalog membership at module load.');
 
+const uiController = read('js/features/ui/ui-controller.js');
+includesAll(uiController, [
+  "ensureStylesheet('css/player-routing-v83.css')",
+  "currentTrack.removeAttribute('data-view-target')",
+  "identity.className = 'current-track-identity'",
+  "identity.dataset.viewTarget = 'lyrics'",
+  "identity.setAttribute('role', 'button')",
+  "identity.setAttribute('tabindex', '0')"
+], 'Build 83 mini-player identity route');
+assert.ok(!uiController.includes("currentTrack.dataset.viewTarget = 'lyrics'"), 'Build 83 must not route the full mini-player container to Lyrics.');
+
+const playerRoutingCss = read('css/player-routing-v83.css');
+includesAll(playerRoutingCss, ['.current-track-identity{', 'cursor:pointer', '.current-track-identity:focus-visible{'], 'Build 83 mini-player identity styling');
+
 const mobileLyricsRouting = read('js/ui-polish-v62.js');
-includesAll(mobileLyricsRouting, [
-  'const INTERACTIVE_SELECTOR =',
-  'function nestedInteractiveControl(target, entry)',
-  'control !== entry && entry.contains(control)',
-  'if (nestedInteractiveControl(event.target, entry)) return;'
-], 'Build 82 nested mini-player action routing');
-assert.ok(
-  mobileLyricsRouting.indexOf('if (nestedInteractiveControl(event.target, entry)) return;') < mobileLyricsRouting.indexOf('event.preventDefault();'),
-  'Build 82 must release nested mini-player controls before mobile Lyrics routing consumes the click.'
-);
+for (const retiredWorkaround of ['INTERACTIVE_SELECTOR', 'nestedInteractiveControl', 'if (nestedInteractiveControl(event.target, entry)) return;']) {
+  assert.ok(!mobileLyricsRouting.includes(retiredWorkaround), `Build 82 workaround must stay retired after structural routing fix: ${retiredWorkaround}`);
+}
 
 const lyricsEngineMedia = read('js/features/lyrics/lyrics-engine.js');
 includesAll(lyricsEngineMedia, [
@@ -221,7 +233,7 @@ for (const forbiddenAndroidStudioMutation of [
   'audio.pause()',
   'audio.load()'
 ]) {
-  assert.ok(!androidStudioSafe.includes(forbiddenAndroidStudioMutation), `Build 81 Android Studio bootstrap must stay inert: ${forbiddenAndroidStudioMutation}`);
+  assert.ok(!androidStudioSafe.includes(forbiddenAndroidStudioMutation), `Android Studio bootstrap must stay inert: ${forbiddenAndroidStudioMutation}`);
 }
 
 // Audio Lab registry and sanctuary reference.
@@ -324,7 +336,7 @@ includesAll(signal, ['createDecodedSourceProxy', 'context.decodeAudioData(bytes.
 assert.ok(!signal.includes('captureStream('));
 assert.ok(!signal.includes('createMediaStreamSource('));
 
-includesAll(read('js/features/lyrics-studio.js'), ["video.setAttribute('webkit-playsinline', '')", "routeToHash({ type: 'studio', id: trackId })", "canvasVideo.addEventListener('canplay'"], 'Mobile Lyrics Studio');
+includesAll(read('js/features/lyrics-studio.js'), ["video.setAttribute('webkit-playsinline', '')", "routeToHash({ type: 'studio', id: trackId })", 'video.loop = true'], 'Mobile Lyrics Studio');
 includesAll(read('js/features/admin-access.js'), [
   'resolveLrcMakerAccess', 'https://shinobione.github.io/lrc-maker/', "label: 'LRC Maker'",
   'resolveSonicTraceAccess', 'https://shinobione.github.io/LM-IA-Analayse/', "label: 'SonicTrace'", "initials: 'ST'"
@@ -337,10 +349,10 @@ const worker = read('sw.js');
 includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260810-phase-ux-c2-5-a-mini-player-action-routing-v82');
-assert.equal(build.cache, 'shinobi-launchpad-v82');
-assert.equal(build.display, '2026.08.10.82');
-assert.equal(build.release, 'phase-ux-c2-5-a-mini-player-action-routing-20260810');
-assert.equal(build.revision, 'mini-player-action-routing-1');
+assert.equal(build.id, '20260810-phase-ux-c2-5-a-surgical-rollback-v83');
+assert.equal(build.cache, 'shinobi-launchpad-v83');
+assert.equal(build.display, '2026.08.10.83');
+assert.equal(build.release, 'phase-ux-c2-5-a-surgical-rollback-20260810');
+assert.equal(build.revision, 'surgical-rollback-1');
 
-console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 82 releases nested Favorite/Queue/transport controls from the mobile Lyrics capture router before it can force Studio navigation, while preserving Build 81 Android Canvas disable, Track video teardown, Queue stacking/focus and dynamic Favorites membership, Build 77 single-commit seek, prior media isolation ancestry, supplied Moon/gold brand art and historical v5.10 bridge ancestry with ${presetCount} sanctioned Audio Lab presets.`);
+console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 83 restores structural mini-player action isolation and a single-owner native Lyrics Studio Canvas loop while preserving Build 81 Track video teardown, Queue stacking/focus and dynamic Favorites membership, Build 77 single-commit seek and settled Lyrics autoscroll, supplied Moon/gold brand art and historical v5.10 bridge ancestry with ${presetCount} sanctioned Audio Lab presets.`);

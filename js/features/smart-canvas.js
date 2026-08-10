@@ -1,4 +1,4 @@
-const CANVAS_SELECTOR = 'video.track-video-player, video.lyrics-studio-canvas-video';
+const CANVAS_SELECTOR = 'video.track-video-player';
 const ROUTE_CHANGE_EVENT = 'shinobi:route-change';
 const VIEWPORT_THRESHOLD = 0.18;
 
