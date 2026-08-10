@@ -5,13 +5,11 @@ const read = path => fs.readFileSync(new URL(`../${path}`, import.meta.url), 'ut
 
 const build = read('js/build-config.js');
 for (const token of [
-  "id: '20260810-phase-ux-c2-5-a-mobile-player-ui-polish-v86'",
-  "cache: 'shinobi-launchpad-v86'",
-  "display: '2026.08.10.86'",
-  "release: 'phase-ux-c2-5-a-mobile-player-ui-polish-20260810'",
+  'installMobilePlayerPolish',
   "'css/mobile-player-polish-v86.css'",
-  "data-mobile-player-polish-v86"
-]) assert.ok(build.includes(token), `Build 86 config missing: ${token}`);
+  "'mobilePlayerPolishV86'",
+  'data-mobile-player-polish-v86'
+]) assert.ok(build.includes(token), `Build 86 ancestry missing from current config: ${token}`);
 
 const css = read('css/mobile-player-polish-v86.css');
 for (const token of [
@@ -48,4 +46,4 @@ for (const token of [
   "button.setAttribute('aria-pressed', String(active))"
 ]) assert.ok(memory.includes(token), `Favorite state refresh contract missing: ${token}`);
 
-console.log('Build 86 mobile player/UI polish regression guards passed.');
+console.log('Build 86 mobile player/UI polish ancestry regression guards passed under the current LaunchPAD build.');
