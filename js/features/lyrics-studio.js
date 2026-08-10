@@ -4,16 +4,9 @@ import { parseRoute, routeToHash } from '../core/router.js';
 import { centerElementInScrollContainer } from './lyrics/lyrics-engine.js';
 
 const ROUTE_CHANGE_EVENT = 'shinobi:route-change';
-const CANVAS_LOCAL_STALL_GRACE_MS = 1400;
-const CANVAS_LOCAL_RECOVERY_LIMIT = 2;
 
 function currentTrack(audio) {
   return getTrack(audio?.dataset.trackId || '') || null;
-}
-
-function androidMobileStudioCanvasDisabled() {
-  return /Android/i.test(navigator.userAgent || '')
-    && Boolean(window.matchMedia?.('(max-width:760px)')?.matches);
 }
 
 function createStudioCanvas() {
@@ -28,12 +21,13 @@ function createStudioCanvas() {
   video.autoplay = false;
   video.muted = true;
   video.defaultMuted = true;
-  video.loop = false;
+  video.loop = true;
   video.playsInline = true;
-  video.preload = 'auto';
+  video.preload = 'none';
   video.disablePictureInPicture = true;
   video.disableRemotePlayback = true;
   video.setAttribute('muted', '');
+  video.setAttribute('loop', '');
   video.setAttribute('playsinline', '');
   video.setAttribute('webkit-playsinline', '');
   video.setAttribute('aria-label', 'Looping Spotify Canvas preview');
@@ -116,19 +110,9 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   trackPanel.prepend(panelToggle);
 
   const mobileStudioQuery = window.matchMedia?.('(max-width:760px)');
-  const androidCanvasDisabled = androidMobileStudioCanvasDisabled();
   let savedScrollY = 0;
-  let canvasEnabled = !androidCanvasDisabled
-    && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  let canvasEnabled = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   let mobilePanelCollapsed = false;
-  let canvasObjectUrl = '';
-  let canvasLoadPromise = null;
-  let canvasLoadTrackId = '';
-  let canvasAbortController = null;
-  let canvasFailedTrackId = '';
-  let canvasPausedForAudioSeek = false;
-  let canvasLocalRecoveryTimer = 0;
-  let canvasLocalRecoveryCount = 0;
   let seekPreviewTime = null;
   let lastCommittedSeekTime = Number.NaN;
   let lastCommittedSeekAt = 0;
@@ -165,7 +149,7 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
       resetMobileTrackPanelScroll();
       window.setTimeout(() => {
         resetMobileTrackPanelScroll();
-        if (canvasEnabled) playCanvas('panel-expanded');
+        if (canvasEnabled) playCanvas();
         if (recenter) centerActiveLyric();
       }, 0);
       return;
@@ -192,73 +176,33 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
     if (canvasBadge) canvasBadge.textContent = label;
   }
 
-  function clearCanvasLocalRecovery() {
-    window.clearTimeout(canvasLocalRecoveryTimer);
-    canvasLocalRecoveryTimer = 0;
-  }
-
-  function revokeCanvasObjectUrl() {
-    if (!canvasObjectUrl) return;
-    URL.revokeObjectURL(canvasObjectUrl);
-    canvasObjectUrl = '';
-  }
-
-  function resetCanvasTransport() {
-    canvasAbortController?.abort();
-    canvasAbortController = null;
-    canvasLoadPromise = null;
-    canvasLoadTrackId = '';
-    canvasFailedTrackId = '';
-    canvasPausedForAudioSeek = false;
-    canvasLocalRecoveryCount = 0;
-    clearCanvasLocalRecovery();
-    canvasVideo.pause();
-    canvasVideo.removeAttribute('src');
-    canvasVideo.removeAttribute('data-transport');
-    canvasVideo.load();
-    revokeCanvasObjectUrl();
-  }
-
   function pauseCanvas() {
-    clearCanvasLocalRecovery();
     canvasVideo.pause();
-    canvasPausedForAudioSeek = false;
     canvasShell.hidden = true;
     canvasShell.setAttribute('aria-hidden', 'true');
+    canvasShell.dataset.playback = 'idle';
     view.classList.remove('lyrics-studio-canvas-active');
-    canvasShell.dataset.playback = androidCanvasDisabled ? 'disabled' : 'idle';
-    setCanvasBadge(androidCanvasDisabled ? 'MOBILE SAFE VISUAL' : 'SPOTIFY CANVAS');
+    setCanvasBadge('SPOTIFY CANVAS');
   }
 
   function loadCanvas(track) {
-    if (androidCanvasDisabled) {
-      canvasShell.dataset.trackId = track?.id || '';
-      canvasVideo.dataset.src = '';
-      canvasVideo.removeAttribute('poster');
-      canvasShell.hidden = true;
-      canvasShell.setAttribute('aria-hidden', 'true');
-      canvasShell.dataset.playback = 'disabled';
-      view.classList.remove('lyrics-studio-canvas-active');
-      setCanvasBadge('MOBILE SAFE VISUAL');
-      return false;
-    }
-
     if (!track?.video) {
       canvasShell.dataset.trackId = '';
       canvasVideo.dataset.src = '';
+      canvasVideo.removeAttribute('src');
       canvasVideo.removeAttribute('poster');
-      resetCanvasTransport();
+      canvasVideo.load();
       pauseCanvas();
       return false;
     }
 
     const poster = track.fullCover || track.cover || '';
-    if (poster && canvasVideo.getAttribute('data-transport') !== 'blob') canvasVideo.poster = poster;
+    if (poster) canvasVideo.poster = poster;
 
-    const changed = canvasShell.dataset.trackId !== track.id
-      || canvasVideo.dataset.src !== track.video;
-    if (changed) {
-      resetCanvasTransport();
+    if (canvasShell.dataset.trackId !== track.id || canvasVideo.dataset.src !== track.video) {
+      canvasVideo.pause();
+      canvasVideo.removeAttribute('src');
+      canvasVideo.load();
       canvasShell.dataset.trackId = track.id;
       canvasVideo.dataset.src = track.video;
       canvasShell.dataset.playback = 'loading';
@@ -267,83 +211,7 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
     return true;
   }
 
-  function canRetryCanvas(reason) {
-    return reason === 'canvas-toggle'
-      || reason === 'studio-gesture'
-      || reason === 'pageshow'
-      || reason === 'visibilitychange';
-  }
-
-  async function prepareCanvasSource(track, reason = 'play') {
-    if (androidCanvasDisabled || !track?.video) return false;
-    if (canvasObjectUrl && canvasVideo.getAttribute('data-transport') === 'blob') return true;
-    if (canvasFailedTrackId === track.id && !canRetryCanvas(reason)) return false;
-    if (canvasLoadPromise && canvasLoadTrackId === track.id) return canvasLoadPromise;
-
-    canvasAbortController?.abort();
-    const controller = new AbortController();
-    canvasAbortController = controller;
-    canvasLoadTrackId = track.id;
-    canvasFailedTrackId = '';
-    canvasShell.dataset.playback = 'loading';
-    setCanvasBadge('CANVAS LOADING');
-
-    const loadPromise = (async () => {
-      const response = await fetch(track.video, {
-        method: 'GET',
-        mode: 'cors',
-        credentials: 'omit',
-        cache: 'force-cache',
-        signal: controller.signal
-      });
-      if (!response.ok) {
-        throw new Error(`Canvas fetch failed with HTTP ${response.status}.`);
-      }
-
-      const blob = await response.blob();
-      if (!blob.size) throw new Error('Canvas fetch returned an empty media body.');
-      if (controller.signal.aborted) return false;
-
-      const activeTrack = currentTrack(audio);
-      if (!activeTrack || activeTrack.id !== track.id || canvasShell.dataset.trackId !== track.id) {
-        return false;
-      }
-
-      revokeCanvasObjectUrl();
-      canvasObjectUrl = URL.createObjectURL(blob);
-      canvasVideo.src = canvasObjectUrl;
-      canvasVideo.setAttribute('data-transport', 'blob');
-      canvasVideo.muted = true;
-      canvasVideo.defaultMuted = true;
-      canvasVideo.loop = false;
-      canvasVideo.removeAttribute('loop');
-      canvasVideo.playsInline = true;
-      canvasShell.dataset.playback = 'ready';
-      return true;
-    })().catch(error => {
-      if (error?.name === 'AbortError') return false;
-      canvasFailedTrackId = track.id;
-      canvasShell.dataset.playback = 'error';
-      setCanvasBadge('CANVAS PREVIEW');
-      console.info('Studio Canvas local transport could not be prepared.', error);
-      return false;
-    }).finally(() => {
-      if (canvasLoadPromise === loadPromise) {
-        canvasLoadPromise = null;
-        canvasLoadTrackId = '';
-        if (canvasAbortController === controller) canvasAbortController = null;
-      }
-    });
-
-    canvasLoadPromise = loadPromise;
-    return loadPromise;
-  }
-
-  async function playCanvas(reason = 'play') {
-    if (androidCanvasDisabled) {
-      pauseCanvas();
-      return;
-    }
+  function playCanvas() {
     const track = currentTrack(audio);
     if (!loadCanvas(track) || !canvasEnabled || !view.classList.contains('lyrics-studio-mode')) {
       pauseCanvas();
@@ -353,16 +221,15 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
     canvasShell.hidden = false;
     canvasShell.setAttribute('aria-hidden', 'false');
     view.classList.add('lyrics-studio-canvas-active');
-    canvasShell.dataset.playbackReason = reason;
 
-    const ready = await prepareCanvasSource(track, reason);
-    if (!ready || !canvasEnabled || !view.classList.contains('lyrics-studio-mode')) return;
-    if (currentTrack(audio)?.id !== track.id || canvasPausedForAudioSeek) return;
+    if (!canvasVideo.src) {
+      canvasVideo.src = canvasVideo.dataset.src;
+      canvasVideo.load();
+    }
 
     canvasVideo.muted = true;
     canvasVideo.defaultMuted = true;
-    canvasVideo.loop = false;
-    canvasVideo.removeAttribute('loop');
+    canvasVideo.loop = true;
     canvasVideo.playsInline = true;
 
     const promise = canvasVideo.play();
@@ -373,74 +240,18 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
     }).catch(error => {
       canvasShell.dataset.playback = 'waiting';
       setCanvasBadge(canvasVideo.readyState >= 2 ? 'TAP FOR CANVAS' : 'CANVAS LOADING');
-      console.info('Studio Canvas playback is waiting for a user gesture.', error);
+      console.info('Studio Canvas playback awaits another user gesture.', error);
     });
-  }
-
-  async function restartLocalCanvas(reason = 'local-recovery') {
-    clearCanvasLocalRecovery();
-    if (androidCanvasDisabled) return false;
-    if (!canvasEnabled || canvasPausedForAudioSeek || canvasShell.hidden) return false;
-    if (!view.classList.contains('lyrics-studio-mode')) return false;
-    if (canvasVideo.getAttribute('data-transport') !== 'blob' || !canvasObjectUrl) return false;
-
-    if (canvasLocalRecoveryCount >= CANVAS_LOCAL_RECOVERY_LIMIT) {
-      canvasVideo.pause();
-      canvasVideo.removeAttribute('poster');
-      canvasShell.dataset.playback = 'degraded';
-      setCanvasBadge('CANVAS PAUSED');
-      return false;
-    }
-
-    canvasLocalRecoveryCount += 1;
-    canvasShell.dataset.playback = 'recovering';
-    setCanvasBadge('CANVAS RECOVERY');
-    canvasVideo.pause();
-    canvasVideo.removeAttribute('poster');
-
-    try {
-      canvasVideo.currentTime = 0;
-    } catch {}
-
-    try {
-      const result = canvasVideo.play();
-      if (result?.catch) await result;
-      canvasShell.dataset.playback = 'playing';
-      setCanvasBadge('SPOTIFY CANVAS');
-      return true;
-    } catch (error) {
-      canvasShell.dataset.playback = 'recovering';
-      console.info(`Studio Canvas local decoder recovery failed (${reason}).`, error);
-      if (canvasLocalRecoveryCount < CANVAS_LOCAL_RECOVERY_LIMIT) {
-        canvasVideo.load();
-        scheduleLocalCanvasRecovery('local-reload');
-      } else {
-        canvasShell.dataset.playback = 'degraded';
-        setCanvasBadge('CANVAS PAUSED');
-      }
-      return false;
-    }
-  }
-
-  function scheduleLocalCanvasRecovery(reason = 'local-stall') {
-    if (androidCanvasDisabled) return;
-    if (canvasLocalRecoveryTimer || canvasPausedForAudioSeek || canvasShell.hidden) return;
-    if (canvasVideo.getAttribute('data-transport') !== 'blob') return;
-    canvasLocalRecoveryTimer = window.setTimeout(() => {
-      canvasLocalRecoveryTimer = 0;
-      if (canvasShell.dataset.playback === 'playing' || canvasPausedForAudioSeek) return;
-      restartLocalCanvas(reason);
-    }, CANVAS_LOCAL_STALL_GRACE_MS);
   }
 
   function syncCanvasTrack() {
     const hasCanvas = loadCanvas(currentTrack(audio));
     const studioOpen = view.classList.contains('lyrics-studio-mode');
-    canvasButton.hidden = androidCanvasDisabled || !hasCanvas || !studioOpen;
+    canvasButton.hidden = !hasCanvas || !studioOpen;
     updateControlsLayout();
     setCanvasButtonState();
     updatePanelToggleLabel();
-    if (hasCanvas && studioOpen && canvasEnabled) playCanvas('track-sync');
+    if (hasCanvas && studioOpen && canvasEnabled) playCanvas();
     else pauseCanvas();
   }
 
@@ -611,11 +422,9 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
   });
 
   canvasButton.addEventListener('click', () => {
-    if (androidCanvasDisabled) return;
     canvasEnabled = !canvasEnabled;
-    if (canvasEnabled) canvasLocalRecoveryCount = 0;
     setCanvasButtonState();
-    if (canvasEnabled) playCanvas('canvas-toggle');
+    if (canvasEnabled) playCanvas();
     else pauseCanvas();
   });
 
@@ -623,48 +432,15 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
     setMobilePanelCollapsed(!trackPanel.classList.contains('lyrics-track-panel-collapsed'));
   });
 
-  canvasVideo.addEventListener('loadeddata', () => {
-    if (canvasVideo.getAttribute('data-transport') === 'blob') {
-      canvasVideo.removeAttribute('poster');
-      canvasShell.dataset.playback = 'ready';
-      setCanvasBadge('SPOTIFY CANVAS');
-    }
-  });
-  canvasVideo.addEventListener('canplay', () => {
-    if (canvasVideo.getAttribute('data-transport') === 'blob') {
-      canvasShell.dataset.playback = 'ready';
-    }
-  });
+  // Native loop is the sole Canvas loop owner. These listeners only expose
+  // presentation state; they never restart, seek, reload or recover the video.
   canvasVideo.addEventListener('playing', () => {
-    clearCanvasLocalRecovery();
-    canvasVideo.removeAttribute('poster');
     canvasShell.dataset.playback = 'playing';
     setCanvasBadge('SPOTIFY CANVAS');
   });
-  canvasVideo.addEventListener('ended', () => {
-    if (androidCanvasDisabled) return;
-    if (!canvasEnabled || canvasPausedForAudioSeek || canvasShell.hidden) return;
-    if (canvasVideo.getAttribute('data-transport') !== 'blob') return;
-    try { canvasVideo.currentTime = 0; } catch {}
-    playCanvas('local-loop');
-  });
-  canvasVideo.addEventListener('waiting', () => {
-    if (androidCanvasDisabled) return;
-    canvasShell.dataset.playback = 'buffering';
-    setCanvasBadge('CANVAS BUFFERING');
-    scheduleLocalCanvasRecovery('waiting');
-  });
-  canvasVideo.addEventListener('stalled', () => {
-    if (androidCanvasDisabled) return;
-    canvasShell.dataset.playback = 'stalled';
-    setCanvasBadge('CANVAS STALLED');
-    scheduleLocalCanvasRecovery('stalled');
-  });
   canvasVideo.addEventListener('error', () => {
-    if (androidCanvasDisabled) return;
     canvasShell.dataset.playback = 'error';
-    setCanvasBadge('CANVAS RECOVERY');
-    scheduleLocalCanvasRecovery('error');
+    setCanvasBadge('CANVAS PREVIEW');
   });
 
   document.addEventListener('keydown', event => {
@@ -672,11 +448,6 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
       navigateStudioMode(false);
     }
   });
-
-  view.addEventListener('pointerdown', () => {
-    if (androidCanvasDisabled) return;
-    if (canvasEnabled && !canvasShell.hidden && canvasVideo.paused && !canvasPausedForAudioSeek) playCanvas('studio-gesture');
-  }, { passive: true });
 
   const activeViewObserver = new MutationObserver(() => {
     if (!view.classList.contains('active')) {
@@ -696,32 +467,6 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
     }).observe(audio, {
       attributes: true,
       attributeFilter: ['data-track-id']
-    });
-
-    audio.addEventListener('seeking', () => {
-      if (androidCanvasDisabled) return;
-      if (canvasShell.hidden || canvasVideo.paused) return;
-      canvasPausedForAudioSeek = true;
-      clearCanvasLocalRecovery();
-      canvasVideo.pause();
-      canvasShell.dataset.playback = 'audio-seek';
-      setCanvasBadge('AUDIO SEEK');
-    });
-
-    audio.addEventListener('seeked', () => {
-      if (androidCanvasDisabled) return;
-      if (!canvasPausedForAudioSeek) return;
-      canvasShell.dataset.playback = 'audio-buffer';
-      setCanvasBadge(audio.paused ? 'CANVAS PAUSED' : 'AUDIO BUFFER');
-    });
-
-    audio.addEventListener('playing', () => {
-      if (androidCanvasDisabled) return;
-      if (!canvasPausedForAudioSeek) return;
-      canvasPausedForAudioSeek = false;
-      if (canvasEnabled && view.classList.contains('lyrics-studio-mode') && !canvasShell.hidden) {
-        playCanvas('audio-playing');
-      }
     });
   }
 
@@ -747,24 +492,8 @@ export function initLyricsStudio({ audio = document.querySelector('#audio') } = 
     window.setTimeout(syncStudioRoute, 0);
   });
 
-  window.addEventListener('pageshow', () => {
-    if (androidCanvasDisabled) return;
-    if (canvasEnabled && view.classList.contains('lyrics-studio-mode') && !canvasPausedForAudioSeek) playCanvas('pageshow');
-  });
-
-  document.addEventListener('visibilitychange', () => {
-    if (androidCanvasDisabled) return;
-    if (document.hidden) {
-      clearCanvasLocalRecovery();
-      canvasVideo.pause();
-      return;
-    }
-    if (canvasEnabled && view.classList.contains('lyrics-studio-mode') && !canvasPausedForAudioSeek) playCanvas('visibilitychange');
-  });
-
   window.addEventListener('pagehide', () => {
     pauseCanvas();
-    if (!androidCanvasDisabled) resetCanvasTransport();
     canvasButton.hidden = true;
     updateControlsLayout();
     trackPanel.classList.remove('lyrics-track-panel-collapsed');
