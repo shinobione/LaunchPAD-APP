@@ -33,6 +33,10 @@ const candidateDocs = new Map([
   [
     'phase-ux-c2-5-a-show-track-isolation-20260810',
     'docs/PHASE-UX-C2-5-A-BUILD84-SHOW-TRACK-ISOLATION.md'
+  ],
+  [
+    'phase-ux-c2-5-a-studio-loop-parity-20260810',
+    'docs/PHASE-UX-C2-5-A-BUILD85-STUDIO-LOOP-PARITY.md'
   ]
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
