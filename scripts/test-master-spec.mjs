@@ -118,8 +118,13 @@ includesAll(lyricsStudioMedia, [
   "seek.addEventListener('pointerup', commit, { capture: true })",
   'event.stopImmediatePropagation()',
   "window.dispatchEvent(new CustomEvent('shinobi:seek-preview'",
-  "window.dispatchEvent(new CustomEvent('shinobi:seek-commit'"
-], 'Build 83 Lyrics Studio native-loop/single-commit contract');
+  "window.dispatchEvent(new CustomEvent('shinobi:seek-commit'",
+  'lyrics-mobile-track-open',
+  "openTrackButton.textContent = 'Open track →'",
+  "routeToHash({ type: 'track', id: track.id })",
+  'setStudioMode(false, { restoreScroll: false })',
+  '{ recenter: false }'
+], 'Build 84 Lyrics Studio native-loop/single-commit/Show Track contract');
 for (const forbiddenCanvasRecovery of [
   'CANVAS_LOCAL_RECOVERY_LIMIT',
   'CANVAS_LOCAL_STALL_GRACE_MS',
@@ -144,8 +149,12 @@ for (const forbiddenCanvasRecovery of [
   "window.addEventListener('pageshow'",
   "document.addEventListener('visibilitychange'"
 ]) {
-  assert.ok(!lyricsStudioMedia.includes(forbiddenCanvasRecovery), `Build 83 must keep Lyrics Studio under one native-loop owner: ${forbiddenCanvasRecovery}`);
+  assert.ok(!lyricsStudioMedia.includes(forbiddenCanvasRecovery), `Build 84 must keep Lyrics Studio under one native-loop owner: ${forbiddenCanvasRecovery}`);
 }
+const mobilePanelStart = lyricsStudioMedia.indexOf('function setMobilePanelCollapsed(');
+const mobilePanelEnd = lyricsStudioMedia.indexOf('\n  function setCanvasButtonState', mobilePanelStart);
+assert.ok(mobilePanelStart >= 0 && mobilePanelEnd > mobilePanelStart, 'Build 84 mobile panel transition is missing.');
+assert.ok(!lyricsStudioMedia.slice(mobilePanelStart, mobilePanelEnd).includes('playCanvas('), 'Build 84 Show Track must never touch Canvas playback.');
 
 const smartCanvas = read('js/features/smart-canvas.js');
 includesAll(smartCanvas, ["const CANVAS_SELECTOR = 'video.track-video-player';", 'new IntersectionObserver', "reason: 'another-canvas-started'"] , 'Build 83 Track-only Smart Canvas');
@@ -176,8 +185,13 @@ includesAll(mobileStudioCss, [
   'body.lyrics-studio-open .queue-panel{',
   'z-index:620!important',
   'body.lyrics-studio-open.queue-open::before{',
-  'z-index:619!important'
-], 'Build 81 Queue stacking above Studio');
+  'z-index:619!important',
+  'lyrics-mobile-track-open',
+  'grid-template-columns:48px minmax(0,1fr)',
+  'width:36px',
+  'height:64px'
+], 'Build 84 Queue stacking and stable mobile Show Track Canvas geometry');
+assert.ok(!mobileStudioCss.includes('grid-template-columns:minmax(92px,116px) minmax(0,1fr)'), 'Build 84 must not enlarge the mobile Canvas surface on Show Track.');
 
 const libraryMemory = read('js/features/library-memory.js');
 includesAll(libraryMemory, [
@@ -336,7 +350,7 @@ includesAll(signal, ['createDecodedSourceProxy', 'context.decodeAudioData(bytes.
 assert.ok(!signal.includes('captureStream('));
 assert.ok(!signal.includes('createMediaStreamSource('));
 
-includesAll(read('js/features/lyrics-studio.js'), ["video.setAttribute('webkit-playsinline', '')", "routeToHash({ type: 'studio', id: trackId })", 'video.loop = true'], 'Mobile Lyrics Studio');
+includesAll(read('js/features/lyrics-studio.js'), ["video.setAttribute('webkit-playsinline', '')", "routeToHash({ type: 'studio', id: trackId })", 'video.loop = true', 'lyrics-mobile-track-open', "routeToHash({ type: 'track', id: track.id })"], 'Mobile Lyrics Studio');
 includesAll(read('js/features/admin-access.js'), [
   'resolveLrcMakerAccess', 'https://shinobione.github.io/lrc-maker/', "label: 'LRC Maker'",
   'resolveSonicTraceAccess', 'https://shinobione.github.io/LM-IA-Analayse/', "label: 'SonicTrace'", "initials: 'ST'"
@@ -349,10 +363,10 @@ const worker = read('sw.js');
 includesAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'", "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'"], 'PWA shell');
 
 const build = assertCurrentBuild('Master specification/current release');
-assert.equal(build.id, '20260810-phase-ux-c2-5-a-surgical-rollback-v83');
-assert.equal(build.cache, 'shinobi-launchpad-v83');
-assert.equal(build.display, '2026.08.10.83');
-assert.equal(build.release, 'phase-ux-c2-5-a-surgical-rollback-20260810');
-assert.equal(build.revision, 'surgical-rollback-1');
+assert.equal(build.id, '20260810-phase-ux-c2-5-a-show-track-isolation-v84');
+assert.equal(build.cache, 'shinobi-launchpad-v84');
+assert.equal(build.display, '2026.08.10.84');
+assert.equal(build.release, 'phase-ux-c2-5-a-show-track-isolation-20260810');
+assert.equal(build.revision, 'show-track-isolation-1');
 
-console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 83 restores structural mini-player action isolation and a single-owner native Lyrics Studio Canvas loop while preserving Build 81 Track video teardown, Queue stacking/focus and dynamic Favorites membership, Build 77 single-commit seek and settled Lyrics autoscroll, supplied Moon/gold brand art and historical v5.10 bridge ancestry with ${presetCount} sanctioned Audio Lab presets.`);
+console.log(`LaunchPAD master specification is regression-protected under ${build.display} (${build.release}); Build 84 keeps Build 83 structural mini-player isolation and single-owner native Lyrics Studio Canvas, while making mobile Show Track layout-only with stable Canvas geometry and explicit Track navigation. Build 81 Track video teardown, Queue stacking/focus and dynamic Favorites membership, Build 77 single-commit seek and settled Lyrics autoscroll, supplied Moon/gold brand art and historical v5.10 bridge ancestry remain protected with ${presetCount} sanctioned Audio Lab presets.`);
