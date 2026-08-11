@@ -2,19 +2,19 @@
 
 Installable music PWA for the SHINOBIWAN catalog: playback, Albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
-## Current production state
+## Current production / candidate state
 
 ```text
-LaunchPAD build       2026.08.11.89
-Current main          c128113638dde45e845393eff9bf931d92567adb
+LaunchPAD build       2026.08.11.90
+Release               phase-ux-c3-album-palette-theme-20260811
 Public Worker         v2.7
 Worker Version ID     ddd90621-35d4-44b0-9c22-4e5a72291d9b
 
 Track Manager         v5.19
 Studio bridge         v1.11
 
-Studio                v0.12.2 · Build 37
-SonicTrace            V2-E Build 05
+Studio                v0.13.2 · Build 40
+SonicTrace            V2-E Build 06
 LRC Maker             6.3.8
 
 Public tracks         30
@@ -22,6 +22,8 @@ Canonical Albums      3
 Album authority       canonical-r2
 Singles               virtual collection
 ```
+
+Build 90 is a frontend-only Album palette candidate layered on the fully real-user-validated C2.5-F Build 89 baseline. Public Worker v2.7 and canonical R2 data remain unchanged.
 
 This README is the current-state map. Historical build-by-build implementation detail remains in the dedicated docs/changelogs and Git history.
 
@@ -46,11 +48,28 @@ See:
 - [`docs/PHASE-UX-C2-5-F-REAL-USER-SMOKE-PASS.md`](docs/PHASE-UX-C2-5-F-REAL-USER-SMOKE-PASS.md)
 - [`CHANGELOG-C2-5-CLOSEOUT.md`](CHANGELOG-C2-5-CLOSEOUT.md)
 
+## Build 90 — canonical Album palette theme
+
+The canonical Album manifest already carries `accent` and `accent2`. Build 90 finally uses them on the dedicated public Album page instead of leaving them as dormant metadata.
+
+Scoped behavior:
+
+- `album.accent` = primary Album color;
+- `album.accent2` = secondary Album color;
+- palette variables are scoped to `#view-album` and never replace the global LaunchPAD theme;
+- hero ambient gradients, cover glow, metadata pills, Album actions and track states inherit the release palette;
+- missing or malformed colors fall back to the existing LaunchPAD identity;
+- no Worker, R2, player, queue or Lyrics Studio code path is changed.
+
+Studio v0.13.2 · Build 40 provides the paired authoring UI with **Primary color / Secondary color** pickers, validated HEX editing and existing cover-derived palette extraction.
+
+See [`CHANGELOG-C3-ALBUM-PALETTE-BUILD90.md`](CHANGELOG-C3-ALBUM-PALETTE-BUILD90.md).
+
 ## Important stop line
 
 PHASE UX as a whole is **not yet closed**.
 
-Next PHASE UX milestone is **C3 — SonicTrace Deep Audio / V2-E parity**, which is **NOT STARTED** by this documentation closeout.
+Next active PHASE UX milestone is **C3 — SonicTrace Deep Audio / V2-E parity**. C3-A implementation exists, but its real-user local-GPU smoke remains pending after this small Album palette UX slice.
 
 Phase 7 remains **LOCKED / NOT AUTHORIZED**. Do not implement, scaffold, branch, merge or deploy Phase 7 without explicit user authorization after final PHASE UX closeout.
 
@@ -139,7 +158,7 @@ A later read-only live probe confirmed:
 
 PR #207 hardened only the deployment verifier to allow up to 180 seconds of edge convergence and to distinguish stale-edge version from a real Album-authority failure. No Worker runtime change or R2 mutation was required.
 
-Post-merge checks on current main passed:
+Post-merge C2.5-F checks passed:
 
 ```text
 Validate LaunchPAD              31486980001  SUCCESS
@@ -224,4 +243,4 @@ Source merge, Pages deployment, Worker deployment and R2/catalog mutation remain
 
 A real LaunchPAD runtime release updates build/release/cache markers, affected tests, docs and README together.
 
-A documentation-only closeout does **not** fabricate Build 90 or Worker v2.8.
+A documentation-only closeout does **not** fabricate Build 91 or Worker v2.8.
