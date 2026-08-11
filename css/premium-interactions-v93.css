@@ -45,9 +45,8 @@
     0 0 12px rgba(78,231,223,.055);
 }
 
-/* IMPORTANT: route-entering must use a DIFFERENT animation-name from the ordinary
-   .view.active animation. Feature 11 toggles this class after onRoute(); changing
-   the animation name is what forces browsers to replay the transition each time. */
+/* Build 93 CSS replay retained for historical ancestry. Build 94 below disables
+   CSS-owned page motion and delegates each route to Web Animations for reliable replay. */
 .view.active.route-entering {
   animation: lp93-route-enter var(--lp93-route-duration) var(--lp93-ease) both;
   transform-origin: 50% 14%;
@@ -67,8 +66,6 @@
   }
 }
 
-/* Deliberately obvious but short: new page comes from slightly below/deeper,
-   resolves focus quickly, then settles. No action is delayed waiting for it. */
 @keyframes lp93-route-enter {
   0% {
     opacity: .22;
@@ -90,11 +87,60 @@
   }
 }
 
+/* Build 94 — C3-C.3 real-user corrective.
+   The video smoke proved CSS class replay still did not produce a perceptible route
+   transition. Disable CSS-owned view entry motion so the premium runtime can replay
+   a fresh Web Animation on every navigation, including Track Detail pushState routes. */
+.view.active,
+.view.active.route-entering {
+  animation: none !important;
+}
+
+/* Text-link actions such as “Open project →” should read like premium links, not
+   glowing pills. Keep tactile movement and a tiny text shimmer, but suppress the
+   click bloom and persistent box shadow on this specific interaction family. */
+.project-album-actions .text-button[data-open-album],
+.track-detail-album-link {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.project-album-actions .text-button[data-open-album]:hover:not(:disabled),
+.track-detail-album-link:hover:not(:disabled) {
+  translate: 2px 0;
+  scale: 1;
+  filter: brightness(1.18) saturate(1.05);
+  box-shadow: none !important;
+  text-shadow: 0 0 9px rgba(78,231,223,.20);
+}
+
+.project-album-actions .text-button[data-open-album].lp-pressing,
+.project-album-actions .text-button[data-open-album]:active:not(:disabled),
+.track-detail-album-link.lp-pressing,
+.track-detail-album-link:active:not(:disabled) {
+  translate: 1px 1px;
+  scale: .985;
+  box-shadow: none !important;
+  text-shadow: 0 0 7px rgba(78,231,223,.16);
+}
+
+.project-album-actions .text-button[data-open-album] > .lp-impact-bloom,
+.track-detail-album-link > .lp-impact-bloom {
+  display: none !important;
+}
+
 @media (hover: none) {
   .lab-controls .chip.active:hover:not(:disabled) {
     box-shadow:
       inset 0 0 0 1px rgba(255,255,255,.035),
       0 3px 10px rgba(0,0,0,.22);
+  }
+
+  .project-album-actions .text-button[data-open-album]:hover:not(:disabled),
+  .track-detail-album-link:hover:not(:disabled) {
+    translate: 0 0;
+    text-shadow: none;
   }
 }
 
@@ -104,6 +150,7 @@
     opacity: 0 !important;
   }
 
+  .view.active,
   .view.active.route-entering {
     animation: none !important;
     opacity: 1;
