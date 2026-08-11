@@ -1,0 +1,243 @@
+/* LaunchPAD Build 95 — C3-C.4 smooth motion + desktop layout polish.
+   Presentation only. No player, routing authority, Audio Lab DSP, Worker, R2,
+   Track Manager, Studio, SonicTrace or LRC Maker semantics live here. */
+
+:root {
+  --lp95-page-duration: 280ms;
+  --lp95-page-ease: cubic-bezier(.22,.61,.36,1);
+}
+
+/* Sidebar: the pill is enough. Remove the extra cyan/violet vertical rail that
+   made the active state feel busier than the rest of the interface. */
+.nav-item.active::before {
+  content: none !important;
+  display: none !important;
+}
+
+/* Eras remain horizontally scrollable when needed, but never expose a browser
+   scrollbar that reads like an accidental range slider. */
+.era-timeline-track {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none;
+}
+
+.era-timeline-track::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Album collection actions: preserve Show/Hide Tracks behavior, but make the
+   toggle a compact, stable pill that lives with the other project actions. */
+.project-album-actions {
+  align-items: center;
+  gap: 8px 10px !important;
+}
+
+.project-album-toggle {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px !important;
+  margin-left: 0 !important;
+  padding: 7px 10px !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
+  border-radius: 999px !important;
+  background: rgba(255,255,255,.035) !important;
+  color: #bcb2c9 !important;
+  font-size: 0 !important;
+  line-height: 1 !important;
+  white-space: nowrap;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.project-album-toggle::before {
+  content: "Show tracks · " attr(data-track-count);
+  font-size: 9px;
+  font-weight: 760;
+  letter-spacing: .015em;
+}
+
+.project-album-toggle::after {
+  content: "⌄";
+  display: inline-block;
+  font-size: 13px;
+  line-height: 1;
+  transform: translateY(-1px);
+  transform-origin: 50% 55%;
+  transition: transform 180ms var(--lp95-page-ease);
+}
+
+.project-album-toggle[aria-expanded="true"] {
+  border-color: color-mix(in srgb,var(--accent) 42%,rgba(255,255,255,.12)) !important;
+  background: color-mix(in srgb,var(--accent) 9%,rgba(255,255,255,.035)) !important;
+  color: #f1ebf8 !important;
+}
+
+.project-album-toggle[aria-expanded="true"]::before {
+  content: "Hide tracks · " attr(data-track-count);
+}
+
+.project-album-toggle[aria-expanded="true"]::after {
+  transform: rotate(180deg) translateY(1px);
+}
+
+.project-album-toggle:hover:not(:disabled) {
+  translate: 0 -1px !important;
+  scale: 1 !important;
+  border-color: color-mix(in srgb,var(--accent) 34%,rgba(255,255,255,.12)) !important;
+  box-shadow: 0 7px 18px rgba(0,0,0,.18) !important;
+}
+
+/* Current four projects keep the approved 2x2 composition. When the catalog
+   grows beyond four projects, wide desktops automatically gain a third column
+   instead of letting every Album card become wider and wider forever. */
+@media (min-width: 1500px) {
+  .album-collection:not(.has-album-focus):has(.project-album:nth-child(5)) {
+    grid-template-columns: repeat(3,minmax(0,1fr));
+  }
+
+  .album-collection:not(.has-album-focus):has(.project-album:nth-child(5)) .project-album-head {
+    grid-template-columns: 112px minmax(0,1fr);
+    gap: 13px;
+  }
+
+  .album-collection:not(.has-album-focus):has(.project-album:nth-child(5)) .project-album-cover {
+    width: 112px;
+    height: 112px;
+    border-radius: 16px;
+  }
+
+  .album-collection:not(.has-album-focus):has(.project-album:nth-child(5)) .project-album-copy h2 {
+    font-size: clamp(21px,1.7vw,29px);
+  }
+
+  .album-collection:not(.has-album-focus):has(.project-album:nth-child(5)) .project-tags {
+    max-height: 58px;
+    overflow: hidden;
+  }
+}
+
+/* Desktop Lyrics should fit above the persistent player. The reader itself
+   remains independently scrollable, but entering Lyrics no longer requires a
+   page-level scroll just to see the whole workspace. */
+@media (min-width: 761px) {
+  .main-content:has(#view-lyrics.active),
+  .main-content:has(#view-lab.active) {
+    padding-bottom: 96px;
+  }
+
+  #view-lyrics .lyrics-intro {
+    padding: 12px 0 14px;
+  }
+
+  #view-lyrics .lyrics-intro h1 {
+    margin: 6px 0;
+    font-size: clamp(42px,4.4vw,62px);
+  }
+
+  #view-lyrics .lyrics-intro p {
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  #view-lyrics .lyrics-stage {
+    min-height: 0 !important;
+    height: clamp(500px,calc(100dvh - 330px),620px);
+  }
+
+  #view-lyrics .lyrics-track-panel {
+    padding: 20px 22px;
+  }
+
+  #view-lyrics .lyrics-cover-wrap {
+    width: min(100%,220px);
+    margin-bottom: 14px;
+  }
+
+  #view-lyrics .lyrics-track-panel > p {
+    margin-bottom: 10px;
+  }
+
+  #view-lyrics .lyrics-transport {
+    margin: 4px 0 10px;
+  }
+
+  #view-lyrics .lyrics-track-select-label {
+    padding-top: 14px;
+  }
+
+  #view-lyrics .lyrics-reader-shell {
+    height: 100%;
+    padding: 16px 24px 20px;
+  }
+
+  #view-lyrics .lyrics-reader {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+    padding: clamp(86px,11vh,122px) 5% clamp(118px,15vh,168px);
+  }
+
+  /* Audio Lab should use the available desktop canvas instead of occupying a
+     shallow strip. The cap keeps the preset controls above the player. */
+  #view-lab .page-intro {
+    padding: 10px 0 8px !important;
+  }
+
+  #view-lab .page-intro h1 {
+    margin: 5px 0 !important;
+    font-size: clamp(42px,4.5vw,62px) !important;
+  }
+
+  #view-lab .lab-stage {
+    box-sizing: border-box;
+    min-height: 420px !important;
+    height: clamp(420px,calc(100dvh - 355px),650px) !important;
+    padding: 12px !important;
+  }
+
+  #view-lab .lab-controls {
+    position: relative;
+    z-index: 8;
+    min-height: 44px;
+    align-items: center;
+    margin: 4px 0 8px !important;
+    padding: 6px 2px 4px;
+    overflow: visible !important;
+  }
+
+  #view-lab .lab-controls .chip {
+    min-height: 32px;
+    overflow: visible !important;
+  }
+}
+
+@media (min-width: 761px) and (max-height: 820px) {
+  #view-lyrics .lyrics-stage {
+    height: clamp(470px,calc(100dvh - 300px),540px);
+  }
+
+  #view-lyrics .lyrics-cover-wrap {
+    width: min(100%,190px);
+  }
+
+  #view-lab .lab-stage {
+    min-height: 390px !important;
+    height: clamp(390px,calc(100dvh - 330px),510px) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .project-album-toggle {
+    flex: 1 1 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .project-album-toggle::after {
+    transition: none !important;
+  }
+}

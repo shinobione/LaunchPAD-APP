@@ -39,11 +39,18 @@
     '[data-track-detail-action="back"]'
   ].join(',');
 
+  const NO_BLOOM_SELECTOR = [
+    '.project-album-actions .text-button[data-open-album]',
+    '.track-detail-album-link'
+  ].join(',');
+
   const pressTimers = new WeakMap();
   const impactTimers = new WeakMap();
   let routeTransitionTimer = 0;
   let routeTransitionTicket = 0;
   let routeAnimation = null;
+  let lastAnimatedRoute = '';
+  let lastAnimatedAt = 0;
 
   function reducedMotion() {
     return globalThis.matchMedia?.(REDUCED_MOTION)?.matches === true;
@@ -93,7 +100,7 @@
   }
 
   function triggerImpact(element, event) {
-    if (reducedMotion()) return;
+    if (reducedMotion() || element.matches(NO_BLOOM_SELECTOR)) return;
     const point = localPointer(element, event);
     element.style.setProperty('--lp-bloom-x', `${point.x}px`);
     element.style.setProperty('--lp-bloom-y', `${point.y}px`);
@@ -126,39 +133,49 @@
       || document.querySelector('.view.active');
   }
 
+  function cleanupRouteAnimation(surface) {
+    if (surface instanceof HTMLElement) surface.style.willChange = '';
+    routeAnimation = null;
+  }
+
   function animateRouteSurface() {
     if (reducedMotion() || typeof Element.prototype.animate !== 'function') return;
     const surface = currentRouteSurface();
     if (!(surface instanceof HTMLElement)) return;
 
+    const key = routeKey();
+    const now = globalThis.performance?.now?.() ?? Date.now();
+    if (key === lastAnimatedRoute && now - lastAnimatedAt < 220) return;
+    lastAnimatedRoute = key;
+    lastAnimatedAt = now;
+
     routeAnimation?.cancel?.();
+    surface.style.willChange = 'opacity, transform';
     routeAnimation = surface.animate([
       {
-        opacity: 0.12,
-        transform: 'translate3d(0, 24px, 0) scale(.98)',
-        filter: 'brightness(.84) saturate(.9)'
+        opacity: 0.68,
+        transform: 'translate3d(0, 10px, 0)'
       },
       {
-        offset: 0.52,
-        opacity: 0.86,
-        transform: 'translate3d(0, 5px, 0) scale(.996)',
-        filter: 'brightness(1.035) saturate(1.015)'
+        offset: 0.62,
+        opacity: 0.94,
+        transform: 'translate3d(0, 2px, 0)'
       },
       {
         opacity: 1,
-        transform: 'translate3d(0, 0, 0) scale(1)',
-        filter: 'none'
+        transform: 'translate3d(0, 0, 0)'
       }
     ], {
-      duration: 340,
-      easing: 'cubic-bezier(.16,.84,.24,1)',
+      duration: 280,
+      easing: 'cubic-bezier(.22,.61,.36,1)',
       fill: 'both'
     });
-    routeAnimation.id = 'lp94-route-transition';
+    routeAnimation.id = 'lp95-route-transition';
     routeAnimation.addEventListener('finish', () => {
       routeAnimation?.cancel?.();
-      routeAnimation = null;
+      cleanupRouteAnimation(surface);
     }, { once: true });
+    routeAnimation.addEventListener('cancel', () => cleanupRouteAnimation(surface), { once: true });
   }
 
   function scheduleRouteTransition({ beforeRoute = null } = {}) {
@@ -168,12 +185,24 @@
       if (ticket !== routeTransitionTicket) return;
       if (beforeRoute && routeKey() === beforeRoute) return;
       window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          if (ticket !== routeTransitionTicket) return;
-          animateRouteSurface();
-        });
+        if (ticket !== routeTransitionTicket) return;
+        animateRouteSurface();
       });
-    }, 18);
+    }, 12);
+  }
+
+  function reorderDesktopNavigation() {
+    const nav = document.querySelector('.main-nav');
+    const albums = nav?.querySelector('[data-view="analytics"]');
+    const favorites = nav?.querySelector('[data-view="favorites"]');
+    if (!nav || !albums || !favorites || albums.nextElementSibling === favorites) return;
+    nav.insertBefore(albums, favorites);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', reorderDesktopNavigation, { once: true });
+  } else {
+    reorderDesktopNavigation();
   }
 
   document.addEventListener('pointerdown', event => {
