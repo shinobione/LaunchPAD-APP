@@ -28,7 +28,7 @@ mergeRemoteTracks([
 let result = mergeRemoteAlbums([
   {
     id: 'neon-heartbreaks', title: 'Neon Heartbreaks canonical', type: 'album', status: 'published',
-    cover: '/neon.webp', trackIds: ['neon-a'],
+    cover: '/neon.webp', trackIds: ['neon-a'], accent: '#21d4fd', accent2: '#8c52ff',
   },
 ], { authoritative: false });
 
@@ -38,7 +38,7 @@ assert.ok(getAlbum('love-letters-from-saigon'), 'Legacy fallback must remain ava
 result = mergeRemoteAlbums([
   {
     id: 'neon-heartbreaks', title: 'Neon Heartbreaks canonical', type: 'album', status: 'published',
-    cover: 'https://media.test/albums/neon-heartbreaks/cover.webp', trackIds: ['neon-a'],
+    cover: 'https://media.test/albums/neon-heartbreaks/cover.webp', trackIds: ['neon-a'], accent: '#21d4fd', accent2: '#8c52ff',
   },
   {
     id: 'coal-to-diamond', title: 'Coal to Diamond canonical', type: 'album', status: 'published',
@@ -50,6 +50,8 @@ assert.equal(result.authority, 'canonical-r2');
 assert.equal(getAlbumAuthority(), 'canonical-r2');
 assert.equal(canonicalAlbums.length, 2);
 assert.equal(getAlbum('neon-heartbreaks').title, 'Neon Heartbreaks canonical');
+assert.equal(getAlbum('neon-heartbreaks').accent, '#21d4fd');
+assert.equal(getAlbum('neon-heartbreaks').accent2, '#8c52ff');
 assert.equal(getAlbum('love-letters-from-saigon'), null, 'A stale catalog.js Album must disappear once canonical R2 authority is active.');
 assert.equal(getAlbum('singles')?.source, 'virtual-singles', 'Singles must become a virtual collection, not a canonical R2 Album.');
 assert.deepEqual(getAlbumTracks('neon-heartbreaks').map(track => track.id), ['neon-a']);
@@ -69,6 +71,7 @@ const publicWorker = fs.readFileSync('cloudflare/public-worker-v27.js', 'utf8');
 const wrangler = fs.readFileSync('cloudflare/wrangler.public.jsonc', 'utf8');
 const remoteCatalog = fs.readFileSync('js/core/remote-catalog.js', 'utf8');
 const catalogStore = fs.readFileSync('js/core/catalog-store.js', 'utf8');
+const albumDetail = fs.readFileSync('js/features/album-detail.js', 'utf8');
 const buildConfig = fs.readFileSync('js/build-config.js', 'utf8');
 const deployVerifier = fs.readFileSync('scripts/verify-cloudflare-deployment.mjs', 'utf8');
 
@@ -100,11 +103,20 @@ for (const marker of [
 ]) assert.ok(catalogStore.includes(marker), `Catalog authority cutover is missing ${marker}.`);
 
 for (const marker of [
-  "id: '20260811-phase-ux-c2-5-f-canonical-album-public-cutover-v89'",
-  "cache: 'shinobi-launchpad-v89'",
-  "display: '2026.08.11.89'",
-  "release: 'phase-ux-c2-5-f-canonical-album-public-cutover-20260811'",
-]) assert.ok(buildConfig.includes(marker), `Build 89 marker is missing ${marker}.`);
+  'normalizeAlbumThemeColor',
+  "view.style.setProperty('--album-accent', primary)",
+  "view.style.setProperty('--album-accent2', secondary)",
+  "view.dataset.albumPalette = primary || secondary ? 'canonical' : 'fallback'",
+  '--album-accent2',
+  'linear-gradient(135deg,color-mix(in srgb,var(--album-accent)',
+]) assert.ok(albumDetail.includes(marker), `Canonical Album palette theming is missing ${marker}.`);
+
+for (const marker of [
+  "id: '20260811-phase-ux-c3-album-palette-theme-v90'",
+  "cache: 'shinobi-launchpad-v90'",
+  "display: '2026.08.11.90'",
+  "release: 'phase-ux-c3-album-palette-theme-20260811'",
+]) assert.ok(buildConfig.includes(marker), `Build 90 marker is missing ${marker}.`);
 
 for (const marker of [
   'CLOUDFLARE_PUBLIC_VERIFY_ATTEMPTS || 60',
@@ -119,4 +131,4 @@ const authorityAssertionIndex = deployVerifier.indexOf('Public /health Album aut
 assert.ok(versionAssertionIndex >= 0, 'Public deployment verifier must assert the expected Worker version.');
 assert.ok(authorityAssertionIndex > versionAssertionIndex, 'Worker version must be validated before canonical Album authority so stale edge propagation is diagnosed correctly.');
 
-console.log('C2.5-F / Build 89 guard passed: canonical R2 Album authority, public Album media, virtual Singles, legacy fallback isolation, and propagation-safe post-deploy verification.');
+console.log('Canonical Album public authority + Build 90 palette theme guard passed: R2 accent/accent2 stay canonical, virtual Singles remains isolated, and the public Album detail page consumes the palette without Worker/R2 writes.');
