@@ -3,6 +3,7 @@
   globalThis.__shinobiPremiumInteractionsV92Ready = true;
 
   const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
+  const MOBILE_PERFORMANCE_QUERY = '(max-width: 760px), (hover: none) and (pointer: coarse)';
   const PRESS_SELECTOR = [
     'button:not(:disabled)',
     'a[href]',
@@ -56,6 +57,14 @@
     return globalThis.matchMedia?.(REDUCED_MOTION)?.matches === true;
   }
 
+  function mobilePerformanceMode() {
+    return globalThis.matchMedia?.(MOBILE_PERFORMANCE_QUERY)?.matches === true;
+  }
+
+  function premiumMotionSuppressed() {
+    return reducedMotion() || mobilePerformanceMode();
+  }
+
   function closestInteractive(target, selector = PRESS_SELECTOR) {
     if (!(target instanceof Element)) return null;
     const element = target.closest(selector);
@@ -100,7 +109,7 @@
   }
 
   function triggerImpact(element, event) {
-    if (reducedMotion() || element.matches(NO_BLOOM_SELECTOR)) return;
+    if (premiumMotionSuppressed() || element.matches(NO_BLOOM_SELECTOR)) return;
     const point = localPointer(element, event);
     element.style.setProperty('--lp-bloom-x', `${point.x}px`);
     element.style.setProperty('--lp-bloom-y', `${point.y}px`);
@@ -139,7 +148,7 @@
   }
 
   function animateRouteSurface() {
-    if (reducedMotion() || typeof Element.prototype.animate !== 'function') return;
+    if (premiumMotionSuppressed() || typeof Element.prototype.animate !== 'function') return;
     const surface = currentRouteSurface();
     if (!(surface instanceof HTMLElement)) return;
 
@@ -179,6 +188,7 @@
   }
 
   function scheduleRouteTransition({ beforeRoute = null } = {}) {
+    if (mobilePerformanceMode()) return;
     window.clearTimeout(routeTransitionTimer);
     const ticket = ++routeTransitionTicket;
     routeTransitionTimer = window.setTimeout(() => {
@@ -206,29 +216,32 @@
   }
 
   document.addEventListener('pointerdown', event => {
-    if (event.button !== 0 || reducedMotion()) return;
+    if (event.button !== 0 || premiumMotionSuppressed()) return;
     const element = closestInteractive(event.target);
     if (element) beginPress(element);
   }, { passive: true, capture: true });
 
   document.addEventListener('pointerup', event => {
+    if (mobilePerformanceMode()) return;
     const element = closestInteractive(event.target);
     if (element) endPress(element);
   }, { passive: true, capture: true });
 
   document.addEventListener('pointercancel', event => {
+    if (mobilePerformanceMode()) return;
     const element = closestInteractive(event.target);
     if (element) endPress(element);
   }, { passive: true, capture: true });
 
   document.addEventListener('pointerleave', event => {
+    if (mobilePerformanceMode()) return;
     const element = closestInteractive(event.target);
     if (element) endPress(element);
   }, { passive: true, capture: true });
 
   document.addEventListener('click', event => {
     const element = closestInteractive(event.target, BLOOM_SELECTOR);
-    if (element) {
+    if (element && !mobilePerformanceMode()) {
       endPress(element);
       triggerImpact(element, event);
     }
@@ -236,7 +249,7 @@
     const routeIntent = event.target instanceof Element
       ? event.target.closest(ROUTE_INTENT_SELECTOR)
       : null;
-    if (routeIntent) {
+    if (routeIntent && !mobilePerformanceMode()) {
       const beforeRoute = routeKey();
       window.setTimeout(() => scheduleRouteTransition({ beforeRoute }), 0);
     }
@@ -245,13 +258,13 @@
   document.addEventListener('keydown', event => {
     if (event.repeat || (event.key !== 'Enter' && event.key !== ' ')) return;
     const element = closestInteractive(event.target, BLOOM_SELECTOR);
-    if (element && !reducedMotion()) beginPress(element);
+    if (element && !premiumMotionSuppressed()) beginPress(element);
   }, true);
 
   document.addEventListener('keyup', event => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
     const element = closestInteractive(event.target, BLOOM_SELECTOR);
-    if (!element) return;
+    if (!element || mobilePerformanceMode()) return;
     endPress(element);
     triggerImpact(element, null);
   }, true);
