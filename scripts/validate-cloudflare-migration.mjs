@@ -73,7 +73,7 @@ if (!publicWorker.includes('/" + kind + "/" + encodeURIComponent(filename)')) {
   fail('Public media URLs must end with their real filename.');
 }
 
-const publicWrapper = fs.readFileSync('cloudflare/public-worker-v26.js', 'utf8');
+const publicWrapperV26 = fs.readFileSync('cloudflare/public-worker-v26.js', 'utf8');
 for (const required of [
   'PUBLIC_WORKER_VERSION = 2.6',
   "headers.set('Access-Control-Allow-Origin', '*')",
@@ -84,7 +84,24 @@ for (const required of [
   'payload.audioLabCors = true',
   "payload.crossOriginResourcePolicy = 'cross-origin'"
 ]) {
-  if (!publicWrapper.includes(required)) fail(`Public Worker v2.6 wrapper is missing ${required}.`);
+  if (!publicWrapperV26.includes(required)) fail(`Historical public Worker v2.6 wrapper is missing ${required}.`);
+}
+
+const publicWrapperV27 = fs.readFileSync('cloudflare/public-worker-v27.js', 'utf8');
+for (const required of [
+  'PUBLIC_WORKER_VERSION = 2.7',
+  "CATALOG_INDEX_KEY = 'catalog/index.json'",
+  "payload.albumAuthority = 'canonical-r2'",
+  "pathname === '/albums'",
+  "source: 'cloudflare-r2'",
+  'canonicalAlbums',
+  'streamAlbumAsset(',
+  "headers.set('X-LaunchPAD-Media-Version', String(PUBLIC_WORKER_VERSION))",
+]) {
+  if (!publicWrapperV27.includes(required)) fail(`Public Worker v2.7 Album wrapper is missing ${required}.`);
+}
+if (publicWrapperV27.includes('MEDIA_BUCKET.put(') || publicWrapperV27.includes('MEDIA_BUCKET.delete(')) {
+  fail('Public Worker v2.7 Album layer must remain read-only.');
 }
 
 const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
@@ -93,7 +110,7 @@ if (packageJson.devDependencies?.wrangler !== '4.118.0') {
 }
 
 for (const [configPath, expected] of [
-  ['cloudflare/wrangler.public.jsonc', { name: 'launchpad-media', main: 'public-worker-v26.js' }],
+  ['cloudflare/wrangler.public.jsonc', { name: 'launchpad-media', main: 'public-worker-v27.js' }],
   ['cloudflare/wrangler.admin.jsonc', { name: 'launchpad-r2-api', main: '../dist/launchpad-r2-admin-worker.js' }]
 ]) {
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -107,4 +124,4 @@ for (const [configPath, expected] of [
   }
 }
 
-console.log(`Cloudflare migration plan is valid: ${plan.tracks.length} legacy tracks and public Worker v2.6 hardened CORS wrapper.`);
+console.log(`Cloudflare migration plan is valid: ${plan.tracks.length} legacy tracks, public Worker v2.6 CORS ancestry and v2.7 canonical Album cutover.`);

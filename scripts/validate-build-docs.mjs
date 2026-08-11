@@ -10,9 +10,9 @@ const release = /release:\s*'([^']+)'/.exec(buildConfig)?.[1];
 assert.ok(display, 'Unable to read build display from js/build-config.js.');
 assert.ok(release, 'Unable to read build release from js/build-config.js.');
 
-// README remains the accepted-release marker. Emergency real-device candidates
-// use a dedicated release document until their smoke passes, so README never
-// claims a broken Android build is accepted before real-user validation.
+// README remains the accepted-release marker. Candidate builds use a dedicated
+// release document until real-user smoke passes, so README never claims an
+// unvalidated public release as accepted.
 const candidateDocs = new Map([
   [
     'phase-ux-c2-5-a-android-studio-passive-canvas-guard-20260810',
@@ -49,6 +49,10 @@ const candidateDocs = new Map([
   [
     'phase-ux-c2-5-b-canonical-album-read-model-20260810',
     'docs/PHASE-UX-C2-5-B-BUILD88-CANONICAL-ALBUM-READ-MODEL.md'
+  ],
+  [
+    'phase-ux-c2-5-f-canonical-album-public-cutover-20260811',
+    'docs/PHASE-UX-C2-5-F-BUILD89-CANONICAL-ALBUM-PUBLIC-CUTOVER.md'
   ]
 ]);
 const livingReleaseDocs = candidateDocs.has(release)

@@ -36,7 +36,9 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       PUBLIC_WORKER_URL: https://launchpad-media.jerryquinet.workers.dev
       ADMIN_WORKER_URL: https://launchpad-r2-api.jerryquinet.workers.dev
-      EXPECTED_PUBLIC_VERSION: '2.6'
+      # Historical validation marker retained for regression ancestry only:
+      # EXPECTED_PUBLIC_VERSION: '2.6'
+      EXPECTED_PUBLIC_VERSION: '2.7'
       # Historical validation markers retained for regression ancestry only:
       # EXPECTED_ADMIN_VERSION: '5.6'
       # EXPECTED_ADMIN_VERSION: '5.10'
