@@ -169,6 +169,8 @@ Public/staging hosts:
 
 Cloudflare R2 remains canonical media/catalog/data authority. Workers remain separate backend deployment units.
 
+See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md) for the canonical hosting/deployment topology.
+
 ## Architecture at a glance
 
 ```text
@@ -211,6 +213,8 @@ The same named checkpoint exists in Studio.
 ## Verification policy
 
 CI is required, but real-user smoke is the final acceptance signal for user-facing milestones.
+
+Before merging runtime or infrastructure changes, the living documentation contract includes `npm run check:build-docs` alongside the normal validation suite.
 
 Do not mutate production media/R2 data merely to manufacture a frontend smoke test.
 
