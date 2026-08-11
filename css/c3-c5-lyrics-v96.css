@@ -1,0 +1,55 @@
+/* LaunchPAD Build 96 — C3-C.5 Lyrics viewport + auto-scroll corrective.
+   Surgical desktop Lyrics fix only. Studio fullscreen/mobile/player/audio semantics
+   remain owned by their existing layers. */
+
+@media (min-width: 761px) {
+  /* Normal Lyrics is a single-screen workspace above the persistent 88px player.
+     Prevent the grid row from growing with lyric content and creating page scroll. */
+  .main-content:has(#view-lyrics.active:not(.lyrics-studio-mode)) {
+    height: calc(100dvh - 88px);
+    min-height: 0;
+    max-height: calc(100dvh - 88px);
+    padding-bottom: 0 !important;
+    overflow: hidden;
+  }
+
+  #view-lyrics.active:not(.lyrics-studio-mode) {
+    display: flex !important;
+    flex-direction: column;
+    height: calc(100% - 82px);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #view-lyrics.active:not(.lyrics-studio-mode) .lyrics-intro {
+    flex: 0 0 auto;
+  }
+
+  #view-lyrics.active:not(.lyrics-studio-mode) .lyrics-stage {
+    flex: 1 1 auto;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: hidden;
+  }
+
+  /* Build 95 made the reader flexible, but the real-user video exposed a state
+     where the content could behave like page content instead of a dedicated
+     scroll host. Grid + minmax(0,1fr) gives the reader an explicit finite box. */
+  #view-lyrics.active:not(.lyrics-studio-mode) .lyrics-reader-shell {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #view-lyrics.active:not(.lyrics-studio-mode) .lyrics-reader {
+    width: 100%;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow-x: hidden;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+  }
+}
