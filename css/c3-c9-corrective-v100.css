@@ -1,4 +1,4 @@
-/* LaunchPAD PHASE UX / C3-C.9 — Build 100 corrective.
+/* LaunchPAD PHASE UX / C3-C.9 + C3-C.10 — Builds 100-101 corrective.
    Scope: mobile gesture stability + desktop player chrome only.
    No playback, queue, catalog, Worker/R2 or routing ownership lives here. */
 
@@ -19,10 +19,24 @@
   .player-bar .transport button:not(.main-play):hover,
   .player-bar .transport button:not(.main-play):active,
   .player-bar .transport button:not(.main-play):focus,
-  .player-bar .transport button:not(.main-play):focus-visible {
+  .player-bar .transport button:not(.main-play):focus-visible,
+  .side-player .mini-controls button:not(.mini-play),
+  .side-player .mini-controls button:not(.mini-play):hover,
+  .side-player .mini-controls button:not(.mini-play):active,
+  .side-player .mini-controls button:not(.mini-play):focus,
+  .side-player .mini-controls button:not(.mini-play):focus-visible {
+    background: transparent !important;
     border-color: transparent !important;
     outline: none !important;
     box-shadow: none !important;
+  }
+
+  /* Preserve the premium micro-response without allowing a persistent square
+     around the side mini-player previous/next glyphs. */
+  .side-player .mini-controls button:not(.mini-play):hover,
+  .side-player .mini-controls button:not(.mini-play):active,
+  .side-player .mini-controls button:not(.mini-play):focus-visible {
+    filter: brightness(1.18) saturate(1.08);
   }
 
   /* Range inputs are already self-describing through their track/thumb.
