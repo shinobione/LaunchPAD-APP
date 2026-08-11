@@ -79,12 +79,25 @@ function orderedAlbums() {
   return [...configured, ...remaining];
 }
 
+function mobileAlbumLayout() {
+  return Boolean(globalThis.matchMedia?.('(max-width: 760px)').matches);
+}
+
 function synchronizeAlbumFocus(view, toggle, expanded) {
   const card = toggle.closest('.project-album');
   const collection = card?.closest('.album-collection');
   if (!card || !collection || !view.contains(collection)) return;
 
   card.classList.toggle('is-tracklist-expanded', expanded);
+
+  // Build 97: mobile cards expand independently. Do not turn the whole collection
+  // into desktop "album focus" mode; that was the source of large mobile jumps.
+  if (mobileAlbumLayout()) {
+    collection.classList.remove('has-album-focus');
+    delete collection.dataset.focusedAlbumId;
+    return;
+  }
+
   const focusedCard = collection.querySelector('.project-album.is-tracklist-expanded');
   collection.classList.toggle('has-album-focus', Boolean(focusedCard));
 
@@ -113,6 +126,14 @@ function prefersReducedMotion() {
 }
 
 function runAlbumLayoutTransition(callback) {
+  // Native document View Transitions looked good on desktop but, combined with
+  // collapsing another card and auto-focusing the new one, made mobile Albums
+  // visibly jump/repaint. Mobile now owns a simple local expansion only.
+  if (mobileAlbumLayout()) {
+    callback();
+    return Promise.resolve();
+  }
+
   if (!prefersReducedMotion() && typeof document.startViewTransition === 'function') {
     const transition = document.startViewTransition(callback);
     return transition?.finished || Promise.resolve();
@@ -122,6 +143,9 @@ function runAlbumLayoutTransition(callback) {
 }
 
 function focusExpandedAlbumOnNarrowScreen(toggle) {
+  // Build 97: never programmatically move the page after a mobile Show tracks tap.
+  // The card expands exactly where the user touched it.
+  if (mobileAlbumLayout()) return;
   if (!globalThis.matchMedia?.('(max-width: 1180px)').matches) return;
   const card = toggle.closest('.project-album');
   if (!card) return;
@@ -148,6 +172,13 @@ function installAlbumTrackToggles(view) {
   toggles.forEach(toggle => {
     toggle.addEventListener('click', () => {
       const shouldExpand = toggle.getAttribute('aria-expanded') !== 'true';
+
+      if (mobileAlbumLayout()) {
+        // Independent mobile accordions: opening Coal to Diamond must not collapse
+        // Neon Heartbreaks above it and yank the viewport underneath the user's finger.
+        setAlbumTrackListExpanded(view, toggle, shouldExpand);
+        return;
+      }
 
       const layoutFinished = runAlbumLayoutTransition(() => {
         toggles.forEach(other => setAlbumTrackListExpanded(view, other, false));
