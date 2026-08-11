@@ -67,7 +67,7 @@ function mapRemoteAlbum(item, importIndex = 0) {
   if (!item?.id) return null;
   return normalizeAlbumSchema({
     ...item,
-    source: 'cloudflare-r2',
+    source: item.source || 'cloudflare-r2',
   }, importIndex);
 }
 
@@ -147,6 +147,7 @@ async function fetchRemoteCatalogPayload({ apiUrl = globalThis.SHINOBIWAN_MEDIA_
     return {
       albums: [],
       tracks: catalogFixture.map((track, index) => normalizeTrackSchema({ ...track }, index)),
+      albumAuthority: null,
     };
   }
 
@@ -165,6 +166,7 @@ async function fetchRemoteCatalogPayload({ apiUrl = globalThis.SHINOBIWAN_MEDIA_
         ? payload.albums.map((item, index) => mapRemoteAlbum(item, index)).filter(Boolean)
         : [],
       tracks: payload.tracks.map((item, index) => mapRemoteTrack(item, normalizedApiUrl, index)).filter(Boolean),
+      albumAuthority: payload.albumAuthority === 'canonical-r2' ? 'canonical-r2' : null,
     };
   } finally {
     clearTimeout(timeout);
@@ -183,12 +185,15 @@ export async function fetchRemoteAlbums(options = {}) {
 
 export async function hydrateRemoteCatalog(options = {}) {
   const remote = await fetchRemoteCatalogPayload(options);
-  const albumResult = mergeRemoteAlbums(remote.albums);
+  const albumResult = mergeRemoteAlbums(remote.albums, {
+    authoritative: remote.albumAuthority === 'canonical-r2',
+  });
   const trackResult = mergeRemoteTracks(remote.tracks);
   return {
     ...trackResult,
     remoteCount: remote.tracks.length,
     remoteAlbumCount: remote.albums.length,
+    albumAuthority: remote.albumAuthority,
     albumResult,
   };
 }
