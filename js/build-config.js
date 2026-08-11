@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260811-phase-ux-c3-c3-real-route-transitions-v94',
-    cache: 'shinobi-launchpad-v94',
-    revision: 'premium-interaction-motion-4',
-    display: '2026.08.11.94',
-    release: 'phase-ux-c3-c3-real-route-transitions-20260811'
+    id: '20260811-phase-ux-c3-c4-smooth-layout-v95',
+    cache: 'shinobi-launchpad-v95',
+    revision: 'premium-interaction-motion-5',
+    display: '2026.08.11.95',
+    release: 'phase-ux-c3-c4-smooth-layout-20260811'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
@@ -125,6 +125,14 @@
     );
   }
 
+  function installC3C4LayoutPolish() {
+    ensureBuildStylesheet(
+      'link[data-c3-c4-layout-polish-v95]',
+      'css/c3-c4-layout-polish-v95.css',
+      'c3C4LayoutPolishV95'
+    );
+  }
+
   function findEquivalentStylesheet(link, url) {
     return [...document.querySelectorAll('link[rel="stylesheet"]')].find(candidate => {
       if (candidate === link) return false;
@@ -162,6 +170,7 @@
   installGlobalTouchPolish();
   installPremiumFeel();
   installPremiumFeelTuning();
+  installC3C4LayoutPolish();
 
   document.querySelectorAll('link[rel="stylesheet"]').forEach(normalizeStylesheet);
   new MutationObserver(records => {
