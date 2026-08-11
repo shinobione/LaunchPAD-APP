@@ -53,6 +53,10 @@ const candidateDocs = new Map([
   [
     'phase-ux-c2-5-f-canonical-album-public-cutover-20260811',
     'docs/PHASE-UX-C2-5-F-BUILD89-CANONICAL-ALBUM-PUBLIC-CUTOVER.md'
+  ],
+  [
+    'phase-ux-c3-c-premium-feel-20260811',
+    'docs/PHASE-UX-C3-C-BUILD91-PREMIUM-FEEL.md'
   ]
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
