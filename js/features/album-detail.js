@@ -3,6 +3,43 @@ import { shareRoute } from '../core/share.js';
 
 const durationCache = new Map();
 let durationHydrationId = 0;
+const ALBUM_PALETTE_STYLE_ID = 'shinobi-album-palette-theme';
+
+function normalizeAlbumThemeColor(value) {
+  const color = String(value || '').trim().toLowerCase();
+  if (/^#[0-9a-f]{6}$/i.test(color)) return color;
+  if (/^#[0-9a-f]{3}$/i.test(color)) return `#${color.slice(1).split('').map(char => `${char}${char}`).join('')}`;
+  return null;
+}
+
+function ensureAlbumPaletteStyles() {
+  if (document.getElementById(ALBUM_PALETTE_STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = ALBUM_PALETTE_STYLE_ID;
+  style.textContent = `
+    .album-detail-view{--album-accent:var(--accent);--album-accent2:#8f58ff}
+    .album-detail-view .album-detail-hero{border-color:color-mix(in srgb,var(--album-accent) 26%,rgba(255,255,255,.09));background:radial-gradient(circle at 18% 20%,color-mix(in srgb,var(--album-accent) 24%,transparent),transparent 34%),radial-gradient(circle at 84% 2%,color-mix(in srgb,var(--album-accent2) 18%,transparent),transparent 38%),linear-gradient(145deg,rgba(255,255,255,.05),rgba(255,255,255,.015));box-shadow:0 28px 80px rgba(0,0,0,.28),0 0 72px color-mix(in srgb,var(--album-accent2) 9%,transparent)}
+    .album-detail-view .album-detail-cover{border:1px solid color-mix(in srgb,var(--album-accent) 24%,rgba(255,255,255,.08));box-shadow:0 30px 70px rgba(0,0,0,.48),0 0 42px color-mix(in srgb,var(--album-accent) 16%,transparent)}
+    .album-detail-view .album-detail-copy .eyebrow{color:color-mix(in srgb,var(--album-accent) 82%,#fff)}
+    .album-detail-view .album-detail-meta span{border-color:color-mix(in srgb,var(--album-accent2) 22%,rgba(255,255,255,.09));background:color-mix(in srgb,var(--album-accent2) 7%,rgba(255,255,255,.035))}
+    .album-detail-view .album-detail-actions .primary{border-color:color-mix(in srgb,var(--album-accent) 48%,transparent);background:linear-gradient(135deg,color-mix(in srgb,var(--album-accent) 74%,#07040d),color-mix(in srgb,var(--album-accent2) 74%,#07040d));box-shadow:0 12px 34px color-mix(in srgb,var(--album-accent) 15%,transparent)}
+    .album-detail-view .album-detail-actions .secondary{border-color:color-mix(in srgb,var(--album-accent2) 32%,rgba(255,255,255,.12));background:color-mix(in srgb,var(--album-accent2) 8%,rgba(255,255,255,.03))}
+    .album-detail-view .album-detail-track:hover,.album-detail-view .album-detail-track.is-current{border-color:color-mix(in srgb,var(--album-accent) 42%,transparent);background:linear-gradient(90deg,color-mix(in srgb,var(--album-accent) 10%,transparent),color-mix(in srgb,var(--album-accent2) 6%,transparent))}
+    .album-detail-view .album-detail-lyrics,.album-detail-view .album-detail-play{color:var(--album-accent)}
+    .album-detail-view .album-detail-back{color:color-mix(in srgb,var(--album-accent2) 72%,#fff)}
+  `;
+  document.head.append(style);
+}
+
+function applyAlbumTheme(view, album) {
+  const primary = normalizeAlbumThemeColor(album?.accent);
+  const secondary = normalizeAlbumThemeColor(album?.accent2);
+  if (primary) view.style.setProperty('--album-accent', primary);
+  else view.style.removeProperty('--album-accent');
+  if (secondary) view.style.setProperty('--album-accent2', secondary);
+  else view.style.removeProperty('--album-accent2');
+  view.dataset.albumPalette = primary || secondary ? 'canonical' : 'fallback';
+}
 
 function formatDuration(value) {
   if (!Number.isFinite(value) || value < 0) return '--:--';
@@ -65,6 +102,7 @@ function ensureView() {
 }
 
 export function createAlbumDetail({ escapeHtml, onPlayAlbum, onPlayTrack, onBack }) {
+  ensureAlbumPaletteStyles();
   const view = ensureView();
   let currentAlbumId = null;
 
@@ -110,6 +148,7 @@ export function createAlbumDetail({ escapeHtml, onPlayAlbum, onPlayTrack, onBack
     const tags = [...new Set(albumTracks.flatMap(track => track.tags || [track.genre]))];
     const lyricCount = albumTracks.filter(track => track.lyrics).length;
     currentAlbumId = albumId;
+    applyAlbumTheme(view, album);
 
     view.innerHTML = `
       <button type="button" class="album-detail-back text-button" data-album-detail-action="back">← All albums</button>
