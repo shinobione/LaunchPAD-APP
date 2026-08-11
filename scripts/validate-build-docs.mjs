@@ -69,6 +69,10 @@ const candidateDocs = new Map([
   [
     'phase-ux-c3-c3-real-route-transitions-20260811',
     'docs/PHASE-UX-C3-C3-BUILD94-REAL-ROUTE-TRANSITIONS.md'
+  ],
+  [
+    'phase-ux-c3-c4-smooth-layout-20260811',
+    'docs/PHASE-UX-C3-C4-BUILD95-SMOOTH-LAYOUT.md'
   ]
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
