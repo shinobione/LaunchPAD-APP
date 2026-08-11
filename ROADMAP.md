@@ -1,6 +1,6 @@
 # LaunchPAD roadmap
 
-> Current candidate build: `2026.08.11.93` — release `phase-ux-c3-c2-transition-glow-20260811`.
+> Current candidate build: `2026.08.11.94` — release `phase-ux-c3-c3-real-route-transitions-20260811`.
 > Accepted LaunchPAD baseline remains Build 90 until C3-C real-user acceptance.
 
 The repository cleanup/reconciliation phase is complete. This roadmap now tracks product/runtime work rather than historical migration chores.
@@ -13,18 +13,22 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Build 91 CI/deployment passed without player/Worker/R2/Track Manager/SonicTrace behavior changes.
 - [x] Real-user Build 91 perception smoke recorded as **NOT ACCEPTED**: clean but too subtle, with little or no premium-feel difference.
 - [x] Build 92 / C3-C.1 increased perceptual contrast with durable press state, click-position light bloom, stronger control pop, card depth, active navigation light and deeper route-entry styling.
-- [x] Build 92 kept the premium runtime presentation-only: no `preventDefault()`, no `stopPropagation()`, no delayed actions and no infinite attention animation.
-- [x] Build 92 full CI green.
-- [x] Build 92 GitHub Pages deployment green.
-- [x] Real-user Build 92 desktop smoke recorded as **NOT ACCEPTED YET**: click feedback is finally obvious, but bloom is too strong, selected Audio Lab chips retain too much outer light, and expected page transitions are effectively absent.
-- [x] Build 93 / C3-C.2 identifies the route-transition root cause: `.view.active` and `.view.active.route-entering` shared the same Build 92 animation name, so the replay class did not reliably restart animation.
-- [x] Build 93 adds a later presentation-only tuning overlay: smaller/shorter bloom, compact Audio Lab selected-chip state, and a distinct 260 ms `lp93-route-enter` animation.
-- [x] Build 93 keeps the validated Build 92 press/runtime behavior and does not touch router/player/data ownership.
-- [ ] Build 93 full CI green.
-- [ ] Build 93 GitHub Pages deployment green.
-- [ ] Build 93 real-user desktop smoke: page transitions clearly visible; click bloom tasteful; selected Audio Lab preset has no residual-looking neon puddle.
-- [ ] Build 93 touch/mobile smoke: no sticky hover, layout shift or accidental gesture ownership.
-- [ ] Recheck Play/Pause, favorites, queue, Album/Track navigation, tabs/buttons and mini-player after Build 93.
+- [x] Build 92 full CI + Pages deployment green.
+- [x] Real-user Build 92 desktop smoke recorded as **NOT ACCEPTED YET**: click feedback became obvious, but bloom was too strong and expected page transitions were absent.
+- [x] Build 93 / C3-C.2 reduced click bloom and removed the persistent Audio Lab selected-chip neon puddle.
+- [x] Build 93 full CI + Pages deployment green.
+- [x] Real-user Build 93 follow-up: **glow accepted**, but supplied video proves Favorites → Discography and Track Detail changes still have no perceptible page transition; `Open project →` also has an inappropriate button-style glow.
+- [x] Build 94 / C3-C.3 identifies the topology issue: normal routes use the generic router while Track Detail can use direct `history.pushState()` + render ownership, so CSS-class replay alone cannot guarantee one transition path.
+- [x] Build 94 keeps router ownership untouched and replays presentation with Web Animations on the actual active view after navigation.
+- [x] Build 94 covers shared route events, hash/popstate navigation and direct user navigation intents including Album/Track Detail routes.
+- [x] Build 94 removes broad bloom/box-shadow treatment from `Open project →` text actions while keeping tactile text feedback.
+- [x] Build 94 adds dedicated regression coverage and keeps reduced-motion/event-ownership guards.
+- [x] Build 94 PR-head CI green: LaunchPAD validation, Cloudflare dry-run validation and horizontal-overflow validation.
+- [ ] Build 94 GitHub Pages deployment green after merge.
+- [ ] Build 94 real-user desktop smoke: transitions clearly visible on Favorites → Discography, Albums → Album Detail and Track → Track Detail changes.
+- [ ] Build 94 real-user desktop smoke: `Open project →` has clean text-link feedback without a glow/pill artifact.
+- [ ] Build 94 touch/mobile smoke: no sticky hover, layout shift or accidental gesture ownership.
+- [ ] Recheck Play/Pause, favorites, queue, Album/Track navigation and mini-player after Build 94.
 - [ ] Only after explicit real-user acceptance, mark C3-C complete and run PHASE UX final closeout/reconciliation.
 - [ ] Phase 7 remains locked until that closeout is complete and explicit authorization is given.
 
