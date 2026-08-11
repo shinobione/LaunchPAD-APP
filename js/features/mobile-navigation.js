@@ -1,12 +1,12 @@
 import { ensureStylesheet } from '../core/assets.js';
 
 const MOBILE_QUERY = '(max-width: 760px)';
-const TOUCH_CLICK_SUPPRESS_MS = 650;
 
 export function initMobileNavigation() {
   if (window.__shinobiMobileNavigationReady) return;
   window.__shinobiMobileNavigationReady = true;
   ensureStylesheet('css/mobile-navigation.css');
+  ensureStylesheet('css/c3-c9-corrective-v100.css', 'c3C9CorrectiveV100');
 
   const sidebar = document.querySelector('.sidebar');
   const menuButton = document.querySelector('#menu-button');
@@ -25,7 +25,6 @@ export function initMobileNavigation() {
   }
 
   const media = window.matchMedia(MOBILE_QUERY);
-  let suppressTouchClickUntil = 0;
 
   function isOpen() {
     return sidebar.classList.contains('open') && document.body.classList.contains('mobile-menu-open');
@@ -60,25 +59,10 @@ export function initMobileNavigation() {
     else openMenu({ focusFirst: keyboard });
   }
 
-  // Build 99: on touch/pen, move the drawer on pointerdown rather than waiting
-  // for the synthesized click. Keyboard/mouse keeps normal click semantics.
-  document.addEventListener('pointerdown', event => {
-    if (!media.matches || !event.isPrimary || (event.pointerType !== 'touch' && event.pointerType !== 'pen')) return;
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-
-    const menuTarget = target.closest('#menu-button');
-    const backdropTarget = target.closest('#mobile-menu-backdrop');
-    if (!menuTarget && !backdropTarget) return;
-
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    suppressTouchClickUntil = performance.now() + TOUCH_CLICK_SUPPRESS_MS;
-
-    if (menuTarget) toggleMenu({ keyboard: false });
-    else closeMenu({ returnFocus: false });
-  }, true);
-
+  // Build 100 corrective: one event family owns the drawer. Modern mobile
+  // Chromium already emits click without the legacy 300 ms delay when
+  // touch-action: manipulation is present, so pointerdown ownership only
+  // created a pointerdown -> synthetic click race and occasional self-closing.
   document.addEventListener('click', event => {
     const target = event.target;
     if (!(target instanceof Element)) return;
@@ -87,7 +71,6 @@ export function initMobileNavigation() {
       if (!media.matches) return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      if (performance.now() < suppressTouchClickUntil) return;
       toggleMenu({ keyboard: event.detail === 0 });
       return;
     }
@@ -95,7 +78,6 @@ export function initMobileNavigation() {
     if (target.closest('#mobile-menu-backdrop')) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      if (performance.now() < suppressTouchClickUntil) return;
       closeMenu({ returnFocus: event.detail === 0 });
       return;
     }
@@ -117,5 +99,8 @@ export function initMobileNavigation() {
     if (!event.matches) closeMenu();
   });
 
-  sync(false);
+  // Preserve an early boot-menu click instead of force-closing it when the
+  // full navigation module hydrates. This is the other half of the Build 99
+  // self-close race: the boot bridge may already have set .sidebar.open.
+  sync(media.matches && sidebar.classList.contains('open'));
 }
