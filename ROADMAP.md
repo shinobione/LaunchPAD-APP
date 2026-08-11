@@ -1,6 +1,6 @@
 # LaunchPAD roadmap
 
-> Current candidate build: `2026.08.11.92` — release `phase-ux-c3-c1-premium-feel-20260811`.
+> Current candidate build: `2026.08.11.93` — release `phase-ux-c3-c2-transition-glow-20260811`.
 > Accepted LaunchPAD baseline remains Build 90 until C3-C real-user acceptance.
 
 The repository cleanup/reconciliation phase is complete. This roadmap now tracks product/runtime work rather than historical migration chores.
@@ -12,12 +12,19 @@ The repository cleanup/reconciliation phase is complete. This roadmap now tracks
 - [x] Build 91 introduced the first restrained LaunchPAD premium interaction layer.
 - [x] Build 91 CI/deployment passed without player/Worker/R2/Track Manager/SonicTrace behavior changes.
 - [x] Real-user Build 91 perception smoke recorded as **NOT ACCEPTED**: clean but too subtle, with little or no premium-feel difference.
-- [x] Build 92 / C3-C.1 increases perceptual contrast with durable press state, click-position light bloom, stronger control pop, card depth, active navigation light and deeper route-entry motion.
-- [x] Build 92 keeps the premium runtime presentation-only: no `preventDefault()`, no `stopPropagation()`, no delayed actions and no infinite attention animation.
-- [ ] Build 92 full CI green.
-- [ ] Build 92 GitHub Pages deployment green.
-- [ ] Build 92 real-user desktop smoke: buttons/player/cards/navigation feel materially more responsive and premium without becoming flashy/heavy.
-- [ ] Build 92 touch/mobile smoke: no sticky hover, layout shift or accidental gesture ownership.
+- [x] Build 92 / C3-C.1 increased perceptual contrast with durable press state, click-position light bloom, stronger control pop, card depth, active navigation light and deeper route-entry styling.
+- [x] Build 92 kept the premium runtime presentation-only: no `preventDefault()`, no `stopPropagation()`, no delayed actions and no infinite attention animation.
+- [x] Build 92 full CI green.
+- [x] Build 92 GitHub Pages deployment green.
+- [x] Real-user Build 92 desktop smoke recorded as **NOT ACCEPTED YET**: click feedback is finally obvious, but bloom is too strong, selected Audio Lab chips retain too much outer light, and expected page transitions are effectively absent.
+- [x] Build 93 / C3-C.2 identifies the route-transition root cause: `.view.active` and `.view.active.route-entering` shared the same Build 92 animation name, so the replay class did not reliably restart animation.
+- [x] Build 93 adds a later presentation-only tuning overlay: smaller/shorter bloom, compact Audio Lab selected-chip state, and a distinct 260 ms `lp93-route-enter` animation.
+- [x] Build 93 keeps the validated Build 92 press/runtime behavior and does not touch router/player/data ownership.
+- [ ] Build 93 full CI green.
+- [ ] Build 93 GitHub Pages deployment green.
+- [ ] Build 93 real-user desktop smoke: page transitions clearly visible; click bloom tasteful; selected Audio Lab preset has no residual-looking neon puddle.
+- [ ] Build 93 touch/mobile smoke: no sticky hover, layout shift or accidental gesture ownership.
+- [ ] Recheck Play/Pause, favorites, queue, Album/Track navigation, tabs/buttons and mini-player after Build 93.
 - [ ] Only after explicit real-user acceptance, mark C3-C complete and run PHASE UX final closeout/reconciliation.
 - [ ] Phase 7 remains locked until that closeout is complete and explicit authorization is given.
 
