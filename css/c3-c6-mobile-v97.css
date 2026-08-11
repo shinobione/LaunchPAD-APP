@@ -1,0 +1,304 @@
+/* LaunchPAD Build 97 — C3-C.6 mobile cleanup.
+   Presentation only: mobile Home/Albums + normal Lyrics track picker.
+   Player, queue, audio, Workers/R2 and Studio-mode ownership remain untouched. */
+
+/* Replace the platform-native Lyrics select popup only in normal Lyrics.
+   Studio mode keeps the original select and its existing behavior. */
+#view-lyrics:not(.lyrics-studio-mode) #lyrics-track-select.lp97-native-track-select {
+  position: absolute !important;
+  inline-size: 1px !important;
+  block-size: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  clip-path: inset(50%) !important;
+}
+
+.lp97-lyrics-picker {
+  position: relative;
+  width: 100%;
+  margin-top: 8px;
+  z-index: 30;
+}
+
+.lp97-lyrics-picker[hidden] {
+  display: none !important;
+}
+
+.lp97-lyrics-picker-button {
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, rgba(255,255,255,.12));
+  border-radius: 13px;
+  background: rgba(10,8,18,.96);
+  color: #f4eff8;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 720;
+  text-align: left;
+  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+}
+
+.lp97-lyrics-picker-button::after {
+  content: "⌄";
+  flex: 0 0 auto;
+  font-size: 14px;
+  color: color-mix(in srgb, var(--accent) 74%, white 26%);
+  transition: transform 180ms cubic-bezier(.22,.61,.36,1);
+}
+
+.lp97-lyrics-picker.is-open .lp97-lyrics-picker-button::after {
+  transform: rotate(180deg);
+}
+
+.lp97-lyrics-picker-list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 7px);
+  max-height: min(280px, 44dvh);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px;
+  border: 1px solid rgba(255,255,255,.11);
+  border-radius: 14px;
+  background: rgba(10,7,17,.985);
+  box-shadow: 0 18px 48px rgba(0,0,0,.48), 0 0 0 1px rgba(135,71,255,.05) inset;
+  backdrop-filter: blur(18px);
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb,var(--accent) 58%,#5e4a78) transparent;
+}
+
+.lp97-lyrics-picker-list[hidden] {
+  display: none !important;
+}
+
+.lp97-lyrics-option {
+  width: 100%;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #bbb2c7;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  text-align: left;
+}
+
+.lp97-lyrics-option:hover,
+.lp97-lyrics-option:focus-visible {
+  outline: none;
+  background: rgba(255,255,255,.055);
+  color: white;
+}
+
+.lp97-lyrics-option[aria-selected="true"] {
+  background: color-mix(in srgb,var(--accent) 15%,rgba(255,255,255,.04));
+  color: white;
+  box-shadow: 0 0 0 1px color-mix(in srgb,var(--accent) 42%,transparent) inset;
+}
+
+@media (max-width: 760px) {
+  /* Home stays about the artist/player instead of becoming a second Discography.
+     The catalog remains fully available through Discography and Albums. */
+  #view-home #recently-added-section {
+    display: none !important;
+  }
+
+  /* Mobile Album library: compact cards rather than desktop cards squeezed into
+     a phone column. Tags become a horizontal rail instead of a giant tag cloud. */
+  #view-analytics .albums-intro {
+    padding-bottom: 12px;
+  }
+
+  #view-analytics .albums-summary {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  #view-analytics .albums-summary > span {
+    padding: 6px 9px;
+    font-size: 8px;
+  }
+
+  #view-analytics .album-collection {
+    display: flex !important;
+    flex-direction: column;
+    gap: 14px !important;
+  }
+
+  #view-analytics .album-collection.has-album-focus {
+    display: flex !important;
+  }
+
+  #view-analytics .project-album {
+    width: 100%;
+    padding: 13px !important;
+    border-radius: 18px !important;
+    overflow: clip;
+  }
+
+  #view-analytics .project-album-open {
+    width: 100%;
+    text-align: left;
+  }
+
+  #view-analytics .project-album-head {
+    display: grid !important;
+    grid-template-columns: 82px minmax(0,1fr) !important;
+    align-items: start !important;
+    gap: 12px !important;
+  }
+
+  #view-analytics .project-album-cover {
+    width: 82px !important;
+    height: 82px !important;
+    border-radius: 14px !important;
+  }
+
+  #view-analytics .project-album-copy {
+    min-width: 0;
+  }
+
+  #view-analytics .project-album-copy small {
+    font-size: 7.5px;
+    letter-spacing: .1em;
+  }
+
+  #view-analytics .project-album-copy h2 {
+    margin: 3px 0 5px !important;
+    font-size: clamp(20px,6.2vw,25px) !important;
+    line-height: 1.02;
+  }
+
+  #view-analytics .project-album-copy p {
+    margin: 0 !important;
+    font-size: 10px;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  #view-analytics .project-era-heading {
+    display: block;
+    margin-top: 7px;
+    font-size: 10px;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #view-analytics .project-tags {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+    margin-top: 8px !important;
+    max-width: 100%;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 1px 2px 4px 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    overscroll-behavior-x: contain;
+  }
+
+  #view-analytics .project-tags::-webkit-scrollbar {
+    display: none;
+  }
+
+  #view-analytics .project-tags > span {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-size: 8px;
+    padding: 5px 7px;
+  }
+
+  #view-analytics .project-album-actions {
+    display: grid !important;
+    grid-template-columns: auto minmax(0,1fr);
+    gap: 8px !important;
+    align-items: center;
+    margin-top: 11px;
+  }
+
+  #view-analytics .project-album-actions > .secondary {
+    min-height: 34px;
+    padding-inline: 11px;
+    white-space: nowrap;
+  }
+
+  #view-analytics .project-album-actions > .text-button[data-open-album] {
+    justify-self: end;
+    min-height: 34px;
+    padding: 7px 3px;
+    white-space: nowrap;
+  }
+
+  #view-analytics .project-album-toggle {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 36px !important;
+    margin: 0 !important;
+    justify-self: stretch;
+    background: rgba(255,255,255,.035) !important;
+  }
+
+  #view-analytics .project-track-list {
+    margin-top: 9px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,.07);
+  }
+
+  #view-analytics .project-track-list:not([hidden]) {
+    animation: lp97-mobile-tracklist-in 210ms cubic-bezier(.22,.61,.36,1) both;
+  }
+
+  #view-analytics .project-track {
+    min-height: 42px;
+    padding: 8px 9px !important;
+    border-radius: 11px;
+  }
+
+  #view-analytics .track-number {
+    opacity: .6;
+  }
+
+  #view-analytics .albums-dna {
+    margin-top: 16px;
+  }
+
+  .lp97-lyrics-picker-list {
+    position: fixed;
+    left: 14px;
+    right: 14px;
+    bottom: calc(112px + env(safe-area-inset-bottom));
+    max-height: min(360px, 52dvh);
+    z-index: 10000;
+  }
+}
+
+@keyframes lp97-mobile-tracklist-in {
+  from { opacity: 0; transform: translate3d(0,-6px,0); }
+  to { opacity: 1; transform: translate3d(0,0,0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #view-analytics .project-track-list:not([hidden]) {
+    animation: none !important;
+  }
+
+  .lp97-lyrics-picker-button::after {
+    transition: none !important;
+  }
+}
