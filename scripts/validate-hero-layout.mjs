@@ -30,9 +30,19 @@ requirePattern(
 
 requirePattern(
   desktop,
-  /\.hero-banner-art\s*\{[\s\S]*?height:\s*auto\s*!important;[\s\S]*?transform:\s*translate\(-50%,\s*-50%\)\s*!important;/,
-  'Desktop Home must center-crop only the transparent vertical padding around the new logo artwork.'
+  /\.hero-banner-art\s*\{[\s\S]*?height:\s*100%\s*!important;[\s\S]*?object-fit:\s*cover\s*!important;[\s\S]*?transform:\s*none\s*!important;[\s\S]*?transition:\s*none\s*!important;/,
+  'Desktop Home must crop the logo without a transform or transition that can drift on hover.'
 );
+
+requirePattern(
+  desktop,
+  /\.launchpad-hero:hover\s+\.hero-banner-art\s*\{[\s\S]*?transform:\s*none\s*!important;/,
+  'Desktop Home hover must not move the Shino LaunchPAD artwork.'
+);
+
+if (/transform:\s*translate\(\s*-50%\s*,\s*-50%\s*\)\s*!important;/.test(desktop)) {
+  throw new Error('Desktop Home must not reintroduce transform-based logo centering; it conflicts with historical hover rules.');
+}
 
 requirePattern(
   finalArtwork,
@@ -52,4 +62,4 @@ requirePattern(
   'The build config must expose a stable non-empty revision slug so cached shell assets can refresh.'
 );
 
-console.log('Hero profile sizing, desktop logo framing, artwork visibility, LAUNCHPAD-first mobile ordering and generic build revision metadata are guarded.');
+console.log('Hero profile sizing, transform-free desktop logo framing, artwork visibility, LAUNCHPAD-first mobile ordering and generic build revision metadata are guarded.');
