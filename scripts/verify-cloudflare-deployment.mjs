@@ -68,6 +68,8 @@ async function waitForPublicHealth() {
       assert(Number(health.canonicalTracks) > 0, 'Public /health reported no canonical tracks');
       assert(health.audioLabCors === true, 'Public /health did not report audioLabCors=true');
       assert(health.crossOriginResourcePolicy === 'cross-origin', 'Public /health did not report crossOriginResourcePolicy=cross-origin');
+      assert(health.albumAuthority === 'canonical-r2', `Public /health Album authority is ${health.albumAuthority || 'missing'}`);
+      assert(Number(health.canonicalAlbums) > 0, 'Public /health reported no canonical Albums');
       if (expectedVersion) {
         assert(String(health.version) === String(expectedVersion), `Public version ${health.version} does not match ${expectedVersion}`);
       }
@@ -93,6 +95,26 @@ async function verifyPublic() {
   assert(Array.isArray(catalog.tracks), 'Public /tracks did not return a tracks array');
   assert(catalog.tracks.length > 0, 'Public /tracks returned an empty catalog');
   assert(Number(catalog.count) === catalog.tracks.length, 'Public /tracks count does not match the array length');
+  assert(catalog.albumAuthority === 'canonical-r2', 'Public /tracks did not expose canonical-r2 Album authority');
+  assert(Array.isArray(catalog.albums), 'Public /tracks did not return an albums array');
+  assert(catalog.albums.length > 0, 'Public /tracks returned no canonical Albums');
+  assert(Number(catalog.albumCount) === catalog.albums.length, 'Public /tracks albumCount does not match albums length');
+
+  const albumsResponse = await fetchChecked(cacheBustedUrl(PUBLIC_URL, '/albums'));
+  assert(albumsResponse.status === 200, `Public /albums returned ${albumsResponse.status}`);
+  assertAudioLabCors(albumsResponse, 'Public /albums');
+  const albumCatalog = await readJson(albumsResponse, 'Public /albums');
+  assert(albumCatalog.ok === true, 'Public /albums did not report ok=true');
+  assert(albumCatalog.albumAuthority === 'canonical-r2', 'Public /albums did not report canonical-r2 authority');
+  assert(Array.isArray(albumCatalog.albums), 'Public /albums did not return an albums array');
+  assert(albumCatalog.albums.length === catalog.albums.length, 'Public /albums disagrees with /tracks Album projection');
+
+  const coverAlbum = catalog.albums.find(album => album?.cover);
+  assert(coverAlbum, 'No canonical Album exposes a public cover URL');
+  const coverHead = await fetchChecked(coverAlbum.cover, { method: 'HEAD' });
+  assert(coverHead.status === 200, `Canonical Album cover HEAD returned ${coverHead.status}`);
+  assertAudioLabCors(coverHead, 'Canonical Album cover response');
+  assert(coverHead.headers.get('x-launchpad-media-version') === String(expectedVersion || health.version), 'Album cover Worker version header is missing or stale');
 
   const rangedTrack = catalog.tracks.find(track => track?.assets?.audio?.url);
   assert(rangedTrack, 'No published track exposes an audio URL');
@@ -120,8 +142,11 @@ async function verifyPublic() {
     audioLabCors: health.audioLabCors,
     crossOriginResourcePolicy: health.crossOriginResourcePolicy,
     canonicalTracks: health.canonicalTracks,
+    canonicalAlbums: health.canonicalAlbums,
     publishedTracks: catalog.tracks.length,
+    publishedAlbums: catalog.albums.length,
     rangeTrack: rangedTrack.slug,
+    coverAlbum: coverAlbum.id,
   }));
 }
 
