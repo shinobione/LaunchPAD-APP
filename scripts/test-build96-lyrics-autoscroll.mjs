@@ -5,9 +5,9 @@ const engine = fs.readFileSync('js/features/lyrics/lyrics-engine.js', 'utf8');
 const css = fs.readFileSync('css/c3-c5-lyrics-v96.css', 'utf8');
 const buildConfig = fs.readFileSync('js/build-config.js', 'utf8');
 
-const isBuild96 = buildConfig.includes("display: '2026.08.11.96'");
-const isSuccessor = /display:\s*'2026\.08\.11\.(?:9[7-9]|[1-9]\d{2,})'/.test(buildConfig);
-assert.ok(isBuild96 || isSuccessor, 'Build 96 guard must run on Build 96 or a later C3-C successor.');
+const buildNumber = Number(/display:\s*'\d{4}\.\d{2}\.\d{2}\.(\d+)'/.exec(buildConfig)?.[1]);
+const isBuild96 = buildNumber === 96;
+assert.ok(Number.isInteger(buildNumber) && buildNumber >= 96, 'Build 96 guard must run on Build 96 or a later C3-C successor.');
 
 for (const marker of [
   "id: '20260811-phase-ux-c3-c5-lyrics-autoscroll-v96'",
@@ -43,4 +43,4 @@ assert.doesNotMatch(engine, /scrollIntoView\s*\(/, 'Build 96 Lyrics must remain 
 assert.doesNotMatch(css, /#view-lyrics\.lyrics-studio-mode\s*\{/, 'Build 96 corrective must not own Studio mode layout.');
 assert.doesNotMatch(css, /@media\s*\(max-width:\s*760px\)/, 'Build 96 corrective must remain desktop-only.');
 
-console.log('LaunchPAD Build 96 passed normal-Lyrics viewport lock, internal scroll-host and route-settled auto-scroll guards.');
+console.log(`LaunchPAD Build 96 ancestry guard passed under Build ${buildNumber} for normal-Lyrics viewport lock, internal scroll-host and route-settled auto-scroll.`);
