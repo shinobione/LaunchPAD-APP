@@ -8,12 +8,26 @@ import {
 
 const ALLOWED_LANGUAGES = ['French', 'English', 'Vietnamese'];
 const ERA_QUEUE_PREFIX = 'era:';
+const VIRTUAL_SINGLES_ID = 'singles';
 
 const legacyAlbums = sourceAlbums.map((album, index) => normalizeAlbumSchema({
   ...album,
   status: 'published',
   source: 'legacy-catalog-js',
 }, index));
+const legacySingles = legacyAlbums.find(album => album.id === VIRTUAL_SINGLES_ID) || null;
+const virtualSingles = normalizeAlbumSchema({
+  ...(legacySingles || {}),
+  id: VIRTUAL_SINGLES_ID,
+  title: legacySingles?.title || 'Singles',
+  type: 'collection',
+  status: 'published',
+  year: legacySingles?.year || new Date().getFullYear(),
+  cover: legacySingles?.cover || 'assets/singles.jpeg',
+  description: legacySingles?.description || 'Standalone releases outside canonical Album membership.',
+  trackIds: [],
+  source: 'virtual-singles',
+}, legacyAlbums.length);
 
 export const albums = [...legacyAlbums];
 export const canonicalAlbums = [];
@@ -24,6 +38,7 @@ const canonicalAlbumById = new Map();
 const albumById = new Map();
 const trackById = new Map();
 const trackIndexById = new Map();
+let canonicalAlbumAuthority = false;
 
 function canonicalEraValue(value) {
   return String(value ?? '')
@@ -45,11 +60,33 @@ function decodeEraQueueId(value) {
   }
 }
 
+function canonicalClaimedTrackIds() {
+  return new Set(canonicalAlbums.flatMap(album => Array.isArray(album.trackIds) ? album.trackIds : []));
+}
+
+function refreshVirtualSingles() {
+  const claimed = canonicalClaimedTrackIds();
+  virtualSingles.trackIds = tracks
+    .filter(track => !claimed.has(track.id))
+    .map(track => track.id);
+  return virtualSingles;
+}
+
 function rebuildAlbumIndexes() {
   canonicalAlbumById.clear();
   canonicalAlbums.forEach(album => canonicalAlbumById.set(album.id, album));
 
   albumById.clear();
+  const authorityAlbums = canonicalAlbumAuthority ? canonicalAlbums : legacyAlbums;
+
+  if (canonicalAlbumAuthority) {
+    refreshVirtualSingles();
+    authorityAlbums.forEach(album => albumById.set(album.id, album));
+    albumById.set(VIRTUAL_SINGLES_ID, virtualSingles);
+    albums.splice(0, albums.length, ...authorityAlbums, virtualSingles);
+    return;
+  }
+
   legacyAlbums.forEach(album => albumById.set(album.id, album));
   canonicalAlbums.forEach(album => albumById.set(album.id, album));
 
@@ -66,6 +103,7 @@ function rebuildTrackIndexes() {
     trackById.set(track.id, track);
     trackIndexById.set(track.id, index);
   });
+  if (canonicalAlbumAuthority) refreshVirtualSingles();
 }
 
 export function reindexCatalog() {
@@ -92,19 +130,24 @@ function mergeSearchText(track) {
 rebuildAlbumIndexes();
 rebuildTrackIndexes();
 
-export function mergeRemoteAlbums(remoteAlbums = []) {
+export function mergeRemoteAlbums(remoteAlbums = [], { authoritative = false } = {}) {
   const normalized = Array.isArray(remoteAlbums)
     ? remoteAlbums
       .map((album, index) => normalizeAlbumSchema({ ...album, source: album?.source || 'cloudflare-r2' }, index))
-      .filter(album => album.id)
+      .filter(album => album.id && album.id !== VIRTUAL_SINGLES_ID)
     : [];
 
+  canonicalAlbumAuthority = authoritative === true;
   canonicalAlbums.splice(0, canonicalAlbums.length, ...normalized);
   rebuildAlbumIndexes();
   return {
     canonical: canonicalAlbums.length,
     effective: albums.length,
-    legacyFallback: albums.filter(album => !canonicalAlbumById.has(album.id)).length,
+    legacyFallback: canonicalAlbumAuthority
+      ? 0
+      : albums.filter(album => !canonicalAlbumById.has(album.id)).length,
+    authority: canonicalAlbumAuthority ? 'canonical-r2' : 'legacy-fallback',
+    virtualSingles: canonicalAlbumAuthority ? virtualSingles.trackIds.length : 0,
   };
 }
 
@@ -155,9 +198,20 @@ export function mergeRemoteTracks(remoteTracks = []) {
 export function getAlbum(albumId) { return albumById.get(albumId) || null; }
 export function getCanonicalAlbum(albumId) { return canonicalAlbumById.get(albumId) || null; }
 export function hasCanonicalAlbum(albumId) { return canonicalAlbumById.has(albumId); }
+export function getAlbumAuthority() { return canonicalAlbumAuthority ? 'canonical-r2' : 'legacy-fallback'; }
 export function getTrack(trackId) { return trackById.get(trackId) || null; }
 export function getTrackIndex(trackId) { return trackIndexById.has(trackId) ? trackIndexById.get(trackId) : -1; }
 export function getAlbumTracks(albumId) {
+  if (albumId === VIRTUAL_SINGLES_ID && canonicalAlbumAuthority) {
+    refreshVirtualSingles();
+    return virtualSingles.trackIds
+      .map(trackId => {
+        const index = getTrackIndex(trackId);
+        return index >= 0 ? { ...tracks[index], index } : null;
+      })
+      .filter(Boolean);
+  }
+
   const canonical = canonicalAlbumById.get(albumId);
   if (canonical) {
     return canonical.trackIds
