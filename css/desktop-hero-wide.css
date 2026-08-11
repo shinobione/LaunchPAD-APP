@@ -4,24 +4,35 @@
     padding: 0 !important;
   }
 
-  /* Keep the Launchpad artwork centered above the artist identity bar. */
+  /*
+   * The current LaunchPAD PNG is a 1536x1024 transparent canvas, while the
+   * visible neon artwork is much wider (~2.08:1). Frame the visible artwork
+   * on desktop instead of reserving space for the transparent top/bottom
+   * padding baked into the file. Mobile uses its own layout and is untouched.
+   */
   .launchpad-banner-rail {
     position: absolute !important;
-    top: 18px !important;
+    top: 6px !important;
     left: 50% !important;
     right: auto !important;
-    width: min(36vw, 520px) !important;
+    width: min(38vw, 540px) !important;
     height: auto !important;
-    aspect-ratio: 2048 / 1143 !important;
+    aspect-ratio: 2.08 / 1 !important;
+    overflow: hidden !important;
     margin: 0 !important;
     transform: translateX(-50%) !important;
   }
 
   .hero-banner-art {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
     width: 100% !important;
-    height: 100% !important;
-    object-fit: contain !important;
+    height: auto !important;
+    max-width: none !important;
+    object-fit: unset !important;
     object-position: center !important;
+    transform: translate(-50%, -50%) !important;
   }
 
   /* One coherent, full-width artist card. */
