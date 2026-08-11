@@ -1,6 +1,14 @@
 import { ensureStylesheet } from '../core/assets.js';
 
 const MOBILE_QUERY = '(max-width: 760px)';
+const LOCKED_VIEWPORT = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';
+
+function lockMobileViewport(media) {
+  if (!media.matches) return;
+  const viewport = document.querySelector('meta[name="viewport"]');
+  if (!viewport) return;
+  if (viewport.getAttribute('content') !== LOCKED_VIEWPORT) viewport.setAttribute('content', LOCKED_VIEWPORT);
+}
 
 export function initMobileNavigation() {
   if (window.__shinobiMobileNavigationReady) return;
@@ -25,6 +33,7 @@ export function initMobileNavigation() {
   }
 
   const media = window.matchMedia(MOBILE_QUERY);
+  lockMobileViewport(media);
 
   function isOpen() {
     return sidebar.classList.contains('open') && document.body.classList.contains('mobile-menu-open');
@@ -96,6 +105,7 @@ export function initMobileNavigation() {
 
   window.addEventListener('hashchange', () => closeMenu());
   media.addEventListener?.('change', event => {
+    lockMobileViewport(media);
     if (!event.matches) closeMenu();
   });
 
