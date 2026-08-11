@@ -77,6 +77,10 @@ const candidateDocs = new Map([
   [
     'phase-ux-c3-c5-lyrics-autoscroll-20260811',
     'docs/PHASE-UX-C3-C5-BUILD96-LYRICS-AUTOSCROLL.md'
+  ],
+  [
+    'phase-ux-c3-c6-mobile-cleanup-20260811',
+    'docs/PHASE-UX-C3-C6-BUILD97-MOBILE-CLEANUP.md'
   ]
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
