@@ -5,9 +5,9 @@ Installable music PWA for the SHINOBIWAN catalog: playback, Albums, synchronized
 ## Current production / candidate state
 
 ```text
-LaunchPAD build       2026.08.11.93 (C3-C.2 candidate)
+LaunchPAD build       2026.08.11.94 (C3-C.3 candidate)
 Accepted baseline     2026.08.11.90
-Release               phase-ux-c3-c2-transition-glow-20260811
+Release               phase-ux-c3-c3-real-route-transitions-20260811
 Public Worker         v2.7
 Worker Version ID     ddd90621-35d4-44b0-9c22-4e5a72291d9b
 
@@ -24,7 +24,7 @@ Album authority       canonical-r2
 Singles               virtual collection
 ```
 
-Build 93 is the C3-C.2 frontend-only perceptual tuning candidate layered on the accepted Build 90 baseline and the inherited Build 92 interaction runtime. Build 91 was too subtle; Build 92 made interaction feedback materially visible but real-user desktop smoke found the click bloom too strong, persistent selected Audio Lab chip light too heavy, and expected route transitions effectively absent. Public Worker v2.7, canonical R2 data and player semantics remain unchanged.
+Build 94 is the C3-C.3 frontend-only transition corrective layered on the accepted Build 90 baseline and inherited Build 92/93 premium interaction work. Real-user Build 93 video confirmed that click glow tuning was now acceptable but route transitions were still effectively absent, including Favorites → Discography and Track Detail changes. Build 94 moves perceptual route replay into the premium runtime using a fresh Web Animation on the actual active view and cleans the `Open project →` text-link glow. Public Worker v2.7, canonical R2 data and player semantics remain unchanged.
 
 This README is the current-state map. Historical build-by-build implementation detail remains in the dedicated docs/changelogs and Git history.
 
@@ -59,26 +59,39 @@ Build 92 / C3-C.1 deliberately increased perceptual feedback with durable press/
 
 - bloom too large/bright;
 - selected Audio Lab preset kept a persistent outer neon halo that looked like leftover click light;
-- `.view.active` and `.view.active.route-entering` shared the same Build 92 animation name, so Feature 11's route replay class could fail to restart the page transition.
+- expected page transitions remained effectively absent.
 
-Build 93 / C3-C.2 keeps Build 92 press/runtime behavior but adds one later presentation-only tuning layer:
+Build 93 / C3-C.2 tuned the click interaction:
 
 - click bloom core/radius/energy reduced;
 - maximum bloom expansion reduced from scale 9 to scale 4.6;
 - bloom visibility shortened to 285 ms;
 - selected Audio Lab preset keeps a readable fill/border without the persistent exterior neon puddle;
-- `.view.active.route-entering` now uses a distinct `lp93-route-enter` animation name;
-- route transition duration is aligned to Feature 11's existing 260 ms replay window;
-- keyboard/reduced-motion behavior remains inherited and protected;
-- no routing/player/data ownership changes.
+- glow tuning was judged acceptable in real-user follow-up.
+
+The same Build 93 real-user video proved the CSS route replay was still not perceptible. The application has more than one navigation path: normal hash routes use the shared router, while Track Detail deliberately uses direct `history.pushState()` + render ownership. CSS class replay alone therefore did not provide one reliable transition owner across all route families.
+
+Build 94 / C3-C.3 keeps the accepted glow tuning and adds the real transition corrective:
+
+- normal `shinobi:route-change`, hash and popstate navigation are observed;
+- user navigation intents cover sidebar/view targets, Album open actions and direct Track Detail links;
+- after the existing application route handler completes, the actual active `.view` receives a fresh Web Animations API transition;
+- 340 ms opacity + 24 px depth + micro-scale settle is intentionally visible but does not delay navigation;
+- repeated/fast navigation cancels only the previous presentation animation;
+- legacy CSS-owned `.view.active` animation is disabled to avoid competing transition owners;
+- `Open project →` / Track Detail Album text actions no longer receive the broad button-style bloom/box-shadow;
+- keyboard and reduced-motion behavior remain protected;
+- no router/player/data ownership changes.
 
 See:
 
 - [`docs/PHASE-UX-C3-C-BUILD91-PREMIUM-FEEL.md`](docs/PHASE-UX-C3-C-BUILD91-PREMIUM-FEEL.md)
 - [`docs/PHASE-UX-C3-C1-BUILD92-PREMIUM-FEEL.md`](docs/PHASE-UX-C3-C1-BUILD92-PREMIUM-FEEL.md)
 - [`docs/PHASE-UX-C3-C2-BUILD93-TRANSITION-GLOW-TUNING.md`](docs/PHASE-UX-C3-C2-BUILD93-TRANSITION-GLOW-TUNING.md)
+- [`docs/PHASE-UX-C3-C3-BUILD94-REAL-ROUTE-TRANSITIONS.md`](docs/PHASE-UX-C3-C3-BUILD94-REAL-ROUTE-TRANSITIONS.md)
 - [`CHANGELOG-C3-C1-BUILD92.md`](CHANGELOG-C3-C1-BUILD92.md)
 - [`CHANGELOG-C3-C2-BUILD93.md`](CHANGELOG-C3-C2-BUILD93.md)
+- [`CHANGELOG-C3-C3-BUILD94.md`](CHANGELOG-C3-C3-BUILD94.md)
 
 ## Build 90 — canonical Album palette theme
 
@@ -101,7 +114,7 @@ See [`CHANGELOG-C3-ALBUM-PALETTE-BUILD90.md`](CHANGELOG-C3-ALBUM-PALETTE-BUILD90
 
 PHASE UX as a whole is **not yet closed**.
 
-Current active PHASE UX milestone is **C3-C — Premium Feel**. Build 93 is a candidate until real-user smoke confirms that page transitions are clearly visible, click feedback is tasteful rather than flashy, and player/navigation behavior remains intact.
+Current active PHASE UX milestone is **C3-C — Premium Feel**. Build 94 is a candidate until real-user smoke confirms that page transitions are now clearly visible across both normal navigation and Track Detail changes, `Open project →` feedback is clean, and player/navigation behavior remains intact.
 
 Phase 7 remains **LOCKED / NOT AUTHORIZED**. Do not implement, scaffold, branch, merge or deploy Phase 7 without explicit user authorization after final PHASE UX closeout.
 
@@ -260,6 +273,7 @@ safety/phase-ux-c2-5-complete-20260811-1356
 safety/pre-c3-c-premium-feel-20260811-2003
 safety/pre-c3-c1-premium-feel-build92-20260811-2029
 safety/pre-c3-c2-build93-transition-glow-20260811-2058
+safety/pre-c3-c3-build94-real-transitions-20260811-2115
 ```
 
 ## Verification policy
