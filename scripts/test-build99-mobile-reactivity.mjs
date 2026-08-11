@@ -5,14 +5,12 @@ const buildConfig = fs.readFileSync('js/build-config.js', 'utf8');
 const audio = fs.readFileSync('js/features/audio-readiness.js', 'utf8');
 const mobileNav = fs.readFileSync('js/features/mobile-navigation.js', 'utf8');
 const mobileCss = fs.readFileSync('css/mobile-navigation.css', 'utf8');
+const correctiveCss = fs.readFileSync('css/c3-c9-corrective-v100.css', 'utf8');
 const premium = fs.readFileSync('js/features/premium-interactions-v92.js', 'utf8');
 
-for (const marker of [
-  "id: '20260812-phase-ux-c3-c8-mobile-reactivity-v99'",
-  "cache: 'shinobi-launchpad-v99'",
-  "display: '2026.08.12.99'",
-  "release: 'phase-ux-c3-c8-mobile-reactivity-20260812'",
-]) assert.ok(buildConfig.includes(marker), `Build 99 config is missing ${marker}.`);
+const isBuild99 = buildConfig.includes("release: 'phase-ux-c3-c8-mobile-reactivity-20260812'");
+const isBuild100 = buildConfig.includes("release: 'phase-ux-c3-c9-mobile-menu-focus-20260812'");
+assert.ok(isBuild99 || isBuild100, 'Build 99 ancestry guard only supports Build 99 or its Build 100 successor.');
 
 for (const marker of [
   'const WAITING_SPINNER_DELAY_MS = 360',
@@ -32,13 +30,17 @@ assert.doesNotMatch(
 );
 
 for (const marker of [
-  "const TOUCH_CLICK_SUPPRESS_MS = 650",
-  "document.addEventListener('pointerdown', event => {",
-  "event.pointerType !== 'touch' && event.pointerType !== 'pen'",
-  'suppressTouchClickUntil = performance.now() + TOUCH_CLICK_SUPPRESS_MS',
-  "toggleMenu({ keyboard: false })",
+  "const MOBILE_QUERY = '(max-width: 760px)'",
+  "const LOCKED_VIEWPORT = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'",
+  'function lockMobileViewport(media)',
+  "document.addEventListener('click', event => {",
   "toggleMenu({ keyboard: event.detail === 0 })",
-]) assert.ok(mobileNav.includes(marker), `Build 99 mobile input path is missing ${marker}.`);
+  "sync(media.matches && sidebar.classList.contains('open'))",
+  "ensureStylesheet('css/c3-c9-corrective-v100.css', 'c3C9CorrectiveV100')",
+]) assert.ok(mobileNav.includes(marker), `Build 100 mobile navigation corrective is missing ${marker}.`);
+
+assert.doesNotMatch(mobileNav, /addEventListener\('pointerdown'/, 'Build 100 drawer must have a single click event owner, not pointerdown + click.');
+assert.doesNotMatch(mobileNav, /TOUCH_CLICK_SUPPRESS_MS|suppressTouchClickUntil/, 'Build 100 must remove synthetic-click suppression state.');
 
 for (const marker of [
   'backdrop-filter:none!important',
@@ -55,6 +57,13 @@ assert.doesNotMatch(
 );
 
 for (const marker of [
+  'touch-action: pan-x pan-y',
+  '.player-bar .transport button:not(.main-play)',
+  '.player-bar input[type="range"]',
+  'box-shadow: none !important',
+]) assert.ok(correctiveCss.includes(marker), `Build 100 corrective CSS is missing ${marker}.`);
+
+for (const marker of [
   "const MOBILE_PERFORMANCE_QUERY = '(max-width: 760px), (hover: none) and (pointer: coarse)'",
   'function mobilePerformanceMode()',
   'function premiumMotionSuppressed()',
@@ -63,4 +72,4 @@ for (const marker of [
   'if (mobilePerformanceMode()) return;',
 ]) assert.ok(premium.includes(marker), `Build 99 mobile premium-motion bypass is missing ${marker}.`);
 
-console.log('LaunchPAD Build 99 protects touch-first mobile navigation, lightweight drawer rendering, mobile premium-motion bypass and stall-aware player state.');
+console.log('LaunchPAD Build 99 ancestry + Build 100 corrective protect stall-aware playback, single-owner mobile navigation, locked mobile zoom and clean desktop player chrome.');
