@@ -30,8 +30,20 @@
     '.icon-button'
   ].join(',');
 
+  const ROUTE_INTENT_SELECTOR = [
+    '.main-nav [data-view]',
+    '[data-view-target]',
+    '[data-open-album]',
+    '[data-track-cover-link]',
+    '[data-track-detail-route]',
+    '[data-track-detail-action="back"]'
+  ].join(',');
+
   const pressTimers = new WeakMap();
   const impactTimers = new WeakMap();
+  let routeTransitionTimer = 0;
+  let routeTransitionTicket = 0;
+  let routeAnimation = null;
 
   function reducedMotion() {
     return globalThis.matchMedia?.(REDUCED_MOTION)?.matches === true;
@@ -105,6 +117,65 @@
     }, 380));
   }
 
+  function routeKey() {
+    return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  }
+
+  function currentRouteSurface() {
+    return document.querySelector('.main-content > .view.active')
+      || document.querySelector('.view.active');
+  }
+
+  function animateRouteSurface() {
+    if (reducedMotion() || typeof Element.prototype.animate !== 'function') return;
+    const surface = currentRouteSurface();
+    if (!(surface instanceof HTMLElement)) return;
+
+    routeAnimation?.cancel?.();
+    routeAnimation = surface.animate([
+      {
+        opacity: 0.12,
+        transform: 'translate3d(0, 24px, 0) scale(.98)',
+        filter: 'brightness(.84) saturate(.9)'
+      },
+      {
+        offset: 0.52,
+        opacity: 0.86,
+        transform: 'translate3d(0, 5px, 0) scale(.996)',
+        filter: 'brightness(1.035) saturate(1.015)'
+      },
+      {
+        opacity: 1,
+        transform: 'translate3d(0, 0, 0) scale(1)',
+        filter: 'none'
+      }
+    ], {
+      duration: 340,
+      easing: 'cubic-bezier(.16,.84,.24,1)',
+      fill: 'both'
+    });
+    routeAnimation.id = 'lp94-route-transition';
+    routeAnimation.addEventListener('finish', () => {
+      routeAnimation?.cancel?.();
+      routeAnimation = null;
+    }, { once: true });
+  }
+
+  function scheduleRouteTransition({ beforeRoute = null } = {}) {
+    window.clearTimeout(routeTransitionTimer);
+    const ticket = ++routeTransitionTicket;
+    routeTransitionTimer = window.setTimeout(() => {
+      if (ticket !== routeTransitionTicket) return;
+      if (beforeRoute && routeKey() === beforeRoute) return;
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          if (ticket !== routeTransitionTicket) return;
+          animateRouteSurface();
+        });
+      });
+    }, 18);
+  }
+
   document.addEventListener('pointerdown', event => {
     if (event.button !== 0 || reducedMotion()) return;
     const element = closestInteractive(event.target);
@@ -128,9 +199,18 @@
 
   document.addEventListener('click', event => {
     const element = closestInteractive(event.target, BLOOM_SELECTOR);
-    if (!element) return;
-    endPress(element);
-    triggerImpact(element, event);
+    if (element) {
+      endPress(element);
+      triggerImpact(element, event);
+    }
+
+    const routeIntent = event.target instanceof Element
+      ? event.target.closest(ROUTE_INTENT_SELECTOR)
+      : null;
+    if (routeIntent) {
+      const beforeRoute = routeKey();
+      window.setTimeout(() => scheduleRouteTransition({ beforeRoute }), 0);
+    }
   }, true);
 
   document.addEventListener('keydown', event => {
@@ -146,4 +226,8 @@
     endPress(element);
     triggerImpact(element, null);
   }, true);
+
+  window.addEventListener('shinobi:route-change', () => scheduleRouteTransition());
+  window.addEventListener('hashchange', () => scheduleRouteTransition());
+  window.addEventListener('popstate', () => scheduleRouteTransition());
 })();
