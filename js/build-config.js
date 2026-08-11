@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260812-phase-ux-c3-c8-mobile-reactivity-v99',
-    cache: 'shinobi-launchpad-v99',
-    revision: 'mobile-reactivity-player-state-9',
-    display: '2026.08.12.99',
-    release: 'phase-ux-c3-c8-mobile-reactivity-20260812'
+    id: '20260812-phase-ux-c3-c9-mobile-menu-focus-v100',
+    cache: 'shinobi-launchpad-v100',
+    revision: 'mobile-menu-focus-10',
+    display: '2026.08.12.100',
+    release: 'phase-ux-c3-c9-mobile-menu-focus-20260812'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
