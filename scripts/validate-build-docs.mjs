@@ -93,6 +93,10 @@ const candidateDocs = new Map([
   [
     'phase-ux-c3-c9-mobile-menu-focus-20260812',
     'docs/PHASE-UX-C3-C9-BUILD100-MOBILE-MENU-FOCUS.md'
+  ],
+  [
+    'phase-ux-c3-c10-mini-player-chrome-20260812',
+    'docs/PHASE-UX-C3-C10-BUILD101-MINI-PLAYER-CHROME.md'
   ]
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
