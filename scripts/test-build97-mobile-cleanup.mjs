@@ -12,7 +12,7 @@ for (const marker of [
   "display: '2026.08.11.97'",
   "release: 'phase-ux-c3-c6-mobile-cleanup-20260811'",
   "'css/c3-c6-mobile-v97.css'",
-  "'js/features/mobile-cleanup-v97.js'",
+  'js/features/mobile-cleanup-v97.js?v=',
 ]) assert.ok(buildConfig.includes(marker), `Build 97 config is missing ${marker}.`);
 
 for (const marker of [
