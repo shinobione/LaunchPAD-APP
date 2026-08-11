@@ -85,6 +85,10 @@ const candidateDocs = new Map([
   [
     'phase-ux-c3-c7-responsiveness-20260812',
     'docs/PHASE-UX-C3-C7-BUILD98-RESPONSIVENESS.md'
+  ],
+  [
+    'phase-ux-c3-c8-mobile-reactivity-20260812',
+    'docs/PHASE-UX-C3-C8-BUILD99-MOBILE-REACTIVITY.md'
   ]
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
