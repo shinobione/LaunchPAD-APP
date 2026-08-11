@@ -43,7 +43,7 @@ assert.deepEqual(CANONICAL_ALBUM_TYPES, ['album', 'ep', 'collection']);
 assert.deepEqual(CANONICAL_ALBUM_STATUSES, ['draft', 'published', 'archived']);
 
 const legacyNeon = getAlbum('neon-heartbreaks');
-assert.ok(legacyNeon, 'Current hardcoded albums must remain available before migration.');
+assert.ok(legacyNeon, 'Current hardcoded albums must remain available before authoritative public hydration.');
 assert.equal(legacyNeon.source, 'legacy-catalog-js');
 
 mergeRemoteTracks([
@@ -66,40 +66,39 @@ let result = mergeRemoteAlbums([
     id: 'coal-to-diamond', title: 'Coal to Diamond — canonical', type: 'album', status: 'published',
     cover: '/coal-canonical.webp', trackIds: [],
   },
-]);
+], { authoritative: false });
 
 assert.equal(result.canonical, 2);
 assert.equal(canonicalAlbums.length, 2);
 assert.equal(hasCanonicalAlbum('ghost-signal'), true);
-assert.equal(getAlbum('coal-to-diamond').title, 'Coal to Diamond — canonical', 'Canonical Album must override the same legacy id in the effective read model.');
+assert.equal(getAlbum('coal-to-diamond').title, 'Coal to Diamond — canonical', 'Canonical Album must override the same legacy id in the transitional effective read model.');
 assert.deepEqual(getAlbumTracks('ghost-signal').map(track => track.id), ['alpha', 'beta'], 'album.trackIds must be authoritative for membership and order when a canonical Album exists.');
-assert.equal(albums.some(album => album.id === 'neon-heartbreaks'), true, 'Unmigrated legacy Albums must remain readable during the transition.');
+assert.equal(albums.some(album => album.id === 'neon-heartbreaks'), true, 'Unmigrated legacy Albums must remain readable during the C2.5-B transition mode.');
 
-result = mergeRemoteAlbums([]);
+result = mergeRemoteAlbums([], { authoritative: false });
 assert.equal(result.canonical, 0);
 assert.equal(hasCanonicalAlbum('ghost-signal'), false);
-assert.equal(getAlbum('coal-to-diamond').title, 'Coal to Diamond', 'Removing the optional canonical projection must restore legacy fallback without data migration.');
+assert.equal(getAlbum('coal-to-diamond').title, 'Coal to Diamond', 'Removing the optional canonical projection in transition mode must restore legacy fallback.');
 
-const buildConfig = fs.readFileSync('js/build-config.js', 'utf8');
+const historicalBuildDoc = fs.readFileSync('docs/PHASE-UX-C2-5-B-BUILD88-CANONICAL-ALBUM-READ-MODEL.md', 'utf8');
 const remoteSource = fs.readFileSync('js/core/remote-catalog.js', 'utf8');
 const adminReadModel = fs.readFileSync('cloudflare/admin-worker.parts/03-z1-album-read-model.part', 'utf8');
 const projectionHook = fs.readFileSync('cloudflare/admin-worker.parts/03-z2-album-projection-hook.part', 'utf8');
 const trackCatalog = fs.readFileSync('cloudflare/admin-worker.parts/02-catalog.part', 'utf8');
-const publicWorker = fs.readFileSync('cloudflare/public-worker.js', 'utf8');
+const publicWorkerCore = fs.readFileSync('cloudflare/public-worker.js', 'utf8');
 
 for (const marker of [
-  "id: '20260810-phase-ux-c2-5-b-canonical-album-read-model-v88'",
-  "cache: 'shinobi-launchpad-v88'",
-  "display: '2026.08.10.88'",
-  "release: 'phase-ux-c2-5-b-canonical-album-read-model-20260810'",
-]) assert.ok(buildConfig.includes(marker), `Build 88 release marker is missing ${marker}.`);
+  '2026.08.10.88',
+  'phase-ux-c2-5-b-canonical-album-read-model-20260810',
+  'canonical Album read model',
+]) assert.ok(historicalBuildDoc.toLowerCase().includes(marker.toLowerCase()), `Historical Build 88 release record is missing ${marker}.`);
 
 for (const marker of [
   'payload.albums',
-  'mergeRemoteAlbums(remote.albums)',
+  'mergeRemoteAlbums(remote.albums, {',
   'remoteAlbumCount: remote.albums.length',
-  "source: 'cloudflare-r2'",
-]) assert.ok(remoteSource.includes(marker), `Optional canonical Album client hydration is missing ${marker}.`);
+  "source: item.source || 'cloudflare-r2'",
+]) assert.ok(remoteSource.includes(marker), `Canonical Album client hydration ancestry is missing ${marker}.`);
 
 for (const marker of [
   'const ALBUMS_PREFIX = "albums/"',
@@ -121,9 +120,9 @@ for (const marker of [
 ]) assert.ok(projectionHook.includes(marker), `Canonical Album projection hook is missing ${marker}.`);
 
 assert.ok(trackCatalog.includes('schemaVersion: 1'), 'C2.5-B must remain an additive catalog/index.json v1 extension, not a gratuitous breaking schemaVersion bump.');
-assert.ok(!adminReadModel.includes('async function saveAlbum'), 'C2.5-B must not introduce Album writes.');
-assert.ok(!adminReadModel.includes('async function deleteAlbum'), 'C2.5-B must not introduce Album deletes.');
-assert.ok(!projectionHook.includes('request.method'), 'C2.5-B projection hook must not introduce a write route.');
-assert.ok(!publicWorker.includes('url.pathname === "/albums"'), 'LaunchPAD public canonical Album consumption belongs to C2.5-F, not C2.5-B.');
+assert.ok(!adminReadModel.includes('async function saveAlbum'), 'C2.5-B read-model file must not own Album writes.');
+assert.ok(!adminReadModel.includes('async function deleteAlbum'), 'C2.5-B read-model file must not own Album deletes.');
+assert.ok(!projectionHook.includes('request.method'), 'C2.5-B projection hook must not own a write route.');
+assert.ok(!publicWorkerCore.includes('url.pathname === "/albums"'), 'The historical public Worker core remains unchanged; C2.5-F public Album consumption is layered by a versioned wrapper.');
 
-console.log('Build 88 / C2.5-B canonical Album read model passed: schema, stable ordered membership, legacy fallback, private read projection, no Album write surface, no public-consumption cutover.');
+console.log('C2.5-B historical guard passed under the current release: schema, ordered membership, transition fallback, private projection ancestry, and isolated public cutover layering.');
