@@ -1,0 +1,41 @@
+
+// C2.5-E4 — Cloudflare Workers only accept redirect="follow" or "manual".
+// Keep the pinned raw.githubusercontent.com source strict: do not follow redirects.
+const STUDIO_ALBUM_MIGRATION_EDGE_REDIRECT_MODE = "manual";
+
+importStudioAlbumMigrationCover = async function importStudioAlbumMigrationCoverEdgeSafe(bucket, definition, user) {
+  const url = new URL(definition.cover.sourceUrl);
+  if (url.protocol !== "https:" || url.hostname !== "raw.githubusercontent.com") throw new Error("INPUT_Source cover Album non autorisée.");
+  const expectedPrefix = `/shinobione/LaunchPAD-APP/${STUDIO_ALBUM_MIGRATION_SOURCE_REF}/`;
+  if (!url.pathname.startsWith(expectedPrefix)) throw new Error("INPUT_La cover Album n'est pas épinglée sur le ref de migration attendu.");
+
+  const response = await fetch(definition.cover.sourceUrl, {
+    headers: { Accept: "image/jpeg,image/png,image/webp", "User-Agent": "LaunchPAD-Album-Migration/1.1" },
+    redirect: STUDIO_ALBUM_MIGRATION_EDGE_REDIRECT_MODE,
+  });
+  if (response.status >= 300 && response.status < 400) {
+    throw new Error("INPUT_Redirection inattendue pendant l'import de la cover Album (HTTP " + response.status + ").");
+  }
+  if (!response.ok) throw new Error("INPUT_Import de la cover Album impossible (HTTP " + response.status + ").");
+
+  const contentType = String(response.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
+  if (!["image/jpeg", "image/png", "image/webp"].includes(contentType)) throw new Error("INPUT_Type de cover Album non autorisé.");
+  const body = await response.arrayBuffer();
+  if (!body.byteLength || body.byteLength > STUDIO_ALBUM_MIGRATION_MAX_COVER_BYTES) throw new Error("UPLOAD_Cover Album vide ou supérieure à 20 Mo.");
+
+  const extension = contentType === "image/png" ? "png" : contentType === "image/webp" ? "webp" : "jpeg";
+  const relativePath = `cover/cover.${extension}`;
+  const key = albumPrefix(definition.id) + relativePath;
+  await bucket.put(key, body, {
+    httpMetadata: { contentType, cacheControl: "public, max-age=31536000, immutable" },
+    customMetadata: {
+      kind: "album-cover",
+      albumId: definition.id,
+      migratedFrom: definition.cover.sourceUrl,
+      migrationId: STUDIO_ALBUM_MIGRATION_ID,
+      uploadedBy: String(user.email || "authorized-user").slice(0, 200),
+      uploadedAt: new Date().toISOString(),
+    },
+  });
+  return { key, relativePath, contentType, size: body.byteLength };
+};
