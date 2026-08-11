@@ -1,0 +1,108 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {
+  albums,
+  canonicalAlbums,
+  getAlbum,
+  getAlbumAuthority,
+  getAlbumTracks,
+  mergeRemoteAlbums,
+  mergeRemoteTracks,
+} from '../js/core/catalog-store.js';
+
+mergeRemoteTracks([
+  {
+    id: 'neon-a', title: 'Neon A', file: '/neon-a.mp3', cover: '/neon-a.webp',
+    albumId: 'neon-heartbreaks', album: 'Neon Heartbreaks', languages: ['English'], remote: true,
+  },
+  {
+    id: 'coal-cache-orphan', title: 'Coal cache orphan', file: '/coal.mp3', cover: '/coal.webp',
+    albumId: 'coal-to-diamond', album: 'Coal to Diamond', languages: ['English'], remote: true,
+  },
+  {
+    id: 'single-a', title: 'Single A', file: '/single-a.mp3', cover: '/single-a.webp',
+    albumId: 'singles', album: 'Singles', languages: ['English'], remote: true,
+  },
+]);
+
+let result = mergeRemoteAlbums([
+  {
+    id: 'neon-heartbreaks', title: 'Neon Heartbreaks canonical', type: 'album', status: 'published',
+    cover: '/neon.webp', trackIds: ['neon-a'],
+  },
+], { authoritative: false });
+
+assert.equal(result.authority, 'legacy-fallback', 'C2.5-B transitional hydration must remain available when no authoritative public signal exists.');
+assert.ok(getAlbum('love-letters-from-saigon'), 'Legacy fallback must remain available in degraded/transitional mode.');
+
+result = mergeRemoteAlbums([
+  {
+    id: 'neon-heartbreaks', title: 'Neon Heartbreaks canonical', type: 'album', status: 'published',
+    cover: 'https://media.test/albums/neon-heartbreaks/cover.webp', trackIds: ['neon-a'],
+  },
+  {
+    id: 'coal-to-diamond', title: 'Coal to Diamond canonical', type: 'album', status: 'published',
+    cover: 'https://media.test/albums/coal-to-diamond/cover.webp', trackIds: [],
+  },
+], { authoritative: true });
+
+assert.equal(result.authority, 'canonical-r2');
+assert.equal(getAlbumAuthority(), 'canonical-r2');
+assert.equal(canonicalAlbums.length, 2);
+assert.equal(getAlbum('neon-heartbreaks').title, 'Neon Heartbreaks canonical');
+assert.equal(getAlbum('love-letters-from-saigon'), null, 'A stale catalog.js Album must disappear once canonical R2 authority is active.');
+assert.equal(getAlbum('singles')?.source, 'virtual-singles', 'Singles must become a virtual collection, not a canonical R2 Album.');
+assert.deepEqual(getAlbumTracks('neon-heartbreaks').map(track => track.id), ['neon-a']);
+assert.deepEqual(
+  getAlbumTracks('singles').map(track => track.id),
+  ['coal-cache-orphan', 'single-a'],
+  'Virtual Singles must be derived from tracks not claimed by canonical album.trackIds, not from the transitional track album cache.',
+);
+assert.deepEqual(albums.map(album => album.id), ['neon-heartbreaks', 'coal-to-diamond', 'singles']);
+
+result = mergeRemoteAlbums([], { authoritative: false });
+assert.equal(result.authority, 'legacy-fallback');
+assert.equal(getAlbumAuthority(), 'legacy-fallback');
+assert.ok(getAlbum('love-letters-from-saigon'), 'Offline/degraded fallback must restore legacy catalog.js Albums.');
+
+const publicWorker = fs.readFileSync('cloudflare/public-worker-v27.js', 'utf8');
+const wrangler = fs.readFileSync('cloudflare/wrangler.public.jsonc', 'utf8');
+const remoteCatalog = fs.readFileSync('js/core/remote-catalog.js', 'utf8');
+const catalogStore = fs.readFileSync('js/core/catalog-store.js', 'utf8');
+const buildConfig = fs.readFileSync('js/build-config.js', 'utf8');
+
+for (const marker of [
+  'PUBLIC_WORKER_VERSION = 2.7',
+  "CATALOG_INDEX_KEY = 'catalog/index.json'",
+  "payload.albumAuthority = 'canonical-r2'",
+  "pathname === '/albums'",
+  '/media\\/(cover|thumbnail)',
+  "source: 'cloudflare-r2'",
+]) assert.ok(publicWorker.includes(marker), `Public Worker v2.7 is missing ${marker}.`);
+
+assert.ok(!publicWorker.includes('MEDIA_BUCKET.put('), 'Public Album cutover must remain read-only.');
+assert.ok(!publicWorker.includes('MEDIA_BUCKET.delete('), 'Public Album cutover must not delete R2 objects.');
+assert.ok(wrangler.includes('"main": "public-worker-v27.js"'), 'Wrangler public entry point must use v2.7.');
+
+for (const marker of [
+  "albumAuthority: payload.albumAuthority === 'canonical-r2' ? 'canonical-r2' : null",
+  "authoritative: remote.albumAuthority === 'canonical-r2'",
+  'remoteAlbumCount: remote.albums.length',
+]) assert.ok(remoteCatalog.includes(marker), `Remote Album hydration is missing ${marker}.`);
+
+for (const marker of [
+  "const VIRTUAL_SINGLES_ID = 'singles'",
+  "source: 'virtual-singles'",
+  'let canonicalAlbumAuthority = false',
+  'export function getAlbumAuthority()',
+  'canonicalAlbumAuthority ? canonicalAlbums : legacyAlbums',
+]) assert.ok(catalogStore.includes(marker), `Catalog authority cutover is missing ${marker}.`);
+
+for (const marker of [
+  "id: '20260811-phase-ux-c2-5-f-canonical-album-public-cutover-v89'",
+  "cache: 'shinobi-launchpad-v89'",
+  "display: '2026.08.11.89'",
+  "release: 'phase-ux-c2-5-f-canonical-album-public-cutover-20260811'",
+]) assert.ok(buildConfig.includes(marker), `Build 89 marker is missing ${marker}.`);
+
+console.log('C2.5-F / Build 89 guard passed: canonical R2 Album authority, public Album media, virtual Singles, and legacy fallback isolation.');
