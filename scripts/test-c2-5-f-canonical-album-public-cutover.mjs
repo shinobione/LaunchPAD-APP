@@ -70,6 +70,7 @@ const wrangler = fs.readFileSync('cloudflare/wrangler.public.jsonc', 'utf8');
 const remoteCatalog = fs.readFileSync('js/core/remote-catalog.js', 'utf8');
 const catalogStore = fs.readFileSync('js/core/catalog-store.js', 'utf8');
 const buildConfig = fs.readFileSync('js/build-config.js', 'utf8');
+const deployVerifier = fs.readFileSync('scripts/verify-cloudflare-deployment.mjs', 'utf8');
 
 for (const marker of [
   'PUBLIC_WORKER_VERSION = 2.7',
@@ -105,4 +106,17 @@ for (const marker of [
   "release: 'phase-ux-c2-5-f-canonical-album-public-cutover-20260811'",
 ]) assert.ok(buildConfig.includes(marker), `Build 89 marker is missing ${marker}.`);
 
-console.log('C2.5-F / Build 89 guard passed: canonical R2 Album authority, public Album media, virtual Singles, and legacy fallback isolation.');
+for (const marker of [
+  'CLOUDFLARE_PUBLIC_VERIFY_ATTEMPTS || 60',
+  'CLOUDFLARE_PUBLIC_VERIFY_DELAY_MS || 3000',
+  'let lastObservation = null',
+  'Public Worker header',
+  'Last observation:',
+]) assert.ok(deployVerifier.includes(marker), `C2.5-F deployment propagation guard is missing ${marker}.`);
+
+const versionAssertionIndex = deployVerifier.indexOf('Public version ${health.version');
+const authorityAssertionIndex = deployVerifier.indexOf('Public /health Album authority');
+assert.ok(versionAssertionIndex >= 0, 'Public deployment verifier must assert the expected Worker version.');
+assert.ok(authorityAssertionIndex > versionAssertionIndex, 'Worker version must be validated before canonical Album authority so stale edge propagation is diagnosed correctly.');
+
+console.log('C2.5-F / Build 89 guard passed: canonical R2 Album authority, public Album media, virtual Singles, legacy fallback isolation, and propagation-safe post-deploy verification.');
