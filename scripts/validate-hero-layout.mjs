@@ -30,18 +30,22 @@ requirePattern(
 
 requirePattern(
   desktop,
-  /\.hero-banner-art\s*\{[\s\S]*?height:\s*100%\s*!important;[\s\S]*?object-fit:\s*cover\s*!important;[\s\S]*?mix-blend-mode:\s*screen\s*!important;[\s\S]*?transform:\s*none\s*!important;[\s\S]*?transition:\s*none\s*!important;/,
-  'Desktop Home must crop the logo without drift and neutralize the dark bitmap plate with screen blending.'
+  /\.hero-banner-art\s*\{[\s\S]*?height:\s*100%\s*!important;[\s\S]*?object-fit:\s*cover\s*!important;[\s\S]*?mix-blend-mode:\s*normal\s*!important;[\s\S]*?transform:\s*none\s*!important;[\s\S]*?transition:\s*none\s*!important;[\s\S]*?filter:\s*none\s*!important;/,
+  'Desktop Home must keep the transparent logo crop static and free of clipped CSS glow effects.'
 );
 
 requirePattern(
   desktop,
-  /\.launchpad-hero:hover\s+\.hero-banner-art\s*\{[\s\S]*?mix-blend-mode:\s*screen\s*!important;[\s\S]*?transform:\s*none\s*!important;[\s\S]*?filter:\s*drop-shadow/,
-  'Desktop Home hover must preserve the same static logo blend, position and filter.'
+  /\.launchpad-hero:hover\s+\.hero-banner-art\s*\{[\s\S]*?mix-blend-mode:\s*normal\s*!important;[\s\S]*?transform:\s*none\s*!important;[\s\S]*?filter:\s*none\s*!important;/,
+  'Desktop Home hover must preserve the same static unfiltered logo rendering.'
 );
 
 if (/transform:\s*translate\(\s*-50%\s*,\s*-50%\s*\)\s*!important;/.test(desktop)) {
   throw new Error('Desktop Home must not reintroduce transform-based logo centering; it conflicts with historical hover rules.');
+}
+
+if (/\.hero-banner-art\s*\{[\s\S]*?filter:\s*drop-shadow/.test(desktop)) {
+  throw new Error('Desktop Home must not apply a clipped CSS drop-shadow to the logo artwork; it creates a visible rectangular halo at the crop boundary.');
 }
 
 requirePattern(
@@ -62,4 +66,4 @@ requirePattern(
   'The build config must expose a stable non-empty revision slug so cached shell assets can refresh.'
 );
 
-console.log('Hero profile sizing, borderless transform-free desktop logo framing, artwork visibility, LAUNCHPAD-first mobile ordering and generic build revision metadata are guarded.');
+console.log('Hero profile sizing, borderless transform-free unfiltered desktop logo framing, artwork visibility, LAUNCHPAD-first mobile ordering and generic build revision metadata are guarded.');

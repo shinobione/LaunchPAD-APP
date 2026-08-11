@@ -5,13 +5,14 @@
   }
 
   /*
-   * The current LaunchPAD PNG is a 1536x1024 canvas, while the visible neon
-   * artwork is much wider (~2.08:1). Frame the visible artwork on desktop
-   * instead of reserving space for the top/bottom padding baked into the file.
-   * Keep the crop transform-free so historical hero hover rules cannot animate
-   * the artwork out of position. The bitmap also contains a very dark residual
-   * plate around the neon artwork; screen blending makes those dark pixels
-   * visually neutral against the dark hero without changing the asset bytes.
+   * The current LaunchPAD PNG is a 1536x1024 transparent canvas, while the
+   * visible neon artwork is much wider (~2.08:1). Frame the visible artwork
+   * on desktop instead of reserving space for the transparent top/bottom
+   * padding baked into the file. Keep the crop transform-free so historical
+   * hero hover rules cannot animate the artwork out of position.
+   * The source artwork already contains its own neon glow, so do not add a
+   * CSS drop-shadow inside the clipped framing window: clipping a blur at the
+   * rail edges creates a visible rectangular halo/plate around the logo.
    * Mobile uses its own layout and is untouched.
    */
   .launchpad-banner-rail {
@@ -43,16 +44,16 @@
     outline: 0 !important;
     background: transparent !important;
     box-shadow: none !important;
-    mix-blend-mode: screen !important;
+    mix-blend-mode: normal !important;
     transform: none !important;
     transition: none !important;
-    filter: drop-shadow(0 18px 42px rgba(24, 154, 255, .16)) !important;
+    filter: none !important;
   }
 
   .launchpad-hero:hover .hero-banner-art {
-    mix-blend-mode: screen !important;
+    mix-blend-mode: normal !important;
     transform: none !important;
-    filter: drop-shadow(0 18px 42px rgba(24, 154, 255, .16)) !important;
+    filter: none !important;
   }
 
   /* One coherent, full-width artist card. */
