@@ -1,0 +1,389 @@
+
+const STUDIO_ALBUM_MIGRATION_APPLY_INTENT = "album-migration-apply-v1";
+const STUDIO_ALBUM_MIGRATION_ID = "phase-ux-c2-5-e-legacy-albums-v1";
+const STUDIO_ALBUM_MIGRATION_CONFIRM_PREFIX = "MIGRATE ";
+const STUDIO_ALBUM_MIGRATION_MAX_COVER_BYTES = 20 * 1024 * 1024;
+const STUDIO_ALBUM_MIGRATION_SOURCE_REF = "35cfbff8cd9e06ef3548f8e909eb033a1c0a60bb";
+const STUDIO_ALBUM_MIGRATION_DEFINITIONS = Object.freeze([
+  Object.freeze({
+    id: "neon-heartbreaks",
+    title: "Neon Heartbreaks",
+    type: "album",
+    year: 2026,
+    releaseDate: null,
+    heading: "Digital intimacy",
+    description: "Digital intimacy, nocturnal R&B and fragile connections shaped through glitch and emotion.",
+    cover: Object.freeze({
+      repositoryPath: "assets/neon-heartbreaks.jpeg",
+      sourceUrl: "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/35cfbff8cd9e06ef3548f8e909eb033a1c0a60bb/assets/neon-heartbreaks.jpeg",
+    }),
+  }),
+  Object.freeze({
+    id: "coal-to-diamond",
+    title: "Coal to Diamond",
+    type: "album",
+    year: 2026,
+    releaseDate: null,
+    heading: "Pressure into power",
+    description: "Heavy 808s and drums, cinematic pressure and hip-hop built around impact.",
+    cover: Object.freeze({
+      repositoryPath: "assets/coal-to-diamond.jpeg",
+      sourceUrl: "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/35cfbff8cd9e06ef3548f8e909eb033a1c0a60bb/assets/coal-to-diamond.jpeg",
+    }),
+  }),
+  Object.freeze({
+    id: "love-letters-from-saigon",
+    title: "Love Letters from Saigon",
+    type: "album",
+    year: 2026,
+    releaseDate: null,
+    heading: "Distance becomes a place",
+    description: "Vietnam-inspired stories, distance, travel memories and love songs moving between two countries.",
+    cover: Object.freeze({
+      repositoryPath: "assets/love-letters.jpeg",
+      sourceUrl: "https://raw.githubusercontent.com/shinobione/LaunchPAD-APP/35cfbff8cd9e06ef3548f8e909eb033a1c0a60bb/assets/love-letters.jpeg",
+    }),
+  }),
+]);
+
+function studioAlbumMigrationSequence(manifest) {
+  for (const value of [manifest?.sequence, manifest?.order, manifest?.position]) {
+    const numeric = Number(value);
+    if (Number.isFinite(numeric)) return numeric;
+  }
+  return null;
+}
+
+function studioAlbumMigrationTrackState(manifest) {
+  return {
+    id: manifest.slug,
+    title: manifest.title,
+    status: manifest.status,
+    albumId: manifest.album?.id || null,
+    albumTitle: manifest.album?.title || null,
+    sequence: studioAlbumMigrationSequence(manifest),
+    updatedAt: manifest.updatedAt || null,
+  };
+}
+
+async function studioAlbumMigrationSha256(value) {
+  const bytes = new TextEncoder().encode(String(value));
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function studioAlbumMigrationStateToken(albumDefinition, canonical, tracks, owners) {
+  const state = {
+    migrationId: STUDIO_ALBUM_MIGRATION_ID,
+    sourceRef: STUDIO_ALBUM_MIGRATION_SOURCE_REF,
+    album: albumDefinition.id,
+    canonical: canonical ? { id: canonical.id, updatedAt: canonical.updatedAt, trackIds: canonical.trackIds } : null,
+    tracks: tracks.map(studioAlbumMigrationTrackState).sort((a, b) => a.id.localeCompare(b.id)),
+    owners: [...owners.entries()].sort((a, b) => a[0].localeCompare(b[0])),
+  };
+  return studioAlbumMigrationSha256(JSON.stringify(state));
+}
+
+async function readStudioAlbumMigrationTrackManifests(bucket) {
+  const objects = await listAllObjects(bucket, TRACKS_PREFIX);
+  const manifestObjects = objects.filter(object => object.key.endsWith("/" + MANIFEST_NAME));
+  return (await Promise.all(manifestObjects.map(async object => {
+    const slug = object.key.slice(TRACKS_PREFIX.length, -(MANIFEST_NAME.length + 1));
+    return readManifest(bucket, slug);
+  }))).filter(Boolean);
+}
+
+function studioAlbumMigrationOwnerMap(canonicalAlbums) {
+  const owners = new Map();
+  for (const album of canonicalAlbums) {
+    for (const trackId of album.trackIds || []) {
+      if (!owners.has(trackId)) owners.set(trackId, album.id);
+      else owners.set(trackId, `${owners.get(trackId)}|${album.id}`);
+    }
+  }
+  return owners;
+}
+
+function studioAlbumMigrationOrder(tracks) {
+  const states = tracks.map(studioAlbumMigrationTrackState);
+  const sequences = states.map(track => track.sequence);
+  const complete = states.length > 0
+    && sequences.every(Number.isFinite)
+    && new Set(sequences).size === sequences.length;
+  const proposed = [...states].sort((left, right) => {
+    if (complete) return left.sequence - right.sequence;
+    if (left.sequence !== null || right.sequence !== null) {
+      if (left.sequence === null) return 1;
+      if (right.sequence === null) return -1;
+      if (left.sequence !== right.sequence) return left.sequence - right.sequence;
+    }
+    return String(left.title || left.id).localeCompare(String(right.title || right.id), "fr", { numeric: true, sensitivity: "base" });
+  });
+  return {
+    deterministic: complete,
+    requiresOrderConfirmation: !complete,
+    trackIds: proposed.map(track => track.id),
+    tracks: proposed,
+  };
+}
+
+async function buildStudioLegacyAlbumMigrationDryRun(env) {
+  const [trackManifests, albumObjects] = await Promise.all([
+    readStudioAlbumMigrationTrackManifests(env.MEDIA_BUCKET),
+    listAllObjects(env.MEDIA_BUCKET, ALBUMS_PREFIX),
+  ]);
+  const canonicalAlbums = await buildCanonicalAlbumSummaries(albumObjects, env.MEDIA_BUCKET);
+  const owners = studioAlbumMigrationOwnerMap(canonicalAlbums);
+  const byCanonicalId = new Map(canonicalAlbums.map(album => [album.id, album]));
+  const albums = [];
+
+  for (const definition of STUDIO_ALBUM_MIGRATION_DEFINITIONS) {
+    const canonical = byCanonicalId.get(definition.id) || null;
+    const candidates = trackManifests.filter(track => track.album?.id === definition.id);
+    const order = studioAlbumMigrationOrder(candidates);
+    const blockers = [];
+    const warnings = [];
+
+    if (canonical) blockers.push({ code: "ALBUM_ALREADY_CANONICAL", message: "A canonical Album with this immutable id already exists." });
+    if (!candidates.length) blockers.push({ code: "NO_LEGACY_MEMBERS", message: "No live track manifest currently references this legacy Album id." });
+    const unpublished = candidates.filter(track => track.status !== "published");
+    if (unpublished.length) blockers.push({ code: "UNPUBLISHED_TRACKS", message: `${unpublished.length} candidate track(s) are not published.`, trackIds: unpublished.map(track => track.slug) });
+    const conflicts = candidates.filter(track => owners.has(track.slug) && owners.get(track.slug) !== definition.id);
+    if (conflicts.length) blockers.push({ code: "CANONICAL_OWNERSHIP_CONFLICT", message: `${conflicts.length} candidate track(s) already belong to another canonical Album.`, trackIds: conflicts.map(track => track.slug) });
+    const titleMismatches = candidates.filter(track => String(track.album?.title || "").trim() !== definition.title);
+    if (titleMismatches.length) warnings.push({ code: "LEGACY_TITLE_CACHE_DIFFERS", message: `${titleMismatches.length} track compatibility cache title(s) differ from the migration title.`, trackIds: titleMismatches.map(track => track.slug) });
+    if (order.requiresOrderConfirmation && candidates.length) warnings.push({ code: "ORDER_CONFIRMATION_REQUIRED", message: "Not every candidate has a unique explicit sequence/order/position. Studio must explicitly confirm the artistic order before apply." });
+
+    albums.push({
+      id: definition.id,
+      title: definition.title,
+      type: definition.type,
+      year: definition.year,
+      releaseDate: definition.releaseDate,
+      heading: definition.heading,
+      description: definition.description,
+      cover: definition.cover,
+      canonicalExists: Boolean(canonical),
+      canonicalUpdatedAt: canonical?.updatedAt || null,
+      candidateCount: candidates.length,
+      proposedTrackIds: order.trackIds,
+      tracks: order.tracks,
+      deterministicOrder: order.deterministic,
+      requiresOrderConfirmation: order.requiresOrderConfirmation,
+      blockers,
+      warnings,
+      readyToApply: blockers.length === 0,
+      stateToken: await studioAlbumMigrationStateToken(definition, canonical, candidates, owners),
+    });
+  }
+
+  const singles = trackManifests.filter(track => track.album?.id === "singles").map(studioAlbumMigrationTrackState);
+  return {
+    schemaVersion: 1,
+    migrationId: STUDIO_ALBUM_MIGRATION_ID,
+    sourceRef: STUDIO_ALBUM_MIGRATION_SOURCE_REF,
+    mode: "dry-run",
+    generatedAt: new Date().toISOString(),
+    writesPerformed: false,
+    albums,
+    singles: {
+      id: "singles",
+      title: "Singles",
+      candidateCount: singles.length,
+      tracks: singles,
+      migrateAsCanonicalAlbum: false,
+      futureModel: "virtual collection",
+      reason: "C2.5-E keeps Singles as a compatibility cache. Virtual Singles belongs to the controlled C2.5-F cutover.",
+    },
+  };
+}
+
+function studioAlbumMigrationSameSet(left, right) {
+  if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) return false;
+  const a = [...left].sort();
+  const b = [...right].sort();
+  return a.every((value, index) => value === b[index]) && new Set(left).size === left.length;
+}
+
+async function snapshotStudioAlbumMigrationCatalog(bucket) {
+  const object = await bucket.get(CATALOG_INDEX_KEY);
+  if (!object) return null;
+  return {
+    body: await object.text(),
+    contentType: object.httpMetadata?.contentType || "application/json; charset=utf-8",
+  };
+}
+
+async function restoreStudioAlbumMigrationCatalog(bucket, snapshot) {
+  if (!snapshot) {
+    await bucket.delete(CATALOG_INDEX_KEY);
+    return true;
+  }
+  const parsed = JSON.parse(snapshot.body);
+  await bucket.put(CATALOG_INDEX_KEY, snapshot.body, {
+    httpMetadata: { contentType: snapshot.contentType, cacheControl: "public, max-age=60, stale-while-revalidate=300" },
+    customMetadata: {
+      kind: "catalog-index",
+      generatedAt: String(parsed.generatedAt || ""),
+      count: String(parsed.count || 0),
+      albumCount: String(parsed.albumCount || 0),
+    },
+  });
+  return true;
+}
+
+async function importStudioAlbumMigrationCover(bucket, definition, user) {
+  const url = new URL(definition.cover.sourceUrl);
+  if (url.protocol !== "https:" || url.hostname !== "raw.githubusercontent.com") throw new Error("INPUT_Source cover Album non autorisée.");
+  const expectedPrefix = `/shinobione/LaunchPAD-APP/${STUDIO_ALBUM_MIGRATION_SOURCE_REF}/`;
+  if (!url.pathname.startsWith(expectedPrefix)) throw new Error("INPUT_La cover Album n'est pas épinglée sur le ref de migration attendu.");
+  const response = await fetch(definition.cover.sourceUrl, {
+    headers: { Accept: "image/jpeg,image/png,image/webp", "User-Agent": "LaunchPAD-Album-Migration/1.0" },
+    redirect: "error",
+  });
+  if (!response.ok) throw new Error("INPUT_Import de la cover Album impossible (HTTP " + response.status + ").");
+  const contentType = String(response.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
+  if (!["image/jpeg", "image/png", "image/webp"].includes(contentType)) throw new Error("INPUT_Type de cover Album non autorisé.");
+  const body = await response.arrayBuffer();
+  if (!body.byteLength || body.byteLength > STUDIO_ALBUM_MIGRATION_MAX_COVER_BYTES) throw new Error("UPLOAD_Cover Album vide ou supérieure à 20 Mo.");
+  const extension = contentType === "image/png" ? "png" : contentType === "image/webp" ? "webp" : "jpeg";
+  const relativePath = `cover/cover.${extension}`;
+  const key = albumPrefix(definition.id) + relativePath;
+  await bucket.put(key, body, {
+    httpMetadata: { contentType, cacheControl: "public, max-age=31536000, immutable" },
+    customMetadata: {
+      kind: "album-cover",
+      albumId: definition.id,
+      migratedFrom: definition.cover.sourceUrl,
+      migrationId: STUDIO_ALBUM_MIGRATION_ID,
+      uploadedBy: String(user.email || "authorized-user").slice(0, 200),
+      uploadedAt: new Date().toISOString(),
+    },
+  });
+  return { key, relativePath, contentType, size: body.byteLength };
+}
+
+async function applyStudioLegacyAlbumMigration(request, env, user) {
+  const payload = await readStudioAlbumJsonPayload(request, STUDIO_ALBUM_MIGRATION_APPLY_INTENT);
+  const albumId = String(payload.albumId || "").trim();
+  const definition = STUDIO_ALBUM_MIGRATION_DEFINITIONS.find(item => item.id === albumId);
+  if (!definition || albumId === "singles") throw new Error("INPUT_Album non autorisé par le plan C2.5-E.");
+  const expectedConfirmation = STUDIO_ALBUM_MIGRATION_CONFIRM_PREFIX + albumId;
+  if (String(payload.confirm || "") !== expectedConfirmation) throw new Error("AUTH_Confirmation de migration Album invalide.");
+
+  const dryRun = await buildStudioLegacyAlbumMigrationDryRun(env);
+  const candidate = dryRun.albums.find(album => album.id === albumId);
+  if (!candidate) throw new Error("INPUT_Album absent du dry-run courant.");
+  if (candidate.blockers.length) return jsonResponse({ ok: false, error: "Migration bloquée par le dry-run courant.", code: "ALBUM_MIGRATION_BLOCKED", migration: candidate }, 409);
+  if (!payload.expectedStateToken || payload.expectedStateToken !== candidate.stateToken) {
+    return jsonResponse({ ok: false, error: "L'état canonique a changé depuis le dry-run.", code: "STALE_ALBUM_MIGRATION_PLAN", currentStateToken: candidate.stateToken }, 409);
+  }
+
+  const requestedTrackIds = Array.isArray(payload.trackIds) ? payload.trackIds.map(value => slugify(value)).filter(Boolean) : [];
+  if (!studioAlbumMigrationSameSet(requestedTrackIds, candidate.proposedTrackIds)) {
+    throw new Error("INPUT_La tracklist confirmée doit contenir exactement les candidats du dry-run, sans ajout ni suppression.");
+  }
+  if (candidate.requiresOrderConfirmation && payload.orderConfirmed !== true) {
+    throw new Error("INPUT_L'ordre artistique doit être confirmé explicitement avant migration.");
+  }
+  if (await readAlbumManifest(env.MEDIA_BUCKET, albumId)) {
+    return jsonResponse({ ok: false, error: "Cet Album est déjà canonique.", code: "ALBUM_ALREADY_CANONICAL" }, 409);
+  }
+
+  for (const trackId of requestedTrackIds) {
+    const track = await readManifest(env.MEDIA_BUCKET, trackId);
+    if (!track || track.status !== "published" || track.album?.id !== albumId) {
+      return jsonResponse({ ok: false, error: `Le track ${trackId} ne correspond plus au dry-run.`, code: "STALE_ALBUM_MIGRATION_TRACK", trackId }, 409);
+    }
+  }
+
+  const catalogBefore = await snapshotStudioAlbumMigrationCatalog(env.MEDIA_BUCKET);
+  let cover = null;
+  let manifestWritten = false;
+  const rollback = { manifestRemoved: false, coverRemoved: false, catalogRestored: false };
+  try {
+    cover = await importStudioAlbumMigrationCover(env.MEDIA_BUCKET, definition, user);
+    const now = new Date().toISOString();
+    const manifest = normalizeAlbumManifest({
+      id: definition.id,
+      title: definition.title,
+      type: definition.type,
+      status: "published",
+      year: definition.year,
+      releaseDate: definition.releaseDate,
+      description: definition.description,
+      heading: definition.heading,
+      trackIds: requestedTrackIds,
+      accent: null,
+      accent2: null,
+      assets: { cover: cover.relativePath, thumbnail: null },
+      createdAt: now,
+      updatedAt: now,
+      updatedBy: String(user.email || "authorized-user"),
+    });
+    await writeAlbumManifest(env.MEDIA_BUCKET, manifest);
+    manifestWritten = true;
+    const index = await writeCatalogIndex(env.MEDIA_BUCKET);
+    const reread = await readAlbumManifest(env.MEDIA_BUCKET, albumId);
+    if (!reread || reread.updatedAt !== manifest.updatedAt || JSON.stringify(reread.trackIds) !== JSON.stringify(requestedTrackIds)) {
+      throw new Error("SAVE_VERIFY_Album migré non vérifié.");
+    }
+    const quality = await inspectCanonicalAlbumQuality(env.MEDIA_BUCKET, reread);
+    if (!quality.publishable) throw new Error("SAVE_VERIFY_Album migré non publiable après relecture.");
+    return jsonResponse({
+      ok: true,
+      migrated: true,
+      migrationId: STUDIO_ALBUM_MIGRATION_ID,
+      albumId,
+      album: reread,
+      cover: { path: cover.relativePath, size: cover.size, contentType: cover.contentType },
+      trackCachesRewritten: 0,
+      catalogRebuilt: true,
+      catalogGeneratedAt: index.generatedAt || null,
+      quality,
+      singlesUntouched: true,
+      authenticatedEmail: user.email || null,
+    }, 201);
+  } catch (error) {
+    if (manifestWritten) {
+      try { await env.MEDIA_BUCKET.delete(albumPrefix(albumId) + ALBUM_MANIFEST_NAME); rollback.manifestRemoved = true; }
+      catch (rollbackError) { console.error("Album migration manifest rollback failed", rollbackError); }
+    } else rollback.manifestRemoved = true;
+    if (cover?.key) {
+      try { await env.MEDIA_BUCKET.delete(cover.key); rollback.coverRemoved = true; }
+      catch (rollbackError) { console.error("Album migration cover rollback failed", rollbackError); }
+    } else rollback.coverRemoved = true;
+    try { await restoreStudioAlbumMigrationCatalog(env.MEDIA_BUCKET, catalogBefore); rollback.catalogRestored = true; }
+    catch (rollbackError) { console.error("Album migration catalog rollback failed", rollbackError); }
+    console.error("Album migration failed", albumId, error);
+    return jsonResponse({
+      ok: false,
+      error: "Migration Album annulée après échec de publication ou vérification.",
+      details: error instanceof Error ? error.message : String(error),
+      code: "ALBUM_MIGRATION_ROLLBACK",
+      rollback,
+    }, 500);
+  }
+}
+
+const listAlbumsBeforeC25EMigration = listAlbums;
+listAlbums = async function listAlbumsWithC25EMigrationDryRun(env) {
+  const response = await listAlbumsBeforeC25EMigration(env);
+  const payload = await response.json();
+  const migration = await buildStudioLegacyAlbumMigrationDryRun(env);
+  return jsonResponse({ ...payload, migration }, response.status);
+};
+
+const createStudioAlbumBeforeC25EMigration = createStudioAlbum;
+createStudioAlbum = async function createStudioAlbumWithC25EMigration(request, env, user) {
+  let intent = null;
+  try {
+    const probe = request.clone();
+    const parsed = JSON.parse(await probe.text());
+    intent = parsed?.intent || null;
+  } catch {
+    // The base create handler remains responsible for the canonical input error.
+  }
+  if (intent === STUDIO_ALBUM_MIGRATION_APPLY_INTENT) return applyStudioLegacyAlbumMigration(request, env, user);
+  return createStudioAlbumBeforeC25EMigration(request, env, user);
+};
