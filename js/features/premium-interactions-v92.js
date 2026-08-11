@@ -53,7 +53,8 @@
 
   function localPointer(element, event) {
     const rect = element.getBoundingClientRect();
-    if (!rect.width || !rect.height || event.detail === 0) {
+    const pointerAvailable = Number.isFinite(event?.clientX) && Number.isFinite(event?.clientY) && event?.detail !== 0;
+    if (!rect.width || !rect.height || !pointerAvailable) {
       return { x: rect.width / 2, y: rect.height / 2 };
     }
     return {
@@ -143,6 +144,6 @@
     const element = closestInteractive(event.target, BLOOM_SELECTOR);
     if (!element) return;
     endPress(element);
-    triggerImpact(element, { ...event, detail: 0, clientX: 0, clientY: 0 });
+    triggerImpact(element, null);
   }, true);
 })();
