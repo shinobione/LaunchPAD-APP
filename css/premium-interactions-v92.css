@@ -1,0 +1,364 @@
+/* Build 92 — C3-C.1 Premium Feel
+   Presentation-only interaction layer. Stronger than Build 91 by design after
+   real-user smoke reported the previous motion/glow as barely perceptible.
+   No player, routing, catalog, Worker, R2 or application authority semantics live here. */
+
+:root {
+  --lp92-instant: 80ms;
+  --lp92-fast: 150ms;
+  --lp92-base: 230ms;
+  --lp92-slow: 360ms;
+  --lp92-ease: cubic-bezier(.16,.84,.24,1);
+  --lp92-spring: cubic-bezier(.18,1.28,.32,1);
+  --lp92-cyan: rgba(78,231,223,.72);
+  --lp92-violet: rgba(163,92,255,.62);
+  --lp92-panel-shadow: 0 18px 55px rgba(0,0,0,.34), 0 0 38px rgba(78,231,223,.08), 0 0 62px rgba(163,92,255,.055);
+}
+
+/* Intentional tactile response. JS keeps the class alive just long enough to
+   be perceived even when a click handler navigates immediately. */
+:where(
+  button:not(:disabled),
+  a[href],
+  summary,
+  .album-card,
+  .track-card,
+  .favorite-card,
+  .album-tile,
+  .track-row,
+  .album-track-row,
+  .queue-item
+) {
+  transition-timing-function: var(--lp92-ease);
+}
+
+:where(button:not(:disabled), a[href], summary) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(
+  button:not(:disabled),
+  a.social-platform,
+  a.brand,
+  .nav-item,
+  .chip,
+  .album-action,
+  .track-action,
+  .play-overlay,
+  .mini-controls button,
+  .player-control,
+  .round-button,
+  .icon-button
+) {
+  position: relative;
+  isolation: isolate;
+}
+
+:where(
+  .primary,
+  .secondary,
+  .text-button,
+  .chip,
+  .nav-item,
+  .menu-button,
+  .mini-controls button,
+  .icon-button,
+  .round-button,
+  .player-control,
+  .album-action,
+  .track-action,
+  .social-platform,
+  .play-overlay
+) {
+  transition:
+    translate var(--lp92-fast) var(--lp92-ease),
+    scale var(--lp92-fast) var(--lp92-spring),
+    filter var(--lp92-fast) var(--lp92-ease),
+    color var(--lp92-fast) var(--lp92-ease),
+    border-color var(--lp92-base) var(--lp92-ease),
+    background var(--lp92-base) var(--lp92-ease),
+    box-shadow var(--lp92-base) var(--lp92-ease),
+    opacity var(--lp92-fast) var(--lp92-ease);
+}
+
+/* Primary actions: visibly lift instead of moving by a nearly invisible pixel. */
+:where(.primary, .hero-actions .primary):hover:not(:disabled) {
+  translate: 0 -3px;
+  scale: 1.018;
+  filter: brightness(1.16) saturate(1.15);
+  box-shadow:
+    0 18px 42px rgba(0,0,0,.28),
+    0 0 0 1px rgba(78,231,223,.22),
+    0 0 34px rgba(78,231,223,.25),
+    0 0 54px rgba(163,92,255,.14);
+}
+
+:where(.primary, .hero-actions .primary).lp-pressing,
+:where(.primary, .hero-actions .primary):active:not(:disabled) {
+  translate: 0 2px;
+  scale: .94;
+  filter: brightness(1.23) saturate(1.18);
+  box-shadow:
+    0 5px 14px rgba(0,0,0,.34),
+    0 0 0 1px rgba(78,231,223,.28),
+    0 0 28px rgba(78,231,223,.28),
+    0 0 44px rgba(163,92,255,.14);
+}
+
+:where(.secondary, .text-button, .chip, .nav-item, .menu-button, .album-action, .track-action, .social-platform):hover:not(:disabled) {
+  translate: 0 -2px;
+  scale: 1.012;
+  filter: brightness(1.14) saturate(1.08);
+  border-color: rgba(78,231,223,.24);
+  box-shadow: 0 10px 28px rgba(0,0,0,.24), 0 0 24px rgba(78,231,223,.11);
+}
+
+:where(.secondary, .text-button, .chip, .nav-item, .menu-button, .album-action, .track-action, .social-platform).lp-pressing,
+:where(.secondary, .text-button, .chip, .nav-item, .menu-button, .album-action, .track-action, .social-platform):active:not(:disabled) {
+  translate: 0 1px;
+  scale: .955;
+  filter: brightness(1.18) saturate(1.12);
+}
+
+/* Active nav/filter state reads like an illuminated control, not just a border. */
+:where(.nav-item.active, .chip.active, button[aria-pressed='true'], button[aria-selected='true']) {
+  background-image: linear-gradient(110deg, rgba(78,231,223,.11), rgba(163,92,255,.10));
+  border-color: rgba(78,231,223,.34);
+  filter: brightness(1.12) saturate(1.08);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.035),
+    0 9px 28px rgba(0,0,0,.24),
+    0 0 26px rgba(78,231,223,.15),
+    0 0 40px rgba(163,92,255,.08);
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 22%;
+  bottom: 22%;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(112,255,247,.95), rgba(164,103,255,.85));
+  box-shadow: 0 0 10px rgba(78,231,223,.72), 0 0 18px rgba(163,92,255,.4);
+  opacity: .95;
+}
+
+/* Player controls get an unmistakable press/pop without changing playback timing. */
+:where(.mini-controls button, .player-control, .transport button, .lyrics-player button, .play-overlay):hover:not(:disabled) {
+  scale: 1.07;
+  filter: brightness(1.2) saturate(1.12);
+  box-shadow: 0 0 0 1px rgba(78,231,223,.16), 0 0 30px rgba(78,231,223,.19), 0 0 46px rgba(163,92,255,.09);
+}
+
+:where(.mini-controls button, .player-control, .transport button, .lyrics-player button, .play-overlay).lp-pressing,
+:where(.mini-controls button, .player-control, .transport button, .lyrics-player button, .play-overlay):active:not(:disabled) {
+  scale: .88;
+  filter: brightness(1.3) saturate(1.2);
+  box-shadow: 0 0 0 1px rgba(78,231,223,.28), 0 0 36px rgba(78,231,223,.3), 0 0 54px rgba(163,92,255,.15);
+}
+
+.mini-play.lp-impact,
+.player-control.lp-impact,
+.play-overlay.lp-impact {
+  animation: lp92-control-pop 340ms var(--lp92-spring) both;
+}
+
+/* Pointer-position light bloom. Created as a temporary, pointer-events:none span. */
+.lp-impact-bloom {
+  position: absolute;
+  z-index: -1;
+  width: 18px;
+  aspect-ratio: 1;
+  left: var(--lp-bloom-x, 50%);
+  top: var(--lp-bloom-y, 50%);
+  translate: -50% -50%;
+  border-radius: 999px;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255,255,255,.9) 0 4%, rgba(78,231,223,.5) 18%, rgba(163,92,255,.22) 44%, transparent 72%);
+  filter: blur(.15px);
+  animation: lp92-bloom 430ms var(--lp92-ease) both;
+}
+
+/* Interactive cards now gain actual depth and cover response. */
+:where(.album-card, .track-card, .favorite-card, .album-tile) {
+  transition:
+    translate var(--lp92-base) var(--lp92-ease),
+    scale var(--lp92-base) var(--lp92-ease),
+    border-color var(--lp92-base) var(--lp92-ease),
+    background var(--lp92-base) var(--lp92-ease),
+    box-shadow var(--lp92-slow) var(--lp92-ease),
+    filter var(--lp92-fast) var(--lp92-ease);
+}
+
+:where(.album-card, .track-card, .favorite-card, .album-tile):hover {
+  translate: 0 -5px;
+  scale: 1.014;
+  border-color: rgba(78,231,223,.24);
+  background-image: linear-gradient(145deg, rgba(78,231,223,.025), rgba(163,92,255,.025));
+  box-shadow: var(--lp92-panel-shadow);
+  filter: brightness(1.06) saturate(1.04);
+}
+
+:where(.album-card, .track-card, .favorite-card, .album-tile):hover :where(img, .cover-wrap) {
+  filter: brightness(1.05) saturate(1.06);
+}
+
+:where(.track-row, .album-track-row, .queue-item) {
+  transition:
+    translate var(--lp92-fast) var(--lp92-ease),
+    scale var(--lp92-fast) var(--lp92-ease),
+    border-color var(--lp92-base) var(--lp92-ease),
+    background var(--lp92-base) var(--lp92-ease),
+    box-shadow var(--lp92-base) var(--lp92-ease),
+    filter var(--lp92-fast) var(--lp92-ease);
+}
+
+:where(.track-row, .album-track-row, .queue-item):hover {
+  translate: 3px 0;
+  scale: 1.003;
+  border-color: rgba(78,231,223,.2);
+  background-image: linear-gradient(90deg, rgba(78,231,223,.045), rgba(163,92,255,.02), transparent 72%);
+  box-shadow: 0 9px 26px rgba(0,0,0,.2), -5px 0 22px rgba(78,231,223,.055);
+}
+
+/* Form focus should be obvious enough to feel intentional. */
+:where(input, select, textarea):not(:disabled) {
+  transition:
+    border-color var(--lp92-fast) var(--lp92-ease),
+    background var(--lp92-base) var(--lp92-ease),
+    box-shadow var(--lp92-base) var(--lp92-ease),
+    filter var(--lp92-fast) var(--lp92-ease);
+}
+
+:where(input, select, textarea):not(:disabled):hover {
+  border-color: rgba(255,255,255,.22);
+  background-color: rgba(255,255,255,.018);
+}
+
+:where(input, select, textarea):not(:disabled):focus,
+:where(input, select, textarea):not(:disabled):focus-visible {
+  border-color: rgba(78,231,223,.54);
+  filter: brightness(1.08);
+  box-shadow: 0 0 0 3px rgba(78,231,223,.11), 0 0 30px rgba(78,231,223,.12), 0 0 45px rgba(163,92,255,.055);
+}
+
+/* View changes get depth: opacity + vertical travel + micro scale + blur.
+   The route-entering selector intentionally overrides Feature 11's older 240ms cue. */
+.view.active,
+.view.active.route-entering {
+  animation: lp92-view-enter var(--lp92-slow) var(--lp92-ease) both;
+  transform-origin: 50% 16%;
+}
+
+:where(.toast, .notification, .inline-status, .error-state, .success-state, .lyrics-status, .pwa-update) {
+  animation: lp92-feedback-in 300ms var(--lp92-spring) both;
+}
+
+/* Existing album accent remains authoritative; this only makes focus feedback visible. */
+.album-detail-page :where(button:not(:disabled), a[href]):focus-visible,
+.album-detail :where(button:not(:disabled), a[href]):focus-visible {
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--album-accent, #4ee7df) 28%, transparent),
+    0 0 34px color-mix(in srgb, var(--album-accent, #4ee7df) 19%, transparent),
+    0 0 52px color-mix(in srgb, var(--album-accent2, #a35cff) 9%, transparent);
+}
+
+@keyframes lp92-control-pop {
+  0% { scale: .88; }
+  58% { scale: 1.11; }
+  100% { scale: 1; }
+}
+
+@keyframes lp92-bloom {
+  0% { opacity: .95; scale: .3; }
+  70% { opacity: .45; }
+  100% { opacity: 0; scale: 9; }
+}
+
+@keyframes lp92-view-enter {
+  from {
+    opacity: .52;
+    translate: 0 12px;
+    scale: .992;
+    filter: blur(2px) brightness(.92);
+  }
+  70% {
+    opacity: 1;
+    filter: blur(0) brightness(1.035);
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+    filter: none;
+  }
+}
+
+@keyframes lp92-feedback-in {
+  from { opacity: .35; translate: 0 -7px; scale: .975; }
+  68% { opacity: 1; translate: 0 1px; scale: 1.012; }
+  to { opacity: 1; translate: 0 0; scale: 1; }
+}
+
+@media (hover: none) {
+  :where(
+    .primary,
+    .secondary,
+    .text-button,
+    .chip,
+    .nav-item,
+    .menu-button,
+    .album-action,
+    .track-action,
+    .social-platform,
+    .album-card,
+    .track-card,
+    .favorite-card,
+    .album-tile,
+    .track-row,
+    .album-track-row,
+    .queue-item
+  ):hover {
+    translate: 0 0;
+    scale: 1;
+  }
+
+  :where(.mini-controls button, .player-control, .transport button, .lyrics-player button, .play-overlay):hover:not(:disabled) {
+    scale: 1;
+  }
+
+  /* Touch gets a slightly stronger pressed state because there is no hover pre-cue. */
+  :where(button:not(:disabled), a[href]).lp-pressing {
+    filter: brightness(1.2) saturate(1.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --lp92-instant: 1ms;
+    --lp92-fast: 1ms;
+    --lp92-base: 1ms;
+    --lp92-slow: 1ms;
+  }
+
+  .view.active,
+  .view.active.route-entering,
+  :where(.toast, .notification, .inline-status, .error-state, .success-state, .lyrics-status, .pwa-update),
+  .mini-play.lp-impact,
+  .player-control.lp-impact,
+  .play-overlay.lp-impact,
+  .lp-impact-bloom {
+    animation: none !important;
+  }
+
+  :where(button, a, summary, .album-card, .track-card, .favorite-card, .album-tile, .track-row, .album-track-row, .queue-item) {
+    scale: 1 !important;
+    translate: 0 0 !important;
+  }
+
+  .lp-impact-bloom {
+    display: none !important;
+  }
+}
