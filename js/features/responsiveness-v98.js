@@ -5,6 +5,7 @@ const TRACK_SIGNAL_SELECTOR = '.track-detail-signal-groups';
 const TRACK_COPY_SELECTOR = '#view-track .track-detail-copy';
 const TRACK_TAGS_SELECTOR = '.track-detail-tags';
 const PLAYBACK_PROGRESS_EPSILON = 0.025;
+const MOBILE_LYRICS_FETCH_LIMIT = 2;
 
 function dispatchPlaybackState(audio, state) {
   if (!audio || audio.dataset.playbackRequestState === state) return;
@@ -46,6 +47,58 @@ function installPlaybackStateReconcile(audio) {
   audio.addEventListener('seeked', () => {
     lastTime = Number(audio.currentTime) || 0;
   });
+}
+
+function requestUrl(input) {
+  try {
+    if (input instanceof Request) return new URL(input.url, location.href);
+    return new URL(String(input), location.href);
+  } catch {
+    return null;
+  }
+}
+
+function isLyricsAssetRequest(input) {
+  const url = requestUrl(input);
+  if (!url) return false;
+  const path = url.pathname.toLowerCase();
+  return path.includes('/lyrics') || path.endsWith('.lrc') || path.endsWith('.txt');
+}
+
+function installMobileLyricsFetchLimiter() {
+  if (window.__shinobiBuild98LyricsFetchLimiterReady) return;
+  if (!globalThis.matchMedia?.('(max-width: 760px)').matches) return;
+  window.__shinobiBuild98LyricsFetchLimiterReady = true;
+
+  const nativeFetch = globalThis.fetch.bind(globalThis);
+  const queue = [];
+  let active = 0;
+
+  const drain = () => {
+    while (active < MOBILE_LYRICS_FETCH_LIMIT && queue.length) {
+      const task = queue.shift();
+      active += 1;
+      nativeFetch(task.input, task.init)
+        .then(task.resolve, task.reject)
+        .finally(() => {
+          active -= 1;
+          drain();
+        });
+    }
+  };
+
+  globalThis.fetch = (input, init) => {
+    if (!isLyricsAssetRequest(input)) return nativeFetch(input, init);
+
+    return new Promise((resolve, reject) => {
+      const task = { input, init, resolve, reject };
+      // If the user is actively looking at Lyrics, prioritize the new request
+      // ahead of background search-index hydration already queued at startup.
+      if (document.querySelector('#view-lyrics.active')) queue.unshift(task);
+      else queue.push(task);
+      drain();
+    });
+  };
 }
 
 function integrateTrackSignals(root = document) {
@@ -98,6 +151,7 @@ function installTrackSignalFirstPaint() {
 }
 
 export function initResponsivenessV98({ audio = document.querySelector('#audio') } = {}) {
+  installMobileLyricsFetchLimiter();
   installPlaybackStateReconcile(audio);
   installTrackSignalFirstPaint();
 }
