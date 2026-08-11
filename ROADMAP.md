@@ -1,8 +1,25 @@
 # LaunchPAD roadmap
 
-> Current application build: `2026.08.08.66` — release `studio-metadata-validation-20260808`.
+> Current candidate build: `2026.08.11.92` — release `phase-ux-c3-c1-premium-feel-20260811`.
+> Accepted LaunchPAD baseline remains Build 90 until C3-C real-user acceptance.
 
 The repository cleanup/reconciliation phase is complete. This roadmap now tracks product/runtime work rather than historical migration chores.
+
+## Current PHASE UX milestone — C3-C Premium Feel
+
+- [x] C3-B Catalog Intelligence/V2-E parity real-user finding on 5 analyses / 4 valid 512D embeddings was made explicit in Studio rather than hidden.
+- [x] C3-B real-user pass recorded after the map exposed mapped/hidden counts and the missing embedding track explicitly.
+- [x] Build 91 introduced the first restrained LaunchPAD premium interaction layer.
+- [x] Build 91 CI/deployment passed without player/Worker/R2/Track Manager/SonicTrace behavior changes.
+- [x] Real-user Build 91 perception smoke recorded as **NOT ACCEPTED**: clean but too subtle, with little or no premium-feel difference.
+- [x] Build 92 / C3-C.1 increases perceptual contrast with durable press state, click-position light bloom, stronger control pop, card depth, active navigation light and deeper route-entry motion.
+- [x] Build 92 keeps the premium runtime presentation-only: no `preventDefault()`, no `stopPropagation()`, no delayed actions and no infinite attention animation.
+- [ ] Build 92 full CI green.
+- [ ] Build 92 GitHub Pages deployment green.
+- [ ] Build 92 real-user desktop smoke: buttons/player/cards/navigation feel materially more responsive and premium without becoming flashy/heavy.
+- [ ] Build 92 touch/mobile smoke: no sticky hover, layout shift or accidental gesture ownership.
+- [ ] Only after explicit real-user acceptance, mark C3-C complete and run PHASE UX final closeout/reconciliation.
+- [ ] Phase 7 remains locked until that closeout is complete and explicit authorization is given.
 
 ## Baseline — complete
 
@@ -142,4 +159,5 @@ The repo is considered structurally healthy when:
 10. sustained musical energy produces visible kinetic travel while low-frequency onsets retain a separate post-pose impact with reserved headroom;
 11. the Audio Lab can introduce new composition families without duplicating the same centered radial grammar;
 12. Studio integration can fail or be reverted without disabling the standalone Track Manager, LaunchPAD, SonicTrace or LRC Maker;
-13. validation-only cross-origin capabilities are proven before any production mutation endpoint is introduced.
+13. validation-only cross-origin capabilities are proven before any production mutation endpoint is introduced;
+14. premium-feel slices remain presentation-only and are accepted by real-user perception, not by CI alone.

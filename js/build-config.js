@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260811-phase-ux-c3-c-premium-feel-v91',
-    cache: 'shinobi-launchpad-v91',
-    revision: 'premium-interaction-motion-1',
-    display: '2026.08.11.91',
-    release: 'phase-ux-c3-c-premium-feel-20260811'
+    id: '20260811-phase-ux-c3-c1-premium-feel-v92',
+    cache: 'shinobi-launchpad-v92',
+    revision: 'premium-interaction-motion-2',
+    display: '2026.08.11.92',
+    release: 'phase-ux-c3-c1-premium-feel-20260811'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
@@ -104,10 +104,17 @@
 
   function installPremiumFeel() {
     ensureBuildStylesheet(
-      'link[data-premium-interactions-v91]',
-      'css/premium-interactions-v91.css',
-      'premiumInteractionsV91'
+      'link[data-premium-interactions-v92]',
+      'css/premium-interactions-v92.css',
+      'premiumInteractionsV92'
     );
+
+    if (document.querySelector('script[data-premium-interactions-v92]')) return;
+    const script = document.createElement('script');
+    script.src = `js/features/premium-interactions-v92.js?v=${encodeURIComponent(config.id)}`;
+    script.async = false;
+    script.dataset.premiumInteractionsV92 = 'true';
+    document.head.appendChild(script);
   }
 
   function findEquivalentStylesheet(link, url) {
