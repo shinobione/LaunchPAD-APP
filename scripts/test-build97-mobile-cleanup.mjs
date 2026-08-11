@@ -6,14 +6,23 @@ const css = fs.readFileSync('css/c3-c6-mobile-v97.css', 'utf8');
 const picker = fs.readFileSync('js/features/mobile-cleanup-v97.js', 'utf8');
 const content = fs.readFileSync('js/features/content/content-controller.js', 'utf8');
 
+const buildNumber = Number(/display:\s*'\d{4}\.\d{2}\.\d{2}\.(\d+)'/.exec(buildConfig)?.[1]);
+const isBuild97 = buildNumber === 97;
+assert.ok(Number.isInteger(buildNumber) && buildNumber >= 97, 'Build 97 guard must run on Build 97 or a later C3-C successor.');
+
+if (isBuild97) {
+  for (const marker of [
+    "id: '20260811-phase-ux-c3-c6-mobile-cleanup-v97'",
+    "cache: 'shinobi-launchpad-v97'",
+    "display: '2026.08.11.97'",
+    "release: 'phase-ux-c3-c6-mobile-cleanup-20260811'",
+  ]) assert.ok(buildConfig.includes(marker), `Build 97 config is missing ${marker}.`);
+}
+
 for (const marker of [
-  "id: '20260811-phase-ux-c3-c6-mobile-cleanup-v97'",
-  "cache: 'shinobi-launchpad-v97'",
-  "display: '2026.08.11.97'",
-  "release: 'phase-ux-c3-c6-mobile-cleanup-20260811'",
   "'css/c3-c6-mobile-v97.css'",
   'js/features/mobile-cleanup-v97.js?v=',
-]) assert.ok(buildConfig.includes(marker), `Build 97 config is missing ${marker}.`);
+]) assert.ok(buildConfig.includes(marker), `Build 97 ancestry wiring is missing ${marker}.`);
 
 for (const marker of [
   '#view-home #recently-added-section',
@@ -59,4 +68,4 @@ assert.ok(
   'Mobile Album behavior must bypass document View Transitions before the desktop branch.'
 );
 
-console.log('LaunchPAD Build 97 passed mobile Home, Album stability and dark Lyrics picker guards.');
+console.log(`LaunchPAD Build 97 ancestry guard passed under Build ${buildNumber} for mobile Home, Album stability and dark Lyrics picker.`);

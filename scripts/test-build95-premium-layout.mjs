@@ -5,9 +5,8 @@ const js = fs.readFileSync('js/features/premium-interactions-v92.js', 'utf8');
 const css = fs.readFileSync('css/c3-c4-layout-polish-v95.css', 'utf8');
 const buildConfig = fs.readFileSync('js/build-config.js', 'utf8');
 
-const isBuild95 = buildConfig.includes("display: '2026.08.11.95'");
-const isSuccessor = /display:\s*'2026\.08\.11\.(?:9[6-9]|[1-9]\d{2,})'/.test(buildConfig);
-assert.ok(isBuild95 || isSuccessor, 'Build 95 guard must run on Build 95 or a later C3-C successor.');
+const buildNumber = Number(/display:\s*'\d{4}\.\d{2}\.\d{2}\.(\d+)'/.exec(buildConfig)?.[1]);
+assert.ok(Number.isInteger(buildNumber) && buildNumber >= 95, 'Build 95 guard must run on Build 95 or a later C3-C successor.');
 
 for (const marker of [
   "routeAnimation.id = 'lp95-route-transition'",
@@ -41,4 +40,4 @@ assert.doesNotMatch(js, /preventDefault\s*\(/, 'Build 95+ premium runtime must n
 assert.doesNotMatch(js, /stopPropagation\s*\(/, 'Build 95+ premium runtime must not own event propagation.');
 assert.doesNotMatch(css, /animation-iteration-count:\s*infinite/i, 'Build 95 layout ancestry must not add perpetual attention motion.');
 
-console.log('LaunchPAD Build 95 ancestry guard passed for smooth routes, nav order, Eras, Audio Lab, Album scalability and Show/Hide Tracks.');
+console.log(`LaunchPAD Build 95 ancestry guard passed under Build ${buildNumber} for smooth routes, nav order, Eras, Audio Lab, Album scalability and Show/Hide Tracks.`);
