@@ -23,6 +23,18 @@ for (const [label, source] of [['desktop', desktop], ['mobile', mobile]]) {
 }
 
 requirePattern(
+  desktop,
+  /\.launchpad-banner-rail\s*\{[\s\S]*?aspect-ratio:\s*2\.08\s*\/\s*1\s*!important;[\s\S]*?overflow:\s*hidden\s*!important;/,
+  'Desktop Home must frame the visible Shino LaunchPAD artwork rather than its transparent PNG canvas.'
+);
+
+requirePattern(
+  desktop,
+  /\.hero-banner-art\s*\{[\s\S]*?height:\s*auto\s*!important;[\s\S]*?transform:\s*translate\(-50%,\s*-50%\)\s*!important;/,
+  'Desktop Home must center-crop only the transparent vertical padding around the new logo artwork.'
+);
+
+requirePattern(
   finalArtwork,
   /\.hero-banner-art\s*\{[\s\S]*?opacity:\s*1\s*!important;[\s\S]*?visibility:\s*visible\s*!important;/,
   'The LAUNCHPAD artwork must remain visible in the final cascade.'
@@ -40,4 +52,4 @@ requirePattern(
   'The build config must expose a stable non-empty revision slug so cached shell assets can refresh.'
 );
 
-console.log('Hero profile sizing, artwork visibility, LAUNCHPAD-first mobile ordering and generic build revision metadata are guarded.');
+console.log('Hero profile sizing, desktop logo framing, artwork visibility, LAUNCHPAD-first mobile ordering and generic build revision metadata are guarded.');
