@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260811-phase-ux-c2-5-f-canonical-album-public-cutover-v89',
-    cache: 'shinobi-launchpad-v89',
-    revision: 'canonical-album-public-cutover-1',
-    display: '2026.08.11.89',
-    release: 'phase-ux-c2-5-f-canonical-album-public-cutover-20260811'
+    id: '20260811-phase-ux-c3-album-palette-theme-v90',
+    cache: 'shinobi-launchpad-v90',
+    revision: 'canonical-album-palette-theme-1',
+    display: '2026.08.11.90',
+    release: 'phase-ux-c3-album-palette-theme-20260811'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
