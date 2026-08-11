@@ -39,11 +39,44 @@ function installStylesheets(entries) {
   });
 }
 
+function installBootMenuBridge() {
+  const button = document.querySelector('#menu-button');
+  const sidebar = document.querySelector('.sidebar');
+  if (!button || !sidebar) return () => {};
+
+  const toggle = () => sidebar.classList.toggle('open');
+  button.addEventListener('click', toggle);
+  document.documentElement.dataset.bootMenuReady = 'true';
+
+  return () => {
+    button.removeEventListener('click', toggle);
+    delete document.documentElement.dataset.bootMenuReady;
+  };
+}
+
+function scheduleIdleEnhancements(callback) {
+  const run = () => Promise.resolve(callback()).catch(error => {
+    console.warn('Deferred LaunchPAD enhancement failed.', error);
+  });
+
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(run, { timeout: 3500 });
+    return;
+  }
+  window.setTimeout(run, 900);
+}
+
 async function boot() {
   document.documentElement.dataset.build = BUILD;
   document.documentElement.dataset.appState = 'booting';
   if (new URLSearchParams(location.search).has('visual-test')) document.documentElement.dataset.visualTest = 'true';
   installStylesheets(CRITICAL_STYLES);
+
+  // Build 98: bind the one interaction users need while catalog hydration is in
+  // flight. app-main will take ownership after import; this bridge is removed
+  // immediately afterwards so there is never a double-toggle listener.
+  const removeBootMenuBridge = installBootMenuBridge();
+
   await import(versioned('./ui-polish-v62.js'));
   await import(versioned('./ui-polish-v62-1.js'));
 
@@ -54,7 +87,8 @@ async function boot() {
     { normalizeCatalogEditorialTags },
     { initAudioReadiness },
     { initAudioLabSignalBridge },
-    feature11
+    feature11,
+    { initResponsivenessV98 }
   ] = await Promise.all([
     import(versioned('./features/library-memory-shell.js')),
     import(versioned('./features/pwa.js')),
@@ -62,7 +96,8 @@ async function boot() {
     import(versioned('./core/editorial-normalization.js')),
     import(versioned('./features/audio-readiness.js')),
     import(versioned('./features/audio-lab-signal.js')),
-    import(versioned('./features/feature-11.js'))
+    import(versioned('./features/feature-11.js')),
+    import(versioned('./features/responsiveness-v98.js'))
   ]);
 
   feature11.normalizeLaunchRoute();
@@ -72,6 +107,7 @@ async function boot() {
   const audio = document.querySelector('#audio');
   initAudioLabSignalBridge({ audio });
   initAudioReadiness({ audio });
+  initResponsivenessV98({ audio });
 
   try {
     const state = await remoteCatalog.hydrateRemoteCatalog();
@@ -91,25 +127,26 @@ async function boot() {
     console.warn('Cloudflare R2 catalog unavailable; continuing with the local catalog.', error);
   }
 
-  await import(versioned('./app-main.js'));
+  try {
+    await import(versioned('./app-main.js'));
+  } finally {
+    removeBootMenuBridge();
+  }
 
+  // Build 98 critical interactive layer. Keep navigation/player/catalog surfaces
+  // ahead of optional visual/history/About enhancements on slower phones.
   const [
     { installContentV4 },
     { initCatalogFilters },
     { initContentAdvisoryBadges },
     { initAudioFocus },
     { initLyricsWakeLock },
-    { initAboutEnhancements },
     { initLibraryMemory },
-    { initListeningHistorySummary },
-    { initVisualCard },
     { createPlayerExperience },
     { initResilienceAccessibility },
     { initTrackDetail },
     { initTrackCardNavigation },
     { initTrackVideos },
-    { initSmartCanvasManager },
-    { initCanvasIdentity },
     { initMobileNavigation },
     { initAdminAccess },
     { initPhase12 },
@@ -124,17 +161,12 @@ async function boot() {
     import(versioned('./features/content-advisory-badges.js')),
     import(versioned('./features/audio/audio-focus.js')),
     import(versioned('./features/lyrics/wake-lock.js')),
-    import(versioned('./features/about/about-controller.js')),
     import(versioned('./features/library-memory.js')),
-    import(versioned('./features/listening-history-summary.js')),
-    import(versioned('./features/visual-card.js')),
     import(versioned('./features/player-experience.js')),
     import(versioned('./features/resilience-accessibility.js')),
     import(versioned('./features/track-detail.js')),
     import(versioned('./features/track-card-navigation.js')),
     import(versioned('./features/track-videos.js')),
-    import(versioned('./features/smart-canvas.js')),
-    import(versioned('./features/canvas-identity.js')),
     import(versioned('./features/mobile-navigation.js')),
     import(versioned('./features/admin-access.js')),
     import(versioned('./features/feature-12.js')),
@@ -148,21 +180,16 @@ async function boot() {
   installContentV4();
   initCatalogFilters();
   initContentAdvisoryBadges();
-  initAboutEnhancements();
   installStylesheets(LAYOUT_STYLES);
 
   createPlayerExperience({ audio });
   initResilienceAccessibility({ audio });
   initLibraryMemory({ audio });
-  initListeningHistorySummary({ audio });
   initTrackDetail({ audio });
   initTrackCardNavigation();
   initTrackVideos({ audio });
-  initSmartCanvasManager();
-  initCanvasIdentity();
   initMobileNavigation();
   initAdminAccess();
-  initVisualCard({ audio });
   feature11.initFeature11({ audio });
   initPhase12();
   initPhase13({ audio });
@@ -181,6 +208,29 @@ async function boot() {
     window.frameElement.dataset.appReady = 'true';
   }
   window.dispatchEvent(new CustomEvent('shinobi:ready'));
+
+  scheduleIdleEnhancements(async () => {
+    const [
+      { initAboutEnhancements },
+      { initListeningHistorySummary },
+      { initVisualCard },
+      { initSmartCanvasManager },
+      { initCanvasIdentity }
+    ] = await Promise.all([
+      import(versioned('./features/about/about-controller.js')),
+      import(versioned('./features/listening-history-summary.js')),
+      import(versioned('./features/visual-card.js')),
+      import(versioned('./features/smart-canvas.js')),
+      import(versioned('./features/canvas-identity.js'))
+    ]);
+
+    initAboutEnhancements();
+    initListeningHistorySummary({ audio });
+    initVisualCard({ audio });
+    initSmartCanvasManager();
+    initCanvasIdentity();
+    document.documentElement.dataset.idleEnhancements = 'ready';
+  });
 }
 
 boot().catch(error => {
