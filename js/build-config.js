@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260811-phase-ux-c3-c4-smooth-layout-v95',
-    cache: 'shinobi-launchpad-v95',
-    revision: 'premium-interaction-motion-5',
-    display: '2026.08.11.95',
-    release: 'phase-ux-c3-c4-smooth-layout-20260811'
+    id: '20260811-phase-ux-c3-c5-lyrics-autoscroll-v96',
+    cache: 'shinobi-launchpad-v96',
+    revision: 'lyrics-viewport-autoscroll-6',
+    display: '2026.08.11.96',
+    release: 'phase-ux-c3-c5-lyrics-autoscroll-20260811'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
@@ -133,6 +133,14 @@
     );
   }
 
+  function installC3C5LyricsCorrective() {
+    ensureBuildStylesheet(
+      'link[data-c3-c5-lyrics-v96]',
+      'css/c3-c5-lyrics-v96.css',
+      'c3C5LyricsV96'
+    );
+  }
+
   function findEquivalentStylesheet(link, url) {
     return [...document.querySelectorAll('link[rel="stylesheet"]')].find(candidate => {
       if (candidate === link) return false;
@@ -171,6 +179,7 @@
   installPremiumFeel();
   installPremiumFeelTuning();
   installC3C4LayoutPolish();
+  installC3C5LyricsCorrective();
 
   document.querySelectorAll('link[rel="stylesheet"]').forEach(normalizeStylesheet);
   new MutationObserver(records => {
