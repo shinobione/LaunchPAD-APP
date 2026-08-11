@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260811-phase-ux-c3-c5-lyrics-autoscroll-v96',
-    cache: 'shinobi-launchpad-v96',
-    revision: 'lyrics-viewport-autoscroll-6',
-    display: '2026.08.11.96',
-    release: 'phase-ux-c3-c5-lyrics-autoscroll-20260811'
+    id: '20260811-phase-ux-c3-c6-mobile-cleanup-v97',
+    cache: 'shinobi-launchpad-v97',
+    revision: 'mobile-layout-picker-7',
+    display: '2026.08.11.97',
+    release: 'phase-ux-c3-c6-mobile-cleanup-20260811'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
@@ -141,6 +141,21 @@
     );
   }
 
+  function installC3C6MobileCleanup() {
+    ensureBuildStylesheet(
+      'link[data-c3-c6-mobile-v97]',
+      'css/c3-c6-mobile-v97.css',
+      'c3C6MobileV97'
+    );
+
+    if (document.querySelector('script[data-c3-c6-mobile-v97]')) return;
+    const script = document.createElement('script');
+    script.src = `js/features/mobile-cleanup-v97.js?v=${encodeURIComponent(config.id)}`;
+    script.async = false;
+    script.dataset.c3C6MobileV97 = 'true';
+    document.head.appendChild(script);
+  }
+
   function findEquivalentStylesheet(link, url) {
     return [...document.querySelectorAll('link[rel="stylesheet"]')].find(candidate => {
       if (candidate === link) return false;
@@ -180,6 +195,7 @@
   installPremiumFeelTuning();
   installC3C4LayoutPolish();
   installC3C5LyricsCorrective();
+  installC3C6MobileCleanup();
 
   document.querySelectorAll('link[rel="stylesheet"]').forEach(normalizeStylesheet);
   new MutationObserver(records => {
