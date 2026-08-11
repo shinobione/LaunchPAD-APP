@@ -62,7 +62,13 @@ const fakeBucket = {
     }
     objects.set(key, { key, body, options });
   },
-  async delete(key) { objects.delete(key); },
+  async delete(key) {
+    if (key.startsWith('albums/') && key.endsWith('/manifest.json')) {
+      const id = key.slice('albums/'.length, -'/manifest.json'.length);
+      albums.delete(id);
+    }
+    objects.delete(key);
+  },
 };
 
 const listAllObjects = async (_bucket, prefix) => {
