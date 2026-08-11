@@ -53,6 +53,7 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
   let lastSyncAt = 0;
   let seekInProgress = false;
   let seekSettleFrame = 0;
+  let routeSyncFrame = 0;
 
   const lyricsViewActive = () => $('#view-lyrics')?.classList.contains('active') === true;
   const homeViewActive = () => $('#view-home')?.classList.contains('active') === true;
@@ -235,6 +236,7 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
     currentLines = lines;
     render(lines);
     update(audio.currentTime);
+    if (lyricsViewActive()) scheduleRouteSyncReconcile();
   }
 
   function findIndex(time) {
@@ -281,7 +283,17 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
 
     if (next === activeIndex) {
       if (lyricsViewActive()) {
-        const activeElement = $$('#lyrics-reader .lyric-line')[activeIndex];
+        const elements = $$('#lyrics-reader .lyric-line');
+        const activeElement = elements[activeIndex];
+
+        // When playback advanced while Lyrics was hidden, activeIndex can already
+        // be correct while the freshly rendered DOM has no .active line yet.
+        // Repair that presentation state before deciding whether centering is needed.
+        if (activeIndex >= 0 && activeElement && !activeElement.classList.contains('active')) {
+          applyActiveLine(activeIndex, behavior, { allowScroll: scrollAllowed });
+          return;
+        }
+
         if (scrollAllowed && autoScroll && activeIndex >= 0 && (forceCenter || !lineIsInReaderFocusZone(activeElement))) {
           scrollLineIntoReader(activeElement, behavior);
         }
@@ -329,6 +341,29 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
         seekSettleFrame = 0;
         update(time, { behavior: 'auto', forceCenter: true, allowScroll: true });
         if (!audio.paused && !audio.ended) startSyncClock();
+      });
+    });
+  }
+
+  function scheduleRouteSyncReconcile() {
+    if (routeSyncFrame) cancelAnimationFrame(routeSyncFrame);
+    routeSyncFrame = requestAnimationFrame(() => {
+      routeSyncFrame = requestAnimationFrame(() => {
+        routeSyncFrame = 0;
+
+        if (!syncSurfaceActive()) {
+          stopSyncClock();
+          return;
+        }
+
+        update(audio.currentTime, {
+          behavior: 'auto',
+          forceCenter: lyricsViewActive(),
+          allowScroll: !seekInProgress
+        });
+
+        if (!audio.paused && !audio.ended && !seekInProgress) startSyncClock();
+        if (homeViewActive()) renderHome(Math.max(0, activeIndex));
       });
     });
   }
@@ -388,16 +423,7 @@ export function createLyricsController({ tracks, audio, getCurrentIndex, selectT
   audio.addEventListener('pause', stopSyncClock);
   audio.addEventListener('ended', stopSyncClock);
 
-  window.addEventListener('shinobi:route-change', () => {
-    if (!syncSurfaceActive()) {
-      stopSyncClock();
-      return;
-    }
-    update(audio.currentTime, { behavior: 'auto' });
-    if (!audio.paused && !audio.ended && !seekInProgress) startSyncClock();
-    if (lyricsViewActive() && activeIndex >= 0) applyActiveLine(activeIndex, 'auto', { allowScroll: !seekInProgress });
-    if (homeViewActive()) renderHome(Math.max(0, activeIndex));
-  });
+  window.addEventListener('shinobi:route-change', scheduleRouteSyncReconcile);
 
   return {
     load,
