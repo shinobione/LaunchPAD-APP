@@ -1,0 +1,44 @@
+/* LaunchPAD PHASE UX / C3-C.9 — Build 100 corrective.
+   Scope: mobile gesture stability + desktop player chrome only.
+   No playback, queue, catalog, Worker/R2 or routing ownership lives here. */
+
+@media (max-width: 760px) {
+  /* Keep one-finger vertical/horizontal panning and nested rails, but do not
+     allow pinch zoom to resize the application shell. */
+  html,
+  body {
+    touch-action: pan-x pan-y;
+  }
+}
+
+@media (min-width: 761px) {
+  /* Build 92's generic premium hover shadow painted a square around bare
+     previous/next transport buttons. Keep the tiny scale/brightness response,
+     but never draw a rectangular chrome box around icon-only transport. */
+  .player-bar .transport button:not(.main-play),
+  .player-bar .transport button:not(.main-play):hover,
+  .player-bar .transport button:not(.main-play):active,
+  .player-bar .transport button:not(.main-play):focus,
+  .player-bar .transport button:not(.main-play):focus-visible {
+    border-color: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Range inputs are already self-describing through their track/thumb.
+     The generic form-focus halo from Premium Feel produced the cyan rectangle
+     visible around volume/timeline. Suppress only that rectangular halo. */
+  .player-bar input[type="range"],
+  .player-bar input[type="range"]:hover,
+  .player-bar input[type="range"]:focus,
+  .player-bar input[type="range"]:focus-visible,
+  .player-bar input[type="range"]:active {
+    border-color: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  .player-bar input[type="range"]:focus-visible {
+    filter: brightness(1.08);
+  }
+}
