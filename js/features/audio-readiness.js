@@ -1,6 +1,8 @@
 const PLAY_READY_EVENTS = ['loadedmetadata', 'canplay', 'canplaythrough'];
 const PLAY_RETRY_DELAY_MS = 900;
 const PLAY_START_WATCHDOG_MS = 1800;
+const WAITING_SPINNER_DELAY_MS = 360;
+const PLAYBACK_PROGRESS_EPSILON = 0.025;
 
 function abortError() {
   try {
@@ -23,6 +25,9 @@ export function initAudioReadiness({ audio }) {
   let playbackRequested = false;
   let playIntent = 0;
   let pendingPlay = null;
+  let waitingTimer = 0;
+  let lastObservedTime = Number(audio.currentTime) || 0;
+  let lastProgressAt = performance.now();
   const nativeLoad = audio.load.bind(audio);
   const nativePlay = audio.play.bind(audio);
   const nativePause = audio.pause.bind(audio);
@@ -33,6 +38,28 @@ export function initAudioReadiness({ audio }) {
     audio.dispatchEvent(new CustomEvent('shinobi:audio-request-state', {
       detail: { state }
     }));
+  }
+
+  function clearWaitingTimer() {
+    if (!waitingTimer) return;
+    window.clearTimeout(waitingTimer);
+    waitingTimer = 0;
+  }
+
+  function notePlaybackProgress() {
+    const current = Number(audio.currentTime) || 0;
+    const advanced = current > lastObservedTime + PLAYBACK_PROGRESS_EPSILON;
+    const rewound = current + PLAYBACK_PROGRESS_EPSILON < lastObservedTime;
+    lastObservedTime = current;
+
+    if (advanced || rewound) {
+      lastProgressAt = performance.now();
+      clearWaitingTimer();
+    }
+
+    if (advanced && playbackRequested && !audio.paused && !audio.ended) {
+      setRequestState('playing');
+    }
   }
 
   audio.load = (...args) => {
@@ -170,6 +197,9 @@ export function initAudioReadiness({ audio }) {
 
     playbackRequested = true;
     const intent = ++playIntent;
+    clearWaitingTimer();
+    lastObservedTime = Number(audio.currentTime) || 0;
+    lastProgressAt = performance.now();
     setRequestState('starting');
 
     if (pendingPlay) {
@@ -210,25 +240,52 @@ export function initAudioReadiness({ audio }) {
     playbackRequested = false;
     playIntent += 1;
     pendingPlay = null;
+    clearWaitingTimer();
     setRequestState('idle');
     return nativePause(...args);
   };
 
   audio.addEventListener('play', () => {
     playbackRequested = true;
+    lastObservedTime = Number(audio.currentTime) || 0;
+    lastProgressAt = performance.now();
     if (audio.dataset.playbackRequestState !== 'playing') setRequestState('starting');
   });
 
   audio.addEventListener('playing', () => {
     playbackRequested = true;
+    clearWaitingTimer();
+    lastObservedTime = Number(audio.currentTime) || 0;
+    lastProgressAt = performance.now();
     setRequestState('playing');
   });
 
+  audio.addEventListener('timeupdate', notePlaybackProgress);
+
   audio.addEventListener('waiting', () => {
-    if (playbackRequested) setRequestState('starting');
+    if (!playbackRequested || audio.paused || audio.ended) return;
+
+    clearWaitingTimer();
+    const intent = playIntent;
+    const waitingStartedAt = performance.now();
+    waitingTimer = window.setTimeout(() => {
+      waitingTimer = 0;
+      if (intent !== playIntent || !playbackRequested || audio.paused || audio.ended) return;
+
+      const noRecentProgress = performance.now() - lastProgressAt >= WAITING_SPINNER_DELAY_MS - 40;
+      const waitingLongEnough = performance.now() - waitingStartedAt >= WAITING_SPINNER_DELAY_MS - 40;
+      const lacksFutureData = audio.readyState < HTMLMediaElement.HAVE_FUTURE_DATA;
+      if (noRecentProgress && waitingLongEnough && lacksFutureData) setRequestState('starting');
+    }, WAITING_SPINNER_DELAY_MS);
+  });
+
+  audio.addEventListener('seeked', () => {
+    lastObservedTime = Number(audio.currentTime) || 0;
+    lastProgressAt = performance.now();
   });
 
   audio.addEventListener('pause', () => {
+    clearWaitingTimer();
     if (!pendingPlay && !audio.error) {
       playbackRequested = false;
       setRequestState('idle');
@@ -239,6 +296,7 @@ export function initAudioReadiness({ audio }) {
     playbackRequested = false;
     playIntent += 1;
     pendingPlay = null;
+    clearWaitingTimer();
     setRequestState('idle');
   });
 
