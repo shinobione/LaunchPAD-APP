@@ -27,7 +27,7 @@ const SHELL_RESOURCES = [
 
 const IMAGE_RESOURCES = [
   './assets/app-icon-neon.svg','./assets/app-icon-neon-maskable.svg','./assets/app-icon-neon-192.png','./assets/app-icon-neon-512.png',
-  './assets/logo.png','./assets/shinoprofil.jpeg','./assets/launchpad.png','./assets/neon-heartbreaks.jpeg','./assets/coal-to-diamond.jpeg',
+  './assets/logo.png','./assets/shinoprofil.jpeg','./assets/launchpad.png','./assets/ShinoLaunchpadLogo.png','./assets/neon-heartbreaks.jpeg','./assets/coal-to-diamond.jpeg',
   './assets/love-letters.jpeg','./assets/singles.jpeg'
 ];
 
