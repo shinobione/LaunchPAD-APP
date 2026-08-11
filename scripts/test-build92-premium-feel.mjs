@@ -13,7 +13,7 @@ for (const marker of [
   "display: '2026.08.11.92'",
   "release: 'phase-ux-c3-c1-premium-feel-20260811'",
   "'css/premium-interactions-v92.css'",
-  "'js/features/premium-interactions-v92.js'",
+  'js/features/premium-interactions-v92.js?v=',
   'premiumInteractionsV92',
   'installPremiumFeel()',
 ]) assert.ok(buildConfig.includes(marker), `Build 92 config is missing ${marker}.`);
