@@ -5,9 +5,8 @@ const js = fs.readFileSync('js/features/premium-interactions-v92.js', 'utf8');
 const css = fs.readFileSync('css/premium-interactions-v93.css', 'utf8');
 const buildConfig = fs.readFileSync('js/build-config.js', 'utf8');
 
-const isBuild94 = buildConfig.includes("display: '2026.08.11.94'");
-const isSuccessor = /display:\s*'2026\.08\.11\.(?:9[5-9]|[1-9]\d{2,})'/.test(buildConfig);
-assert.ok(isBuild94 || isSuccessor, 'Build 94 guard must run on Build 94 or a later C3-C successor.');
+const buildNumber = Number(/display:\s*'\d{4}\.\d{2}\.\d{2}\.(\d+)'/.exec(buildConfig)?.[1]);
+assert.ok(Number.isInteger(buildNumber) && buildNumber >= 94, 'Build 94 guard must run on Build 94 or a later C3-C successor.');
 
 for (const marker of [
   'ROUTE_INTENT_SELECTOR',
@@ -37,4 +36,4 @@ assert.doesNotMatch(js, /stopImmediatePropagation\s*\(/, 'Premium runtime must n
 assert.doesNotMatch(css, /animation-iteration-count:\s*infinite/i, 'C3-C premium tuning must not introduce perpetual attention motion.');
 assert.doesNotMatch(css, /transition-delay:/i, 'C3-C premium tuning must not delay real interactions.');
 
-console.log('LaunchPAD Build 94 ancestry guard passed for WAAPI route replay, Open project cleanup and event ownership.');
+console.log(`LaunchPAD Build 94 ancestry guard passed under Build ${buildNumber} for WAAPI route replay, Open project cleanup and event ownership.`);
