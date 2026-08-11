@@ -51,6 +51,12 @@ for (const marker of [
 
 assert.doesNotMatch(picker, /stopPropagation\s*\(/, 'Build 97 picker must not steal application click propagation.');
 assert.doesNotMatch(picker, /stopImmediatePropagation\s*\(/, 'Build 97 picker must not steal immediate propagation.');
-assert.doesNotMatch(content, /document\.startViewTransition\(callback\)[\s\S]*mobileAlbumLayout\(\)/, 'Mobile Album behavior must bypass document View Transitions before the desktop branch.');
+
+const mobileBypassIndex = content.indexOf('if (mobileAlbumLayout()) {\n    callback();');
+const documentTransitionIndex = content.indexOf('document.startViewTransition(callback)');
+assert.ok(
+  mobileBypassIndex >= 0 && documentTransitionIndex > mobileBypassIndex,
+  'Mobile Album behavior must bypass document View Transitions before the desktop branch.'
+);
 
 console.log('LaunchPAD Build 97 passed mobile Home, Album stability and dark Lyrics picker guards.');
