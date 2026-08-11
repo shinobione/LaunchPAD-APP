@@ -112,11 +112,10 @@ for (const marker of [
 ]) assert.ok(albumDetail.includes(marker), `Canonical Album palette theming is missing ${marker}.`);
 
 for (const marker of [
-  "id: '20260811-phase-ux-c3-album-palette-theme-v90'",
-  "cache: 'shinobi-launchpad-v90'",
-  "display: '2026.08.11.90'",
-  "release: 'phase-ux-c3-album-palette-theme-20260811'",
-]) assert.ok(buildConfig.includes(marker), `Build 90 marker is missing ${marker}.`);
+  'globalThis.SHINOBIWAN_BUILD = config',
+  'const stylesheetVersion = config.id',
+  'ensureBuildStylesheet',
+]) assert.ok(buildConfig.includes(marker), `Build config contract is missing ${marker}.`);
 
 for (const marker of [
   'CLOUDFLARE_PUBLIC_VERIFY_ATTEMPTS || 60',
@@ -131,4 +130,4 @@ const authorityAssertionIndex = deployVerifier.indexOf('Public /health Album aut
 assert.ok(versionAssertionIndex >= 0, 'Public deployment verifier must assert the expected Worker version.');
 assert.ok(authorityAssertionIndex > versionAssertionIndex, 'Worker version must be validated before canonical Album authority so stale edge propagation is diagnosed correctly.');
 
-console.log('Canonical Album public authority + Build 90 palette theme guard passed: R2 accent/accent2 stay canonical, virtual Singles remains isolated, and the public Album detail page consumes the palette without Worker/R2 writes.');
+console.log('Canonical Album public authority + palette theme guard passed: R2 accent/accent2 stay canonical, virtual Singles remains isolated, and the public Album detail page consumes the palette without Worker/R2 writes.');

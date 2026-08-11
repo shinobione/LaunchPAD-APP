@@ -1,0 +1,188 @@
+:root {
+  --lp-motion-instant: 90ms;
+  --lp-motion-fast: 140ms;
+  --lp-motion-base: 200ms;
+  --lp-motion-slow: 280ms;
+  --lp-ease-out: cubic-bezier(.22,.78,.22,1);
+  --lp-ease-soft: cubic-bezier(.2,.7,.2,1);
+  --lp-press-scale: .982;
+  --lp-cyan-glow: 0 0 0 1px rgba(78,231,223,.08), 0 10px 28px rgba(47,196,204,.11), 0 0 30px rgba(78,231,223,.075);
+  --lp-violet-glow: 0 0 0 1px rgba(163,92,255,.08), 0 10px 28px rgba(120,81,217,.11), 0 0 30px rgba(163,92,255,.07);
+}
+
+:where(button, a, summary, input, select, textarea) {
+  transition-timing-function: var(--lp-ease-out);
+}
+
+:where(button:not(:disabled), a[href], summary) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Universal click response uses individual scale so existing transform-based
+   layout/visualizer code keeps its own transform untouched. */
+:where(button:not(:disabled), a[href], summary):active {
+  scale: var(--lp-press-scale);
+  filter: brightness(1.08) saturate(1.04);
+  transition-duration: var(--lp-motion-instant) !important;
+}
+
+:where(
+  .primary,
+  .secondary,
+  .text-button,
+  .chip,
+  .nav-item,
+  .menu-button,
+  .mini-controls button,
+  .icon-button,
+  .round-button,
+  .player-control,
+  .album-action,
+  .track-action,
+  .social-platform
+) {
+  transition:
+    translate var(--lp-motion-fast) var(--lp-ease-out),
+    scale var(--lp-motion-instant) var(--lp-ease-out),
+    filter var(--lp-motion-fast) var(--lp-ease-out),
+    color var(--lp-motion-fast) var(--lp-ease-out),
+    border-color var(--lp-motion-fast) var(--lp-ease-out),
+    background var(--lp-motion-base) var(--lp-ease-out),
+    box-shadow var(--lp-motion-base) var(--lp-ease-out),
+    opacity var(--lp-motion-fast) var(--lp-ease-out);
+}
+
+:where(.primary, .hero-actions .primary):hover:not(:disabled) {
+  translate: 0 -1px;
+  filter: brightness(1.08) saturate(1.08);
+  box-shadow: 0 14px 34px rgba(61,192,211,.2), 0 0 28px rgba(78,231,223,.12), 0 0 40px rgba(163,92,255,.08);
+}
+
+:where(.primary, .hero-actions .primary):active:not(:disabled) {
+  translate: 0 1px;
+  scale: .975;
+  box-shadow: 0 5px 16px rgba(61,192,211,.14), 0 0 18px rgba(78,231,223,.08);
+}
+
+:where(.secondary, .text-button, .chip, .nav-item, .menu-button, .album-action, .track-action):hover:not(:disabled) {
+  translate: 0 -1px;
+  filter: brightness(1.08);
+}
+
+:where(.nav-item.active, .chip.active, button[aria-pressed='true'], button[aria-selected='true']) {
+  box-shadow: inset 0 0 0 1px rgba(78,231,223,.07), 0 8px 24px rgba(0,0,0,.16), 0 0 20px rgba(78,231,223,.055);
+}
+
+/* Player controls respond immediately but do not change playback timing. */
+:where(.mini-controls button, .player-control, .transport button, .lyrics-player button):hover:not(:disabled) {
+  filter: brightness(1.12) saturate(1.06);
+  box-shadow: 0 0 22px rgba(78,231,223,.075);
+}
+
+:where(.mini-controls button, .player-control, .transport button, .lyrics-player button):active:not(:disabled) {
+  scale: .94;
+}
+
+/* Local focus light for search, filters and editable controls. */
+:where(input, select, textarea):not(:disabled) {
+  transition:
+    border-color var(--lp-motion-fast) var(--lp-ease-out),
+    background var(--lp-motion-base) var(--lp-ease-out),
+    box-shadow var(--lp-motion-base) var(--lp-ease-out),
+    filter var(--lp-motion-fast) var(--lp-ease-out);
+}
+
+:where(input, select, textarea):not(:disabled):hover {
+  border-color: rgba(255,255,255,.16);
+}
+
+:where(input, select, textarea):not(:disabled):focus,
+:where(input, select, textarea):not(:disabled):focus-visible {
+  border-color: rgba(78,231,223,.34);
+  box-shadow: 0 0 0 3px rgba(78,231,223,.07), 0 0 24px rgba(78,231,223,.055);
+}
+
+/* Cards/rows get depth only when they are already interaction surfaces. */
+:where(.album-card, .track-card, .favorite-card, .album-tile, .track-row, .album-track-row, .queue-item) {
+  transition:
+    translate var(--lp-motion-base) var(--lp-ease-out),
+    border-color var(--lp-motion-base) var(--lp-ease-out),
+    background var(--lp-motion-base) var(--lp-ease-out),
+    box-shadow var(--lp-motion-slow) var(--lp-ease-out),
+    filter var(--lp-motion-fast) var(--lp-ease-out);
+}
+
+:where(.album-card, .track-card, .favorite-card, .album-tile):hover {
+  translate: 0 -2px;
+  border-color: rgba(78,231,223,.14);
+  box-shadow: 0 18px 46px rgba(0,0,0,.24), 0 0 28px rgba(78,231,223,.045);
+}
+
+:where(.track-row, .album-track-row, .queue-item):hover {
+  border-color: rgba(78,231,223,.1);
+  background-color: rgba(78,231,223,.018);
+}
+
+/* View changes feel continuous, without delaying navigation or playback. */
+.view.active {
+  animation: lp-premium-view-in var(--lp-motion-slow) var(--lp-ease-out) both;
+}
+
+:where(.toast, .notification, .inline-status, .error-state, .success-state, .lyrics-status, .pwa-update) {
+  animation: lp-premium-feedback-in var(--lp-motion-base) var(--lp-ease-soft) both;
+}
+
+/* Album palette remains the source of page-specific accent glow; this layer only
+   gives those existing controls a short interaction response. */
+.album-detail-page :where(button:not(:disabled), a[href]):focus-visible,
+.album-detail :where(button:not(:disabled), a[href]):focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--album-accent, #4ee7df) 18%, transparent), 0 0 26px color-mix(in srgb, var(--album-accent, #4ee7df) 10%, transparent);
+}
+
+@keyframes lp-premium-view-in {
+  from { opacity: .74; translate: 0 5px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@keyframes lp-premium-feedback-in {
+  from { opacity: .4; translate: 0 -3px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@media (hover: none) {
+  :where(
+    .primary,
+    .secondary,
+    .text-button,
+    .chip,
+    .nav-item,
+    .menu-button,
+    .album-action,
+    .track-action,
+    .album-card,
+    .track-card,
+    .favorite-card,
+    .album-tile
+  ):hover {
+    translate: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --lp-motion-instant: 1ms;
+    --lp-motion-fast: 1ms;
+    --lp-motion-base: 1ms;
+    --lp-motion-slow: 1ms;
+  }
+
+  .view.active,
+  :where(.toast, .notification, .inline-status, .error-state, .success-state, .lyrics-status, .pwa-update) {
+    animation: none !important;
+  }
+
+  :where(button, a, summary) {
+    scale: 1 !important;
+    translate: 0 0 !important;
+  }
+}

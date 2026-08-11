@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260811-phase-ux-c3-album-palette-theme-v90',
-    cache: 'shinobi-launchpad-v90',
-    revision: 'canonical-album-palette-theme-1',
-    display: '2026.08.11.90',
-    release: 'phase-ux-c3-album-palette-theme-20260811'
+    id: '20260811-phase-ux-c3-c-premium-feel-v91',
+    cache: 'shinobi-launchpad-v91',
+    revision: 'premium-interaction-motion-1',
+    display: '2026.08.11.91',
+    release: 'phase-ux-c3-c-premium-feel-20260811'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
@@ -102,6 +102,14 @@
     );
   }
 
+  function installPremiumFeel() {
+    ensureBuildStylesheet(
+      'link[data-premium-interactions-v91]',
+      'css/premium-interactions-v91.css',
+      'premiumInteractionsV91'
+    );
+  }
+
   function findEquivalentStylesheet(link, url) {
     return [...document.querySelectorAll('link[rel="stylesheet"]')].find(candidate => {
       if (candidate === link) return false;
@@ -137,6 +145,7 @@
   installStudioLoopParity();
   installMobilePlayerPolish();
   installGlobalTouchPolish();
+  installPremiumFeel();
 
   document.querySelectorAll('link[rel="stylesheet"]').forEach(normalizeStylesheet);
   new MutationObserver(records => {
