@@ -13,7 +13,8 @@ Public Worker         v2.7
 Worker Version ID     ddd90621-35d4-44b0-9c22-4e5a72291d9b
 Track Manager         v5.19
 Studio bridge         v1.11
-Studio                v0.15.0 · Build 44
+Studio                v0.16.0 · Build 46 · Phase 7-A candidate
+Track-To-Market       v0.1.5 · Bridge V2
 SonicTrace            V2-E Build 06
 Deep Audio            2.0.1-alpha
 LRC Maker             6.3.8
@@ -23,6 +24,8 @@ Singles               virtual collection
 ```
 
 Build 102 is a frontend-only Visual Card corrective layered on the real-user-tested C3-C sequence through Build 101. It pre-encodes the current 1080 × 1080 PNG before the Share gesture, adds deterministic single-owner Share / Download / Copy actions and exposes visible success/info/error feedback. Automated LaunchPAD/Chrome, horizontal-overflow, Worker dry-run and GitHub Pages gates are green. **Build 102 remains a candidate until the user performs the final Visual Card smoke.**
+
+Studio Phase 7-A Build 46 is now a separate live candidate. Its authorization does not retroactively convert LaunchPAD Build 102 into a real-user pass.
 
 This README is the current-state map. Historical build-by-build implementation detail remains in the dedicated docs/changelogs and Git history.
 
@@ -97,14 +100,19 @@ Authorization does **not** retroactively mark the pending Build 102 Visual Card 
 ```text
 C3-C implementation line    through LaunchPAD Build 102
 C3-C final user smoke       pending Visual Card confirmation
-Phase 7                     authorized to begin on separate safety boundary
+Phase 7-A                   Studio v0.16.0 · Build 46 live candidate
 ```
 
-Pre-Phase-7 rollback anchor:
+Pre-Phase-7 rollback anchors:
 
-` safety/pre-phase7-authorized-20260812-0230 `
+```text
+LaunchPAD  safety/pre-phase7-authorized-20260812-0230
+Studio     safety/pre-phase7-authorized-post-build45-20260812-0232
+```
 
-Phase 7 must preserve the frozen product roles: Studio orchestrates; LaunchPAD remains the public listener product; Track Manager remains the protected write authority; SonicTrace and LRC Maker keep their specialist responsibilities; R2 remains canonical authority.
+Phase 7 preserves the frozen product roles: Studio orchestrates; LaunchPAD remains the public listener product; Track Manager remains the protected write authority; SonicTrace and LRC Maker keep their specialist responsibilities; Track-To-Market remains review/ideation authority only; R2 remains canonical authority.
+
+Phase 7-A is deliberately read-only: it derives `Identity → Core media → Lyrics → SonicTrace → Release` readiness and deep-links the user into existing guarded Studio surfaces. It does not mutate LaunchPAD or R2.
 
 ## Canonical Album architecture
 
@@ -162,7 +170,7 @@ Builds 90–102 do not require a public Worker runtime change; Worker workflows 
 
 ## Source of truth / topology
 
-**GitHub `main` is the application-code authority.** Cloudflare R2 remains canonical media/catalog/data authority. Workers are separate deployment units.
+**GitHub `main` is the only application-code authority.** Cloudflare R2 remains canonical media/catalog/data authority. Workers are separate deployment units.
 
 ```text
 GitHub main
@@ -188,6 +196,7 @@ Product roles:
 - Track Manager = protected write/admin authority;
 - SonicTrace = audio intelligence;
 - LRC Maker = lyrics synchronization;
+- Track-To-Market = release-pack ideation/finalization assistant, not canonical write authority;
 - R2 = catalog/media/data authority;
 - GitHub = code authority.
 
@@ -211,6 +220,8 @@ Historical C2.5 rollback anchor remains:
 ## Verification policy
 
 CI is required, but real-user smoke remains the final acceptance signal for user-facing milestones.
+
+Build-synchronized Markdown/runtime validation is part of CI through `npm run check:build-docs`; deployment topology is guarded separately as well.
 
 Do not mutate production media/R2 data merely to manufacture a frontend smoke test. Source merge, Pages deployment, Worker deployment and R2/catalog mutation remain separate auditable facts.
 
