@@ -186,6 +186,61 @@ body.visual-card-open{
   font-size:8px;
 }
 
+/* Build 102 — deterministic export/share feedback. */
+.visual-card-actions button:disabled{
+  cursor:wait;
+  opacity:.62;
+}
+
+.visual-card-actions button.visual-card-action-busy{
+  transform:translateY(0) scale(.985);
+  filter:saturate(.88);
+}
+
+.visual-card-actions button.visual-card-action-done{
+  border-color:color-mix(in srgb,#65f0a5 52%,rgba(255,255,255,.12));
+  box-shadow:0 0 0 1px rgba(101,240,165,.08),0 8px 28px rgba(42,210,128,.11);
+}
+
+.visual-card-status:not(:empty){
+  display:inline-flex;
+  align-items:center;
+  min-height:30px;
+  margin-top:12px;
+  padding:6px 10px;
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:999px;
+  color:#c9bfd4;
+  background:rgba(255,255,255,.035);
+  box-shadow:0 8px 24px rgba(0,0,0,.2);
+}
+
+.visual-card-status[data-kind="success"]{
+  border-color:rgba(101,240,165,.25);
+  color:#9ef4bf;
+  background:rgba(36,146,91,.1);
+}
+
+.visual-card-status[data-kind="error"]{
+  border-color:rgba(255,105,126,.27);
+  color:#ff9cac;
+  background:rgba(158,39,60,.1);
+}
+
+.visual-card-status[data-kind="info"]{
+  border-color:color-mix(in srgb,var(--accent) 24%,rgba(255,255,255,.08));
+  color:#c8bed3;
+}
+
+.visual-card-status-pulse{
+  animation:visual-card-status-pulse .24s ease-out both;
+}
+
+@keyframes visual-card-status-pulse{
+  from{opacity:.45;transform:translateY(3px)}
+  to{opacity:1;transform:none}
+}
+
 @media(max-width:760px){
   .visual-card-modal{
     align-items:end;
@@ -229,5 +284,11 @@ body.visual-card-open{
 
   .visual-card-actions .text-button{
     grid-column:auto;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .visual-card-status-pulse{
+    animation:none;
   }
 }
