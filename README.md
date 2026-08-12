@@ -2,19 +2,19 @@
 
 Installable music PWA for the SHINOBIWAN catalog: playback, Albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
-## Current production / candidate state
+## Current production / accepted state
 
 ```text
-LaunchPAD candidate   2026.08.12.102
+LaunchPAD accepted    2026.08.12.102
 Release               phase-ux-c3-c11-visual-card-feedback-20260812
-C3-C status           final Visual Card real-user smoke pending
+C3-C status           COMPLETE · REAL USER PASS
 
 Public Worker         v2.7
 Worker Version ID     ddd90621-35d4-44b0-9c22-4e5a72291d9b
 Track Manager         v5.19
 Studio bridge         v1.11
-Studio                v0.16.0 · Build 46 · Phase 7-A candidate
-Track-To-Market       v0.1.5 · Bridge V2
+Studio                v0.16.0 · Build 46 · Phase 7-A REAL USER PASS
+Track-To-Market       v0.1.5 · Bridge V2 · REAL USER PASS
 SonicTrace            V2-E Build 06
 Deep Audio            2.0.1-alpha
 LRC Maker             6.3.8
@@ -23,9 +23,7 @@ Album authority       canonical-r2
 Singles               virtual collection
 ```
 
-Build 102 is a frontend-only Visual Card corrective layered on the real-user-tested C3-C sequence through Build 101. It pre-encodes the current 1080 × 1080 PNG before the Share gesture, adds deterministic single-owner Share / Download / Copy actions and exposes visible success/info/error feedback. Automated LaunchPAD/Chrome, horizontal-overflow, Worker dry-run and GitHub Pages gates are green. **Build 102 remains a candidate until the user performs the final Visual Card smoke.**
-
-Studio Phase 7-A Build 46 is now a separate live candidate. Its authorization does not retroactively convert LaunchPAD Build 102 into a real-user pass.
+Build 102 is the accepted LaunchPAD C3-C baseline. It pre-encodes the 1080 × 1080 Visual Card PNG before the Share gesture, provides deterministic single-owner Share / Download / Copy actions and visible success/info/error feedback. Automated LaunchPAD/Chrome, horizontal-overflow, Worker dry-run and GitHub Pages gates are green, and the final real-user Visual Card smoke passed on 2026-08-12.
 
 This README is the current-state map. Historical build-by-build implementation detail remains in the dedicated docs/changelogs and Git history.
 
@@ -49,11 +47,9 @@ See:
 - [`docs/PHASE-UX-C2-5-F-REAL-USER-SMOKE-PASS.md`](docs/PHASE-UX-C2-5-F-REAL-USER-SMOKE-PASS.md)
 - [`CHANGELOG-C2-5-CLOSEOUT.md`](CHANGELOG-C2-5-CLOSEOUT.md)
 
-## C3 — current state
+## C3 — final state
 
-C3-A Deep Audio and C3-B Catalog Intelligence / V2-E parity are **COMPLETE — REAL USER PASS**.
-
-The remaining PHASE UX boundary is **C3-C Premium Feel**, whose real-user loop materially changed LaunchPAD between Builds 91 and 102.
+C3-A Deep Audio, C3-B Catalog Intelligence / V2-E parity and C3-C Premium Feel are **COMPLETE — REAL USER PASS**.
 
 ### C3-C real-user progression
 
@@ -68,9 +64,11 @@ The remaining PHASE UX boundary is **C3-C Premium Feel**, whose real-user loop m
 - **Build 99** — stall-aware playback state + reduced expensive premium motion on touch devices; exposed a menu ownership race and remaining control chrome.
 - **Build 100** — single-owner mobile menu, preserved early-open state, locked application pinch zoom, cleaned bottom-player rectangular chrome.
 - **Build 101** — extended player-chrome cleanup to sidebar mini-player Previous/Next; real-user accepted (`okay pour les sale carrés`).
-- **Build 102** — Visual Card Share / Download / Copy becomes deterministic and visibly acknowledged; final real-user Visual Card smoke pending.
+- **Build 102** — Visual Card Share / Download / Copy made deterministic and visibly acknowledged; final real-user smoke passed.
 
-Full handoff: [`docs/PHASE-UX-C3-C-CLOSEOUT-CANDIDATE.md`](docs/PHASE-UX-C3-C-CLOSEOUT-CANDIDATE.md).
+Final closeout: [`docs/PHASE-UX-C3-C-CLOSEOUT.md`](docs/PHASE-UX-C3-C-CLOSEOUT.md).
+
+Smoke record: [`docs/PHASE-UX-C3-C-REAL-USER-SMOKE-PASS.md`](docs/PHASE-UX-C3-C-REAL-USER-SMOKE-PASS.md).
 
 Build 102 detail: [`docs/PHASE-UX-C3-C11-BUILD102-VISUAL-CARD-FEEDBACK.md`](docs/PHASE-UX-C3-C11-BUILD102-VISUAL-CARD-FEEDBACK.md).
 
@@ -91,28 +89,29 @@ Build 102 changes only the export interaction boundary:
 
 No audio/player, queue, Album, Worker, R2, Track Manager, SonicTrace, Lyrics or Audio Lab semantics are changed by Build 102.
 
-## Phase 7 authorization / handoff
+## Phase 7 handoff
 
-The user explicitly authorized beginning **Phase 7 — End-to-end workflow** on 2026-08-12.
+The user explicitly authorized **Phase 7 — End-to-end workflow** on 2026-08-12.
 
-Authorization does **not** retroactively mark the pending Build 102 Visual Card smoke as passed. The boundary is therefore explicit:
+The handoff is now clean:
 
 ```text
-C3-C implementation line    through LaunchPAD Build 102
-C3-C final user smoke       pending Visual Card confirmation
-Phase 7-A                   Studio v0.16.0 · Build 46 live candidate
+LaunchPAD C3-C          COMPLETE · Build 102 REAL USER PASS
+Track-To-Market Build45 COMPLETE · Bridge V2 REAL USER PASS
+Phase 7-A               Studio v0.16.0 · Build 46 REAL USER PASS
+Phase 7-B               next Studio roadmap slice
 ```
 
-Pre-Phase-7 rollback anchors:
+Pre/post handoff rollback anchors:
 
 ```text
 LaunchPAD  safety/pre-phase7-authorized-20260812-0230
+LaunchPAD  safety/post-c3-c-build102-real-user-pass-20260812-0923
 Studio     safety/pre-phase7-authorized-post-build45-20260812-0232
+Studio     safety/post-phase7-a-build46-real-user-pass-20260812-0923
 ```
 
 Phase 7 preserves the frozen product roles: Studio orchestrates; LaunchPAD remains the public listener product; Track Manager remains the protected write authority; SonicTrace and LRC Maker keep their specialist responsibilities; Track-To-Market remains review/ideation authority only; R2 remains canonical authority.
-
-Phase 7-A is deliberately read-only: it derives `Identity → Core media → Lyrics → SonicTrace → Release` readiness and deep-links the user into existing guarded Studio surfaces. It does not mutate LaunchPAD or R2.
 
 ## Canonical Album architecture
 
@@ -166,7 +165,7 @@ albumAuthority      canonical-r2
 canonicalAlbums     3
 ```
 
-Builds 90–102 do not require a public Worker runtime change; Worker workflows during these frontend candidates are validation/Wrangler dry-runs unless explicitly documented otherwise.
+Builds 90–102 do not require a public Worker runtime change; Worker workflows during these frontend builds are validation/Wrangler dry-runs unless explicitly documented otherwise.
 
 ## Source of truth / topology
 
@@ -211,6 +210,7 @@ safety/pre-c3-c-premium-feel-20260811-2003
 safety/pre-c3-c4-build95-layout-smooth-20260811-2142
 safety/pre-build102-visual-card-feedback-20260812-0220
 safety/pre-phase7-authorized-20260812-0230
+safety/post-c3-c-build102-real-user-pass-20260812-0923
 ```
 
 Historical C2.5 rollback anchor remains:
@@ -229,4 +229,4 @@ Do not mutate production media/R2 data merely to manufacture a frontend smoke te
 
 A real LaunchPAD runtime release updates build/release/cache markers, affected tests and dedicated documentation together.
 
-Candidate builds remain candidates until real-user smoke passes; automation never silently advances a subjective UX acceptance boundary.
+Build 102 is now an accepted baseline. A later runtime release must explicitly supersede it rather than silently reclassify its acceptance history.
