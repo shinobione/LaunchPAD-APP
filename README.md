@@ -2,44 +2,42 @@
 
 Installable music PWA for the SHINOBIWAN catalog: playback, Albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
-## Current production / accepted state
+## Current accepted state
 
 ```text
-LaunchPAD accepted    2026.08.12.102
-Release               phase-ux-c3-c11-visual-card-feedback-20260812
-C3-C status           COMPLETE · REAL USER PASS
-
-Public Worker         v2.7
-Worker Version ID     ddd90621-35d4-44b0-9c22-4e5a72291d9b
-Track Manager         v5.19
-Studio bridge         v1.11
-Studio                v0.19.1 · Build 61 · Studio Focus Slice 4 REAL USER PASS
-Track-To-Market       v0.1.5 · Bridge V2 · REAL USER PASS
-SonicTrace            V2-E Build 08 · REAL USER PASS
-Deep Audio            2.0.3-alpha
-LRC Maker             6.3.8
-
-Album authority       canonical-r2
-Singles               virtual collection
+LaunchPAD           2026.08.12.102 · C3-C REAL USER PASS
+Public Worker       v2.7
+Public Worker ID    ddd90621-35d4-44b0-9c22-4e5a72291d9b
+Track Manager       v5.20
+TM Worker ID        78609aff-1f4a-4a21-b618-cb97add0c416
+Studio bridge       v1.11
+Studio              v0.19.2 · Build 62 · Studio Focus program closeout REAL USER PASS
+Track-To-Market     v0.1.5 · Bridge V2 · REAL USER PASS
+SonicTrace          V2-E Build 08 · REAL USER PASS
+Deep Audio          2.0.3-alpha
+LRC Maker           6.3.8
 ```
 
-Build 102 is the accepted LaunchPAD C3-C baseline. It pre-encodes the 1080 × 1080 Visual Card PNG before the Share gesture, provides deterministic single-owner Share / Download / Copy actions and visible success/info/error feedback. Automated LaunchPAD/Chrome, horizontal-overflow, Worker dry-run and GitHub Pages gates are green, and the final real-user Visual Card smoke passed on 2026-08-12.
+Build 102 remains the accepted LaunchPAD public baseline. Track Manager v5.20 is a service correction paired with the accepted Studio closeout; it does **not** create a new LaunchPAD public build. Public Worker v2.7 was not redeployed during that rollout.
 
-This README is the current-state map. Historical build-by-build implementation detail remains in the dedicated docs/changelogs and Git history.
+Track Manager v5.20 deployment record:
 
-## PHASE UX C2.5 — status
+```text
+LaunchPAD main      586c71333c902fc2ebef214c63e9234ece9e1711
+Workflow run        31714222431
+Track Manager       v5.20
+Studio bridge       v1.11
+TM Worker ID        78609aff-1f4a-4a21-b618-cb97add0c416
+Public Worker       unchanged v2.7
+```
+
+## Accepted product state
+
+### PHASE UX C2.5
 
 **C2.5-A → C2.5-F is COMPLETE and real-user validated.**
 
-Delivered and preserved:
-
-- scalable Album presentation and mobile/player hardening;
-- canonical R2 Album read model;
-- guarded Track Manager Album writes;
-- Studio Album Management + New Track binding;
-- controlled migration of the three historical Albums;
-- LaunchPAD canonical Album public cutover through Worker v2.7;
-- virtual Singles semantics.
+Preserved outcomes include scalable Album presentation, canonical R2 Album data, Studio Album Management, controlled historical Album migration, LaunchPAD canonical Album presentation and virtual Singles semantics.
 
 See:
 
@@ -47,190 +45,82 @@ See:
 - [`docs/PHASE-UX-C2-5-F-REAL-USER-SMOKE-PASS.md`](docs/PHASE-UX-C2-5-F-REAL-USER-SMOKE-PASS.md)
 - [`CHANGELOG-C2-5-CLOSEOUT.md`](CHANGELOG-C2-5-CLOSEOUT.md)
 
-## C3 — final state
+### C3
 
 C3-A Deep Audio, C3-B Catalog Intelligence / V2-E parity and C3-C Premium Feel are **COMPLETE — REAL USER PASS**.
 
-### C3-C real-user progression
+Accepted public baseline: **Build 102**.
 
-- **Build 91** — initial premium layer; not accepted because it was too subtle.
-- **Build 92** — stronger press/bloom/depth; interaction visible, but bloom too strong and route transitions effectively absent.
-- **Build 93** — click glow tuned down and Audio Lab persistent halo removed; glow accepted.
-- **Build 94** — route replay made visible; real-user result was too jittery/violent.
-- **Build 95** — clean fade + short translate, desktop/mobile layout cleanup, Audio Lab sizing, Album scalability and integrated Show/Hide Tracks; broadly accepted, Lyrics still needed repair.
-- **Build 96** — normal Lyrics auto-scroll + viewport-contained reader; real-user accepted (`NIQUELLE`).
-- **Build 97** — mobile Home/Albums/Lyrics picker cleanup; layout improved, responsiveness still felt slow.
-- **Build 98** — earlier mobile interaction wiring and Track Detail Moods/Themes reconciliation; partial improvement only.
-- **Build 99** — stall-aware playback state + reduced expensive premium motion on touch devices; exposed a menu ownership race and remaining control chrome.
-- **Build 100** — single-owner mobile menu, preserved early-open state, locked application pinch zoom, cleaned bottom-player rectangular chrome.
-- **Build 101** — extended player-chrome cleanup to sidebar mini-player Previous/Next; real-user accepted (`okay pour les sale carrés`).
-- **Build 102** — Visual Card Share / Download / Copy made deterministic and visibly acknowledged; final real-user smoke passed.
+Build 102 keeps the 1080 × 1080 Visual Card export flow deterministic for Share / Download / Copy and provides visible success/info/error feedback. The final real-user Visual Card smoke passed on 2026-08-12.
 
-Final closeout: [`docs/PHASE-UX-C3-C-CLOSEOUT.md`](docs/PHASE-UX-C3-C-CLOSEOUT.md).
+See:
 
-Smoke record: [`docs/PHASE-UX-C3-C-REAL-USER-SMOKE-PASS.md`](docs/PHASE-UX-C3-C-REAL-USER-SMOKE-PASS.md).
+- [`docs/PHASE-UX-C3-C-CLOSEOUT.md`](docs/PHASE-UX-C3-C-CLOSEOUT.md)
+- [`docs/PHASE-UX-C3-C-REAL-USER-SMOKE-PASS.md`](docs/PHASE-UX-C3-C-REAL-USER-SMOKE-PASS.md)
+- [`docs/PHASE-UX-C3-C11-BUILD102-VISUAL-CARD-FEEDBACK.md`](docs/PHASE-UX-C3-C11-BUILD102-VISUAL-CARD-FEEDBACK.md)
 
-Build 102 detail: [`docs/PHASE-UX-C3-C11-BUILD102-VISUAL-CARD-FEEDBACK.md`](docs/PHASE-UX-C3-C11-BUILD102-VISUAL-CARD-FEEDBACK.md).
-
-## Visual Card Build 102 contract
-
-The existing card renderer remains 1080 × 1080 and CORS-safe for Cloudflare/R2 artwork.
-
-Build 102 changes only the export interaction boundary:
-
-- the PNG is prepared as soon as the rendered card is ready;
-- `Share image ↗` calls native file sharing directly from the user click when supported;
-- unsupported native image share falls back explicitly to PNG download;
-- `Download PNG` produces one download and shows `Downloaded ✓`;
-- `Copy track link` shows `Copied ✓`;
-- successful native share shows `Shared ✓`;
-- cancelling native share is an informational state, not an error;
-- the legacy bubble listener cannot double-run export actions.
-
-No audio/player, queue, Album, Worker, R2, Track Manager, SonicTrace, Lyrics or Audio Lab semantics are changed by Build 102.
-
-## Phase 7 / Studio Focus handoff
-
-The user explicitly authorized **Phase 7 — End-to-end workflow** on 2026-08-12. Phase 7-A and Phase 7-B are now accepted; Studio Focus Slices 1–4 are also accepted. Phase 7-C remains closed.
-
-Current handoff:
+## Studio / Phase 7 handoff
 
 ```text
-LaunchPAD C3-C          COMPLETE · Build 102 REAL USER PASS
-Track-To-Market Build45 COMPLETE · Bridge V2 REAL USER PASS
+LaunchPAD C3-C          Build 102 REAL USER PASS
+Track-To-Market Build45 Bridge V2 REAL USER PASS
 Phase 7-A               Studio Build 46 REAL USER PASS
 Phase 7-B               Studio Build 51 REAL USER PASS
-Studio Focus Slices 1–4 through Build 61 REAL USER PASS
+Studio Focus Slice 1    Studio Build 53 REAL USER PASS
+Studio Focus Slice 2    Studio Build 56 REAL USER PASS
+Studio Focus Slice 3    Studio Build 58 REAL USER PASS
+Studio Focus Slice 4    Studio Build 61 REAL USER PASS
+Studio Focus closeout   Studio Build 62 REAL USER PASS
+Track Manager           v5.20 · Studio bridge v1.11
 Phase 7-C               CLOSED / NOT STARTED
 ```
 
-Pre/post handoff rollback anchors:
+Studio Focus closeout acceptance includes the final Visuals palette save smoke on `Magnetic Midnight`, stable palette layout, `Album track` artist-facing wording and `Sonic` workflow wording.
 
-```text
-LaunchPAD  safety/pre-phase7-authorized-20260812-0230
-LaunchPAD  safety/post-c3-c-build102-real-user-pass-20260812-0923
-Studio     safety/pre-phase7-authorized-post-build45-20260812-0232
-Studio     safety/post-phase7-a-build46-real-user-pass-20260812-0923
-Studio     safety/post-phase7-b-build51-real-user-pass-20260812-2120
-Studio     safety/post-studio-focus-build61-real-user-pass-20260813-1347
-```
+## Data contracts — quick reference
 
-Phase 7 preserves the frozen product roles: Studio orchestrates; LaunchPAD remains the public listener product; Track Manager remains the protected write authority; SonicTrace and LRC Maker keep their specialist responsibilities; Track-To-Market remains review/ideation authority only; R2 remains canonical authority.
-
-## Canonical Album architecture
+Albums:
 
 ```text
 albums/<album-id>/manifest.json
-albums/<album-id>/cover/<filename>
-albums/<album-id>/thumbnail/thumbnail.webp
 ```
 
-Frozen rules:
+Ordered `album.trackIds` owns Album membership and artistic order. Virtual Singles remains isolated from canonical Album manifests.
 
-- Album ID is immutable canonical storage identity;
-- ordered `album.trackIds` is authoritative membership + artistic order;
-- track `album.id/title` is compatibility cache during migration, not authority;
-- `catalog/index.json` is a rebuildable projection, not Album authority;
-- Singles is virtual and derived from tracks not owned by a canonical Album.
-
-Current canonical R2 Album set:
-
-- `neon-heartbreaks`;
-- `coal-to-diamond`;
-- `love-letters-from-saigon`.
-
-## Canonical Lyrics contract
+Lyrics:
 
 ```text
-tracks/<slug>/lyrics.txt = unique canonical lyrics source
-recognized timestamps    = synchronized lyrics
-.lrc                      = optional export/compatibility only
+tracks/<slug>/lyrics.txt
 ```
 
-A missing `.lrc` does not mean lyrics are unsynchronized. `.lrc` is never a second source of truth.
+Recognized timestamps inside `lyrics.txt` define synchronization. `.lrc` remains optional compatibility/export only.
 
-## Public Worker v2.7
-
-The public Worker remains read-only and exposes:
+SonicTrace:
 
 ```text
-/health
-/tracks
-/albums
-/albums/{id}
-/albums/{id}/media/{cover|thumbnail}/{filename}
+tracks/<slug>/analysis/sonictrace/latest.json
+tracks/<slug>/analysis/sonictrace/history/<analysisId>.json
 ```
 
-Canonical Album/media reads come from R2 authority. The validated Worker deployment remains:
+## Product roles
 
-```text
-Worker Version ID   ddd90621-35d4-44b0-9c22-4e5a72291d9b
-albumAuthority      canonical-r2
-canonicalAlbums     3
-```
+- LaunchPAD — public listener experience.
+- Studio — artist production cockpit/orchestrator.
+- Track Manager — canonical track/Album management service.
+- SonicTrace — audio intelligence.
+- LRC Maker — lyrics synchronization.
+- Cloudflare R2 — canonical catalog/media/data store.
 
-Builds 90–102 do not require a public Worker runtime change; Worker workflows during these frontend builds are validation/Wrangler dry-runs unless explicitly documented otherwise.
+The same R2 track slug is used as canonical `trackId` across the toolchain.
 
-## Source of truth / topology
+## Audio Lab / player baseline
 
-**GitHub `main` is the only application-code authority.** Cloudflare R2 remains canonical media/catalog/data authority. Workers are separate deployment units.
+The accepted Build 102 lineage preserves native HTML5 audible playback, decoded-buffer visual metering, the accepted Audio Lab preset set, queue/favorites/seek/loop behavior and the C3-C responsive player/navigation cleanup.
 
-```text
-GitHub main
-   |
-   +--> GitHub Pages ---------+
-   |                          |
-   +--> Cloudflare Pages -----+--> LaunchPAD PWA
-                                      |
-                         +------------+------------+
-                         |                         |
-                         v                         v
-                launchpad-media Worker    launchpad-r2-api Worker
-                         |                         |
-                         +------------+------------+
-                                      |
-                               Cloudflare R2
-```
+Historical per-build detail remains in dedicated docs and Git history rather than being duplicated here.
 
-Product roles:
+## Acceptance policy
 
-- LaunchPAD = public listener product;
-- Studio = private orchestration cockpit;
-- Track Manager = protected write/admin authority;
-- SonicTrace = audio intelligence;
-- LRC Maker = lyrics synchronization;
-- Track-To-Market = release-pack ideation/finalization assistant, not canonical write authority;
-- R2 = catalog/media/data authority;
-- GitHub = code authority.
+**CI GREEN ≠ DEPLOYED CANDIDATE ≠ REAL USER PASS.**
 
-See [`docs/DEPLOYMENT-TOPOLOGY.md`](docs/DEPLOYMENT-TOPOLOGY.md).
-
-## Safety / rollback
-
-Recent PHASE UX / handoff checkpoints:
-
-```text
-safety/pre-c3-c-premium-feel-20260811-2003
-safety/pre-c3-c4-build95-layout-smooth-20260811-2142
-safety/pre-build102-visual-card-feedback-20260812-0220
-safety/pre-phase7-authorized-20260812-0230
-safety/post-c3-c-build102-real-user-pass-20260812-0923
-```
-
-Historical C2.5 rollback anchor remains:
-
-` safety/phase-ux-c2-5-complete-20260811-1356 `
-
-## Verification policy
-
-CI is required, but real-user smoke remains the final acceptance signal for user-facing milestones.
-
-Build-synchronized Markdown/runtime validation is part of CI through `npm run check:build-docs`; deployment topology is guarded separately as well.
-
-Do not mutate production media/R2 data merely to manufacture a frontend smoke test. Source merge, Pages deployment, Worker deployment and R2/catalog mutation remain separate auditable facts.
-
-## Versioning discipline
-
-A real LaunchPAD runtime release updates build/release/cache markers, affected tests and dedicated documentation together.
-
-Build 102 is now an accepted baseline. A later runtime release must explicitly supersede it rather than silently reclassify its acceptance history.
+Real-user acceptance is recorded only after the deployed behavior is actually exercised. Phase 7-C remains **CLOSED / NOT STARTED**.
