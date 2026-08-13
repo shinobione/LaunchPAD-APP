@@ -13,10 +13,10 @@ Public Worker         v2.7
 Worker Version ID     ddd90621-35d4-44b0-9c22-4e5a72291d9b
 Track Manager         v5.19
 Studio bridge         v1.11
-Studio                v0.16.0 · Build 46 · Phase 7-A REAL USER PASS
+Studio                v0.19.1 · Build 61 · Studio Focus Slice 4 REAL USER PASS
 Track-To-Market       v0.1.5 · Bridge V2 · REAL USER PASS
-SonicTrace            V2-E Build 06
-Deep Audio            2.0.1-alpha
+SonicTrace            V2-E Build 08 · REAL USER PASS
+Deep Audio            2.0.3-alpha
 LRC Maker             6.3.8
 
 Album authority       canonical-r2
@@ -89,17 +89,19 @@ Build 102 changes only the export interaction boundary:
 
 No audio/player, queue, Album, Worker, R2, Track Manager, SonicTrace, Lyrics or Audio Lab semantics are changed by Build 102.
 
-## Phase 7 handoff
+## Phase 7 / Studio Focus handoff
 
-The user explicitly authorized **Phase 7 — End-to-end workflow** on 2026-08-12.
+The user explicitly authorized **Phase 7 — End-to-end workflow** on 2026-08-12. Phase 7-A and Phase 7-B are now accepted; Studio Focus Slices 1–4 are also accepted. Phase 7-C remains closed.
 
-The handoff is now clean:
+Current handoff:
 
 ```text
 LaunchPAD C3-C          COMPLETE · Build 102 REAL USER PASS
 Track-To-Market Build45 COMPLETE · Bridge V2 REAL USER PASS
-Phase 7-A               Studio v0.16.0 · Build 46 REAL USER PASS
-Phase 7-B               next Studio roadmap slice
+Phase 7-A               Studio Build 46 REAL USER PASS
+Phase 7-B               Studio Build 51 REAL USER PASS
+Studio Focus Slices 1–4 through Build 61 REAL USER PASS
+Phase 7-C               CLOSED / NOT STARTED
 ```
 
 Pre/post handoff rollback anchors:
@@ -109,6 +111,8 @@ LaunchPAD  safety/pre-phase7-authorized-20260812-0230
 LaunchPAD  safety/post-c3-c-build102-real-user-pass-20260812-0923
 Studio     safety/pre-phase7-authorized-post-build45-20260812-0232
 Studio     safety/post-phase7-a-build46-real-user-pass-20260812-0923
+Studio     safety/post-phase7-b-build51-real-user-pass-20260812-2120
+Studio     safety/post-studio-focus-build61-real-user-pass-20260813-1347
 ```
 
 Phase 7 preserves the frozen product roles: Studio orchestrates; LaunchPAD remains the public listener product; Track Manager remains the protected write authority; SonicTrace and LRC Maker keep their specialist responsibilities; Track-To-Market remains review/ideation authority only; R2 remains canonical authority.
