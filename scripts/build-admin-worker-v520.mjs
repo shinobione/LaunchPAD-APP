@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -76,5 +77,41 @@ if (syntax.status !== 0) process.exit(syntax.status || 1);
 const embeddedScript = source.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 if (!embeddedScript) throw new Error('TM 5.20 bundle is missing its embedded UI script.');
 new vm.Script(embeddedScript, { filename: 'track-manager-ui-v520.js' });
+
+const readManifestMatch = source.match(/async function readManifest\(bucket, slug\) \{[\s\S]*?\n\}\n\nasync function writeManifest/);
+if (!readManifestMatch) throw new Error('TM 5.20 bundle is missing the guarded readManifest implementation.');
+const isolatedReadManifest = readManifestMatch[0].replace(/\n\nasync function writeManifest$/, '');
+const readContext = {
+  MANIFEST_NAME: 'manifest.json',
+  trackPrefix: slug => `tracks/${slug}/`,
+  normalizeManifest: manifest => ({ ...manifest }),
+};
+vm.createContext(readContext);
+vm.runInContext(`${isolatedReadManifest}\nglobalThis.__readManifest = readManifest;`, readContext);
+
+const uploaded = new Date('2026-01-02T03:04:05.000Z');
+const legacyBody = JSON.stringify({ slug: 'magnetic-midnight', createdAt: '2025-12-01T00:00:00.000Z' });
+const legacyBucket = {
+  async get() {
+    return { customMetadata: {}, uploaded, async text() { return legacyBody; } };
+  },
+};
+const firstLegacyRead = await readContext.__readManifest(legacyBucket, 'magnetic-midnight');
+const secondLegacyRead = await readContext.__readManifest(legacyBucket, 'magnetic-midnight');
+assert.equal(firstLegacyRead.updatedAt, uploaded.toISOString());
+assert.equal(secondLegacyRead.updatedAt, firstLegacyRead.updatedAt, 'Same legacy R2 object must keep one stable optimistic revision across repeated reads.');
+
+const persistedRevision = '2026-07-08T09:10:11.000Z';
+const modernBucket = {
+  async get() {
+    return {
+      customMetadata: { updatedAt: '2026-07-09T00:00:00.000Z' },
+      uploaded,
+      async text() { return JSON.stringify({ slug: 'modern-track', updatedAt: persistedRevision }); },
+    };
+  },
+};
+const modernRead = await readContext.__readManifest(modernBucket, 'modern-track');
+assert.equal(modernRead.updatedAt, persistedRevision, 'Persisted manifest.updatedAt remains authoritative.');
 
 console.log(`Track Manager v5.20 / Studio bridge v1.11 stable legacy manifest revision bundle verified: ${outputPath}`);
