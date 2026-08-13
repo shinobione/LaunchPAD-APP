@@ -83,12 +83,12 @@ function installSignatureArt() {
 
   const art = document.createElement('img');
   art.className = 'about-signature-art';
-  art.src = 'assets/Lune-ShinoBiWan.png';
+  art.src = 'assets/SHINOBIWAN_LaunchPAD_cinematic_loop.webp';
   art.width = 1254;
   art.height = 1254;
   art.loading = 'lazy';
   art.decoding = 'async';
-  art.alt = 'SHINOBIWAN moon emblem';
+  art.alt = 'Animated SHINOBIWAN moon emblem';
 
   wrapper.appendChild(art);
   card.appendChild(wrapper);

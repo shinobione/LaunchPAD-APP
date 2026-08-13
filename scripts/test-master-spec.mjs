@@ -81,7 +81,7 @@ includesAll(discographyCss, [
   '.era-can-scroll-left.era-can-scroll-right .era-timeline-track{'
 ], 'Build 72 mobile Era discoverability');
 const about = read('js/features/about/about-controller.js');
-includesAll(about, ["art.src = 'assets/Lune-ShinoBiWan.png'", "art.className = 'about-signature-art'", 'installSignatureArt()'], 'About moon artwork');
+includesAll(about, ["art.src = 'assets/SHINOBIWAN_LaunchPAD_cinematic_loop.webp'", "art.className = 'about-signature-art'", 'installSignatureArt()'], 'About moon artwork');
 const aboutCss = read('css/about-enhancements.css');
 includesAll(aboutCss, [
   '.brand-wordmark::after{', "mask:url('../assets/logo.png') left center / contain no-repeat", '.about-signature-art{'
