@@ -11,10 +11,11 @@ C3-C status           COMPLETE · REAL USER PASS
 
 Public Worker         v2.7
 Worker Version ID     ddd90621-35d4-44b0-9c22-4e5a72291d9b
-Track Manager         v5.20
-TM Worker Version ID  78609aff-1f4a-4a21-b618-cb97add0c416
+Track Manager         v5.21
+TM Worker Version ID  0e1b9a3f-eabd-432e-8872-24ff0a9c085f
 Studio bridge         v1.11
-Studio                v0.19.2 · Build 62 · Studio Focus program closeout REAL USER PASS
+Studio accepted       v0.19.3 · Build 67 · Foundation Regression Repair REAL USER PASS
+Studio candidate      v0.19.3 · Build 68 · Home lead fix · DEPLOYED / SMOKE PENDING
 Track-To-Market       v0.1.5 · Bridge V2 · REAL USER PASS
 SonicTrace            V2-E Build 08 · REAL USER PASS
 Deep Audio            2.0.3-alpha
@@ -26,9 +27,9 @@ Singles               virtual collection
 
 Build 102 is the accepted LaunchPAD C3-C baseline. It pre-encodes the 1080 × 1080 Visual Card PNG before the Share gesture, provides deterministic single-owner Share / Download / Copy actions and visible success/info/error feedback. Automated LaunchPAD/Chrome, horizontal-overflow, Worker dry-run and GitHub Pages gates are green, and the final real-user Visual Card smoke passed on 2026-08-12.
 
-Track Manager v5.20 is a private admin-Worker correction paired with the accepted Studio Focus closeout. It does not create a new LaunchPAD public build; public Worker v2.7 was not redeployed during that rollout.
+Track Manager v5.21 is the accepted private admin-Worker half of the Studio Foundation Regression Repair. It removes `album` from the generic Studio metadata write allowlist, adds protected canonical Album media reads, keeps bridge v1.11 and does not create a new LaunchPAD public build. Public Worker v2.7 was not redeployed during this rollout.
 
-This README is the current-state map. Historical build-by-build implementation detail remains in the dedicated docs/changelogs and Git history.
+This README is the current-state map. Historical build-by-build implementation detail remains in dedicated docs/changelogs and Git history.
 
 ## PHASE UX C2.5 — status
 
@@ -92,9 +93,9 @@ Build 102 changes only the export interaction boundary:
 
 No audio/player, queue, Album, Worker, R2, Track Manager, SonicTrace, Lyrics or Audio Lab semantics are changed by Build 102.
 
-## Phase 7 / Studio Focus handoff
+## Phase 7 / Studio handoff
 
-The user explicitly authorized **Phase 7 — End-to-end workflow** on 2026-08-12. Phase 7-A and Phase 7-B are accepted; Studio Focus Slices 1–4 and the final program closeout are also accepted. Phase 7-C remains closed.
+The user explicitly authorized **Phase 7 — End-to-end workflow** on 2026-08-12. Phase 7-A and Phase 7-B are accepted. Studio Focus Slices 1–4 and its closeout are accepted. The Foundation Regression Repair is accepted on Studio Build 67 + Track Manager v5.21. Phase 7-C is **started at contract level**, while runtime Slice 1 remains not started.
 
 Current handoff:
 
@@ -105,29 +106,36 @@ Phase 7-A               Studio Build 46 REAL USER PASS
 Phase 7-B               Studio Build 51 REAL USER PASS
 Studio Focus Slices 1–4 through Build 61 REAL USER PASS
 Studio Focus closeout   Studio Build 62 REAL USER PASS
-Track Manager           v5.20 · Studio bridge v1.11
-Phase 7-C               CLOSED / NOT STARTED
+Foundation Repair       Studio Build 67 + TM5.21 REAL USER PASS
+Studio Build 68         Home lead corrective · DEPLOYED · SMOKE PENDING
+Track Manager           v5.21 · Studio bridge v1.11
+Phase 7-C               CONTRACT LOCKED · RUNTIME SLICE 1 NOT STARTED
 ```
 
-Track Manager v5.20 deployment record:
+Track Manager v5.21 deployment record:
 
 ```text
-LaunchPAD main       586c71333c902fc2ebef214c63e9234ece9e1711
-Deploy run           31714222431 · admin only
-TM Worker Version ID 78609aff-1f4a-4a21-b618-cb97add0c416
-Public Worker        v2.7 · unchanged
+LaunchPAD code main   813eb845b563b9a176c23f490d7fc044d4a0abc3
+Deploy run            31728992790 · admin only
+TM Worker Version ID  0e1b9a3f-eabd-432e-8872-24ff0a9c085f
+Public Worker         v2.7 · unchanged
 ```
+
+Repair closeout: [`docs/TRACK-MANAGER-V5.21-FOUNDATION-REPAIR-REAL-USER-PASS.md`](docs/TRACK-MANAGER-V5.21-FOUNDATION-REPAIR-REAL-USER-PASS.md).
 
 Pre/post handoff rollback anchors:
 
 ```text
 LaunchPAD  safety/pre-phase7-authorized-20260812-0230
 LaunchPAD  safety/post-c3-c-build102-real-user-pass-20260812-0923
+LaunchPAD  safety/post-tm521-code-merge-pre-deploy-20260813-1959
 Studio     safety/pre-phase7-authorized-post-build45-20260812-0232
 Studio     safety/post-phase7-a-build46-real-user-pass-20260812-0923
 Studio     safety/post-phase7-b-build51-real-user-pass-20260812-2120
 Studio     safety/post-studio-focus-build61-real-user-pass-20260813-1347
 Studio     safety/post-studio-focus-program-closeout-20260813-1720
+Studio     safety/post-build67-lyrics-source-anchor-20260813-2205
+Studio     safety/pre-build68-home-lead-priority-20260813-2228
 ```
 
 Phase 7 preserves the frozen product roles: Studio orchestrates; LaunchPAD remains the public listener product; Track Manager remains the protected write authority; SonicTrace and LRC Maker keep their specialist responsibilities; Track-To-Market remains review/ideation authority only; R2 remains canonical authority.
@@ -230,6 +238,7 @@ safety/pre-c3-c4-build95-layout-smooth-20260811-2142
 safety/pre-build102-visual-card-feedback-20260812-0220
 safety/pre-phase7-authorized-20260812-0230
 safety/post-c3-c-build102-real-user-pass-20260812-0923
+safety/post-tm521-code-merge-pre-deploy-20260813-1959
 ```
 
 Historical C2.5 rollback anchor remains:
@@ -248,4 +257,4 @@ Do not mutate production media/R2 data merely to manufacture a frontend smoke te
 
 A real LaunchPAD runtime release updates build/release/cache markers, affected tests and dedicated documentation together.
 
-Build 102 is now an accepted baseline. A later runtime release must explicitly supersede it rather than silently reclassify its acceptance history.
+Build 102 is the accepted LaunchPAD baseline. A later runtime release must explicitly supersede it rather than silently reclassify its acceptance history.
