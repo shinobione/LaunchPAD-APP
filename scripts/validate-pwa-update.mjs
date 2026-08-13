@@ -124,7 +124,7 @@ const about = read('js/features/about/about-controller.js');
 for (const required of [
   'installBuildInfo','about-build-info','Build ${build.display','Release ${build.release',
   'function placeBuildInfo()','ABOUT_MOBILE_QUERY',"logo.insertAdjacentElement('afterend', info)",
-  'function installSignatureArt()',"art.src = 'assets/Lune-ShinoBiWan.png'","art.className = 'about-signature-art'",
+  'function installSignatureArt()',"art.src = 'assets/SHINOBIWAN_LaunchPAD_cinematic_loop.webp'","art.className = 'about-signature-art'",
   'installSignatureArt();\n  installBuildInfo();','installBuildInfoPlacementWatcher()'
 ]) {
   if (!about.includes(required)) fail(`About build information/artwork is missing ${required}.`);
