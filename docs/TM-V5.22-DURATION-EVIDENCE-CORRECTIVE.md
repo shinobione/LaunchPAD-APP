@@ -1,11 +1,11 @@
 # Track Manager v5.22 / Studio bridge v1.12 — Canonical audio duration evidence corrective
 
 Date: 2026-08-14
-Status: **CANDIDATE — CI GREEN / NOT DEPLOYED / REAL USER PASS PENDING**
+Status: **COMPLETE — DEPLOYED / REAL USER PASS THROUGH STUDIO BUILD71**
 
 ## Trigger
 
-Studio v0.19.3 Build 70 real-user smoke on `uNTouCHaBLe` exposed a canonical contradiction after a verified master-audio replacement:
+Studio v0.19.3 Build70 real-user smoke on `uNTouCHaBLe` exposed a canonical contradiction after a verified master-audio replacement:
 
 - the browser and embedded Lyrics Studio read the canonical audio at about **3:55**;
 - the last canonical lyrics timestamp is **03:48.593**;
@@ -46,7 +46,7 @@ Track Manager v5.22 / Studio bridge v1.12 keeps all existing authorities and add
 
 Pre-change checkpoint:
 
-` safety/pre-tm522-duration-evidence-fix-20260814-0215 `
+`safety/pre-tm522-duration-evidence-fix-20260814-0215`
 
 Source base:
 
@@ -60,29 +60,46 @@ PR:
 
 `#232 — Track Manager v5.22 — canonical audio duration evidence repair`
 
-## Candidate evidence
+## Exact tested / deployment evidence
 
-Exact candidate head before documentation closeout:
+```text
+Exact tested head      888d29e9b7064346311ed3c959669a327505204d
+Validate Workers       31757006174 · SUCCESS
+Validate LaunchPAD     31757006198 · SUCCESS
+Validate Overflow      31757006309 · SUCCESS
+Merge                  be7d970f6577e0e54eade04a5ef764a733baed42
+Deploy run             31789368122 · SUCCESS
+Deploy target          admin
+Track Manager          v5.22
+Studio bridge          v1.12
+Worker Version ID      df00e4c7-bfa1-45a3-b3e8-bd2640e0a159
+Public Worker          v2.7 · deployment steps SKIPPED
+```
 
-`5e7b456e74b3d4bcfe087652421f37356ccc0d24`
+The deployment workflow explicitly ran with `DEPLOY_TARGET=admin`. Public Worker deploy/record/verify steps were skipped.
 
-Successful workflows on that head:
+## Real-user acceptance
 
-- `31756854782` — Validate Cloudflare Workers — SUCCESS
-- `31756854777` — Validate Launchpad — SUCCESS
-- `31756854795` — Validate Horizontal Overflow — SUCCESS
+The matching Studio client landed as **Studio v0.19.3 · Build71**.
 
-Documentation changes require a fresh exact-head CI before merge.
+Studio evidence:
 
-## Deployment gate
+```text
+Studio tested head     4298a07e13983786833240dd69a61a72dc09636e
+Studio CI              31757665434 · SUCCESS
+Studio merge           0b3c3d452076708c698de71d9c691b5e459f7c17
+Studio Pages           31789774785 · SUCCESS
+User verdict           @GitHub BUILD71 PASS · 2026-08-14
+```
 
-After fresh CI is green and `main` is confirmed unchanged:
+The deployed end-to-end stack therefore completed the full acceptance chain:
 
-1. merge only the exact tested PR head;
-2. dispatch `Deploy Cloudflare Workers` with `target=admin` and `confirm=DEPLOY`;
-3. verify Track Manager **v5.22** and Studio bridge **v1.12** from the deployed admin Worker;
-4. do **not** deploy public Worker v2.7;
-5. deploy the corresponding Studio Build 71 client evidence plumbing;
-6. repeat the `uNTouCHaBLe` browser smoke.
+`CI GREEN → DEPLOYED → REAL USER PASS`.
 
-Acceptance requires the browser smoke. `CI GREEN != DEPLOYED != REAL USER PASS`.
+This confirms the canonical duration-evidence corrective through Studio Build71. Historical v5.21 repair records remain valid predecessor evidence and are not rewritten.
+
+## Acceptance policy
+
+**CI GREEN != DEPLOYED != REAL USER PASS.**
+
+TM v5.22 / bridge v1.12 has now completed all three stages through the accepted Studio Build71 browser smoke.
