@@ -14,7 +14,7 @@ Worker Version ID     ddd90621-35d4-44b0-9c22-4e5a72291d9b
 Track Manager         v5.22
 TM Worker Version ID  df00e4c7-bfa1-45a3-b3e8-bd2640e0a159
 Studio bridge         v1.12
-Studio accepted       v0.19.3 · Build 71 · Phase 7-C Slice 1 REAL USER PASS
+Studio accepted       v0.19.3 · Build 73 · Phase 7-C PROGRAM COMPLETE · REAL USER PASS
 Track-To-Market       v0.1.5 · Bridge V2 · REAL USER PASS
 SonicTrace            V2-E Build 08 · REAL USER PASS
 Deep Audio            2.0.3-alpha
@@ -26,7 +26,7 @@ Singles               virtual collection
 
 Build 102 is the accepted LaunchPAD C3-C baseline. It pre-encodes the 1080 × 1080 Visual Card PNG before the Share gesture, provides deterministic single-owner Share / Download / Copy actions and visible success/info/error feedback. Automated LaunchPAD/Chrome, horizontal-overflow, Worker dry-run and GitHub Pages gates are green, and the final real-user Visual Card smoke passed on 2026-08-12.
 
-Track Manager v5.22 / Studio bridge v1.12 is the accepted private admin-Worker corrective paired with Studio Build71. It preserves the v5.21 Album authority repair and adds bounded browser-measured canonical audio duration evidence so `manifest.duration` can be derived and verified without becoming a manual metadata field. The admin-only deployment run `31789368122` produced Worker Version ID `df00e4c7-bfa1-45a3-b3e8-bd2640e0a159`. Public Worker v2.7 was not redeployed.
+Track Manager v5.22 / Studio bridge v1.12 is the accepted private admin-Worker corrective originally paired with Studio Build71 and remains unchanged underneath accepted Studio Build73. It preserves the v5.21 Album authority repair and adds bounded browser-measured canonical audio duration evidence so `manifest.duration` can be derived and verified without becoming a manual metadata field. The admin-only deployment run `31789368122` produced Worker Version ID `df00e4c7-bfa1-45a3-b3e8-bd2640e0a159`. Public Worker v2.7 was not redeployed.
 
 This README is the current-state map. Historical build-by-build implementation detail remains in dedicated docs/changelogs and Git history.
 
@@ -94,7 +94,7 @@ No audio/player, queue, Album, Worker, R2, Track Manager, SonicTrace, Lyrics or 
 
 ## Phase 7 / Studio handoff
 
-Phase 7-A and Phase 7-B are accepted. Studio Focus Slices 1–4 and its closeout are accepted. The Foundation Regression Repair is accepted on Studio Build67 + Track Manager v5.21. Phase 7-C Runtime Slice 1 is now **COMPLETE — REAL USER PASS** through Studio Build71 + Track Manager v5.22 / bridge v1.12.
+Phase 7-A and Phase 7-B are accepted. Studio Focus Slices 1–4 and its closeout are accepted. The Foundation Regression Repair is accepted on Studio Build67 + Track Manager v5.21. Phase 7-C is now **PROGRAM COMPLETE** on accepted Studio Build73. Slice1 closed via Build71; Slice2 closed through the Build72→73 corrective chain; a post-RUP Studio audit proved Lyrics, Intelligence and Release already satisfy the guided-action contract, so no synthetic Slice3 runtime was required.
 
 Current handoff:
 
@@ -108,10 +108,13 @@ Studio Focus closeout   Studio Build 62 REAL USER PASS
 Foundation Repair       Studio Build 67 + TM5.21 REAL USER PASS
 Home lead corrective    Studio Build 68 REAL USER PASS
 Phase 7-C Slice 1       Studio Build 71 REAL USER PASS
+Phase 7-C Slice 2       Studio Build 73 REAL USER PASS
+Phase 7-C Program       COMPLETE · no Slice3 runtime required
+Next Studio runtime     Phase 8 · Build74 unused at audit point
 Track Manager           v5.22 · Studio bridge v1.12
 ```
 
-Track Manager v5.22 deployment record:
+Track Manager v5.22 deployment record remains the Build71 backend acceptance event:
 
 ```text
 Backend tested head   888d29e9b7064346311ed3c959669a327505204d
@@ -124,7 +127,11 @@ Studio Pages run      31789774785 · SUCCESS
 Real-user verdict     BUILD71 PASS · 2026-08-14
 ```
 
+The same TM v5.22 / bridge v1.12 deployment remains current for accepted Studio Build73; no later admin/public Worker deployment was required by Builds72–73.
+
 Duration corrective closeout: [`docs/TM-V5.22-DURATION-EVIDENCE-CORRECTIVE.md`](docs/TM-V5.22-DURATION-EVIDENCE-CORRECTIVE.md).
+
+Current Studio cross-stack sync: [`docs/STUDIO-PHASE7C-BUILD73-CROSSSTACK-SYNC.md`](docs/STUDIO-PHASE7C-BUILD73-CROSSSTACK-SYNC.md).
 
 Pre/post handoff rollback anchors:
 
@@ -134,6 +141,7 @@ LaunchPAD  safety/post-c3-c-build102-real-user-pass-20260812-0923
 LaunchPAD  safety/post-tm521-code-merge-pre-deploy-20260813-1959
 LaunchPAD  safety/pre-tm522-duration-evidence-fix-20260814-0215
 LaunchPAD  safety/post-tm522-build71-real-user-pass-20260814-1217
+LaunchPAD  safety/pre-phase7c-crossstack-doc-sync-20260814-1747
 Studio     safety/pre-phase7-authorized-post-build45-20260812-0232
 Studio     safety/post-phase7-a-build46-real-user-pass-20260812-0923
 Studio     safety/post-phase7-b-build51-real-user-pass-20260812-2120
@@ -143,6 +151,8 @@ Studio     safety/post-build67-lyrics-source-anchor-20260813-2205
 Studio     safety/pre-build68-home-lead-priority-20260813-2228
 Studio     safety/pre-build71-duration-evidence-fix-20260814-0216
 Studio     safety/post-build71-real-user-pass-20260814-1217
+Studio     safety/post-build73-real-user-pass-20260814-1715
+Studio     safety/pre-phase7c-program-closeout-audit-20260814-1747
 ```
 
 Phase 7 preserves the frozen product roles: Studio orchestrates; LaunchPAD remains the public listener product; Track Manager remains the protected write authority; SonicTrace and LRC Maker keep their specialist responsibilities; Track-To-Market remains review/ideation authority only; R2 remains canonical authority.
@@ -248,6 +258,7 @@ safety/post-c3-c-build102-real-user-pass-20260812-0923
 safety/post-tm521-code-merge-pre-deploy-20260813-1959
 safety/pre-tm522-duration-evidence-fix-20260814-0215
 safety/post-tm522-build71-real-user-pass-20260814-1217
+safety/pre-phase7c-crossstack-doc-sync-20260814-1747
 ```
 
 Historical C2.5 rollback anchor remains:
@@ -266,4 +277,4 @@ Do not mutate production media/R2 data merely to manufacture a frontend smoke te
 
 A real LaunchPAD runtime release updates build/release/cache markers, affected tests and dedicated documentation together.
 
-Build 102 is the accepted LaunchPAD baseline. Track Manager v5.22 / Studio bridge v1.12 is the accepted private admin counterpart after Studio Build71 REAL USER PASS. A later runtime release must explicitly supersede these states rather than silently reclassify their acceptance history.
+Build102 is the accepted LaunchPAD baseline. Track Manager v5.22 / Studio bridge v1.12 remains the accepted private admin counterpart originally accepted with Studio Build71 and still current for Studio Build73. Studio Build73 is the current accepted Studio cross-stack state and Phase7-C is program-complete. A later runtime release must explicitly supersede these states rather than silently reclassify their acceptance history.
