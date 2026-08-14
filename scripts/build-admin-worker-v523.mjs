@@ -85,4 +85,39 @@ assert.deepEqual(Array.from(helperContext.__albumMismatch(
   { title: 'Pulse Dominion', status: 'published', year: 2026 },
 )), []);
 
+const qualityMatch = source.match(/async function inspectCanonicalAlbumQuality\(bucket, manifest\) \{[\s\S]*?\n\}(?=\n\nfunction studioAlbumTrackCacheManifest)/);
+if (!qualityMatch) throw new Error('TM 5.23 bundle is missing isolated Album quality inspector.');
+const qualityTracks = new Map();
+const qualityContext = {
+  listAllObjects: async () => [],
+  albumPrefix: id => `albums/${id}/`,
+  albumAssetStateFromObjects: (_objects, manifest) => ({
+    cover: manifest.assets?.cover ? { present: true } : null,
+    thumbnail: manifest.assets?.thumbnail ? { present: true } : null,
+  }),
+  readManifest: async (_bucket, id) => qualityTracks.get(id) || null,
+};
+vm.createContext(qualityContext);
+vm.runInContext(`${qualityMatch[0]}\nglobalThis.__inspectAlbumQuality = inspectCanonicalAlbumQuality;`, qualityContext);
+const pulse = {
+  id: 'pulse-dominion',
+  title: 'Pulse Dominion',
+  status: 'published',
+  trackIds: ['neon-swagger', 'pulse-drive'],
+  assets: { cover: 'cover/pulse.webp', thumbnail: null },
+};
+qualityTracks.set('neon-swagger', { slug: 'neon-swagger', title: 'Neon Swagger', status: 'draft' });
+qualityTracks.set('pulse-drive', { slug: 'pulse-drive', title: 'Pulse Drive', status: 'published' });
+let quality = await qualityContext.__inspectAlbumQuality({}, pulse);
+assert.equal(quality.publishable, false, 'Album publish must stay blocked while one member Track is Draft.');
+assert.equal(quality.checks.find(check => check.id === 'publishedTracks')?.ok, false);
+assert.equal(quality.tracks.find(track => track.trackId === 'neon-swagger')?.status, 'draft');
+qualityTracks.set('neon-swagger', { slug: 'neon-swagger', title: 'Neon Swagger', status: 'published' });
+quality = await qualityContext.__inspectAlbumQuality({}, pulse);
+assert.equal(quality.publishable, true, 'Album publish must pass once cover, references and all member Track statuses are valid.');
+assert.equal(quality.checks.every(check => check.ok), true);
+const noCover = await qualityContext.__inspectAlbumQuality({}, { ...pulse, assets: { cover: null, thumbnail: null } });
+assert.equal(noCover.publishable, false, 'Album publish must stay blocked without a cover.');
+assert.equal(noCover.checks.find(check => check.id === 'cover')?.ok, false);
+
 console.log(`Track Manager v5.23 / Studio bridge v1.13 Album publish truth verified: ${outputPath}`);
