@@ -105,6 +105,6 @@ const evidence = helperContext.__normalizeEvidence({ audio: { duration: 235.417,
 assert.equal(evidence.audio.duration, 235.417);
 assert.equal(helperContext.__applyEvidence({ assets: { audio: 'audio.mp3' }, duration: 0 }, evidence).duration, 235.417);
 assert.equal(helperContext.__applyEvidence({ assets: { audio: null }, duration: 0 }, evidence).duration, 0);
-assert.deepEqual(helperContext.__normalizeEvidence({ audio: { duration: -2 } }), {});
+assert.equal(Object.keys(helperContext.__normalizeEvidence({ audio: { duration: -2 } })).length, 0);
 
 console.log(`Track Manager v5.22 / Studio bridge v1.12 duration evidence repair verified: ${outputPath}`);
