@@ -9,12 +9,12 @@ LaunchPAD accepted    2026.08.12.102
 Release               phase-ux-c3-c11-visual-card-feedback-20260812
 C3-C status           COMPLETE · REAL USER PASS
 
-Public Worker         v2.7
+Public Worker         v2.7 · unchanged
 Worker Version ID     ddd90621-35d4-44b0-9c22-4e5a72291d9b
-Track Manager         v5.22
-TM Worker Version ID  df00e4c7-bfa1-45a3-b3e8-bd2640e0a159
-Studio bridge         v1.12
-Studio accepted       v0.19.3 · Build 74 · Phase 8 Slice 1 · REAL USER PASS
+Track Manager         v5.24 · REAL USER VERIFIED
+TM Worker Version ID  53abb651-4f3c-46a7-a37a-055f35d340b9
+Studio bridge         v1.14
+Studio accepted       v0.19.20 · Build98 · Phase 9 Slice17 · REAL USER PASS
 Track-To-Market       v0.1.5 · Bridge V2 · REAL USER PASS
 SonicTrace            V2-E Build 08 · REAL USER PASS
 Deep Audio            2.0.3-alpha
@@ -24,9 +24,11 @@ Album authority       canonical-r2
 Singles               virtual collection
 ```
 
-Build 102 is the accepted LaunchPAD C3-C baseline. It pre-encodes the 1080 × 1080 Visual Card PNG before the Share gesture, provides deterministic single-owner Share / Download / Copy actions and visible success/info/error feedback. Automated LaunchPAD/Chrome, horizontal-overflow, Worker dry-run and GitHub Pages gates are green, and the final real-user Visual Card smoke passed on 2026-08-12.
+Build 102 remains the accepted LaunchPAD public UX baseline. Public Worker v2.7 was not redeployed by the TM v5.24 corrective.
 
-Track Manager v5.22 / Studio bridge v1.12 is the accepted private admin-Worker corrective originally paired with Studio Build71 and remains unchanged underneath accepted Studio Build74. It preserves the v5.21 Album authority repair and adds bounded browser-measured canonical audio duration evidence so `manifest.duration` can be derived and verified without becoming a manual metadata field. The admin-only deployment run `31789368122` produced Worker Version ID `df00e4c7-bfa1-45a3-b3e8-bd2640e0a159`. Public Worker v2.7 was not redeployed.
+Track Manager v5.24 / Studio bridge v1.14 is the current accepted private admin Worker. It fixes the generated-bundle scope defect that left `uploadEvidence` undeclared inside Track asset upload while preserving the existing guarded R2 transaction, canonical reread and rollback model. Protected deployment run `31919397012` deployed **admin only** from source `aaa28c90c95b6d5dbe76e34a840d95e194e0cc65`, produced Worker Version ID `53abb651-4f3c-46a7-a37a-055f35d340b9`, passed post-deploy Cloudflare Access verification, and skipped Public Worker deployment.
+
+Real-user continuation on the genuine `Pixels & Promises` draft then successfully committed MP3, cover JPEG, MP4 and TXT assets with no recurrence of `ASSET_SAVE_ROLLBACK · HTTP 500`. Explicit verdict: **`MP3 + COVER + MP4 + TXT PASS MADAFAKA`** on 2026-08-16.
 
 This README is the current-state map. Historical build-by-build implementation detail remains in dedicated docs/changelogs and Git history.
 
@@ -103,18 +105,15 @@ Current handoff:
 ```text
 LaunchPAD C3-C          COMPLETE · Build 102 REAL USER PASS
 Track-To-Market Build45 COMPLETE · Bridge V2 REAL USER PASS
-Phase 7-A               Studio Build 46 REAL USER PASS
-Phase 7-B               Studio Build 51 REAL USER PASS
-Studio Focus Slices 1–4 through Build 61 REAL USER PASS
-Studio Focus closeout   Studio Build 62 REAL USER PASS
-Foundation Repair       Studio Build 67 + TM5.21 REAL USER PASS
-Home lead corrective    Studio Build 68 REAL USER PASS
-Phase 7-C Slice 1       Studio Build 71 REAL USER PASS
-Phase 7-C Slice 2       Studio Build 73 REAL USER PASS
-Phase 7-C Program       COMPLETE · no Slice3 runtime required
-Phase 8 Slice 1         Studio Build 74 REAL USER PASS
-Next Studio build       Build75 unused · fresh Phase8 audit required
-Track Manager           v5.22 · Studio bridge v1.12
+Phase 7-A / 7-B / 7-C   COMPLETE · REAL USER PASS / program closeout
+Phase 8                 COMPLETE · Build81 closeout
+Phase 9 Slice1–15       Build82–Build96 · REAL USER PASS
+Phase 9 Slice16         Studio Build97 · REAL USER PASS
+Phase 9 Slice17         Studio Build98 · REAL USER PASS
+Track Manager           v5.24 · Studio bridge v1.14 · REAL USER VERIFIED
+TM admin Worker         53abb651-4f3c-46a7-a37a-055f35d340b9
+Public Worker           v2.7 · unchanged
+Next Studio build       Build99 UNALLOCATED · fresh read-only audit required
 ```
 
 Track Manager v5.22 deployment record remains the Build71 backend acceptance event:

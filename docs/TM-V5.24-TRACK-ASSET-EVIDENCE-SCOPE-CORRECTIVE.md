@@ -1,7 +1,7 @@
 # Track Manager v5.24 — Track asset evidence scope corrective
 
 Date: 2026-08-16  
-Status: **IMPLEMENTED CANDIDATE · CI PENDING · NOT DEPLOYED**
+Status: **DEPLOYED · REAL USER VERIFIED · ACCEPTED CORRECTIVE**
 
 ## Real-user trigger
 
@@ -56,16 +56,26 @@ This corrective does **not**:
 - modify Studio runtime in this backend PR;
 - mark Studio Build97 REAL USER PASS.
 
-## Safety
+## Accepted receipts
 
 ```text
-Canonical LaunchPAD main  bc82fea12edc7cbd1b7b054c697a553694e76322
+Original accepted main    bc82fea12edc7cbd1b7b054c697a553694e76322
 Safety checkpoint         safety/pre-tm524-track-asset-evidence-scope-corrective-20260816
-Corrective branch         agent/tm524-track-asset-evidence-scope-corrective
-Diagnostic branch         diagnostic/tm523-fresh-draft-asset-upload
-Production Worker deploy  NONE before exact-head CI + merge
-Public Worker deploy      NONE planned
-R2 manual mutation        NONE
+Corrective PR             #238
+Corrective merge          aaa28c90c95b6d5dbe76e34a840d95e194e0cc65
+Diagnostic run            31916576113 · reproduced ReferenceError
+Placement proof run       31916652865 · proved declaration in wrong function
+Protected deploy run      31919397012 · SUCCESS · target admin
+Track Manager             v5.24
+Studio bridge             v1.14
+Worker Version ID         53abb651-4f3c-46a7-a37a-055f35d340b9
+Cloudflare Access check   PASS
+Public Worker deploy      SKIPPED · v2.7 unchanged
+R2 deployment mutation   NONE · deploy did not rebuild catalog/index.json or mutate media
+Real-user verdict         MP3 + COVER + MP4 + TXT PASS MADAFAKA · 2026-08-16
+Safety post-acceptance    safety/post-tm524-real-user-pass-20260816
 ```
 
-`CI GREEN != MERGED != ADMIN WORKER DEPLOYED != REAL USER PASS`.
+The exact fresh-draft regression (`album-track` + transitional `Singles` → first MP3 → first JPEG) passes in the v5.24 bundle, and the genuine `Pixels & Promises` continuation additionally verified MP4 + TXT in production. No automatic write retry was added and the existing rollback/canonical reread safety model remains intact.
+
+TM v5.24 / bridge v1.14 is **REAL USER VERIFIED**.
