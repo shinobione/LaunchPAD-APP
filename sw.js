@@ -5,6 +5,7 @@ const SHELL_CACHE = `${VERSION}-shell`;
 const IMAGE_CACHE = `${VERSION}-images`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const CACHE_NAMES = new Set([SHELL_CACHE, IMAGE_CACHE, RUNTIME_CACHE]);
+const CACHE_PREFIX = 'shinobi-launchpad-';
 
 const SHELL_RESOURCES = [
   './','./index.html','./manifest.webmanifest','./robots.txt','./sitemap.xml',
@@ -113,7 +114,9 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const names = await caches.keys();
-    await Promise.all(names.filter(name => !CACHE_NAMES.has(name)).map(name => caches.delete(name)));
+    await Promise.all(names
+      .filter(name => name.startsWith(CACHE_PREFIX) && !CACHE_NAMES.has(name))
+      .map(name => caches.delete(name)));
     await self.clients.claim();
   })());
 });
