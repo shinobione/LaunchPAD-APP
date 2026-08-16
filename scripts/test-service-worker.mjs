@@ -5,9 +5,14 @@ import vm from 'node:vm';
 
 const ORIGIN = 'https://launchpad.test/';
 const source = await fs.readFile(new URL('../sw.js', import.meta.url), 'utf8');
+const manifest = JSON.parse(await fs.readFile(new URL('../manifest.webmanifest', import.meta.url), 'utf8'));
 const listeners = new Map();
 let offline = false;
 let networkRequests = [];
+
+assert.equal(manifest.id, '/', 'LaunchPAD must retain its historical root PWA identity.');
+assert.equal(manifest.start_url, '/LaunchPAD-APP/#home', 'LaunchPAD start_url must stay inside its GitHub Pages project.');
+assert.equal(manifest.scope, '/LaunchPAD-APP/', 'LaunchPAD PWA scope must not cover sibling GitHub Pages apps.');
 
 class TestRequest {
   constructor(input, options = {}) {
@@ -138,12 +143,19 @@ async function dispatchFetch(request) {
   return responsePromise;
 }
 
+await caches.open('shinobi-launchpad-obsolete-shell');
+await caches.open('tran-french-teacher-v-test');
+await caches.open('akari-lrc-maker-test');
+
 await dispatchLifecycle('install');
 await dispatchLifecycle('activate');
 
 const cacheNames = await caches.keys();
 assert.ok(cacheNames.some(name => name.endsWith('-shell')), 'Shell cache was not created.');
 assert.ok(cacheNames.some(name => name.endsWith('-images')), 'Image cache was not created.');
+assert.ok(!cacheNames.includes('shinobi-launchpad-obsolete-shell'), 'Obsolete LaunchPAD caches must still be cleaned up.');
+assert.ok(cacheNames.includes('tran-french-teacher-v-test'), 'LaunchPAD must never delete French Trân’quille caches.');
+assert.ok(cacheNames.includes('akari-lrc-maker-test'), 'LaunchPAD must never delete LRC Maker caches.');
 
 networkRequests = [];
 offline = true;
@@ -182,4 +194,4 @@ for (const [name, cache] of caches.stores) {
   assert.ok(keys.every(request => !/\.(mp3|m4a|wav|ogg|flac)$/i.test(new URL(request.url).pathname)), `${name} contains audio.`);
 }
 
-console.log('Service worker offline shell, versioned modules and network-only audio are valid.');
+console.log('Service worker isolation, offline shell, versioned modules and network-only audio are valid.');
