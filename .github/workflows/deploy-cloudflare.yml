@@ -38,7 +38,8 @@ jobs:
       ADMIN_WORKER_URL: https://launchpad-r2-api.jerryquinet.workers.dev
       # Historical validation marker retained for regression ancestry only:
       # EXPECTED_PUBLIC_VERSION: '2.6'
-      EXPECTED_PUBLIC_VERSION: '2.7'
+      # EXPECTED_PUBLIC_VERSION: '2.7'
+      EXPECTED_PUBLIC_VERSION: '2.8'
       # Historical validation markers retained for regression ancestry only:
       # EXPECTED_ADMIN_VERSION: '5.6'
       # EXPECTED_ADMIN_VERSION: '5.10'
@@ -68,8 +69,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
+        uses:
           node-version: 22
           cache: npm
 
