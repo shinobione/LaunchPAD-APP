@@ -21,5 +21,13 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
-      - name: Build current TM v5.23 and reproduce fresh draft uploads
+      - name: Locate uploadEvidence in generated TM v5.23
+        shell: bash
+        run: |
+          node scripts/build-admin-worker-v523.mjs /tmp/tm523-diagnostic.mjs
+          echo '--- uploadEvidence declaration(s) ---'
+          grep -n -B 18 -A 8 'const uploadEvidence' /tmp/tm523-diagnostic.mjs || true
+          echo '--- Track asset upload function ---'
+          grep -n -A 35 'async function uploadStudioTrackAsset' /tmp/tm523-diagnostic.mjs | head -n 45
+      - name: Reproduce fresh draft uploads
         run: node scripts/diagnose-tm523-fresh-draft-assets.mjs
