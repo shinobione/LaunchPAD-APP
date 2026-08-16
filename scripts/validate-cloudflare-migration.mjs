@@ -98,10 +98,26 @@ for (const required of [
   'streamAlbumAsset(',
   "headers.set('X-LaunchPAD-Media-Version', String(PUBLIC_WORKER_VERSION))",
 ]) {
-  if (!publicWrapperV27.includes(required)) fail(`Public Worker v2.7 Album wrapper is missing ${required}.`);
+  if (!publicWrapperV27.includes(required)) fail(`Historical public Worker v2.7 Album wrapper is missing ${required}.`);
 }
 if (publicWrapperV27.includes('MEDIA_BUCKET.put(') || publicWrapperV27.includes('MEDIA_BUCKET.delete(')) {
   fail('Public Worker v2.7 Album layer must remain read-only.');
+}
+
+const publicWrapperV28 = fs.readFileSync('cloudflare/public-worker-v28.js', 'utf8');
+for (const required of [
+  'PUBLIC_WORKER_VERSION = 2.8',
+  "ALBUMS_PREFIX = 'albums/'",
+  'buildCanonicalAlbumVisibilityState',
+  'canonicalAlbumVisibilityState',
+  "owner.status === 'published'",
+  "payload.parentAlbumVisibility = 'canonical-trackIds-v1'",
+  "code: 'PUBLIC_VISIBILITY_UNAVAILABLE'",
+]) {
+  if (!publicWrapperV28.includes(required)) fail(`Public Worker v2.8 parent-Album visibility wrapper is missing ${required}.`);
+}
+if (publicWrapperV28.includes('MEDIA_BUCKET.put(') || publicWrapperV28.includes('MEDIA_BUCKET.delete(')) {
+  fail('Public Worker v2.8 parent-Album visibility layer must remain read-only.');
 }
 
 const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
@@ -110,7 +126,7 @@ if (packageJson.devDependencies?.wrangler !== '4.118.0') {
 }
 
 for (const [configPath, expected] of [
-  ['cloudflare/wrangler.public.jsonc', { name: 'launchpad-media', main: 'public-worker-v27.js' }],
+  ['cloudflare/wrangler.public.jsonc', { name: 'launchpad-media', main: 'public-worker-v28.js' }],
   ['cloudflare/wrangler.admin.jsonc', { name: 'launchpad-r2-api', main: '../dist/launchpad-r2-admin-worker.js' }]
 ]) {
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -124,4 +140,4 @@ for (const [configPath, expected] of [
   }
 }
 
-console.log(`Cloudflare migration plan is valid: ${plan.tracks.length} legacy tracks, public Worker v2.6 CORS ancestry and v2.7 canonical Album cutover.`);
+console.log(`Cloudflare migration plan is valid: ${plan.tracks.length} legacy tracks, public Worker v2.6 CORS ancestry, v2.7 canonical Album cutover and v2.8 canonical parent-Album visibility.`);

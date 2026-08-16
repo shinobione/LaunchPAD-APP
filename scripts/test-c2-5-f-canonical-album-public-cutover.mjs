@@ -67,7 +67,7 @@ assert.equal(result.authority, 'legacy-fallback');
 assert.equal(getAlbumAuthority(), 'legacy-fallback');
 assert.ok(getAlbum('love-letters-from-saigon'), 'Offline/degraded fallback must restore legacy catalog.js Albums.');
 
-const publicWorker = fs.readFileSync('cloudflare/public-worker-v27.js', 'utf8');
+const publicWorker = fs.readFileSync('cloudflare/public-worker-v28.js', 'utf8');
 const wrangler = fs.readFileSync('cloudflare/wrangler.public.jsonc', 'utf8');
 const remoteCatalog = fs.readFileSync('js/core/remote-catalog.js', 'utf8');
 const catalogStore = fs.readFileSync('js/core/catalog-store.js', 'utf8');
@@ -76,17 +76,19 @@ const buildConfig = fs.readFileSync('js/build-config.js', 'utf8');
 const deployVerifier = fs.readFileSync('scripts/verify-cloudflare-deployment.mjs', 'utf8');
 
 for (const marker of [
-  'PUBLIC_WORKER_VERSION = 2.7',
+  'PUBLIC_WORKER_VERSION = 2.8',
   "CATALOG_INDEX_KEY = 'catalog/index.json'",
-  "payload.albumAuthority = 'canonical-r2'",
-  "pathname === '/albums'",
-  '/media\\/(cover|thumbnail)',
-  "source: 'cloudflare-r2'",
-]) assert.ok(publicWorker.includes(marker), `Public Worker v2.7 is missing ${marker}.`);
+  "ALBUMS_PREFIX = 'albums/'",
+  'canonicalAlbumVisibilityState',
+  "owner.status === 'published'",
+  "pathname === '/tracks'",
+  '/media\\/([a-z0-9][a-z0-9-]{0,119})',
+  "parentAlbumVisibility = 'canonical-trackIds-v1'",
+]) assert.ok(publicWorker.includes(marker), `Public Worker v2.8 is missing ${marker}.`);
 
-assert.ok(!publicWorker.includes('MEDIA_BUCKET.put('), 'Public Album cutover must remain read-only.');
-assert.ok(!publicWorker.includes('MEDIA_BUCKET.delete('), 'Public Album cutover must not delete R2 objects.');
-assert.ok(wrangler.includes('"main": "public-worker-v27.js"'), 'Wrangler public entry point must use v2.7.');
+assert.ok(!publicWorker.includes('MEDIA_BUCKET.put('), 'Public parent-Album visibility gate must remain read-only.');
+assert.ok(!publicWorker.includes('MEDIA_BUCKET.delete('), 'Public parent-Album visibility gate must not delete R2 objects.');
+assert.ok(wrangler.includes('"main": "public-worker-v28.js"'), 'Wrangler public entry point must use v2.8.');
 
 for (const marker of [
   "albumAuthority: payload.albumAuthority === 'canonical-r2' ? 'canonical-r2' : null",
@@ -130,4 +132,6 @@ const authorityAssertionIndex = deployVerifier.indexOf('Public /health Album aut
 assert.ok(versionAssertionIndex >= 0, 'Public deployment verifier must assert the expected Worker version.');
 assert.ok(authorityAssertionIndex > versionAssertionIndex, 'Worker version must be validated before canonical Album authority so stale edge propagation is diagnosed correctly.');
 
-console.log('Canonical Album public authority + palette theme guard passed: R2 accent/accent2 stay canonical, virtual Singles remains isolated, and the public Album detail page consumes the palette without Worker/R2 writes.');
+await import('./test-public-v28-parent-album-visibility.mjs');
+
+console.log('Canonical Album public authority + parent visibility guard passed: R2 album.trackIds remains authoritative, virtual Singles stays isolated, and draft/archived Album members are withheld from public Track/list/detail/media surfaces.');
