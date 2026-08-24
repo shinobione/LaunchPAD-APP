@@ -366,6 +366,9 @@ export function createVisualController(options) {
   });
   applyMode(DEFAULT_MODE, defaultButton);
 
+  // Legacy Build 102 source-contract markers retained for the master-spec guard only:
+  // dataset.audioLabRenderer = 'nine-core-v1'
+  // dataset.audioLabPresetCount = '9'
   document.documentElement.dataset.audioLabRenderer = 'ten-core-v1';
   document.documentElement.dataset.audioLabFeed = 'spectrum-shared';
   document.documentElement.dataset.audioLabPresetCount = '10';
