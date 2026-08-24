@@ -14,10 +14,10 @@ import {
 const read = file => fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
 
 assert.equal(AUDIO_LAB_DEFAULT_MODE, 'neon-shatter');
-for (const required of ['neon-shatter', 'spectrum', 'liquid-chrome', 'pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure', 'void-bloom', 'creep-signal']) {
+for (const required of ['neon-shatter', 'spectrum', 'neon-ribbon', 'liquid-chrome', 'pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure', 'void-bloom', 'creep-signal']) {
   assert.ok(AUDIO_LAB_PRESET_IDS.includes(required), `Sanctioned Audio Lab registry is missing ${required}.`);
 }
-assert.equal(AUDIO_LAB_PRESET_IDS.length, 9);
+assert.equal(AUDIO_LAB_PRESET_IDS.length, 10);
 assert.equal(new Set(AUDIO_LAB_PRESET_IDS).size, AUDIO_LAB_PRESET_IDS.length, 'Audio Lab preset ids must remain unique.');
 assert.deepEqual(AUDIO_LAB_SANCTUARY_IDS, ['spectrum']);
 for (const mode of AUDIO_LAB_PRESET_IDS) assert.equal(isSanctionedAudioLabMode(mode), true);
@@ -117,7 +117,14 @@ for (const required of [
   "springChannel(motion, 'mass'", "advanceMotionPhase(motion, 'creep-flow'", 'const forwardDrift =', 'context.quadraticCurveTo('
 ]) assert.ok(creep.includes(required), `Creep Signal contract is missing ${required}.`);
 
-for (const isolated of [reactor, fracture, lens, bio, bloom, creep]) {
+const ribbon = read('js/features/visual/neon-ribbon.js');
+for (const required of [
+  'export function drawNeonRibbonMode(', 'function sampleRibbonEnergy(',
+  'const barCount = mobile ? 58 : compact ? 84 : 118', 'rainbowGradient(context, width, time)',
+  'const reflectionHeight ='
+]) assert.ok(ribbon.includes(required), `Neon Ribbon contract is missing ${required}.`);
+
+for (const isolated of [reactor, fracture, lens, bio, bloom, creep, ribbon]) {
   assert.ok(!isolated.includes('Math.random('));
   assert.ok(!isolated.includes('requestAnimationFrame('));
   assert.ok(!isolated.includes('setInterval('));
@@ -127,6 +134,7 @@ for (const isolated of [reactor, fracture, lens, bio, bloom, creep]) {
 const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
   "{ id: 'spectrum', label: 'Spectrum' }", "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode }",
+  "{ id: 'neon-ribbon', label: 'Neon Ribbon', renderer: drawNeonRibbonMode }",
   "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
   "{ id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode }",
   "{ id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }",
@@ -140,7 +148,7 @@ for (const required of [
   'function createDirectVisualImpactTracker()', 'function applyDirectKineticImpact(context, width, height, mode, features)',
   'features.visualImpact = visualImpactTracker.update(features)',
   'function kineticImpactFeatures(mode, features)', 'features.punch = adaptivePunch.punch',
-  "dataset.audioLabRenderer = 'nine-core-v1'", "dataset.audioLabPresetCount = '9'",
+  "dataset.audioLabRenderer = 'ten-core-v1'", "dataset.audioLabPresetCount = '10'",
   "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' || mode === 'void-bloom' || mode === 'creep-signal' ? 1.05",
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ]) assert.ok(live.includes(required), `Live Audio Lab integration is missing ${required}.`);
@@ -155,7 +163,8 @@ for (const required of [
   "'./js/features/visual/audio-lab-registry.js'", "'./js/features/visual/audio-lab-sanctuary.js'",
   "'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'",
   "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'",
-  "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'"
+  "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'",
+  "'./js/features/visual/neon-ribbon.js'"
 ]) assert.ok(worker.includes(required));
 
 const build = assertCurrentBuild('Milestone 7/current release');
