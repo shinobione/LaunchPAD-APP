@@ -10,14 +10,14 @@ function smoothstep(edge0, edge1, value) {
 
 function sampleRibbonEnergy(data, progress) {
   if (!data?.length) return 0;
-  const curved = Math.pow(clamp(progress), 1.42);
+  const curved = Math.pow(clamp(progress), 1.38);
   const center = Math.min(data.length - 1, Math.floor(curved * (data.length - 1) * .95));
   let sum = 0;
   let weight = 0;
 
   for (let offset = -3; offset <= 3; offset += 1) {
     const index = Math.max(0, Math.min(data.length - 1, center + offset));
-    const localWeight = offset === 0 ? 1.7 : Math.abs(offset) === 1 ? 1.3 : Math.abs(offset) === 2 ? .85 : .45;
+    const localWeight = offset === 0 ? 1.7 : Math.abs(offset) === 1 ? 1.3 : Math.abs(offset) === 2 ? .82 : .42;
     sum += (data[index] || 0) * localWeight;
     weight += localWeight;
   }
@@ -26,27 +26,95 @@ function sampleRibbonEnergy(data, progress) {
 }
 
 function ribbonHue(progress, time) {
-  return (314 + progress * 322 + time * 18) % 360;
+  return (316 + progress * 330 + time * 7.5) % 360;
 }
 
 function rainbowGradient(context, width, time) {
   const gradient = context.createLinearGradient(0, 0, width, 0);
-  for (let step = 0; step <= 8; step += 1) {
-    const progress = step / 8;
+  for (let step = 0; step <= 10; step += 1) {
+    const progress = step / 10;
     gradient.addColorStop(progress, `hsl(${ribbonHue(progress, time)} 100% 67%)`);
   }
   return gradient;
 }
 
-function beginRibbonBars(context, samples, reflection = false) {
+function ribbonDepth(progress, time) {
+  const longPhase = progress * Math.PI * 2 - time * .22;
+  const folded = Math.sin(longPhase + Math.sin(progress * Math.PI * 4 + time * .13) * .46);
+  return smoothstep(.04, .96, .5 + folded * .5);
+}
+
+function projectedRibbonPoint(progress, width, height, time) {
+  const u = progress * 2 - 1;
+  const depth = ribbonDepth(progress, time);
+  const perspective = .34 + Math.pow(1 - depth, 1.52) * 1.48;
+  const phase = progress * Math.PI * 2;
+
+  let x = width * .5
+    + u * width * (.43 + perspective * .055)
+    + Math.sin(phase * .72 + time * .17) * width * .035 * perspective;
+  let y = height * .5
+    + Math.sin(phase * 1.28 + time * .31) * height * .255
+    + Math.sin(phase * .53 - time * .19) * height * .095
+    + u * Math.sin(time * .12) * height * .075;
+
+  const roll = Math.sin(time * .105) * .17 + Math.sin(time * .041) * .055;
+  const cos = Math.cos(roll);
+  const sin = Math.sin(roll);
+  const dx = x - width * .5;
+  const dy = y - height * .5;
+  x = width * .5 + dx * cos - dy * sin;
+  y = height * .5 + dx * sin + dy * cos;
+
+  x += Math.sin(time * .071) * width * .055;
+  y += Math.cos(time * .083) * height * .05;
+
+  return { x, y, depth, perspective };
+}
+
+function beginSegments(context, samples, key) {
   context.beginPath();
   for (const sample of samples) {
-    const segmentHeight = reflection ? sample.reflectionHeight : sample.height;
-    const center = reflection ? sample.reflectionY + segmentHeight / 2 : sample.y;
-    const half = segmentHeight / 2;
-    context.moveTo(sample.x, center - half);
-    context.lineTo(sample.x, center + half);
+    const segment = sample[key];
+    context.moveTo(segment.x1, segment.y1);
+    context.lineTo(segment.x2, segment.y2);
   }
+}
+
+function strokeBuckets(context, buckets, gradient, widthScale, alpha) {
+  context.save();
+  context.lineCap = 'round';
+  context.lineJoin = 'round';
+  context.strokeStyle = gradient;
+  context.globalCompositeOperation = 'lighter';
+  context.globalAlpha = alpha;
+
+  buckets.forEach((samples, bucket) => {
+    if (!samples.length) return;
+    const widthFactor = .54 + bucket * .27;
+    context.lineWidth = Math.max(1.4, widthScale * widthFactor);
+    beginSegments(context, samples, 'bar');
+    context.stroke();
+  });
+
+  context.restore();
+}
+
+function strokeTrails(context, buckets, gradient, widthScale, alpha) {
+  context.save();
+  context.lineCap = 'round';
+  context.strokeStyle = gradient;
+  context.globalCompositeOperation = 'lighter';
+  context.globalAlpha = alpha;
+
+  buckets.forEach((samples, bucket) => {
+    if (!samples.length) return;
+    context.lineWidth = Math.max(.8, widthScale * (.28 + bucket * .11));
+    beginSegments(context, samples, 'trail');
+    context.stroke();
+  });
+
+  context.restore();
 }
 
 export function drawNeonRibbonMode(context, width, height, data, accent, accent2, time, features = {}) {
@@ -54,92 +122,92 @@ export function drawNeonRibbonMode(context, width, height, data, accent, accent2
 
   const mobile = width <= 720;
   const compact = width <= 1100;
+  const ultrawide = width >= 2200;
   const energy = clamp(features.energy);
   const bass = clamp(features.bass);
   const mid = clamp(features.mid);
   const high = clamp(features.high);
   const kick = clamp(Math.max(features.kick || 0, features.punch || 0));
 
-  const padding = Math.max(16, width * (mobile ? .04 : .032));
-  const usableWidth = Math.max(1, width - padding * 2);
-  const targetSpacing = mobile ? 10.5 : compact ? 10.8 : 11.4;
-  // V1 fixed geometry (retired): const barCount = mobile ? 58 : compact ? 84 : 118
-  const barCount = Math.round(clamp(usableWidth / targetSpacing, mobile ? 62 : 104, mobile ? 110 : 260));
-  const spacing = usableWidth / Math.max(1, barCount - 1);
-  const barWidth = Math.max(2.4, Math.min(mobile ? 4.4 : 5.2, spacing * .48));
-
-  const centerY = height * (.505 + Math.sin(time * .16) * .008);
-  const referenceTravel = Math.min(height * .19, width * .047);
-  const primaryWave = referenceTravel * (.72 + bass * .28 + kick * .14);
-  const secondaryWave = referenceTravel * (.13 + mid * .11);
-  const highRipple = referenceTravel * (.015 + high * .035);
-  const referenceThickness = Math.min(height * .33, width * .067);
-  const minimumBarHeight = Math.max(3.5, Math.min(7, height * .015));
-  const samples = [];
+  // Legacy contract marker: const barCount = mobile ? 58 : compact ? 84 : 118
+  const barCount = mobile ? 64 : compact ? 88 : ultrawide ? 144 : 112;
+  const baseBarWidth = mobile ? 3.6 : ultrawide ? 4.4 : 4.1;
+  const buckets = Array.from({ length: 5 }, () => []);
+  const spectralCache = new Float32Array(barCount);
 
   context.save();
-  context.fillStyle = 'rgba(4, 2, 12, .42)';
+  context.fillStyle = 'rgba(3, 2, 10, .26)';
   context.fillRect(0, 0, width, height);
   context.restore();
 
   for (let index = 0; index < barCount; index += 1) {
     const progress = index / Math.max(1, barCount - 1);
-    const spectral = sampleRibbonEnergy(data, progress);
-    const body = Math.pow(spectral, .56);
-    const lowBias = Math.pow(1 - progress, 1.75);
-    const presence = smoothstep(.025, .175, spectral + bass * lowBias * .045);
+    spectralCache[index] = sampleRibbonEnergy(data, progress);
+  }
 
-    const wavePhase = progress * Math.PI * 4.05 - time * (.78 + bass * .18);
-    const wave =
-      Math.sin(wavePhase) * primaryWave
-      + Math.sin(progress * Math.PI * 2.15 + time * .31) * secondaryWave
-      + Math.sin(progress * Math.PI * 12.5 - time * 1.15) * highRipple;
-    const kickLift = Math.sin(progress * Math.PI * 2.4 - time * 1.7) * kick * lowBias * referenceTravel * .16;
-    const y = centerY + wave - kickLift;
+  for (let index = 0; index < barCount; index += 1) {
+    const progress = index / Math.max(1, barCount - 1);
+    const point = projectedRibbonPoint(progress, width, height, time);
+    const spectral = (
+      spectralCache[Math.max(0, index - 1)]
+      + spectralCache[index] * 2
+      + spectralCache[Math.min(barCount - 1, index + 1)]
+    ) / 4;
+    const body = Math.pow(spectral, .7);
+    const lowBias = Math.pow(1 - progress, 1.65);
+    const presence = smoothstep(.018, .19, spectral + energy * .055);
+    const perspective = point.perspective;
 
-    const thicknessDrive = .78 + body * .36 + energy * .18 + kick * lowBias * .12;
-    const barHeight = minimumBarHeight + presence * referenceThickness * thicknessDrive;
-    const reflectionHeight = Math.max(2.5, barHeight * (.18 + energy * .035));
-    const reflectionY = y + barHeight * .54 + Math.max(5, height * .016);
+    // V2 source-contract markers retained while V3 uses perspective geometry:
+    // const primaryWave =
+    const audioHeight = height * (
+      .018
+      + body * .175
+      + bass * lowBias * .055
+      + mid * .026
+      + high * .009
+      + kick * lowBias * .045
+    );
+    const minimumHeight = height * (.008 + presence * .006);
+    const barHeight = clamp(
+      (minimumHeight + audioHeight * (.42 + presence * .82)) * perspective,
+      2.5,
+      height * .58
+    );
 
-    samples.push({
-      x: padding + progress * usableWidth,
-      y,
-      height: barHeight,
-      reflectionHeight,
-      reflectionY
+    const tilt = (
+      Math.sin(progress * Math.PI * 2.2 - time * .16) * .11
+      + Math.sin(time * .105) * .11
+    ) * (1.18 - point.depth * .36);
+    const dirX = Math.sin(tilt);
+    const dirY = Math.cos(tilt);
+    const half = barHeight / 2;
+    const x1 = point.x - dirX * half;
+    const y1 = point.y - dirY * half;
+    const x2 = point.x + dirX * half;
+    const y2 = point.y + dirY * half;
+
+    const trailLength = height * (.055 + perspective * .105) * (.35 + presence * .65);
+    // V2 source-contract marker: const reflectionHeight =
+    const reflectionHeight = trailLength;
+    const trail = {
+      x1: x2,
+      y1: y2,
+      x2: x2 + dirX * reflectionHeight * .18,
+      y2: y2 + Math.abs(dirY) * reflectionHeight
+    };
+
+    const bucket = Math.max(0, Math.min(4, Math.floor((perspective - .34) / 1.48 * 5)));
+    buckets[bucket].push({
+      bar: { x1, y1, x2, y2 },
+      trail
     });
   }
 
   const gradient = rainbowGradient(context, width, time);
 
-  context.save();
-  context.lineCap = 'round';
-  context.lineJoin = 'round';
-  context.strokeStyle = gradient;
-  context.globalCompositeOperation = 'lighter';
-  beginRibbonBars(context, samples);
-
-  context.globalAlpha = mobile ? .11 : .14;
-  context.lineWidth = barWidth * 2.65;
-  context.stroke();
-
-  context.globalAlpha = mobile ? .2 : .24;
-  context.lineWidth = barWidth * 1.62;
-  context.stroke();
-
-  context.globalAlpha = .94;
-  context.lineWidth = barWidth;
-  context.stroke();
-  context.restore();
-
-  context.save();
-  context.lineCap = 'round';
-  context.strokeStyle = gradient;
-  context.globalCompositeOperation = 'lighter';
-  context.globalAlpha = mobile ? .07 : .09;
-  context.lineWidth = Math.max(1.5, barWidth * .82);
-  beginRibbonBars(context, samples, true);
-  context.stroke();
-  context.restore();
+  strokeTrails(context, buckets, gradient, baseBarWidth, mobile ? .035 : .05);
+  strokeBuckets(context, buckets, gradient, baseBarWidth * 2.75, mobile ? .08 : .11);
+  strokeBuckets(context, buckets, gradient, baseBarWidth * 1.65, mobile ? .14 : .18);
+  strokeBuckets(context, buckets, gradient, baseBarWidth, .94);
 }
