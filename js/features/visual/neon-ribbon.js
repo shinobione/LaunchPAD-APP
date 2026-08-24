@@ -2,16 +2,22 @@ function clamp(value, minimum = 0, maximum = 1) {
   return Math.max(minimum, Math.min(maximum, Number(value) || 0));
 }
 
+function smoothstep(edge0, edge1, value) {
+  const span = Math.max(.0001, edge1 - edge0);
+  const t = clamp((value - edge0) / span);
+  return t * t * (3 - 2 * t);
+}
+
 function sampleRibbonEnergy(data, progress) {
   if (!data?.length) return 0;
-  const curved = Math.pow(clamp(progress), 1.48);
-  const center = Math.min(data.length - 1, Math.floor(curved * (data.length - 1) * .94));
+  const curved = Math.pow(clamp(progress), 1.42);
+  const center = Math.min(data.length - 1, Math.floor(curved * (data.length - 1) * .95));
   let sum = 0;
   let weight = 0;
 
-  for (let offset = -2; offset <= 2; offset += 1) {
+  for (let offset = -3; offset <= 3; offset += 1) {
     const index = Math.max(0, Math.min(data.length - 1, center + offset));
-    const localWeight = offset === 0 ? 1.7 : Math.abs(offset) === 1 ? 1.15 : .65;
+    const localWeight = offset === 0 ? 1.7 : Math.abs(offset) === 1 ? 1.3 : Math.abs(offset) === 2 ? .85 : .45;
     sum += (data[index] || 0) * localWeight;
     weight += localWeight;
   }
@@ -19,176 +25,120 @@ function sampleRibbonEnergy(data, progress) {
   return clamp(sum / Math.max(1, weight) / 255);
 }
 
-function roundedBar(context, x, y, width, height, radius) {
-  const r = Math.max(0, Math.min(radius, width / 2, height / 2));
-  const right = x + width;
-  const bottom = y + height;
-  context.beginPath();
-  context.moveTo(x + r, y);
-  context.arcTo(right, y, right, bottom, r);
-  context.arcTo(right, bottom, x, bottom, r);
-  context.arcTo(x, bottom, x, y, r);
-  context.arcTo(x, y, right, y, r);
-  context.closePath();
-}
-
 function ribbonHue(progress, time) {
-  return (318 + progress * 320 + time * 24) % 360;
+  return (314 + progress * 322 + time * 18) % 360;
 }
 
 function rainbowGradient(context, width, time) {
   const gradient = context.createLinearGradient(0, 0, width, 0);
-  for (let step = 0; step <= 6; step += 1) {
-    const progress = step / 6;
-    gradient.addColorStop(progress, `hsl(${ribbonHue(progress, time)} 100% 66%)`);
+  for (let step = 0; step <= 8; step += 1) {
+    const progress = step / 8;
+    gradient.addColorStop(progress, `hsl(${ribbonHue(progress, time)} 100% 67%)`);
   }
   return gradient;
+}
+
+function beginRibbonBars(context, samples, reflection = false) {
+  context.beginPath();
+  for (const sample of samples) {
+    const segmentHeight = reflection ? sample.reflectionHeight : sample.height;
+    const center = reflection ? sample.reflectionY + segmentHeight / 2 : sample.y;
+    const half = segmentHeight / 2;
+    context.moveTo(sample.x, center - half);
+    context.lineTo(sample.x, center + half);
+  }
 }
 
 export function drawNeonRibbonMode(context, width, height, data, accent, accent2, time, features = {}) {
   if (!context || width <= 0 || height <= 0) return;
 
   const mobile = width <= 720;
-  const compact = width <= 980;
+  const compact = width <= 1100;
   const energy = clamp(features.energy);
   const bass = clamp(features.bass);
   const mid = clamp(features.mid);
   const high = clamp(features.high);
   const kick = clamp(Math.max(features.kick || 0, features.punch || 0));
-  const barCount = mobile ? 58 : compact ? 84 : 118;
-  const padding = Math.max(14, width * .035);
+
+  const padding = Math.max(16, width * (mobile ? .04 : .032));
   const usableWidth = Math.max(1, width - padding * 2);
+  const targetSpacing = mobile ? 10.5 : compact ? 10.8 : 11.4;
+  const barCount = Math.round(clamp(usableWidth / targetSpacing, mobile ? 62 : 104, mobile ? 110 : 260));
   const spacing = usableWidth / Math.max(1, barCount - 1);
-  const barWidth = Math.max(2, Math.min(mobile ? 4.2 : 5.3, spacing * .58));
-  const centerY = height * (.515 + Math.sin(time * .22) * .012);
-  const primaryWave = height * (.028 + bass * .078 + kick * .022);
-  const secondaryWave = height * (.015 + mid * .04);
-  const highRipple = height * (.004 + high * .012);
-  const maximumBarHeight = height * (.16 + energy * .2 + kick * .035);
-  const minimumBarHeight = Math.max(5, height * .018);
+  const barWidth = Math.max(2.4, Math.min(mobile ? 4.4 : 5.2, spacing * .48));
+
+  const centerY = height * (.505 + Math.sin(time * .16) * .008);
+  const referenceTravel = Math.min(height * .19, width * .047);
+  const primaryWave = referenceTravel * (.72 + bass * .28 + kick * .14);
+  const secondaryWave = referenceTravel * (.13 + mid * .11);
+  const highRipple = referenceTravel * (.015 + high * .035);
+  const referenceThickness = Math.min(height * .33, width * .067);
+  const minimumBarHeight = Math.max(3.5, Math.min(7, height * .015));
   const samples = [];
 
   context.save();
-  context.fillStyle = 'rgba(4, 2, 12, .54)';
-  context.fillRect(0, 0, width, height);
-
-  const aura = context.createRadialGradient(
-    width * .5,
-    centerY,
-    Math.max(8, height * .035),
-    width * .5,
-    centerY,
-    Math.max(width * .58, height * .72)
-  );
-  aura.addColorStop(0, accent || '#a63cff');
-  aura.addColorStop(.42, accent2 || '#5c6cff');
-  aura.addColorStop(1, 'rgba(0,0,0,0)');
-  context.globalAlpha = .055 + energy * .045;
-  context.fillStyle = aura;
+  context.fillStyle = 'rgba(4, 2, 12, .42)';
   context.fillRect(0, 0, width, height);
   context.restore();
 
   for (let index = 0; index < barCount; index += 1) {
     const progress = index / Math.max(1, barCount - 1);
     const spectral = sampleRibbonEnergy(data, progress);
-    const lowBias = Math.pow(1 - progress, 1.85);
-    const body = Math.pow(spectral, .72);
+    const body = Math.pow(spectral, .56);
+    const lowBias = Math.pow(1 - progress, 1.75);
+    const presence = smoothstep(.025, .175, spectral + bass * lowBias * .045);
+
+    const wavePhase = progress * Math.PI * 4.05 - time * (.78 + bass * .18);
     const wave =
-      Math.sin(time * (1.02 + bass * .24) + index * .135) * primaryWave
-      + Math.sin(time * .47 - index * .064) * secondaryWave
-      + Math.sin(time * 1.85 + index * .39) * highRipple;
-    const lowLift = kick * lowBias * height * .028 * Math.sin(time * 2.2 + progress * 3.6);
-    const y = centerY + wave - lowLift;
-    const barHeight = Math.max(
-      minimumBarHeight,
-      minimumBarHeight
-        + body * maximumBarHeight
-        + bass * lowBias * height * .032
-        + mid * (1 - Math.abs(progress - .5) * 1.35) * height * .012
-    );
+      Math.sin(wavePhase) * primaryWave
+      + Math.sin(progress * Math.PI * 2.15 + time * .31) * secondaryWave
+      + Math.sin(progress * Math.PI * 12.5 - time * 1.15) * highRipple;
+    const kickLift = Math.sin(progress * Math.PI * 2.4 - time * 1.7) * kick * lowBias * referenceTravel * .16;
+    const y = centerY + wave - kickLift;
+
+    const thicknessDrive = .78 + body * .36 + energy * .18 + kick * lowBias * .12;
+    const barHeight = minimumBarHeight + presence * referenceThickness * thicknessDrive;
+    const reflectionHeight = Math.max(2.5, barHeight * (.18 + energy * .035));
+    const reflectionY = y + barHeight * .54 + Math.max(5, height * .016);
 
     samples.push({
       x: padding + progress * usableWidth,
       y,
       height: barHeight,
-      hue: ribbonHue(progress, time)
+      reflectionHeight,
+      reflectionY
     });
   }
 
-  context.save();
-  context.globalCompositeOperation = 'lighter';
-  context.globalAlpha = mobile ? .26 : .32;
-  context.shadowBlur = mobile ? 11 : 18;
-  for (const sample of samples) {
-    const color = `hsl(${sample.hue} 100% 62%)`;
-    context.fillStyle = color;
-    context.shadowColor = color;
-    roundedBar(
-      context,
-      sample.x - barWidth / 2,
-      sample.y - sample.height / 2,
-      barWidth,
-      sample.height,
-      barWidth
-    );
-    context.fill();
-  }
-  context.restore();
+  const gradient = rainbowGradient(context, width, time);
 
   context.save();
+  context.lineCap = 'round';
+  context.lineJoin = 'round';
+  context.strokeStyle = gradient;
   context.globalCompositeOperation = 'lighter';
-  context.globalAlpha = .92;
-  context.shadowBlur = mobile ? 4 : 6;
-  for (const sample of samples) {
-    const color = `hsl(${sample.hue} 100% 67%)`;
-    context.fillStyle = color;
-    context.shadowColor = color;
-    roundedBar(
-      context,
-      sample.x - barWidth / 2,
-      sample.y - sample.height / 2,
-      barWidth,
-      sample.height,
-      barWidth
-    );
-    context.fill();
-  }
-  context.restore();
+  beginRibbonBars(context, samples);
 
-  context.save();
-  context.globalCompositeOperation = 'lighter';
-  context.globalAlpha = .34 + energy * .12;
-  context.strokeStyle = rainbowGradient(context, width, time);
-  context.lineWidth = mobile ? .8 : 1.15;
-  context.shadowColor = accent2 || '#5c6cff';
-  context.shadowBlur = mobile ? 5 : 9;
-  context.beginPath();
-  samples.forEach((sample, index) => {
-    if (index === 0) context.moveTo(sample.x, sample.y);
-    else context.lineTo(sample.x, sample.y);
-  });
+  context.globalAlpha = mobile ? .11 : .14;
+  context.lineWidth = barWidth * 2.65;
+  context.stroke();
+
+  context.globalAlpha = mobile ? .2 : .24;
+  context.lineWidth = barWidth * 1.62;
+  context.stroke();
+
+  context.globalAlpha = .94;
+  context.lineWidth = barWidth;
   context.stroke();
   context.restore();
 
   context.save();
+  context.lineCap = 'round';
+  context.strokeStyle = gradient;
   context.globalCompositeOperation = 'lighter';
-  context.globalAlpha = mobile ? .075 : .11;
-  context.shadowBlur = mobile ? 3 : 6;
-  for (const sample of samples) {
-    const reflectionHeight = Math.max(3, sample.height * (.2 + energy * .08));
-    const reflectionY = sample.y + sample.height * .53 + Math.max(4, height * .014);
-    const color = `hsl(${sample.hue} 100% 65%)`;
-    context.fillStyle = color;
-    context.shadowColor = color;
-    roundedBar(
-      context,
-      sample.x - barWidth / 2,
-      reflectionY,
-      barWidth,
-      reflectionHeight,
-      barWidth
-    );
-    context.fill();
-  }
+  context.globalAlpha = mobile ? .07 : .09;
+  context.lineWidth = Math.max(1.5, barWidth * .82);
+  beginRibbonBars(context, samples, true);
+  context.stroke();
   context.restore();
 }
