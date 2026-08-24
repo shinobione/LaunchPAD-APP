@@ -23,7 +23,7 @@ for (const required of [
   "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum'])"
 ]) assert.ok(registry.includes(required), `Audio Lab registry is missing ${required}.`);
 for (const forbidden of retiredIds) assert.ok(!registry.includes(forbidden), `Retired preset leaked into registry: ${forbidden}.`);
-assert.equal((registry.match(/Object\.freeze\(\{ id:/g) || []).length, 10, 'Audio Lab must expose exactly ten validated presets.');
+assert.equal((registry.match(/id: '[^']+'/g) || []).length, 10, 'Audio Lab must expose exactly ten validated presets.');
 
 const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
