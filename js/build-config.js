@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260824-audiolab-neon-ribbon-v5-build103',
-    cache: 'shinobi-launchpad-v103',
-    revision: 'audiolab-neon-ribbon-v5',
-    display: '2026.08.24.103',
-    release: 'audiolab-neon-ribbon-v5-20260824'
+    id: '20260824-audiolab-neon-ribbon-v6-radial-orbit-build104',
+    cache: 'shinobi-launchpad-v104',
+    revision: 'audiolab-neon-ribbon-v6-radial-orbit',
+    display: '2026.08.24.104',
+    release: 'audiolab-neon-ribbon-v6-radial-orbit-20260824'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
@@ -144,7 +144,7 @@
   function installC3C6MobileCleanup() {
     ensureBuildStylesheet(
       'link[data-c3-c6-mobile-v97]',
-      'css/c3-c6-mobile-v97.css',
+      'css/mobile-cleanup-v97.css',
       'c3C6MobileV97'
     );
 
