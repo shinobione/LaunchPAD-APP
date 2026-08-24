@@ -39,8 +39,10 @@ const bloom = read('js/features/visual/void-bloom.js');
 requireAll(bloom, ['shapeAudioDrive(', "advanceMotionPhase(motion, 'void-bloom-flow'", 'const petalCount = mobile ? 7 : 11', 'const veinCount = mobile ? 7 : 16', 'context.bezierCurveTo('], 'Void Bloom');
 const creep = read('js/features/visual/creep-signal.js');
 requireAll(creep, ['shapeAudioDrive(', "advanceMotionPhase(motion, 'creep-flow'", 'const nodeCount = mobile ? 9 : 14', 'const branchCount = mobile ? 6 : 10', 'const pulseCount = mobile ? 7 : 12', 'context.quadraticCurveTo('], 'Creep Signal');
+const ribbon = read('js/features/visual/neon-ribbon.js');
+requireAll(ribbon, ['drawNeonRibbonMode(', 'sampleRibbonEnergy(', 'rainbowGradient(context, width, time)', 'const reflectionHeight ='], 'Neon Ribbon');
 
-for (const isolated of [reactor, fracture, lens, bio, bloom, creep]) {
+for (const isolated of [reactor, fracture, lens, bio, bloom, creep, ribbon]) {
   assert.ok(!isolated.includes('Math.random('));
   assert.ok(!isolated.includes('requestAnimationFrame('));
   assert.ok(!isolated.includes('setInterval('));
@@ -48,11 +50,12 @@ for (const isolated of [reactor, fracture, lens, bio, bloom, creep]) {
 }
 
 const registry = read('js/features/visual/audio-lab-registry.js');
-const presetCount = (registry.match(/Object\.freeze\(\{ id:/g) || []).length;
-assert.equal(presetCount, 9, 'Audio Lab must keep nine sanctioned presets.');
+const presetCount = (registry.match(/id: '[^']+'/g) || []).length;
+assert.equal(presetCount, 10, 'Audio Lab must keep ten sanctioned presets.');
 
 const live = read('js/features/visual/visual-engine-live.js');
 requireAll(live, [
+  "{ id: 'neon-ribbon', label: 'Neon Ribbon', renderer: drawNeonRibbonMode }",
   "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
   "{ id: 'void-bloom', label: 'Void Bloom', renderer: drawVoidBloomMode }",
   "{ id: 'creep-signal', label: 'Creep Signal', renderer: drawCreepSignalMode }",
@@ -61,7 +64,7 @@ requireAll(live, [
   'function createDirectVisualImpactTracker()', 'function applyDirectKineticImpact(context, width, height, mode, features)',
   'features.visualImpact = visualImpactTracker.update(features)',
   'function kineticImpactFeatures(mode, features)', 'features.punch = adaptivePunch.punch',
-  "dataset.audioLabRenderer = 'nine-core-v1'", "dataset.audioLabPresetCount = '9'",
+  "dataset.audioLabRenderer = 'ten-core-v1'", "dataset.audioLabPresetCount = '10'",
   "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' || mode === 'void-bloom' || mode === 'creep-signal' ? 1.05",
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ], 'Live Audio Lab');
@@ -72,11 +75,11 @@ assert.ok(!signal.includes('captureStream('));
 assert.ok(!signal.includes('createMediaStreamSource('));
 
 const worker = read('sw.js');
-requireAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'", "event.data?.type === 'GET_RELEASE'"], 'PWA shell');
+requireAll(worker, ["'./js/features/visual/motion-spring.js'", "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'", "'./js/features/visual/neon-ribbon.js'", "event.data?.type === 'GET_RELEASE'"], 'PWA shell');
 
 const build = assertCurrentBuild('Phase 13/current release');
 assert.ok(build.number >= 61, `Unexpected pre-Build-61 release ${build.display}.`);
 
 await import('./test-milestone-4.mjs');
 await import('./test-milestone-6.mjs');
-console.log(`Phase 13 remains valid with the shared-FFT ${presetCount}-preset kinetic Audio Lab plus direct impact under ${build.display}.`);
+console.log(`Phase 13 remains valid with the shared-FFT ${presetCount}-preset kinetic Audio Lab plus Neon Ribbon under ${build.display}.`);

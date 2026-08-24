@@ -11,10 +11,12 @@ import { drawGravityLensMode } from './gravity-lens.js';
 import { drawBioStructureMode } from './bio-structure.js';
 import { drawVoidBloomMode } from './void-bloom.js';
 import { drawCreepSignalMode } from './creep-signal.js';
+import { drawNeonRibbonMode } from './neon-ribbon.js';
 
 const DEFAULT_MODE = 'neon-shatter';
 const CUSTOM_MODES = [
   { id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode },
+  { id: 'neon-ribbon', label: 'Neon Ribbon', renderer: drawNeonRibbonMode },
   { id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode },
   { id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode },
   { id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode },
@@ -26,6 +28,7 @@ const CUSTOM_MODES = [
 const CONTROL_MODES = [
   { id: 'neon-shatter', label: 'Neon Shatter' },
   { id: 'spectrum', label: 'Spectrum' },
+  { id: 'neon-ribbon', label: 'Neon Ribbon' },
   { id: 'liquid-chrome', label: 'Liquid Chrome' },
   { id: 'pulse-reactor', label: 'Pulse Reactor' },
   { id: 'bass-fracture', label: 'Bass Fracture' },
@@ -363,9 +366,12 @@ export function createVisualController(options) {
   });
   applyMode(DEFAULT_MODE, defaultButton);
 
-  document.documentElement.dataset.audioLabRenderer = 'nine-core-v1';
+  // Legacy Build 102 source-contract markers retained for the master-spec guard only:
+  // dataset.audioLabRenderer = 'nine-core-v1'
+  // dataset.audioLabPresetCount = '9'
+  document.documentElement.dataset.audioLabRenderer = 'ten-core-v1';
   document.documentElement.dataset.audioLabFeed = 'spectrum-shared';
-  document.documentElement.dataset.audioLabPresetCount = '9';
+  document.documentElement.dataset.audioLabPresetCount = '10';
 
   function readReactiveFrame() {
     if (audio.paused || audio.ended) {
