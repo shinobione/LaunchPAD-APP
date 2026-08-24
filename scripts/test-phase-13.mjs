@@ -50,7 +50,7 @@ for (const isolated of [reactor, fracture, lens, bio, bloom, creep, ribbon]) {
 }
 
 const registry = read('js/features/visual/audio-lab-registry.js');
-const presetCount = (registry.match(/Object\.freeze\(\{ id:/g) || []).length;
+const presetCount = (registry.match(/id: '[^']+'/g) || []).length;
 assert.equal(presetCount, 10, 'Audio Lab must keep ten sanctioned presets.');
 
 const live = read('js/features/visual/visual-engine-live.js');
