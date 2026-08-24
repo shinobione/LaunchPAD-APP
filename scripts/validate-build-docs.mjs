@@ -113,6 +113,10 @@ const candidateDocs = new Map([
   [
     'audiolab-neon-ribbon-v7-source-port-20260824',
     'docs/BUILD105-AUDIOLAB-NEON-RIBBON-V7-SOURCE-PORT.md'
+  ],
+  [
+    'audiolab-neon-ribbon-v8-source-arc-20260824',
+    'docs/BUILD106-AUDIOLAB-NEON-RIBBON-V8-SOURCE-ARC.md'
   ]
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
