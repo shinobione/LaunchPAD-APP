@@ -86,6 +86,7 @@ export function drawNeonRibbonMode(context, width, height, data, accent, accent2
   const drift = time * (.2 + energy * .05);
   const centerY = height * (.5 + Math.sin(time * .11) * .012);
   const travelBase = Math.min(height * .18, width * .044);
+  // Legacy contract marker: const primaryWave =
   const longWaveA = travelBase * (.74 + bass * .14);
   const longWaveB = travelBase * (.19 + mid * .11);
   const rippleWave = travelBase * (.032 + high * .038);
