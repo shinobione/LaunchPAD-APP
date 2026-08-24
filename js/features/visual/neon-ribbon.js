@@ -63,6 +63,7 @@ export function drawNeonRibbonMode(context, width, height, data, accent, accent2
   const padding = Math.max(16, width * (mobile ? .04 : .032));
   const usableWidth = Math.max(1, width - padding * 2);
   const targetSpacing = mobile ? 10.5 : compact ? 10.8 : 11.4;
+  // V1 fixed geometry (retired): const barCount = mobile ? 58 : compact ? 84 : 118
   const barCount = Math.round(clamp(usableWidth / targetSpacing, mobile ? 62 : 104, mobile ? 110 : 260));
   const spacing = usableWidth / Math.max(1, barCount - 1);
   const barWidth = Math.max(2.4, Math.min(mobile ? 4.4 : 5.2, spacing * .48));
