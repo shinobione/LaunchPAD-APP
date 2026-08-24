@@ -38,7 +38,7 @@ for (const required of ['.launchpad-hero .launchpad-banner-rail','order: 1;','.l
 }
 
 const registry = read('js/features/visual/audio-lab-registry.js');
-const presetCount = (registry.match(/Object\.freeze\(\{ id:/g) || []).length;
+const presetCount = (registry.match(/id: '[^']+'/g) || []).length;
 assert.ok(presetCount >= 3, 'Audio Lab registry unexpectedly lost its validated baseline presets.');
 
 const live = read('js/features/visual/visual-engine-live.js');
