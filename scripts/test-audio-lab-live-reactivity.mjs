@@ -8,6 +8,8 @@ for (const required of [
   "const DEFAULT_MODE = 'neon-shatter'",
   "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode }",
   "{ id: 'spectrum', label: 'Spectrum' }",
+  "{ id: 'neon-ribbon', label: 'Neon Ribbon', renderer: drawNeonRibbonMode }",
+  "{ id: 'neon-ribbon', label: 'Neon Ribbon' }",
   "{ id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode }",
   "{ id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode }",
   "{ id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }",
@@ -25,8 +27,8 @@ for (const required of [
   'features.punch = adaptivePunch.punch', 'features.visualImpact = visualImpactTracker.update(features)',
   'data.audioLabPunch = values[5]', 'data.audioLabVisualImpact = values[6]',
   "mode === 'bass-fracture' || mode === 'gravity-lens' || mode === 'bio-structure' || mode === 'void-bloom' || mode === 'creep-signal' ? 1.05",
-  "document.documentElement.dataset.audioLabRenderer = 'nine-core-v1'",
-  "document.documentElement.dataset.audioLabPresetCount = '9'",
+  "document.documentElement.dataset.audioLabRenderer = 'ten-core-v1'",
+  "document.documentElement.dataset.audioLabPresetCount = '10'",
   'const CUSTOM_FRAME_INTERVAL = 1000 / 60'
 ]) assert.ok(live.includes(required), `Live Audio Lab integration is missing ${required}.`);
 
@@ -92,7 +94,14 @@ for (const required of [
   'context.quadraticCurveTo(', 'context.lineTo('
 ]) assert.ok(creep.includes(required), `Creep Signal kinetic/mobile contract is missing ${required}.`);
 
-for (const isolated of [reactor, fracture, lens, bio, bloom, creep]) {
+const ribbon = read('js/features/visual/neon-ribbon.js');
+for (const required of [
+  'export function drawNeonRibbonMode(', 'function sampleRibbonEnergy(',
+  'const barCount = mobile ? 58 : compact ? 84 : 118', 'rainbowGradient(context, width, time)',
+  'const primaryWave =', 'const reflectionHeight ='
+]) assert.ok(ribbon.includes(required), `Neon Ribbon contract is missing ${required}.`);
+
+for (const isolated of [reactor, fracture, lens, bio, bloom, creep, ribbon]) {
   assert.ok(!isolated.includes('requestAnimationFrame('));
   assert.ok(!isolated.includes('setInterval('));
   assert.ok(!isolated.includes('Math.random('));
@@ -106,4 +115,4 @@ for (const required of ['function readSpectrum(target)', 'analyser.getByteFreque
 
 const bridge = read('js/features/visual/visual-engine.js').trim();
 assert.equal(bridge, "export { createVisualController } from './visual-engine-live.js';");
-console.log('Build 61 keeps direct-impact kinetic flow and adds asymmetric Creep Signal with a mobile-first geometry budget.');
+console.log('Audio Lab keeps direct-impact kinetic flow and adds a shared-FFT Neon Ribbon renderer with mobile geometry budgets.');
