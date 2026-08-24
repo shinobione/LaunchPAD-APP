@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260812-phase-ux-c3-c11-visual-card-feedback-v102',
-    cache: 'shinobi-launchpad-v102',
-    revision: 'visual-card-feedback-12',
-    display: '2026.08.12.102',
-    release: 'phase-ux-c3-c11-visual-card-feedback-20260812'
+    id: '20260824-audiolab-neon-ribbon-v5-build103',
+    cache: 'shinobi-launchpad-v103',
+    revision: 'audiolab-neon-ribbon-v5',
+    display: '2026.08.24.103',
+    release: 'audiolab-neon-ribbon-v5-20260824'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;

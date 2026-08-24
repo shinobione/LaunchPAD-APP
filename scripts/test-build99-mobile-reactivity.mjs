@@ -8,11 +8,8 @@ const mobileCss = fs.readFileSync('css/mobile-navigation.css', 'utf8');
 const correctiveCss = fs.readFileSync('css/c3-c9-corrective-v100.css', 'utf8');
 const premium = fs.readFileSync('js/features/premium-interactions-v92.js', 'utf8');
 
-const isBuild99 = buildConfig.includes("release: 'phase-ux-c3-c8-mobile-reactivity-20260812'");
-const isBuild100 = buildConfig.includes("release: 'phase-ux-c3-c9-mobile-menu-focus-20260812'");
-const isBuild101 = buildConfig.includes("release: 'phase-ux-c3-c10-mini-player-chrome-20260812'");
-const isBuild102 = buildConfig.includes("release: 'phase-ux-c3-c11-visual-card-feedback-20260812'");
-assert.ok(isBuild99 || isBuild100 || isBuild101 || isBuild102, 'Build 99 ancestry guard only supports Build 99 and its Build 100-102 successors.');
+const buildNumber = Number(/display:\s*'\d{4}\.\d{2}\.\d{2}\.(\d+)'/.exec(buildConfig)?.[1] || 0);
+assert.ok(buildNumber >= 99, `Build 99 ancestry guard requires Build 99 or a successor, got Build ${buildNumber || 'unknown'}.`);
 
 for (const marker of [
   'const WAITING_SPINNER_DELAY_MS = 360',
@@ -76,4 +73,4 @@ for (const marker of [
   'if (mobilePerformanceMode()) return;',
 ]) assert.ok(premium.includes(marker), `Build 99 mobile premium-motion bypass is missing ${marker}.`);
 
-console.log('LaunchPAD Build 99 ancestry + Builds 100-102 successors protect stall-aware playback, single-owner mobile navigation, locked mobile zoom and clean desktop player chrome including the side mini-player.');
+console.log(`LaunchPAD Build 99 ancestry remains protected under successor Build ${buildNumber}: stall-aware playback, single-owner mobile navigation, locked mobile zoom and clean desktop player chrome including the side mini-player.`);

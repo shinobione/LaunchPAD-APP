@@ -101,6 +101,10 @@ const candidateDocs = new Map([
   [
     'phase-ux-c3-c11-visual-card-feedback-20260812',
     'docs/PHASE-UX-C3-C11-BUILD102-VISUAL-CARD-FEEDBACK.md'
+  ],
+  [
+    'audiolab-neon-ribbon-v5-20260824',
+    'docs/BUILD103-AUDIOLAB-NEON-RIBBON-V5.md'
   ]
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
