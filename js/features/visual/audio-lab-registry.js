@@ -3,6 +3,7 @@ export const AUDIO_LAB_DEFAULT_MODE = 'neon-shatter';
 export const AUDIO_LAB_PRESETS = Object.freeze([
   Object.freeze({ id: 'neon-shatter', label: 'Neon Shatter', tier: 'core' }),
   Object.freeze({ id: 'spectrum', label: 'Spectrum', tier: 'sanctuary' }),
+  Object.freeze({ id: 'neon-ribbon', label: 'Neon Ribbon', tier: 'core' }),
   Object.freeze({ id: 'liquid-chrome', label: 'Liquid Chrome', tier: 'core' }),
   Object.freeze({ id: 'pulse-reactor', label: 'Pulse Reactor', tier: 'core' }),
   Object.freeze({ id: 'bass-fracture', label: 'Bass Fracture', tier: 'core' }),
