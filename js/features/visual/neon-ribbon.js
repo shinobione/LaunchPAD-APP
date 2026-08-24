@@ -8,60 +8,83 @@ function smoothstep(edge0, edge1, value) {
   return t * t * (3 - 2 * t);
 }
 
-function lerp(start, end, amount) {
-  return start + (end - start) * amount;
-}
-
-function gaussian(value, center, radius) {
-  const safe = Math.max(.0001, radius);
-  const delta = (value - center) / safe;
-  return Math.exp(-delta * delta);
-}
-
 function sampleRibbonEnergy(data, progress) {
   if (!data?.length) return 0;
-  const curved = Math.pow(clamp(progress), 1.34);
-  const center = Math.min(data.length - 1, Math.floor(curved * (data.length - 1) * .95));
-  let sum = 0;
-  let weight = 0;
-
-  for (let offset = -3; offset <= 3; offset += 1) {
-    const index = Math.max(0, Math.min(data.length - 1, center + offset));
-    const localWeight = offset === 0 ? 1.7 : Math.abs(offset) === 1 ? 1.3 : Math.abs(offset) === 2 ? .84 : .44;
-    sum += (data[index] || 0) * localWeight;
-    weight += localWeight;
-  }
-
-  return clamp(sum / Math.max(1, weight) / 255);
+  const curved = Math.pow(clamp(progress), 1.27);
+  const center = Math.min(data.length - 1, Math.floor(curved * (data.length - 1) * .96));
+  const previous = Math.max(0, center - 1);
+  const next = Math.min(data.length - 1, center + 1);
+  return clamp(((data[center] || 0) * .62 + (data[previous] || 0) * .19 + (data[next] || 0) * .19) / 255);
 }
 
 function ribbonHue(progress, time) {
-  return (314 + progress * 328 + time * 9) % 360;
+  return (318 + progress * 322 + time * 8.2) % 360;
 }
 
 function rainbowGradient(context, width, time) {
   const gradient = context.createLinearGradient(0, 0, width, 0);
-  for (let step = 0; step <= 10; step += 1) {
-    const progress = step / 10;
-    gradient.addColorStop(progress, `hsl(${ribbonHue(progress, time)} 100% 67%)`);
+  for (let step = 0; step <= 12; step += 1) {
+    const progress = step / 12;
+    gradient.addColorStop(progress, `hsl(${ribbonHue(progress, time)} 100% 66%)`);
   }
   return gradient;
 }
 
-function beginRibbonBars(context, samples) {
+function rotateVector(x, y, angle) {
+  const cosine = Math.cos(angle);
+  const sine = Math.sin(angle);
+  return {
+    x: x * cosine - y * sine,
+    y: x * sine + y * cosine
+  };
+}
+
+function projectOrbitPoint(theta, centerX, centerY, radiusX, radiusY, roll) {
+  const localX = Math.cos(theta) * radiusX;
+  const localY = Math.sin(theta) * radiusY;
+  const point = rotateVector(localX, localY, roll);
+
+  let normalX = Math.cos(theta) / Math.max(1, radiusX);
+  let normalY = Math.sin(theta) / Math.max(1, radiusY);
+  const normalLength = Math.hypot(normalX, normalY) || 1;
+  normalX /= normalLength;
+  normalY /= normalLength;
+  const normal = rotateVector(normalX, normalY, roll);
+
+  return {
+    x: centerX + point.x,
+    y: centerY + point.y,
+    normalX: normal.x,
+    normalY: normal.y
+  };
+}
+
+function beginSegments(context, samples, key) {
   context.beginPath();
   for (const sample of samples) {
-    context.moveTo(sample.x, sample.y - sample.height / 2);
-    context.lineTo(sample.x, sample.y + sample.height / 2);
+    const segment = sample[key];
+    context.moveTo(segment.x1, segment.y1);
+    context.lineTo(segment.x2, segment.y2);
   }
 }
 
-function beginLightBeams(context, samples) {
-  context.beginPath();
-  for (const sample of samples) {
-    context.moveTo(sample.x, sample.y + sample.height / 2);
-    context.lineTo(sample.beamX, sample.beamY);
-  }
+function drawBuckets(context, buckets, gradient, baseWidth, alpha, key) {
+  context.save();
+  context.lineCap = 'round';
+  context.lineJoin = 'round';
+  context.strokeStyle = gradient;
+  context.globalCompositeOperation = 'lighter';
+  context.globalAlpha = alpha;
+
+  buckets.forEach((samples, bucket) => {
+    if (!samples.length) return;
+    const depthWidth = .66 + bucket * .16;
+    context.lineWidth = Math.max(.85, baseWidth * depthWidth);
+    beginSegments(context, samples, key);
+    context.stroke();
+  });
+
+  context.restore();
 }
 
 export function drawNeonRibbonMode(context, width, height, data, accent, accent2, time, features = {}) {
@@ -69,178 +92,98 @@ export function drawNeonRibbonMode(context, width, height, data, accent, accent2
 
   const mobile = width <= 720;
   const compact = width <= 1180;
+  const ultrawide = width >= 2200;
   const energy = clamp(features.energy);
   const bass = clamp(features.bass);
   const mid = clamp(features.mid);
   const high = clamp(features.high);
   const kick = clamp(Math.max(features.kick || 0, features.punch || 0));
 
-  const padding = Math.max(18, width * (mobile ? .042 : .03));
-  const usableWidth = Math.max(1, width - padding * 2);
-  // Legacy contract marker: const barCount = mobile ? 58 : compact ? 84 : 118
-  const targetSpacing = mobile ? 11.4 : compact ? 12.2 : 13.2;
-  const barCount = Math.round(clamp(usableWidth / targetSpacing, mobile ? 60 : 92, mobile ? 108 : 148));
-  const spacing = usableWidth / Math.max(1, barCount - 1);
-  const barWidth = Math.max(2.3, Math.min(mobile ? 4.4 : 5.3, spacing * .48));
+  // Legacy contract marker retained for pre-V6 regression guards:
+  // const barCount = mobile ? 58 : compact ? 84 : 118
+  const barCount = mobile ? 76 : compact ? 108 : ultrawide ? 148 : 132;
+  const barWidth = mobile ? 2.6 : ultrawide ? 3.6 : 3.25;
+  const spectrum = new Float32Array(barCount);
+  const buckets = Array.from({ length: 5 }, () => []);
 
-  const drift = time * (.2 + energy * .05);
-  const centerY = height * (.5 + Math.sin(time * .11) * .012);
-  const travelBase = Math.min(height * .18, width * .044);
+  for (let index = 0; index < barCount; index += 1) {
+    spectrum[index] = sampleRibbonEnergy(data, index / Math.max(1, barCount - 1));
+  }
+
+  // V6 is a moving circular/elliptical carrier like the source video, not a full-width sine ribbon.
   // Legacy contract marker: const primaryWave =
-  const longWaveA = travelBase * (.74 + bass * .14);
-  const longWaveB = travelBase * (.19 + mid * .11);
-  const rippleWave = travelBase * (.032 + high * .038);
-  const bodyBase = Math.min(height * .26, width * .053);
-  const minimumBarHeight = Math.max(3, Math.min(6.5, height * .013));
-
-  const nearCenter = .22 + (Math.sin(time * .14) * .5 + .5) * .53;
-  const secondaryCenter = .14 + (Math.cos(time * .12 + 1.2) * .5 + .5) * .7;
-  const orbitCenter = .18 + (Math.sin(time * .21) * .5 + .5) * .64;
-  const orbitPhase = time * (.55 + energy * .12);
-  const orbitRadius = bodyBase * (.75 + energy * .45 + bass * .18);
-  const orbitLift = Math.sin(orbitPhase * 1.15) * travelBase * (.1 + high * .08);
-  const cameraRoll = Math.sin(time * .085) * .1;
-  const cameraPitch = Math.cos(time * .097) * .04;
-
-  const farSamples = [];
-  const midSamples = [];
-  const nearSamples = [];
+  const centerX = width * (.5 + Math.sin(time * .16) * (mobile ? .035 : .06));
+  const centerY = height * (.93 + Math.cos(time * .13) * .105 + Math.sin(time * .057) * .035);
+  const radiusX = width * (mobile ? .68 : .595) * (1 + Math.sin(time * .071) * .018);
+  const radiusY = height * (mobile ? 1.18 : 1.07) * (1 + Math.cos(time * .089) * .035);
+  const roll = Math.sin(time * .105) * (mobile ? .045 : .07) + Math.sin(time * .041) * .025;
+  const arcStart = Math.PI * 1.055 + Math.sin(time * .145) * .145 + Math.cos(time * .061) * .04;
+  const arcSpan = Math.PI * (mobile ? .9 : .94);
+  const depthPhase = time * .18;
 
   context.save();
-  context.fillStyle = 'rgba(4, 2, 12, .26)';
+  context.fillStyle = 'rgba(3, 2, 10, .22)';
   context.fillRect(0, 0, width, height);
   context.restore();
 
-  let orbX = 0;
-  let orbY = 0;
-  let orbGlow = 0;
-
   for (let index = 0; index < barCount; index += 1) {
     const progress = index / Math.max(1, barCount - 1);
-    const spectral = sampleRibbonEnergy(data, progress);
-    const body = Math.pow(spectral, .58);
-    const presence = smoothstep(.02, .18, spectral + energy * .05);
-    const lowBias = Math.pow(1 - progress, 1.6);
+    const theta = arcStart + progress * arcSpan;
+    const point = projectOrbitPoint(theta, centerX, centerY, radiusX, radiusY, roll);
+    const spectral = spectrum[index];
+    const previous = spectrum[Math.max(0, index - 1)];
+    const next = spectrum[Math.min(barCount - 1, index + 1)];
+    const localMean = (previous + spectral + next) / 3;
+    const localPeak = Math.max(0, spectral - (previous + next) * .5);
 
-    const nearField = gaussian(progress, nearCenter, .18);
-    const secondaryField = gaussian(progress, secondaryCenter, .28);
-    const orbitField = gaussian(progress, orbitCenter, .085 + bass * .015);
-    const depthWave = .5 + .5 * Math.sin(progress * Math.PI * 3.35 - time * .52 + cameraRoll * 4.8);
-    const perspective = clamp(.16 + nearField * .52 + secondaryField * .2 + depthWave * .12 + orbitField * .26);
-    const perspectiveScale = lerp(.42, 1.06, perspective);
+    const depth = .5 + .5 * Math.cos(theta + depthPhase);
+    const perspective = .58 + depth * .62;
+    const lowBias = Math.pow(1 - progress, 1.55);
+    const midBias = 1 - Math.min(1, Math.abs(progress - .48) * 2.15);
+    const highBias = Math.pow(progress, 1.25);
+    const presence = smoothstep(.015, .16, spectral);
 
-    const phase = progress * Math.PI * 4.06 - drift;
-    const sweep = Math.sin(phase) * longWaveA;
-    const sway = Math.sin(progress * Math.PI * 2.25 + drift * .72) * longWaveB;
-    const shimmer = Math.sin(progress * Math.PI * 13.5 - time * 1.2) * rippleWave;
-    const kickPush = Math.sin(progress * Math.PI * 2.5 - time * 1.42) * kick * lowBias * travelBase * .18;
-    const orbitOffset = orbitField * Math.sin(orbitPhase + progress * Math.PI * 2.1) * orbitRadius;
-    const y = centerY
-      + (sweep + sway + shimmer - kickPush + orbitOffset) * (.74 + perspectiveScale * .48)
-      + (progress - .5) * cameraRoll * height * .16
-      + cameraPitch * height * (.22 - perspective * .16);
+    const audioHeight = height * (
+      Math.pow(spectral, .82) * .295
+      + localPeak * .34
+      + bass * lowBias * .045
+      + mid * midBias * .025
+      + high * highBias * .012
+      + kick * lowBias * .04
+    );
+    const minimumHeight = 1.3 + presence * (mobile ? 1.4 : 2.1);
+    const barHeight = clamp(
+      minimumHeight + audioHeight * perspective,
+      1.3,
+      height * (mobile ? .48 : .56)
+    );
 
-    const x = padding
-      + progress * usableWidth
-      + Math.sin(progress * Math.PI * 2.05 + drift * .52) * width * .006 * (perspective - .32)
-      + orbitField * Math.cos(orbitPhase * 1.08 + progress * Math.PI * 2.1) * width * .016
-      + (perspective - .5) * width * .01 * cameraRoll;
+    const startOffset = mobile ? 1.2 : 1.8;
+    const startX = point.x + point.normalX * startOffset;
+    const startY = point.y + point.normalY * startOffset;
+    const endX = startX + point.normalX * barHeight;
+    const endY = startY + point.normalY * barHeight;
 
-    const pulseBoost = orbitField * (.46 + kick * .22 + mid * .14);
-    const thicknessDrive = .74 + presence * .16 + body * .2 + kick * lowBias * .14 + pulseBoost * .28;
-    const edgeTaper = .72 + smoothstep(.02, .16, progress) * .16 + (1 - smoothstep(.84, .98, progress)) * .12;
-    const barHeight = minimumBarHeight + bodyBase * perspectiveScale * thicknessDrive * edgeTaper;
+    // The source has long dim light spilling inward toward the hidden circle centre.
+    const reflectionHeight = (mobile ? 14 : 22)
+      + barHeight * (.34 + depth * .28)
+      + energy * (mobile ? 8 : 14);
+    const trailX = point.x - point.normalX * reflectionHeight;
+    const trailY = point.y - point.normalY * reflectionHeight;
 
-    const beamLength = (mobile ? 18 : 28) + perspective * (mobile ? 22 : 36) + energy * 9 + orbitField * 10;
-    const beamAngle = .18 + (progress - .5) * .56 + cameraRoll * .38;
-    const beamX = x + Math.sin(beamAngle) * beamLength;
-    const beamY = y + barHeight * .55 + Math.cos(beamAngle) * beamLength * (.74 + perspective * .23);
-    // Legacy contract marker: const reflectionHeight =
-    const reflectionHeight = beamLength;
-
-    if (orbitField > orbGlow) {
-      orbGlow = orbitField;
-      orbX = x + Math.cos(orbitPhase) * orbitRadius * .34;
-      orbY = y + orbitLift - Math.sin(orbitPhase * .9) * orbitRadius * .28;
-    }
-
-    const sample = {
-      x,
-      y,
-      height: barHeight,
-      beamX,
-      beamY,
-      depth: perspective,
-      pulse: orbitField,
-      reflectionHeight
-    };
-
-    if (perspective > .72) nearSamples.push(sample);
-    else if (perspective > .44) midSamples.push(sample);
-    else farSamples.push(sample);
+    const bucket = Math.max(0, Math.min(4, Math.floor(depth * 5)));
+    buckets[bucket].push({
+      bar: { x1: startX, y1: startY, x2: endX, y2: endY },
+      trail: { x1: point.x, y1: point.y, x2: trailX, y2: trailY },
+      localMean
+    });
   }
 
   const gradient = rainbowGradient(context, width, time);
-  const groups = [
-    { samples: farSamples, alpha: mobile ? .18 : .21, width: barWidth * .9 },
-    { samples: midSamples, alpha: mobile ? .32 : .36, width: barWidth * 1.02 },
-    { samples: nearSamples, alpha: mobile ? .5 : .55, width: barWidth * 1.16 }
-  ];
 
-  context.save();
-  context.lineCap = 'round';
-  context.lineJoin = 'round';
-  context.strokeStyle = gradient;
-  context.globalCompositeOperation = 'lighter';
-
-  for (const group of groups) {
-    if (!group.samples.length) continue;
-    beginRibbonBars(context, group.samples);
-    context.globalAlpha = group.alpha * .32;
-    context.lineWidth = group.width * 2.65;
-    context.stroke();
-
-    beginRibbonBars(context, group.samples);
-    context.globalAlpha = group.alpha * .62;
-    context.lineWidth = group.width * 1.66;
-    context.stroke();
-
-    beginRibbonBars(context, group.samples);
-    context.globalAlpha = Math.min(.97, group.alpha + .27);
-    context.lineWidth = group.width;
-    context.stroke();
-  }
-  context.restore();
-
-  context.save();
-  context.lineCap = 'round';
-  context.strokeStyle = gradient;
-  context.globalCompositeOperation = 'lighter';
-  for (const group of groups) {
-    if (!group.samples.length) continue;
-    beginLightBeams(context, group.samples);
-    context.globalAlpha = (mobile ? .03 : .045) + group.alpha * .05;
-    context.lineWidth = Math.max(1.1, group.width * .58);
-    context.stroke();
-  }
-  context.restore();
-
-  const orbRadius = (mobile ? 8 : 10) + orbGlow * (mobile ? 12 : 18) + high * 4;
-  const orbGradient = context.createRadialGradient(orbX, orbY, 0, orbX, orbY, orbRadius * 2.2);
-  orbGradient.addColorStop(0, 'rgba(255,255,255,.9)');
-  orbGradient.addColorStop(.18, `hsla(${ribbonHue(orbitCenter, time)} 100% 70% / .96)`);
-  orbGradient.addColorStop(.55, `hsla(${(ribbonHue(orbitCenter, time) + 24) % 360} 100% 60% / .32)`);
-  orbGradient.addColorStop(1, 'rgba(0,0,0,0)');
-
-  context.save();
-  context.globalCompositeOperation = 'lighter';
-  context.fillStyle = orbGradient;
-  context.beginPath();
-  context.arc(orbX, orbY, orbRadius * 2.2, 0, Math.PI * 2);
-  context.fill();
-  context.fillStyle = `hsla(${ribbonHue(orbitCenter, time)} 100% 74% / .95)`;
-  context.beginPath();
-  context.arc(orbX, orbY, orbRadius, 0, Math.PI * 2);
-  context.fill();
-  context.restore();
+  // Directional inward glow first, then two cheap batched neon passes and the crisp radial bars.
+  drawBuckets(context, buckets, gradient, barWidth * 1.25, mobile ? .035 : .05, 'trail');
+  drawBuckets(context, buckets, gradient, barWidth * 2.55, mobile ? .075 : .105, 'bar');
+  drawBuckets(context, buckets, gradient, barWidth * 1.55, mobile ? .13 : .17, 'bar');
+  drawBuckets(context, buckets, gradient, barWidth, .94, 'bar');
 }
