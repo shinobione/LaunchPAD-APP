@@ -13,8 +13,8 @@ const RAINBOW_PALETTE = Object.freeze([
   [184, 99, 184], [225, 77, 153], [225, 91, 100]
 ]);
 
-// Screen-space trace measured from the supplied Rainbow reference. The animation below treats
-// this as a stable carrier, then applies slow source-like orbit/breath motion rather than vibrating it per-bin.
+// Screen-space carrier measured from the supplied Rainbow reference video.
+// Keep this clean shape as the stable base; dynamics come from perspective/camera travel and audio breathing.
 const SOURCE_CARRIER = Object.freeze([
   [0.00, .474], [0.05, .438], [0.10, .414], [0.18, .382], [0.26, .350],
   [0.32, .330], [0.38, .345], [0.44, .385], [0.50, .425], [0.56, .475],
@@ -42,6 +42,12 @@ function wrap01(value) {
 
 function frameBlend(alpha, frameFactor) {
   return 1 - Math.pow(1 - clamp(alpha), Math.max(.15, frameFactor));
+}
+
+function gaussian(value, center, radius) {
+  const safeRadius = Math.max(.0001, radius);
+  const delta = (value - center) / safeRadius;
+  return Math.exp(-delta * delta);
 }
 
 function getRibbonState(context, time) {
@@ -119,20 +125,23 @@ function updateSmoothedSpectrum(state, rawSpectrum, frameFactor) {
       state.spectrum[index] = target;
       continue;
     }
-    const alpha = target > state.spectrum[index] ? .28 : .075;
+
+    // Faster attack than Build 109 restores impact, while the slower release keeps the clean envelope.
+    const alpha = target > state.spectrum[index] ? .36 : .09;
     state.spectrum[index] += (target - state.spectrum[index]) * frameBlend(alpha, frameFactor);
   }
 
+  // Keep spatial continuity, but preserve more local contrast than Build 109.
   for (let index = 0; index < state.spectrum.length; index += 1) {
     const length = state.spectrum.length;
-    const value =
-      state.spectrum[(index - 2 + length) % length] * .08 +
-      state.spectrum[(index - 1 + length) % length] * .22 +
-      state.spectrum[index] * .40 +
-      state.spectrum[(index + 1) % length] * .22 +
-      state.spectrum[(index + 2) % length] * .08;
-    state.spatial[index] = value;
+    state.spatial[index] =
+      state.spectrum[(index - 2 + length) % length] * .06 +
+      state.spectrum[(index - 1 + length) % length] * .18 +
+      state.spectrum[index] * .52 +
+      state.spectrum[(index + 1) % length] * .18 +
+      state.spectrum[(index + 2) % length] * .06;
   }
+
   state.initialized = true;
   return state.spatial;
 }
@@ -167,52 +176,75 @@ function carrierY(progress) {
   return h00 * start[1] + h10 * span * startSlope + h01 * end[1] + h11 * span * endSlope;
 }
 
-function projectedProgress(progress, time) {
-  const focus = .5 + Math.sin(time * .115) * .075;
-  const k = 2.45 + Math.sin(time * .071 + .8) * .18;
+function projectedProgress(progress, time, state) {
+  // Source-like camera travel: a moving focus makes one region loom while another compresses.
+  // This is the big dynamic motion missing from Build 109, and it stays smooth because it is time-based.
+  const focus = clamp(
+    .5 + Math.sin(time * .29) * (.13 + state.carrier * .055) + Math.sin(time * .117 + 1.1) * .045,
+    .24,
+    .76
+  );
+  const k = 2.25 + Math.sin(time * .17 + .8) * .42 + state.carrier * .34;
   const normalized = progress - focus;
   const leftSpan = Math.max(.05, focus);
   const rightSpan = Math.max(.05, 1 - focus);
+
   if (normalized < 0) {
     const local = normalized / leftSpan;
     return focus * (1 + Math.sinh(k * local) / Math.sinh(k));
   }
+
   const local = normalized / rightSpan;
   return focus + rightSpan * Math.sinh(k * local) / Math.sinh(k);
 }
 
+function depthField(progress, time, state) {
+  const center = clamp(
+    .5 + Math.sin(time * .265 + .4) * (.31 + state.carrier * .045),
+    .12,
+    .88
+  );
+  const radius = .14 + state.carrier * .025;
+  const near = gaussian(progress, center, radius);
+  const shoulder = gaussian(progress, clamp(1 - center * .72, .08, .92), .24) * .28;
+  return clamp(near + shoulder);
+}
+
 function carrierPoint(width, height, progress, time, state) {
-  const xProgress = projectedProgress(progress, time);
+  const xProgress = projectedProgress(progress, time, state);
   const yProgress = carrierY(xProgress);
 
-  // Source water-wave exists, but it should read as a smooth surface wobble, not per-frame vibration.
-  const waveScale = 17 + state.wave * 7;
-  const waveStrength = width * (.0018 + state.wave * .0052);
-  const wave = Math.sin(yProgress * waveScale + time * .42) * waveStrength;
+  // Keep the water-wave present but restrained: it is a surface effect, not the main motion source.
+  const waveScale = 15 + state.wave * 6;
+  const waveStrength = width * (.0014 + state.wave * .0042);
+  const wave = Math.sin(yProgress * waveScale + time * .34) * waveStrength;
 
   let x = xProgress * width + wave;
   let y = yProgress * height;
 
-  // Macro carrier motion: slow orbit + audio-reactive breathing. The bass/mids move the carrier itself;
-  // highs/punch are intentionally kept out of geometry so the ribbon stays readable.
   const pivotX = width * .50;
   const pivotY = height * .80;
-  const breath = 1 + state.carrier * .055;
-  const slowScaleX = 1 + Math.sin(time * .083 + .5) * .055;
-  const slowScaleY = 1 + Math.cos(time * .097) * .07 + state.carrier * .035;
+
+  // Audio-reactive carrier breathing. Bass/mids affect the actual carrier, while punch stays mostly in light/length.
+  const breath = 1 + state.carrier * .09;
+  const slowScaleX = 1 + Math.sin(time * .19 + .5) * .085;
+  const slowScaleY = 1 + Math.cos(time * .165) * .105 + state.carrier * .05;
   let localX = (x - pivotX) * breath * slowScaleX;
   let localY = (y - pivotY) * breath * slowScaleY;
 
-  const roll = Math.sin(time * .105) * .13 + Math.sin(time * .047 + 1.4) * .055;
+  const roll = Math.sin(time * .205) * .16 + Math.sin(time * .083 + 1.4) * .06;
   const cos = Math.cos(roll);
   const sin = Math.sin(roll);
   const rotatedX = localX * cos - localY * sin;
   const rotatedY = localX * sin + localY * cos;
-  const driftX = Math.sin(time * .087 + .35) * width * .055;
-  const driftY = Math.cos(time * .073 + .9) * height * .042 - state.carrier * height * .018;
+
+  const driftDrive = .72 + state.carrier * .38;
+  const driftX = Math.sin(time * .18 + .35) * width * .078 * driftDrive;
+  const driftY = Math.cos(time * .145 + .9) * height * .058 * driftDrive - state.carrier * height * .024;
+  const carrierSwell = Math.sin(progress * TAU * .92 - time * .22) * height * .018 * state.carrier;
 
   x = pivotX + rotatedX + driftX;
-  y = pivotY + rotatedY + driftY;
+  y = pivotY + rotatedY + driftY + carrierSwell;
 
   return { x, y, xProgress, yProgress };
 }
@@ -257,30 +289,37 @@ function addSourceBars({
     const outer = carrierPoint(width, height, progress, time, state);
     const nextOuter = carrierPoint(width, height, nextProgress, time, state);
     const slot = Math.max(1, Math.hypot(nextOuter.x - outer.x, nextOuter.y - outer.y));
-    const perspectiveScale = clamp(slot / Math.max(1, averageSlot), .42, 2.05);
+    const slotPerspective = clamp(slot / Math.max(1, averageSlot), .42, 2.05);
+    const depth = depthField(progress, time, state);
+    const depthScale = lerp(.56, 1.68, depth);
+    const perspectiveScale = clamp(slotPerspective * depthScale, .34, 2.35);
 
     const spectrumProgress = ghost
       ? 1 - progress - spinCycles
       : progress + spinCycles;
     const raw = sampleRibbonEnergy(spectrum, spectrumProgress);
     const neighbour = sampleRibbonEnergy(spectrum, spectrumProgress + (ghost ? -1 / 64 : 1 / 64));
-    const localPeak = Math.max(0, raw - neighbour * .82);
-    const audio = Math.pow(clamp(raw * 1.20 + localPeak * .10), .82);
+    const localPeak = Math.max(0, raw - neighbour * .76);
+    const audio = Math.pow(clamp(raw * 1.27 + localPeak * .18), .79);
 
     const barBound = lerp(SOURCE_BAR_LOWER, SOURCE_BAR_UPPER, audio);
     const maskCut = 1 - SOURCE_MASK_RADIUS;
-    const idleFloor = ghost ? .0018 : lerp(.008, .013, clamp((perspectiveScale - .42) / 1.63));
+    const idleFloor = ghost
+      ? .0015
+      : lerp(.0065, .0125, clamp((perspectiveScale - .34) / 2.01));
     const visibleBand = ghost
-      ? Math.max(idleFloor, (barBound - SOURCE_BAR_LOWER) * .82)
+      ? Math.max(idleFloor, (barBound - SOURCE_BAR_LOWER) * .78)
       : Math.max(idleFloor, barBound - maskCut);
 
-    const sourceLengthScale = ghost ? .66 : .91;
+    // One smoothly travelling near region gets the big source-like expansion; distant zones compress instead of jittering.
+    const transientLift = 1 + state.punch * (.08 + depth * .22);
+    const sourceLengthScale = ghost ? .62 : .94;
     const barLength = Math.min(
-      height * (ghost ? .32 : .54),
-      height * visibleBand * perspectiveScale * sourceLengthScale
+      height * (ghost ? .34 : .62),
+      height * visibleBand * perspectiveScale * sourceLengthScale * transientLift
     );
 
-    // Bars follow the carrier normal. This keeps the implicit circle readable while it moves.
+    // Bars stay normal to the clean carrier shape.
     let tangentX = nextOuter.x - previousOuter.x;
     let tangentY = nextOuter.y - previousOuter.y;
     const tangentLength = Math.hypot(tangentX, tangentY) || 1;
@@ -295,22 +334,23 @@ function addSourceBars({
 
     const innerX = outer.x + dirX * barLength;
     const innerY = outer.y + dirY * barLength;
+    const widthDepth = lerp(.72, 1.28, depth);
     const lineWidth = clamp(
-      slot * (1 - SOURCE_BAR_SPACING) * (ghost ? .33 : .44),
-      ghost ? .9 : 1.35,
-      ghost ? 7 : 12.5
+      slot * (1 - SOURCE_BAR_SPACING) * (ghost ? .31 : .44) * widthDepth,
+      ghost ? .85 : 1.3,
+      ghost ? 7 : 13.2
     );
     const bucket = bucketForWidth(buckets, lineWidth);
     bucket.path.moveTo(outer.x, outer.y);
     bucket.path.lineTo(innerX, innerY);
     bucket.count += 1;
 
-    if (!ghost && audio > .018) {
+    if (!ghost && audio > .014) {
       const reflectionHeight = Math.min(
-        height * .62,
-        height * (.08 + audio * .26) * (.74 + perspectiveScale * .32)
+        height * .72,
+        height * (.075 + audio * .31) * (.68 + perspectiveScale * .38) * (1 + state.punch * .16)
       );
-      const rayX = outer.x - dirX * reflectionHeight * .10;
+      const rayX = outer.x - dirX * reflectionHeight * .11;
       const rayY = outer.y - dirY * reflectionHeight;
       rayPath.moveTo(outer.x, outer.y + Math.max(1.5, lineWidth * .34));
       rayPath.lineTo(rayX, rayY);
@@ -329,15 +369,15 @@ function drawSourceBuckets(context, buckets, gradient, ghost = false) {
     if (!bucket.count) continue;
     const width = bucket.width;
 
-    context.globalAlpha = ghost ? .010 : .055;
-    context.lineWidth = width * (ghost ? 2.0 : 2.5);
+    context.globalAlpha = ghost ? .010 : .06;
+    context.lineWidth = width * (ghost ? 2 : 2.55);
     context.stroke(bucket.path);
 
-    context.globalAlpha = ghost ? .042 : .22;
-    context.lineWidth = width * (ghost ? 1.30 : 1.48);
+    context.globalAlpha = ghost ? .04 : .235;
+    context.lineWidth = width * (ghost ? 1.28 : 1.50);
     context.stroke(bucket.path);
 
-    context.globalAlpha = ghost ? .082 : .96;
+    context.globalAlpha = ghost ? .075 : .97;
     context.lineWidth = width;
     context.stroke(bucket.path);
 
@@ -349,7 +389,7 @@ function drawSourceBuckets(context, buckets, gradient, ghost = false) {
       context.stroke(bucket.path);
       context.globalCompositeOperation = 'lighter';
       context.strokeStyle = gradient;
-      context.globalAlpha = .20;
+      context.globalAlpha = .22;
       context.lineWidth = Math.max(.7, width * .12);
       context.stroke(bucket.path);
     }
@@ -358,17 +398,20 @@ function drawSourceBuckets(context, buckets, gradient, ghost = false) {
   context.restore();
 }
 
-function drawSourceGodRays(context, rayPath, gradient, mobile, glowDrive) {
+function drawSourceGodRays(context, rayPath, gradient, mobile, glowDrive, punchDrive) {
   context.save();
   context.lineCap = 'round';
   context.strokeStyle = gradient;
   context.globalCompositeOperation = 'lighter';
-  const drive = .7 + glowDrive * .55;
-  context.globalAlpha = (mobile ? .010 : .019) * drive;
-  context.lineWidth = mobile ? 3 : 5;
+  const drive = .72 + glowDrive * .62 + punchDrive * .24;
+  context.globalAlpha = (mobile ? .011 : .022) * drive;
+  context.lineWidth = mobile ? 3 : 5.5;
   context.stroke(rayPath);
-  context.globalAlpha = (mobile ? .0045 : .009) * drive;
-  context.lineWidth = mobile ? 9 : 15;
+  context.globalAlpha = (mobile ? .005 : .011) * drive;
+  context.lineWidth = mobile ? 9 : 17;
+  context.stroke(rayPath);
+  context.globalAlpha = (mobile ? .002 : .0045) * drive;
+  context.lineWidth = mobile ? 20 : 32;
   context.stroke(rayPath);
   context.restore();
 }
@@ -390,14 +433,15 @@ export function drawNeonRibbonMode(context, width, height, data, accent, accent2
   const frameFactor = delta * 60;
   state.lastTime = time;
 
-  const carrierTarget = clamp(bass * .58 + mid * .30 + energy * .12);
-  const waveTarget = clamp(mid * .48 + high * .10 + energy * .18);
-  const glowTarget = clamp(energy * .42 + high * .26 + punch * .32);
+  const carrierTarget = clamp(bass * .60 + mid * .28 + energy * .12);
+  const waveTarget = clamp(mid * .42 + high * .08 + energy * .16);
+  const glowTarget = clamp(energy * .40 + high * .24 + punch * .38);
   const punchTarget = punch;
-  state.carrier += (carrierTarget - state.carrier) * frameBlend(carrierTarget > state.carrier ? .085 : .035, frameFactor);
-  state.wave += (waveTarget - state.wave) * frameBlend(waveTarget > state.wave ? .11 : .045, frameFactor);
-  state.glow += (glowTarget - state.glow) * frameBlend(glowTarget > state.glow ? .20 : .065, frameFactor);
-  state.punch += (punchTarget - state.punch) * frameBlend(punchTarget > state.punch ? .24 : .055, frameFactor);
+
+  state.carrier += (carrierTarget - state.carrier) * frameBlend(carrierTarget > state.carrier ? .145 : .052, frameFactor);
+  state.wave += (waveTarget - state.wave) * frameBlend(waveTarget > state.wave ? .12 : .05, frameFactor);
+  state.glow += (glowTarget - state.glow) * frameBlend(glowTarget > state.glow ? .28 : .085, frameFactor);
+  state.punch += (punchTarget - state.punch) * frameBlend(punchTarget > state.punch ? .34 : .085, frameFactor);
 
   // Legacy contract marker retained for older source guards:
   // const barCount = mobile ? 58 : compact ? 84 : 118
@@ -411,12 +455,12 @@ export function drawNeonRibbonMode(context, width, height, data, accent, accent2
   const spectrum = updateSmoothedSpectrum(state, rawSpectrum, frameFactor);
   const gradient = rainbowGradient(context, width, time);
   const ghostBuckets = createBuckets(mobile ? [1, 1.6, 2.3, 3.2, 4.5] : [1.1, 1.8, 2.7, 3.8, 5.2, 7]);
-  const primaryBuckets = createBuckets(mobile ? [1.5, 2.4, 3.5, 4.8, 6.5] : [1.7, 2.6, 3.8, 5.2, 7, 9.2, 12.5]);
+  const primaryBuckets = createBuckets(mobile ? [1.5, 2.4, 3.5, 4.8, 6.5] : [1.7, 2.6, 3.8, 5.2, 7, 9.2, 11.2, 13.2]);
   const rayPath = new Path2D();
 
-  // Slight persistence turns fast sample motion into the fluid source-like glide instead of frame-to-frame chatter.
+  // Less persistence than Build 109: keep fluidity without the soft/mushy after-image.
   context.save();
-  context.fillStyle = `rgba(3, 2, 10, ${mobile ? .24 : .21})`;
+  context.fillStyle = `rgba(3, 2, 10, ${mobile ? .30 : .285})`;
   context.fillRect(0, 0, width, height);
   context.restore();
 
@@ -444,7 +488,7 @@ export function drawNeonRibbonMode(context, width, height, data, accent, accent2
     rayPath
   });
 
-  drawSourceGodRays(context, rayPath, gradient, mobile, state.glow);
+  drawSourceGodRays(context, rayPath, gradient, mobile, state.glow, state.punch);
   drawSourceBuckets(context, ghostBuckets, gradient, true);
   drawSourceBuckets(context, primaryBuckets, gradient, false);
 
@@ -452,5 +496,4 @@ export function drawNeonRibbonMode(context, width, height, data, accent, accent2
   // const primaryWave = carrierPoint(width, height, .5, time, state)
   const reflectionHeight = height * .24;
   void reflectionHeight;
-  void state.punch;
 }
