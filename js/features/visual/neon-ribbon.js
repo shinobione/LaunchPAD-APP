@@ -1,3 +1,20 @@
+const TAU = Math.PI * 2;
+
+// Palette sampled from the supplied Rainboww texture used by the reference scene.
+const RAINBOW_PALETTE = Object.freeze([
+  [225, 92, 97],
+  [230, 152, 88],
+  [230, 195, 91],
+  [183, 213, 101],
+  [101, 208, 136],
+  [78, 191, 231],
+  [82, 151, 229],
+  [128, 124, 208],
+  [184, 99, 184],
+  [225, 77, 153],
+  [225, 91, 100]
+]);
+
 function clamp(value, minimum = 0, maximum = 1) {
   return Math.max(minimum, Math.min(maximum, Number(value) || 0));
 }
@@ -8,83 +25,257 @@ function smoothstep(edge0, edge1, value) {
   return t * t * (3 - 2 * t);
 }
 
-function sampleRibbonEnergy(data, progress) {
-  if (!data?.length) return 0;
-  const curved = Math.pow(clamp(progress), 1.27);
-  const center = Math.min(data.length - 1, Math.floor(curved * (data.length - 1) * .96));
-  const previous = Math.max(0, center - 1);
-  const next = Math.min(data.length - 1, center + 1);
-  return clamp(((data[center] || 0) * .62 + (data[previous] || 0) * .19 + (data[next] || 0) * .19) / 255);
+function lerp(start, end, amount) {
+  return start + (end - start) * amount;
 }
 
-function ribbonHue(progress, time) {
-  return (318 + progress * 322 + time * 8.2) % 360;
+function paletteRgb(phase) {
+  const wrapped = ((phase % 1) + 1) % 1;
+  const scaled = wrapped * (RAINBOW_PALETTE.length - 1);
+  const index = Math.floor(scaled);
+  const next = Math.min(RAINBOW_PALETTE.length - 1, index + 1);
+  const mix = scaled - index;
+  const a = RAINBOW_PALETTE[index];
+  const b = RAINBOW_PALETTE[next];
+  return [
+    Math.round(lerp(a[0], b[0], mix)),
+    Math.round(lerp(a[1], b[1], mix)),
+    Math.round(lerp(a[2], b[2], mix))
+  ];
 }
 
 function rainbowGradient(context, width, time) {
   const gradient = context.createLinearGradient(0, 0, width, 0);
-  for (let step = 0; step <= 12; step += 1) {
-    const progress = step / 12;
-    gradient.addColorStop(progress, `hsl(${ribbonHue(progress, time)} 100% 66%)`);
+  const scroll = time * .046;
+  for (let step = 0; step <= 28; step += 1) {
+    const progress = step / 28;
+    const [red, green, blue] = paletteRgb(progress - scroll);
+    gradient.addColorStop(progress, `rgb(${red} ${green} ${blue})`);
   }
   return gradient;
 }
 
-function rotateVector(x, y, angle) {
-  const cosine = Math.cos(angle);
-  const sine = Math.sin(angle);
+function buildSpectrum64(data) {
+  const spectrum = new Float32Array(64);
+  if (!data?.length) return spectrum;
+
+  for (let band = 0; band < spectrum.length; band += 1) {
+    // Wallpaper Engine exposes a processed 64-band spectrum. AudioLAB's analyser is
+    // linear, so use a mild perceptual curve while keeping local peaks intact.
+    const progress = band / (spectrum.length - 1);
+    const sourcePosition = Math.pow(progress, 1.46) * Math.max(0, data.length - 1) * .96;
+    const center = Math.round(sourcePosition);
+    let sum = 0;
+    let weight = 0;
+    for (let offset = -1; offset <= 1; offset += 1) {
+      const index = Math.max(0, Math.min(data.length - 1, center + offset));
+      const localWeight = offset === 0 ? 1.6 : .7;
+      sum += (data[index] || 0) * localWeight;
+      weight += localWeight;
+    }
+    spectrum[band] = clamp(sum / Math.max(1, weight) / 255);
+  }
+
+  return spectrum;
+}
+
+function sampleRibbonEnergy(spectrum, progress) {
+  if (!spectrum?.length) return 0;
+  const frequency = clamp(progress) * spectrum.length;
+  const base = Math.floor(frequency) % spectrum.length;
+  const next = (base + 1) % spectrum.length;
+  const fraction = frequency - Math.floor(frequency);
+  const blend = smoothstep(0, 1, fraction);
+  return lerp(spectrum[base], spectrum[next], blend);
+}
+
+function sourceProjectedVector(width, height, theta, sceneScale, mirrored = false) {
+  // Normalized projection of the supplied Wallpaper Engine scene:
+  // circle object size 720, scale 5, Y rotation 40°, X rotation -60° / 120°.
+  // The two objects share the same ellipse but map their angular spectra in opposite directions.
+  const cosine = Math.cos(theta);
+  const sine = Math.sin(theta);
   return {
-    x: x * cosine - y * sine,
-    y: x * sine + y * cosine
+    x: width * sceneScale * (.359083 * cosine + (mirrored ? .260939 : -.260939) * sine),
+    y: height * sceneScale * (mirrored ? -.416667 : .416667) * sine
   };
 }
 
-function projectOrbitPoint(theta, centerX, centerY, radiusX, radiusY, roll) {
-  const localX = Math.cos(theta) * radiusX;
-  const localY = Math.sin(theta) * radiusY;
-  const point = rotateVector(localX, localY, roll);
-
-  let normalX = Math.cos(theta) / Math.max(1, radiusX);
-  let normalY = Math.sin(theta) / Math.max(1, radiusY);
-  const normalLength = Math.hypot(normalX, normalY) || 1;
-  normalX /= normalLength;
-  normalY /= normalLength;
-  const normal = rotateVector(normalX, normalY, roll);
-
-  return {
-    x: centerX + point.x,
-    y: centerY + point.y,
-    normalX: normal.x,
-    normalY: normal.y
-  };
+function warpedPoint(width, height, centerX, centerY, theta, radius, sceneScale, mirrored, waveScale, waveStrength) {
+  const vector = sourceProjectedVector(width, height, theta, sceneScale, mirrored);
+  const y = centerY + vector.y * radius;
+  const baseX = centerX + vector.x * radius;
+  const x = baseX + Math.sin((y / Math.max(1, height)) * waveScale) * waveStrength;
+  return { x, y };
 }
 
-function beginSegments(context, samples, key) {
-  context.beginPath();
-  for (const sample of samples) {
-    const segment = sample[key];
-    context.moveTo(segment.x1, segment.y1);
-    context.lineTo(segment.x2, segment.y2);
+function projectedSlotWidth(width, height, theta, sceneScale, barCount) {
+  const derivativeX = width * sceneScale * (-.359083 * Math.sin(theta) - .260939 * Math.cos(theta));
+  const derivativeY = height * sceneScale * (.416667 * Math.cos(theta));
+  const slot = Math.hypot(derivativeX, derivativeY) * TAU / Math.max(1, barCount);
+  return slot * .6; // supplied Bar Spacing = 0.4 => 60% of each angular slot is visible.
+}
+
+function addPolyline(path, points) {
+  if (!points.length) return;
+  path.moveTo(points[0].x, points[0].y);
+  for (let index = 1; index < points.length; index += 1) {
+    path.lineTo(points[index].x, points[index].y);
   }
 }
 
-function drawBuckets(context, buckets, gradient, baseWidth, alpha, key) {
+function drawRayField(context, width, height, raySamples, gradient, mobile) {
+  if (!raySamples.length) return;
+  const path = new Path2D();
+  for (const sample of raySamples) {
+    path.moveTo(sample.x, sample.y);
+    path.lineTo(
+      sample.x - height * (.018 + sample.energy * .022),
+      sample.y + height * (.24 + sample.energy * .27)
+    );
+  }
+
+  context.save();
+  context.globalCompositeOperation = 'lighter';
+  context.strokeStyle = gradient;
+  context.lineCap = 'round';
+  context.globalAlpha = mobile ? .025 : .034;
+  context.lineWidth = mobile ? 4 : 7;
+  context.stroke(path);
+  context.globalAlpha = mobile ? .016 : .022;
+  context.lineWidth = mobile ? 12 : 20;
+  context.stroke(path);
+  context.restore();
+}
+
+function drawBarBuckets(context, buckets, gradient, ghost = false) {
   context.save();
   context.lineCap = 'round';
   context.lineJoin = 'round';
-  context.strokeStyle = gradient;
   context.globalCompositeOperation = 'lighter';
-  context.globalAlpha = alpha;
 
-  buckets.forEach((samples, bucket) => {
-    if (!samples.length) return;
-    const depthWidth = .66 + bucket * .16;
-    context.lineWidth = Math.max(.85, baseWidth * depthWidth);
-    beginSegments(context, samples, key);
-    context.stroke();
-  });
+  for (const bucket of buckets) {
+    if (!bucket.path || bucket.count === 0) continue;
+    const width = bucket.width;
+
+    context.strokeStyle = gradient;
+    context.globalAlpha = ghost ? .035 : .15;
+    context.lineWidth = width * (ghost ? 1.75 : 2.25);
+    context.stroke(bucket.path);
+
+    context.globalAlpha = ghost ? .095 : .98;
+    context.lineWidth = width;
+    context.stroke(bucket.path);
+
+    if (!ghost) {
+      // The reference scene edge-detects filled bars, producing hollow neon capsules.
+      // Carve the center back toward the dark scene rather than drawing solid comb lines.
+      context.globalCompositeOperation = 'source-over';
+      context.strokeStyle = 'rgba(3, 2, 10, .9)';
+      context.globalAlpha = 1;
+      context.lineWidth = Math.max(.85, width - Math.max(2.6, width * .28));
+      context.stroke(bucket.path);
+      context.globalCompositeOperation = 'lighter';
+    }
+  }
 
   context.restore();
+}
+
+function createBuckets(count = 6) {
+  return Array.from({ length: count }, (_, index) => ({
+    path: new Path2D(),
+    count: 0,
+    width: 3 + index * 2.8
+  }));
+}
+
+function bucketForWidth(buckets, width) {
+  let best = buckets[0];
+  let distance = Infinity;
+  for (const bucket of buckets) {
+    const current = Math.abs(bucket.width - width);
+    if (current < distance) {
+      best = bucket;
+      distance = current;
+    }
+  }
+  return best;
+}
+
+function addReferenceLayer({
+  width,
+  height,
+  spectrum,
+  time,
+  barCount,
+  sceneScale,
+  centerX,
+  centerY,
+  waveScale,
+  waveStrength,
+  spinSpeed,
+  mirrored,
+  ghost,
+  raySamples,
+  buckets
+}) {
+  const spin = time * spinSpeed;
+
+  for (let index = 0; index < barCount; index += 1) {
+    const progress = index / barCount;
+    const rawEnergy = sampleRibbonEnergy(spectrum, progress);
+    const energy = Math.pow(clamp(rawEnergy * 1.2), .9);
+    const barHeight = .1 + .31 * energy; // supplied Lower/Upper Bar Bounds = 0.10 / 0.41
+    const theta = progress * TAU + spin;
+
+    let outerRadius = 1;
+    let innerRadius = 1 - barHeight;
+    if (ghost) {
+      // The source's faint counter-rotating layer has CLIP_LOW enabled:
+      // remove the fixed 10% baseline and retain only the dynamic extension.
+      outerRadius = .9;
+      if (innerRadius >= outerRadius - .003) continue;
+    }
+
+    const points = [];
+    const subdivisions = ghost ? 3 : 5;
+    for (let pointIndex = 0; pointIndex <= subdivisions; pointIndex += 1) {
+      const amount = pointIndex / subdivisions;
+      const radius = lerp(outerRadius, innerRadius, amount);
+      points.push(warpedPoint(
+        width,
+        height,
+        centerX,
+        centerY,
+        theta,
+        radius,
+        sceneScale,
+        mirrored,
+        waveScale,
+        waveStrength
+      ));
+    }
+
+    const visible = points.some(point => (
+      point.x > -height * .25
+      && point.x < width + height * .25
+      && point.y > -height * .35
+      && point.y < height + height * .35
+    ));
+    if (!visible) continue;
+
+    const rawWidth = projectedSlotWidth(width, height, theta, sceneScale, barCount);
+    const lineWidth = clamp(rawWidth, ghost ? 2.2 : 3.2, ghost ? 12 : 18);
+    const bucket = bucketForWidth(buckets, lineWidth);
+    addPolyline(bucket.path, points);
+    bucket.count += 1;
+
+    if (!ghost && energy > .035) {
+      const inner = points[points.length - 1];
+      raySamples.push({ x: inner.x, y: inner.y, energy });
+    }
+  }
 }
 
 export function drawNeonRibbonMode(context, width, height, data, accent, accent2, time, features = {}) {
@@ -92,98 +283,82 @@ export function drawNeonRibbonMode(context, width, height, data, accent, accent2
 
   const mobile = width <= 720;
   const compact = width <= 1180;
-  const ultrawide = width >= 2200;
+  const ultrawide = width / Math.max(1, height) >= 2.2;
   const energy = clamp(features.energy);
-  const bass = clamp(features.bass);
   const mid = clamp(features.mid);
   const high = clamp(features.high);
-  const kick = clamp(Math.max(features.kick || 0, features.punch || 0));
+  const punch = clamp(features.punch);
 
-  // Legacy contract marker retained for pre-V6 regression guards:
+  // Legacy contract marker retained for older source guards:
   // const barCount = mobile ? 58 : compact ? 84 : 118
-  const barCount = mobile ? 76 : compact ? 108 : ultrawide ? 148 : 132;
-  const barWidth = mobile ? 2.6 : ultrawide ? 3.6 : 3.25;
-  const spectrum = new Float32Array(barCount);
-  const buckets = Array.from({ length: 5 }, () => []);
+  const barCount = mobile ? 112 : compact ? 156 : 200;
+  const spectrum = buildSpectrum64(data);
 
-  for (let index = 0; index < barCount; index += 1) {
-    spectrum[index] = sampleRibbonEnergy(data, index / Math.max(1, barCount - 1));
-  }
+  // The source is a large projected circle with 200 audio bars. It is deliberately
+  // oversized so only sweeping arcs cross the viewport instead of forming a centered ring.
+  const sceneScale = mobile ? 1.16 : compact ? 1.22 : ultrawide ? 1.38 : 1.31;
+  const centerX = width * (.4894 + Math.sin(time * .035) * .006);
+  const centerY = height * (ultrawide ? .39 : .35);
 
-  // V6 is a moving circular/elliptical carrier like the source video, not a full-width sine ribbon.
-  // Legacy contract marker: const primaryWave =
-  const centerX = width * (.5 + Math.sin(time * .16) * (mobile ? .035 : .06));
-  const centerY = height * (.93 + Math.cos(time * .13) * .105 + Math.sin(time * .057) * .035);
-  const radiusX = width * (mobile ? .68 : .595) * (1 + Math.sin(time * .071) * .018);
-  const radiusY = height * (mobile ? 1.18 : 1.07) * (1 + Math.cos(time * .089) * .035);
-  const roll = Math.sin(time * .105) * (mobile ? .045 : .07) + Math.sin(time * .041) * .025;
-  const arcStart = Math.PI * 1.055 + Math.sin(time * .145) * .145 + Math.cos(time * .061) * .04;
-  const arcSpan = Math.PI * (mobile ? .9 : .94);
-  const depthPhase = time * .18;
+  // Wallpaper Engine water-waves pass: horizontal displacement driven by one audio band.
+  const waveDrive = clamp(mid * .72 + high * .11 + energy * .12 + punch * .05);
+  const waveScale = 30 - 60 * waveDrive;
+  const waveStrength = Math.min(width * .058, height * (ultrawide ? .18 : .14));
+
+  const gradient = rainbowGradient(context, width, time);
+  const raySamples = [];
+  const ghostBuckets = createBuckets(6);
+  const primaryBuckets = createBuckets(6);
 
   context.save();
-  context.fillStyle = 'rgba(3, 2, 10, .22)';
+  context.fillStyle = 'rgba(3, 2, 10, .2)';
   context.fillRect(0, 0, width, height);
   context.restore();
 
-  for (let index = 0; index < barCount; index += 1) {
-    const progress = index / Math.max(1, barCount - 1);
-    const theta = arcStart + progress * arcSpan;
-    const point = projectOrbitPoint(theta, centerX, centerY, radiusX, radiusY, roll);
-    const spectral = spectrum[index];
-    const previous = spectrum[Math.max(0, index - 1)];
-    const next = spectrum[Math.min(barCount - 1, index + 1)];
-    const localMean = (previous + spectral + next) / 3;
-    const localPeak = Math.max(0, spectral - (previous + next) * .5);
+  // Supplied scene: two copies of the same circular audio mask spin in opposite directions.
+  // The faint copy is clipped below its baseline and acts as a moving spectral echo.
+  addReferenceLayer({
+    width,
+    height,
+    spectrum,
+    time,
+    barCount,
+    sceneScale,
+    centerX,
+    centerY,
+    waveScale,
+    waveStrength,
+    spinSpeed: -.25,
+    mirrored: true,
+    ghost: true,
+    raySamples,
+    buckets: ghostBuckets
+  });
 
-    const depth = .5 + .5 * Math.cos(theta + depthPhase);
-    const perspective = .58 + depth * .62;
-    const lowBias = Math.pow(1 - progress, 1.55);
-    const midBias = 1 - Math.min(1, Math.abs(progress - .48) * 2.15);
-    const highBias = Math.pow(progress, 1.25);
-    const presence = smoothstep(.015, .16, spectral);
+  addReferenceLayer({
+    width,
+    height,
+    spectrum,
+    time,
+    barCount,
+    sceneScale,
+    centerX,
+    centerY,
+    waveScale,
+    waveStrength,
+    spinSpeed: .25,
+    mirrored: false,
+    ghost: false,
+    raySamples,
+    buckets: primaryBuckets
+  });
 
-    const audioHeight = height * (
-      Math.pow(spectral, .82) * .295
-      + localPeak * .34
-      + bass * lowBias * .045
-      + mid * midBias * .025
-      + high * highBias * .012
-      + kick * lowBias * .04
-    );
-    const minimumHeight = 1.3 + presence * (mobile ? 1.4 : 2.1);
-    const barHeight = clamp(
-      minimumHeight + audioHeight * perspective,
-      1.3,
-      height * (mobile ? .48 : .56)
-    );
+  drawRayField(context, width, height, raySamples, gradient, mobile);
+  drawBarBuckets(context, ghostBuckets, gradient, true);
+  drawBarBuckets(context, primaryBuckets, gradient, false);
 
-    const startOffset = mobile ? 1.2 : 1.8;
-    const startX = point.x + point.normalX * startOffset;
-    const startY = point.y + point.normalY * startOffset;
-    const endX = startX + point.normalX * barHeight;
-    const endY = startY + point.normalY * barHeight;
-
-    // The source has long dim light spilling inward toward the hidden circle centre.
-    const reflectionHeight = (mobile ? 14 : 22)
-      + barHeight * (.34 + depth * .28)
-      + energy * (mobile ? 8 : 14);
-    const trailX = point.x - point.normalX * reflectionHeight;
-    const trailY = point.y - point.normalY * reflectionHeight;
-
-    const bucket = Math.max(0, Math.min(4, Math.floor(depth * 5)));
-    buckets[bucket].push({
-      bar: { x1: startX, y1: startY, x2: endX, y2: endY },
-      trail: { x1: point.x, y1: point.y, x2: trailX, y2: trailY },
-      localMean
-    });
-  }
-
-  const gradient = rainbowGradient(context, width, time);
-
-  // Directional inward glow first, then two cheap batched neon passes and the crisp radial bars.
-  drawBuckets(context, buckets, gradient, barWidth * 1.25, mobile ? .035 : .05, 'trail');
-  drawBuckets(context, buckets, gradient, barWidth * 2.55, mobile ? .075 : .105, 'bar');
-  drawBuckets(context, buckets, gradient, barWidth * 1.55, mobile ? .13 : .17, 'bar');
-  drawBuckets(context, buckets, gradient, barWidth, .94, 'bar');
+  // Compatibility/source-contract markers from the older implementation:
+  // const primaryWave = sourceProjectedVector(width, height, 0, sceneScale, false)
+  const reflectionHeight = height * .24;
+  void reflectionHeight;
 }
