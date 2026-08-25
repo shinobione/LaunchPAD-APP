@@ -62,192 +62,190 @@ function ellipsePoint(cx, cy, rx, ry, angle, rotation) {
   };
 }
 
+function drawEllipseArc(context, cx, cy, rx, ry, rotation, start, end, color, width, alpha, blur = 0) {
+  context.beginPath();
+  context.ellipse(cx, cy, rx, ry, rotation, start, end);
+  context.strokeStyle = rgba(color, alpha);
+  context.lineWidth = width;
+  context.shadowColor = color;
+  context.shadowBlur = blur;
+  context.stroke();
+}
+
 /**
- * Halo Vector — Build 115.
+ * Halo Vector — Build 116 architectural pass.
  *
- * A restrained, editorial halo system: slow orbital motion provides the base
- * choreography, while bass pressure changes scale, mids open the segmented
- * architecture, and highs travel through the rings as fine signal relays.
- * Nothing flashes and no local random jitter is used; every motion is spring-
- * smoothed and derived from the shared Audio Lab FFT/features.
+ * Full-frame, asymmetric orbital architecture. The visual deliberately avoids
+ * the tiny concentric loading-spinner look from Build 115: three large rails,
+ * long controlled arc spans, moving relay highlights and sparse vector bridges
+ * fill the stage while retaining a restrained premium motion language.
  */
 export function drawHaloVectorMode(context, width, height, data, accent, accent2, time, features = {}) {
   const mobile = mobileVisualDevice(width);
   const minSide = Math.min(width, height);
-  const cx = width * .5;
-  const cy = height * .5;
-
   const rawBass = average(data, 0, data.length * .2);
   const rawMid = average(data, data.length * .2, data.length * .64);
   const rawHigh = average(data, data.length * .64, data.length);
   const rawEnergy = average(data, 0, data.length);
 
-  const bass = shapeAudioDrive(rawBass, feature(features, 'bass'), { rawGain: 1.34, featureWeight: .34, exponent: .72 });
-  const mid = shapeAudioDrive(rawMid, feature(features, 'mid'), { rawGain: 1.3, featureWeight: .34, exponent: .74 });
-  const high = shapeAudioDrive(rawHigh, feature(features, 'high'), { rawGain: 1.42, featureWeight: .3, exponent: .7 });
-  const energy = shapeAudioDrive(rawEnergy, feature(features, 'energy'), { rawGain: 1.32, featureWeight: .32, exponent: .72 });
+  const bass = shapeAudioDrive(rawBass, feature(features, 'bass'), { rawGain: 1.48, featureWeight: .32, exponent: .68 });
+  const mid = shapeAudioDrive(rawMid, feature(features, 'mid'), { rawGain: 1.42, featureWeight: .34, exponent: .7 });
+  const high = shapeAudioDrive(rawHigh, feature(features, 'high'), { rawGain: 1.54, featureWeight: .3, exponent: .66 });
+  const energy = shapeAudioDrive(rawEnergy, feature(features, 'energy'), { rawGain: 1.42, featureWeight: .32, exponent: .68 });
   const kick = feature(features, 'kick');
   const peak = feature(features, 'peak');
   const dynamics = feature(features, 'dynamics');
+  const punch = feature(features, 'punch');
 
-  const pressureTarget = clamp(bass * .58 + kick * .5 + energy * .12);
-  const apertureTarget = clamp(mid * .58 + dynamics * .23 + high * .08 + energy * .14);
-  const detailTarget = clamp(high * .62 + peak * .22 + dynamics * .16 + mid * .08);
-  const flowTarget = clamp(energy * .48 + mid * .28 + high * .16 + bass * .1);
+  const pressureTarget = clamp(bass * .5 + kick * .58 + punch * .34 + energy * .14);
+  const apertureTarget = clamp(mid * .55 + dynamics * .24 + high * .11 + energy * .12);
+  const detailTarget = clamp(high * .58 + peak * .22 + dynamics * .2 + mid * .09);
+  const flowTarget = clamp(energy * .45 + mid * .28 + high * .16 + bass * .13);
 
   const motion = beginMotionFrame(context, time);
-  const pressureSpring = springChannel(motion, 'halo-pressure', pressureTarget, { stiffness: 35, damping: 8.4, maximum: 1.08 });
-  const apertureSpring = springChannel(motion, 'halo-aperture', apertureTarget, { stiffness: 27, damping: 8.8, maximum: 1.04 });
-  const detailSpring = springChannel(motion, 'halo-detail', detailTarget, { stiffness: 39, damping: 9.2, maximum: 1.08 });
-  const flowSpring = springChannel(motion, 'halo-flow-drive', flowTarget, { stiffness: 22, damping: 8.6, maximum: 1.02 });
+  const pressureSpring = springChannel(motion, 'halo-pressure', pressureTarget, { stiffness: 46, damping: 8.4, maximum: 1.18 });
+  const apertureSpring = springChannel(motion, 'halo-aperture', apertureTarget, { stiffness: 34, damping: 8.9, maximum: 1.12 });
+  const detailSpring = springChannel(motion, 'halo-detail', detailTarget, { stiffness: 43, damping: 9.1, maximum: 1.12 });
+  const flowSpring = springChannel(motion, 'halo-flow-drive', flowTarget, { stiffness: 25, damping: 8.4, maximum: 1.08 });
 
-  const pressure = clamp(pressureSpring.value + pressureSpring.velocity * .008, 0, 1.06);
-  const aperture = clamp(apertureSpring.value + apertureSpring.velocity * .004, 0, 1.02);
-  const detail = clamp(detailSpring.value + detailSpring.velocity * .003, 0, 1.06);
-  const flowDrive = clamp(flowSpring.value, 0, 1);
+  const pressure = clamp(pressureSpring.value + pressureSpring.velocity * .01, 0, 1.14);
+  const aperture = clamp(apertureSpring.value + apertureSpring.velocity * .006, 0, 1.08);
+  const detail = clamp(detailSpring.value + detailSpring.velocity * .004, 0, 1.08);
+  const flowDrive = clamp(flowSpring.value, 0, 1.04);
   const flow = advanceMotionPhase(motion, 'halo-vector-flow', flowDrive, {
-    baseSpeed: .22,
-    dynamicSpeed: .82,
-    response: 3.6,
-    release: 7.8
+    baseSpeed: .34,
+    dynamicSpeed: 1.12,
+    response: 4.4,
+    release: 7.6
   });
   const phase = flow.phase;
 
-  const primary = mixColor(accent, '#dbe9ff', .44);
-  const secondary = mixColor(accent2, '#b9f3ff', .36);
-  const neutral = '#e7eef8';
-  const deep = mixColor(accent, '#05030b', .78);
+  const primary = mixColor(accent, '#f5f7ff', .18);
+  const secondary = mixColor(accent2, '#dff7ff', .12);
+  const neutral = '#f4f7fb';
+  const shadow = mixColor(accent, '#05030b', .72);
 
-  const baseRadius = minSide * (mobile ? .265 : .29);
-  const pressureScale = 1 + pressure * (mobile ? .09 : .115);
-  const driftRadius = baseRadius * (.012 + flowDrive * .024);
-  const driftX = Math.sin(phase * .46) * driftRadius;
-  const driftY = Math.cos(phase * .37 + .8) * driftRadius * .58;
-  const globalTilt = Math.sin(phase * .23) * .055 + Math.sin(phase * .11 + 1.1) * .025;
-  const ellipseRatio = .67 + aperture * .035 + Math.sin(phase * .31) * .012;
+  const cx = width * (.515 + Math.sin(phase * .17) * .012 * (0.35 + flowDrive));
+  const cy = height * (.515 + Math.cos(phase * .13 + .7) * .018 * (0.35 + flowDrive));
+  const baseRx = Math.min(width * (mobile ? .42 : .36), minSide * (mobile ? .72 : .96));
+  const baseRy = minSide * (mobile ? .24 : .285);
+  const pressureScale = 1 + pressure * (mobile ? .095 : .14);
+  const globalTilt = -.055 + Math.sin(phase * .23) * .045 + mid * .025;
+  const depthShear = Math.sin(phase * .19 + .8) * .028 * (.45 + flowDrive);
 
-  const auraRadius = baseRadius * (1.65 + pressure * .28);
-  const aura = context.createRadialGradient(cx + driftX, cy + driftY, 0, cx + driftX, cy + driftY, auraRadius);
-  aura.addColorStop(0, rgba(primary, .026 + pressure * .045));
-  aura.addColorStop(.34, rgba(secondary, .018 + aperture * .026));
-  aura.addColorStop(.7, rgba(deep, .018 + detail * .012));
-  aura.addColorStop(1, 'rgba(0,0,0,0)');
-  context.fillStyle = aura;
+  const atmosphere = context.createRadialGradient(cx, cy, 0, cx, cy, baseRx * 1.35);
+  atmosphere.addColorStop(0, rgba(primary, .035 + pressure * .045));
+  atmosphere.addColorStop(.38, rgba(secondary, .022 + aperture * .035));
+  atmosphere.addColorStop(.72, rgba(shadow, .015 + detail * .016));
+  atmosphere.addColorStop(1, 'rgba(0,0,0,0)');
+  context.fillStyle = atmosphere;
   context.fillRect(0, 0, width, height);
 
-  const ringCount = mobile ? 4 : 6;
-  const segmentCount = mobile ? 18 : 30;
-  const pulseCount = mobile ? 3 : 5;
-  const maxShadow = mobile ? 5 : 9;
+  const railCount = mobile ? 3 : 4;
+  const bridgeCount = mobile ? 7 : 11;
+  const relayCount = mobile ? 4 : 7;
+  const maxShadow = mobile ? 5 : 8;
 
   context.save();
   context.globalCompositeOperation = 'lighter';
 
-  for (let ring = 0; ring < ringCount; ring += 1) {
-    const ringProgress = ring / Math.max(1, ringCount - 1);
-    const direction = ring % 2 === 0 ? 1 : -1;
-    const ringPhase = direction * phase * (.23 + ringProgress * .11) + ring * .58;
-    const ringPressure = 1 + pressure * (.035 + ringProgress * .03);
-    const rx = baseRadius * (.5 + ringProgress * .66) * pressureScale * ringPressure;
-    const ry = rx * (ellipseRatio + ringProgress * .018);
-    const ringRotation = globalTilt + Math.sin(phase * .17 + ring * .9) * (.012 + ringProgress * .008);
+  for (let rail = 0; rail < railCount; rail += 1) {
+    const rp = rail / Math.max(1, railCount - 1);
+    const direction = rail % 2 === 0 ? 1 : -1;
+    const scale = .58 + rp * .48;
+    const rx = baseRx * scale * pressureScale * (1 + pressure * rp * .035);
+    const ry = baseRy * (scale * .88 + .14) * (1 + aperture * (.035 + rp * .02));
+    const rotation = globalTilt + depthShear * (rp - .45) + Math.sin(phase * .21 + rail * .8) * (.012 + rp * .008);
+    const orbit = direction * phase * (.2 + rp * .06) + rail * .72;
+    const segmentCount = mobile ? 5 : 6;
     const segmentArc = TAU / segmentCount;
 
     for (let segment = 0; segment < segmentCount; segment += 1) {
       const progress = (segment + .5) / segmentCount;
-      const spectral = Math.pow(sampleAt(data, progress * .91 + ringProgress * .07), .84);
-      const localDrive = clamp(spectral * .64 + aperture * .22 + detail * .16 + pressure * .08);
-      const gate = .18 + ringProgress * .04;
-      const alive = clamp((localDrive - gate) / Math.max(.001, 1 - gate));
-      const opening = segmentArc * (.14 + (1 - alive) * .1 + aperture * .04);
-      const angularDrift = Math.sin(phase * .41 + segment * .37 + ring * .8) * .007 * aperture;
-      const start = segment * segmentArc + opening + ringPhase + angularDrift;
-      const span = segmentArc * (.66 + alive * .16) - opening * .36;
-      const end = start + Math.max(segmentArc * .16, span);
-      const stroke = (segment + ring * 2) % 7 === 0 ? secondary : primary;
-      const alpha = .055 + alive * .29 + ringProgress * .035 + detail * .025;
-
-      context.beginPath();
-      context.ellipse(cx + driftX, cy + driftY, rx, ry, ringRotation, start, end);
-      context.strokeStyle = rgba(stroke, alpha);
-      context.lineWidth = .55 + alive * 1.25 + pressure * .25;
-      context.shadowColor = stroke;
-      context.shadowBlur = Math.min(maxShadow, alive * maxShadow * .58 + detail * 1.4);
-      context.stroke();
-
-      if (detail > .08 && segment % (mobile ? 5 : 4) === ring % (mobile ? 5 : 4)) {
-        const tickDrive = clamp(high * .56 + spectral * .52 + detail * .18 - .16);
-        if (tickDrive > .025) {
-          const angle = (start + end) * .5;
-          const inner = ellipsePoint(cx + driftX, cy + driftY, rx, ry, angle, ringRotation);
-          const tickLength = minSide * (.006 + tickDrive * .017);
-          const outer = ellipsePoint(
-            cx + driftX,
-            cy + driftY,
-            rx + tickLength,
-            ry + tickLength * ellipseRatio,
-            angle,
-            ringRotation
-          );
-          context.shadowBlur = 0;
-          context.beginPath();
-          context.moveTo(inner.x, inner.y);
-          context.lineTo(outer.x, outer.y);
-          context.strokeStyle = rgba(neutral, .035 + tickDrive * .23);
-          context.lineWidth = .45 + tickDrive * .65;
-          context.stroke();
-        }
-      }
+      const spectral = Math.pow(sampleAt(data, progress * .9 + rp * .09), .72);
+      const drive = clamp(spectral * .58 + aperture * .2 + detail * .15 + pressure * .1);
+      const gap = segmentArc * (.18 + (1 - drive) * .07 + aperture * .025);
+      const drift = Math.sin(phase * .43 + segment * .91 + rail * .68) * .025 * (.25 + aperture);
+      const start = orbit + segment * segmentArc + gap + drift;
+      const span = segmentArc * (.7 + drive * .17) - gap * .2;
+      const end = start + Math.max(segmentArc * .34, span);
+      const stroke = (segment + rail) % 4 === 0 ? secondary : primary;
+      const alpha = .11 + drive * .34 + rp * .055;
+      const line = .9 + drive * 1.35 + pressure * .34 + rp * .16;
+      drawEllipseArc(context, cx, cy, rx, ry, rotation, start, end, stroke, line, alpha,
+        Math.min(maxShadow, 1.2 + drive * maxShadow * .52));
     }
+
+    // One longer architectural blade per rail gives the composition hierarchy
+    // instead of reading as a stack of equal dotted rings.
+    const bladeDrive = clamp(pressure * .34 + detail * .3 + sampleAt(data, .16 + rp * .63) * .58);
+    const bladeCenter = orbit + phase * (.08 + rp * .035) + rp * 1.25;
+    const bladeSpan = .42 + bladeDrive * .48;
+    drawEllipseArc(
+      context, cx, cy, rx * (1 + rp * .012), ry * (1 + rp * .01), rotation,
+      bladeCenter - bladeSpan, bladeCenter + bladeSpan,
+      rail % 2 ? secondary : neutral,
+      1.15 + bladeDrive * 2.1,
+      .16 + bladeDrive * .44,
+      Math.min(maxShadow, 2 + bladeDrive * maxShadow * .72)
+    );
   }
 
   context.shadowBlur = 0;
 
-  for (let pulse = 0; pulse < pulseCount; pulse += 1) {
-    const pulseProgress = pulse / pulseCount;
-    const ringProgress = (pulse + 1) / (pulseCount + 1);
-    const rx = baseRadius * (.58 + ringProgress * .62) * pressureScale;
-    const ry = rx * (ellipseRatio + ringProgress * .014);
-    const rotation = globalTilt + Math.sin(phase * .19 + pulse) * .014;
-    const spectral = Math.pow(sampleAt(data, .42 + pulseProgress * .52), .76);
-    const relayDrive = clamp(detail * .42 + high * .26 + spectral * .48 + peak * .08);
-    if (relayDrive < .055) continue;
-
-    const speed = .48 + pulse * .055 + relayDrive * .12;
-    const centerAngle = phase * speed + pulseProgress * TAU + Math.sin(phase * .29 + pulse) * .06;
-    const span = .055 + relayDrive * .12;
-    const pulseColor = pulse % 2 ? secondary : neutral;
-
+  // Sparse bridges connect rails only when detail is present. They create a
+  // graphic system / instrumentation feel without filling the frame with noise.
+  for (let bridge = 0; bridge < bridgeCount; bridge += 1) {
+    const p = (bridge + .5) / bridgeCount;
+    const spectral = Math.pow(sampleAt(data, .28 + p * .66), .76);
+    const bridgeDrive = clamp(detail * .34 + spectral * .56 + high * .16 - .12);
+    if (bridgeDrive <= .02) continue;
+    const angle = p * TAU + phase * .16 + Math.sin(phase * .31 + bridge) * .035;
+    const rotationA = globalTilt - depthShear * .18;
+    const rotationB = globalTilt + depthShear * .22;
+    const inner = ellipsePoint(cx, cy, baseRx * .58 * pressureScale, baseRy * .65, angle, rotationA);
+    const outer = ellipsePoint(cx, cy, baseRx * 1.02 * pressureScale, baseRy * 1.02, angle + .018 * Math.sin(bridge), rotationB);
     context.beginPath();
-    context.ellipse(cx + driftX, cy + driftY, rx, ry, rotation, centerAngle - span, centerAngle + span);
-    context.strokeStyle = rgba(pulseColor, .12 + relayDrive * .42);
-    context.lineWidth = .8 + relayDrive * 1.7;
-    context.shadowColor = pulseColor;
-    context.shadowBlur = Math.min(maxShadow, 2 + relayDrive * maxShadow * .72);
+    context.moveTo(inner.x, inner.y);
+    context.lineTo(outer.x, outer.y);
+    context.strokeStyle = rgba(bridge % 3 ? secondary : neutral, .035 + bridgeDrive * .16);
+    context.lineWidth = .45 + bridgeDrive * .65;
     context.stroke();
   }
 
+  // Moving relay highlights are fast enough to read as musical motion, while
+  // the rails themselves remain calm and editorial.
+  for (let relay = 0; relay < relayCount; relay += 1) {
+    const rp = (relay + 1) / (relayCount + 1);
+    const spectral = Math.pow(sampleAt(data, .38 + rp * .55), .7);
+    const relayDrive = clamp(detail * .42 + high * .24 + spectral * .5 + peak * .1);
+    if (relayDrive < .045) continue;
+    const ringScale = .62 + rp * .42;
+    const rx = baseRx * ringScale * pressureScale;
+    const ry = baseRy * (.72 + rp * .31) * (1 + aperture * .03);
+    const rotation = globalTilt + depthShear * (rp - .5);
+    const speed = .42 + relay * .035 + relayDrive * .15;
+    const angle = phase * speed + rp * TAU + Math.sin(phase * .37 + relay * .9) * .06;
+    const span = .045 + relayDrive * .095;
+    const relayColor = relay % 3 === 0 ? neutral : secondary;
+    drawEllipseArc(context, cx, cy, rx, ry, rotation, angle - span, angle + span,
+      relayColor, 1.2 + relayDrive * 2.25, .2 + relayDrive * .5,
+      Math.min(maxShadow, 2 + relayDrive * maxShadow * .75));
+  }
+
   context.restore();
+  context.shadowBlur = 0;
 
-  const coreRadiusX = baseRadius * (.2 + pressure * .025);
-  const coreRadiusY = coreRadiusX * .62;
-  const coreGlow = context.createRadialGradient(cx + driftX, cy + driftY, 0, cx + driftX, cy + driftY, coreRadiusX * 2.8);
-  coreGlow.addColorStop(0, rgba(primary, .035 + pressure * .05));
-  coreGlow.addColorStop(.42, rgba(secondary, .018 + detail * .026));
-  coreGlow.addColorStop(1, 'rgba(0,0,0,0)');
-  context.fillStyle = coreGlow;
-  context.beginPath();
-  context.ellipse(cx + driftX, cy + driftY, coreRadiusX * 2.8, coreRadiusY * 2.8, globalTilt, 0, TAU);
-  context.fill();
-
-  context.fillStyle = 'rgba(5,3,11,.86)';
-  context.beginPath();
-  context.ellipse(cx + driftX, cy + driftY, coreRadiusX, coreRadiusY, globalTilt, 0, TAU);
-  context.fill();
-
-  context.strokeStyle = rgba(neutral, .07 + detail * .16 + pressure * .05);
-  context.lineWidth = .65 + pressure * .45;
-  context.beginPath();
-  context.ellipse(cx + driftX, cy + driftY, coreRadiusX * 1.04, coreRadiusY * 1.04, globalTilt, 0, TAU);
-  context.stroke();
+  // A very subtle pressure ellipse keeps kick/bass reaction physical without a
+  // flash or full-screen scale jump.
+  const pressureRing = clamp(pressure * .64 + punch * .28);
+  if (pressureRing > .06) {
+    const pulseRx = baseRx * (1.08 + pressureRing * .08);
+    const pulseRy = baseRy * (1.04 + pressureRing * .06);
+    context.beginPath();
+    context.ellipse(cx, cy, pulseRx, pulseRy, globalTilt, 0, TAU);
+    context.strokeStyle = rgba(primary, .025 + pressureRing * .1);
+    context.lineWidth = .6 + pressureRing * .75;
+    context.stroke();
+  }
 }
