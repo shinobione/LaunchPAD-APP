@@ -13,7 +13,7 @@ import {
 
 const read = file => fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
 
-assert.equal(AUDIO_LAB_DEFAULT_MODE, 'neon-shatter');
+assert.equal(AUDIO_LAB_DEFAULT_MODE, 'neon-ribbon');
 for (const required of ['neon-shatter', 'spectrum', 'neon-ribbon', 'liquid-chrome', 'pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure', 'void-bloom', 'creep-signal']) {
   assert.ok(AUDIO_LAB_PRESET_IDS.includes(required), `Sanctioned Audio Lab registry is missing ${required}.`);
 }
@@ -22,7 +22,7 @@ assert.equal(new Set(AUDIO_LAB_PRESET_IDS).size, AUDIO_LAB_PRESET_IDS.length, 'A
 assert.deepEqual(AUDIO_LAB_SANCTUARY_IDS, ['spectrum']);
 for (const mode of AUDIO_LAB_PRESET_IDS) assert.equal(isSanctionedAudioLabMode(mode), true);
 for (const mode of ['aurora-glass', 'nebula', 'singularity', 'retired-mode']) assert.equal(isSanctionedAudioLabMode(mode), false);
-assert.equal(normalizeAudioLabMode('unknown'), 'neon-shatter');
+assert.equal(normalizeAudioLabMode('unknown'), 'neon-ribbon');
 
 function collectFiles(root, extensions) {
   if (!fs.existsSync(root)) return [];
