@@ -8,6 +8,13 @@ import {
 
 const VIDEO_SELECTOR = 'video.track-video-player, video.lyrics-studio-canvas-video';
 const VIEW_LABELS = Object.freeze({ video: 'Video', player: 'Player' });
+const PRESET_LABEL_OVERRIDES = new Map([
+  ['gravity-lens', 'Halo Vector']
+]);
+
+function presetLabel(mode) {
+  return PRESET_LABEL_OVERRIDES.get(mode) || AUDIO_LAB_PRESET_LABELS.get(mode) || mode;
+}
 
 function setTextIfChanged(element, value) {
   const next = String(value ?? '');
@@ -49,7 +56,7 @@ function normalizePresetControls(root = document) {
 
     seen.add(mode);
     if (button.dataset.visual !== mode) button.dataset.visual = mode;
-    const label = AUDIO_LAB_PRESET_LABELS.get(mode) || mode;
+    const label = presetLabel(mode);
     setTextIfChanged(button, label);
     setAttributeIfChanged(button, 'aria-label', `Use ${label} visualizer`);
   });
@@ -62,6 +69,23 @@ function normalizePresetControls(root = document) {
   }
   if (controls.dataset.audioLabRegistry !== 'sanctioned-v1') {
     controls.dataset.audioLabRegistry = 'sanctioned-v1';
+  }
+}
+
+function normalizeVisualModePresentation(modeValue) {
+  const mode = normalizeAudioLabMode(modeValue, AUDIO_LAB_DEFAULT_MODE);
+  const label = presetLabel(mode);
+  const heading = document.querySelector('.now-panel .panel-head h3');
+  if (heading) setTextIfChanged(heading, label);
+
+  const labCanvas = document.querySelector('#lab-visualizer');
+  if (labCanvas?.dataset.visualMode === mode) {
+    setAttributeIfChanged(labCanvas, 'aria-label', `Live audio-reactive ${label} visualization`);
+  }
+
+  const homeCanvas = document.querySelector('#home-visualizer');
+  if (homeCanvas?.dataset.visualMode === mode) {
+    setAttributeIfChanged(homeCanvas, 'aria-label', `Live audio-reactive ${label} visualization`);
   }
 }
 
@@ -158,6 +182,7 @@ export function initAudioLabSanctuary({ audio = document.querySelector('#audio')
   document.documentElement.dataset.audioLabRegistry = 'sanctioned-v1';
   document.documentElement.dataset.audioLabDefault = normalizeAudioLabMode(AUDIO_LAB_DEFAULT_MODE);
   hydrate(document, audio);
+  normalizeVisualModePresentation(document.querySelector('.lab-controls [data-visual].active')?.dataset.visual || AUDIO_LAB_DEFAULT_MODE);
 
   let scheduled = false;
   new MutationObserver(records => {
@@ -176,5 +201,8 @@ export function initAudioLabSanctuary({ audio = document.querySelector('#audio')
     });
   }).observe(document.body, { childList: true, subtree: true });
 
+  window.addEventListener('shinobi:visual-mode', event => {
+    normalizeVisualModePresentation(event.detail?.mode);
+  });
   window.addEventListener('shinobi:route-change', () => hydrate(document, audio));
 }
