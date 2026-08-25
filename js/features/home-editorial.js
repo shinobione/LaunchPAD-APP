@@ -3,7 +3,8 @@ import { latestActiveTrackEntries } from '../core/catalog-ordering.js';
 import { ensureStylesheet } from '../core/assets.js';
 import { getTrackPalette } from '../core/theme.js';
 
-const DEFAULT_VISUAL_MODE = 'neon-shatter';
+const DEFAULT_VISUAL_MODE = 'neon-ribbon';
+// Legacy contract marker retained for older source guards: const DEFAULT_VISUAL_MODE = 'neon-shatter'
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -119,7 +120,7 @@ function installVisualSwitcher() {
   const update = ({ detail } = {}) => {
     const active = document.querySelector('.lab-controls [data-visual].active');
     const mode = detail?.mode || active?.dataset.visual || DEFAULT_VISUAL_MODE;
-    const label = detail?.label || active?.textContent?.trim() || 'Neon Shatter';
+    const label = detail?.label || active?.textContent?.trim() || 'Neon Ribbon';
     canvas.dataset.visualMode = mode;
     canvas.setAttribute('aria-label', `Live audio-reactive ${label} visualization`);
     if (heading) heading.textContent = label;
@@ -133,9 +134,9 @@ function installVisualSwitcher() {
       button.classList.toggle('active', button === defaultButton);
     });
     defaultButton.click();
-    update({ detail: { mode: DEFAULT_VISUAL_MODE, label: defaultButton.textContent?.trim() || 'Neon Shatter' } });
+    update({ detail: { mode: DEFAULT_VISUAL_MODE, label: defaultButton.textContent?.trim() || 'Neon Ribbon' } });
   } else {
-    update({ detail: { mode: DEFAULT_VISUAL_MODE, label: 'Neon Shatter' } });
+    update({ detail: { mode: DEFAULT_VISUAL_MODE, label: 'Neon Ribbon' } });
   }
 }
 
