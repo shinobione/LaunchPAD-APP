@@ -105,7 +105,7 @@ jobs:
 
           grep -q 'data-app-ready="true"' /tmp/launchpad-home.html
           grep -q 'home-official-release' /tmp/launchpad-home.html
-          grep -q 'data-home-visual-mode="neon-shatter"' /tmp/launchpad-home.html
+          grep -q 'data-home-visual-mode="neon-ribbon"' /tmp/launchpad-home.html
           ! grep -q 'An error is preventing the application from loading' /tmp/launchpad-home.html
 
           timeout --signal=TERM --kill-after=5s 45s \

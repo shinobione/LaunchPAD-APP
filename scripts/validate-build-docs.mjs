@@ -145,6 +145,10 @@ const candidateDocs = new Map([
   [
     'audiolab-neon-ribbon-v15-capsule-perspective-20260825',
     'docs/BUILD113-AUDIOLAB-NEON-RIBBON-V15-CAPSULE-PERSPECTIVE.md'
+  ],
+  [
+    'audiolab-neon-ribbon-default-20260825',
+    'docs/BUILD114-AUDIOLAB-NEON-RIBBON-DEFAULT.md'
   ]
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
