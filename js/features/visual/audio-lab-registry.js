@@ -10,7 +10,7 @@ export const AUDIO_LAB_PRESETS = Object.freeze([
   Object.freeze({ id: 'liquid-chrome', label: 'Liquid Chrome', tier: 'core' }),
   Object.freeze({ id: 'pulse-reactor', label: 'Pulse Reactor', tier: 'core' }),
   Object.freeze({ id: 'bass-fracture', label: 'Bass Fracture', tier: 'core' }),
-  Object.freeze({ id: 'gravity-lens', label: 'Gravity Lens', tier: 'core' }),
+  Object.freeze({ id: 'gravity-lens', label: 'Halo Vector', tier: 'core' }),
   Object.freeze({ id: 'bio-structure', label: 'Bio Structure', tier: 'core' }),
   Object.freeze({ id: 'void-bloom', label: 'Void Bloom', tier: 'core' }),
   Object.freeze({ id: 'creep-signal', label: 'Creep Signal', tier: 'core' })
