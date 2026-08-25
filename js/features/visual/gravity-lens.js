@@ -22,6 +22,7 @@ function mobileVisualDevice(width) {
  *
  * Legacy kinetic-contract markers retained for pre-Build-115 source guards:
  * shapeAudioDrive(
+ * beginMotionFrame(context, time)
  * advanceMotionPhase(motion, 'gravity-flow'
  * const centerTravel =
  * const bandCount = mobile ? 4 : 6
