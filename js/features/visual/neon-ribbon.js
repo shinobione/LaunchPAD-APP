@@ -14,8 +14,8 @@ const RAINBOW_PALETTE = Object.freeze([
 ]);
 
 // Screen-space trace measured from the supplied Rainbow reference video.
-// Keep the carrier clean: the source-like dynamics come from global camera travel,
-// carrier breathing and the audio bars themselves, never from a moving local deformation.
+// Keep this clean carrier stable: audio dynamics belong in the bars and global breathing,
+// not in local geometry deformations.
 const SOURCE_CARRIER = Object.freeze([
   [0.00, .474], [0.05, .438], [0.10, .414], [0.18, .382], [0.26, .350],
   [0.32, .330], [0.38, .345], [0.44, .385], [0.50, .425], [0.56, .475],
@@ -49,6 +49,7 @@ function getRibbonState(context, time) {
   let state = RIBBON_STATES.get(context);
   if (!state) {
     state = {
+      normalized: new Float32Array(64),
       spectrum: new Float32Array(64),
       spatial: new Float32Array(64),
       initialized: false,
@@ -56,7 +57,9 @@ function getRibbonState(context, time) {
       carrier: 0,
       wave: 0,
       glow: 0,
-      punch: 0
+      punch: 0,
+      audioFloor: .12,
+      audioCeiling: .62
     };
     RIBBON_STATES.set(context, state);
   }
@@ -113,28 +116,68 @@ function buildSpectrum64(data) {
   return spectrum;
 }
 
-function updateSmoothedSpectrum(state, rawSpectrum, frameFactor) {
+function percentile64(values, fraction) {
+  const sorted = Array.from(values).sort((a, b) => a - b);
+  const position = clamp(fraction) * (sorted.length - 1);
+  const base = Math.floor(position);
+  const next = Math.min(sorted.length - 1, base + 1);
+  return lerp(sorted[base], sorted[next], position - base);
+}
+
+function normalizeBrowserSpectrum(state, rawSpectrum, frameFactor) {
+  // WebAudio byte FFT is much "fuller" than Wallpaper Engine's spectrum. Rainbow therefore
+  // needs an adaptive gate/range before the original 0.10 -> 0.41 bar shader mapping.
+  // Percentiles keep the quiet majority near the tiny source ticks while real spectral peaks
+  // still reach the tall bars seen in the reference video.
+  const floorTarget = clamp(percentile64(rawSpectrum, .22) * .92, .025, .42);
+  const highTarget = percentile64(rawSpectrum, .91);
+  const ceilingTarget = clamp(Math.max(highTarget * 1.08, floorTarget + .18), .24, .96);
+
+  if (!state.initialized) {
+    state.audioFloor = floorTarget;
+    state.audioCeiling = ceilingTarget;
+  } else {
+    const floorAlpha = floorTarget > state.audioFloor ? .035 : .075;
+    const ceilingAlpha = ceilingTarget > state.audioCeiling ? .16 : .045;
+    state.audioFloor += (floorTarget - state.audioFloor) * frameBlend(floorAlpha, frameFactor);
+    state.audioCeiling += (ceilingTarget - state.audioCeiling) * frameBlend(ceilingAlpha, frameFactor);
+  }
+
+  const span = Math.max(.16, state.audioCeiling - state.audioFloor);
+  for (let index = 0; index < rawSpectrum.length; index += 1) {
+    const raw = rawSpectrum[index];
+    const relative = clamp((raw - state.audioFloor) / span);
+    const absolute = smoothstep(.08, .76, raw);
+    const shaped = Math.pow(clamp(relative * .88 + absolute * .12), 1.34);
+    state.normalized[index] = shaped < .018 ? 0 : shaped;
+  }
+
+  return state.normalized;
+}
+
+function updateSmoothedSpectrum(state, normalizedSpectrum, frameFactor) {
   for (let index = 0; index < state.spectrum.length; index += 1) {
-    const target = rawSpectrum[index];
+    const target = normalizedSpectrum[index];
     if (!state.initialized) {
       state.spectrum[index] = target;
       continue;
     }
 
-    // Fast enough to feel the beat, slow enough to avoid FFT chatter.
-    const alpha = target > state.spectrum[index] ? .42 : .095;
+    // Responsive bars, but no frame-to-frame buzz.
+    const alpha = target > state.spectrum[index] ? .52 : .14;
     state.spectrum[index] += (target - state.spectrum[index]) * frameBlend(alpha, frameFactor);
   }
 
-  // Preserve continuity but keep more contrast than Build 109/110.
+  // Much lighter spatial smoothing than Build 111: preserve the deep valleys and isolated peaks
+  // that make Rainbow read as individual bars instead of a permanently filled ribbon.
   for (let index = 0; index < state.spectrum.length; index += 1) {
     const length = state.spectrum.length;
     state.spatial[index] =
-      state.spectrum[(index - 2 + length) % length] * .05 +
-      state.spectrum[(index - 1 + length) % length] * .16 +
-      state.spectrum[index] * .58 +
-      state.spectrum[(index + 1) % length] * .16 +
-      state.spectrum[(index + 2) % length] * .05;
+      state.spectrum[(index - 2 + length) % length] * .025 +
+      state.spectrum[(index - 1 + length) % length] * .10 +
+      state.spectrum[index] * .75 +
+      state.spectrum[(index + 1) % length] * .10 +
+      state.spectrum[(index + 2) % length] * .025;
   }
 
   state.initialized = true;
@@ -172,8 +215,6 @@ function carrierY(progress) {
 }
 
 function projectedProgress(progress, time, state) {
-  // Keep one continuous perspective curve. Build 110's moving focus created the travelling
-  // pinch/bulge; Rainbow's apparent drama is better reproduced by moving the whole carrier.
   const k = 2.44 + Math.sin(time * .115 + .6) * .20 + state.carrier * .17;
   return .5 + .5 * Math.sinh(k * (progress - .5)) / Math.sinh(k * .5);
 }
@@ -182,7 +223,6 @@ function carrierPoint(width, height, progress, time, state) {
   const xProgress = projectedProgress(progress, time, state);
   const yProgress = carrierY(xProgress);
 
-  // Source water-wave: subtle surface wobble only.
   const waveScale = 14 + state.wave * 5;
   const waveStrength = width * (.0011 + state.wave * .0036);
   const wave = Math.sin(yProgress * waveScale + time * .31) * waveStrength;
@@ -190,7 +230,6 @@ function carrierPoint(width, height, progress, time, state) {
   let x = xProgress * width + wave;
   let y = yProgress * height;
 
-  // Macro camera travel is deliberately global so the clean carrier shape survives.
   const pivotX = width * (.49 + Math.sin(time * .061 + .9) * .018);
   const pivotY = height * (.80 + Math.cos(time * .057 + .2) * .018);
   const globalZoom = 1 + Math.sin(time * .105 + 1.6) * .075;
@@ -198,8 +237,8 @@ function carrierPoint(width, height, progress, time, state) {
   const scaleX = globalZoom * (1 + Math.sin(time * .155 + .35) * .095);
   const scaleY = globalZoom * (1 + Math.cos(time * .137 + .8) * .115 + state.carrier * .055);
 
-  let localX = (x - pivotX) * breath * scaleX;
-  let localY = (y - pivotY) * breath * scaleY;
+  const localX = (x - pivotX) * breath * scaleX;
+  const localY = (y - pivotY) * breath * scaleY;
 
   const roll = Math.sin(time * .145) * .135 + Math.sin(time * .061 + 1.35) * .045;
   const cos = Math.cos(roll);
@@ -227,8 +266,7 @@ function buildCarrierSamples(width, height, barCount, time, state) {
   const samples = new Array(barCount);
   const step = 1 / Math.max(1, barCount - 1);
   for (let index = 0; index < barCount; index += 1) {
-    const progress = index * step;
-    samples[index] = carrierPoint(width, height, progress, time, state);
+    samples[index] = carrierPoint(width, height, index * step, time, state);
   }
   return samples;
 }
@@ -275,6 +313,9 @@ function addSourceBars({
   const spinCycles = time * SOURCE_SPIN_SPEED / TAU;
   const averageSlot = width / Math.max(1, barCount - 1);
   const step = 1 / Math.max(1, barCount - 1);
+  const maskCut = 1 - SOURCE_MASK_RADIUS;
+  const sourceIdleBand = Math.max(0, SOURCE_BAR_LOWER - maskCut);
+  const sourceDynamicBand = SOURCE_BAR_UPPER - SOURCE_BAR_LOWER;
 
   for (let index = 0; index < barCount; index += 1) {
     const progress = index * step;
@@ -288,23 +329,31 @@ function addSourceBars({
       ? 1 - progress - spinCycles
       : progress + spinCycles;
     const raw = sampleRibbonEnergy(spectrum, spectrumProgress);
-    const neighbour = sampleRibbonEnergy(spectrum, spectrumProgress + (ghost ? -1 / 64 : 1 / 64));
-    const localPeak = Math.max(0, raw - neighbour * .78);
-    const audio = Math.pow(clamp(raw * 1.31 + localPeak * .15), .78);
+    const before = sampleRibbonEnergy(spectrum, spectrumProgress - 1 / 64);
+    const after = sampleRibbonEnergy(spectrum, spectrumProgress + 1 / 64);
+    const localMean = (before + after) * .5;
+    const localPeak = Math.max(0, raw - localMean);
 
-    const barBound = lerp(SOURCE_BAR_LOWER, SOURCE_BAR_UPPER, audio);
-    const maskCut = 1 - SOURCE_MASK_RADIUS;
-    const idleFloor = ghost
-      ? .0012
-      : lerp(.0045, .0092, clamp((perspectiveScale - .38) / 1.8));
+    // Do not boost low FFT values. Build 111 used an exponent < 1, which kept almost every bar tall.
+    // Rainbow needs the opposite: valleys collapse to the idle ring, peaks retain the drama.
+    let audio = Math.pow(clamp(raw * 1.02 + localPeak * .32), 1.20);
+    if (audio < .025) audio = 0;
+
+    // Exact source shader concept:
+    //   barHeight = mix(0.10, 0.41, audio)
+    //   primary is INTERSECTed with the 334/360 alpha circle.
+    // In our screen-space port the constant 0.10 annulus needs a smaller projection factor,
+    // otherwise the idle ribbon looks permanently filled. Dynamic extension stays full strength.
+    const idleProjection = ghost ? 0 : lerp(.38, .62, clamp((perspectiveScale - .38) / 1.8));
+    const dynamicBand = sourceDynamicBand * audio;
     const visibleBand = ghost
-      ? Math.max(idleFloor, (barBound - SOURCE_BAR_LOWER) * .77)
-      : Math.max(idleFloor, barBound - maskCut);
+      ? dynamicBand * .82
+      : sourceIdleBand * idleProjection + dynamicBand;
 
-    const transientLift = 1 + state.punch * .14 + state.carrier * .07;
+    const transientLift = 1 + state.punch * (.08 + audio * .24) + state.carrier * .045;
     const sourceLengthScale = ghost ? .62 : .96;
     const barLength = Math.min(
-      height * (ghost ? .35 : .64),
+      height * (ghost ? .36 : .67),
       height * visibleBand * perspectiveScale * sourceLengthScale * transientLift
     );
 
@@ -332,10 +381,10 @@ function addSourceBars({
     bucket.path.lineTo(innerX, innerY);
     bucket.count += 1;
 
-    if (!ghost && audio > .012) {
+    if (!ghost && audio > .035) {
       const reflectionHeight = Math.min(
         height * .78,
-        height * (.08 + audio * .34) * (.70 + perspectiveScale * .38) * (1 + state.punch * .20)
+        height * (.035 + audio * .39) * (.68 + perspectiveScale * .40) * (1 + state.punch * .22)
       );
       const rayX = outer.x - dirX * reflectionHeight * .11;
       const rayY = outer.y - dirY * reflectionHeight;
@@ -350,11 +399,11 @@ function drawCarrier(context, path, gradient, state, mobile) {
   context.lineCap = 'round';
   context.strokeStyle = gradient;
   context.globalCompositeOperation = 'lighter';
-  context.globalAlpha = (mobile ? .018 : .025) + state.carrier * .045;
-  context.lineWidth = (mobile ? .8 : 1.05) + state.carrier * 1.2;
+  context.globalAlpha = (mobile ? .012 : .018) + state.carrier * .030;
+  context.lineWidth = (mobile ? .7 : .9) + state.carrier * .85;
   context.stroke(path);
-  context.globalAlpha *= .32;
-  context.lineWidth *= 3.2;
+  context.globalAlpha *= .26;
+  context.lineWidth *= 3;
   context.stroke(path);
   context.restore();
 }
@@ -370,15 +419,15 @@ function drawSourceBuckets(context, buckets, gradient, ghost = false) {
     if (!bucket.count) continue;
     const width = bucket.width;
 
-    context.globalAlpha = ghost ? .010 : .062;
-    context.lineWidth = width * (ghost ? 2 : 2.55);
+    context.globalAlpha = ghost ? .009 : .060;
+    context.lineWidth = width * (ghost ? 2 : 2.5);
     context.stroke(bucket.path);
 
-    context.globalAlpha = ghost ? .040 : .245;
-    context.lineWidth = width * (ghost ? 1.28 : 1.50);
+    context.globalAlpha = ghost ? .036 : .235;
+    context.lineWidth = width * (ghost ? 1.26 : 1.48);
     context.stroke(bucket.path);
 
-    context.globalAlpha = ghost ? .074 : .98;
+    context.globalAlpha = ghost ? .068 : .98;
     context.lineWidth = width;
     context.stroke(bucket.path);
 
@@ -404,8 +453,8 @@ function drawSourceGodRays(context, rayPath, gradient, mobile, glowDrive, punchD
   context.lineCap = 'round';
   context.strokeStyle = gradient;
   context.globalCompositeOperation = 'lighter';
-  const drive = .75 + glowDrive * .72 + punchDrive * .42;
-  context.globalAlpha = (mobile ? .012 : .026) * drive;
+  const drive = .70 + glowDrive * .75 + punchDrive * .48;
+  context.globalAlpha = (mobile ? .012 : .027) * drive;
   context.lineWidth = mobile ? 3 : 5.8;
   context.stroke(rayPath);
   context.globalAlpha = (mobile ? .0055 : .013) * drive;
@@ -442,7 +491,7 @@ export function drawNeonRibbonMode(context, width, height, data, accent, accent2
   state.carrier += (carrierTarget - state.carrier) * frameBlend(carrierTarget > state.carrier ? .18 : .060, frameFactor);
   state.wave += (waveTarget - state.wave) * frameBlend(waveTarget > state.wave ? .13 : .052, frameFactor);
   state.glow += (glowTarget - state.glow) * frameBlend(glowTarget > state.glow ? .32 : .09, frameFactor);
-  state.punch += (punchTarget - state.punch) * frameBlend(punchTarget > state.punch ? .40 : .095, frameFactor);
+  state.punch += (punchTarget - state.punch) * frameBlend(punchTarget > state.punch ? .44 : .11, frameFactor);
 
   // Legacy contract marker retained for older source guards:
   // const barCount = mobile ? 58 : compact ? 84 : 118
@@ -453,7 +502,8 @@ export function drawNeonRibbonMode(context, width, height, data, accent, accent2
       : Math.round(clamp(width / 13.2, 154, ultrawide ? 204 : 186));
 
   const rawSpectrum = buildSpectrum64(data);
-  const spectrum = updateSmoothedSpectrum(state, rawSpectrum, frameFactor);
+  const normalizedSpectrum = normalizeBrowserSpectrum(state, rawSpectrum, frameFactor);
+  const spectrum = updateSmoothedSpectrum(state, normalizedSpectrum, frameFactor);
   const gradient = rainbowGradient(context, width, time);
   const samples = buildCarrierSamples(width, height, barCount, time, state);
   const carrierPath = buildCarrierPath(samples);
@@ -461,9 +511,9 @@ export function drawNeonRibbonMode(context, width, height, data, accent, accent2
   const primaryBuckets = createBuckets(mobile ? [1.5, 2.4, 3.5, 4.8, 6.5] : [1.6, 2.6, 3.8, 5.2, 7, 9.1, 11, 12.8]);
   const rayPath = new Path2D();
 
-  // Keep a little persistence for glide, but do not soften the whole ribbon.
+  // Slight persistence for continuity; bar contrast now comes from the audio range rather than after-image.
   context.save();
-  context.fillStyle = `rgba(3, 2, 10, ${mobile ? .34 : .325})`;
+  context.fillStyle = `rgba(3, 2, 10, ${mobile ? .37 : .355})`;
   context.fillRect(0, 0, width, height);
   context.restore();
 
