@@ -23,6 +23,6 @@ Halo Vector is intentionally restrained and graphic rather than flashy:
 
 ## Compatibility
 
-The historical internal preset id `gravity-lens` is preserved temporarily so saved state and older regression guards do not break. Its renderer now bridges to `drawHaloVectorMode`, while the registry exposes the user-facing label **Halo Vector**.
+The historical internal preset id `gravity-lens` and registry metadata are preserved temporarily so saved state and older regression guards do not break. Its renderer now bridges to `drawHaloVectorMode`, while the sanctuary layer presents the user-facing label **Halo Vector** in AudioLAB and the Home visual title.
 
 The PWA shell includes `js/features/visual/halo-vector.js` and Build 115 uses cache namespace `shinobi-launchpad-v115`.
