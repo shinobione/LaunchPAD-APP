@@ -133,6 +133,10 @@ const candidateDocs = new Map([
   [
     'audiolab-neon-ribbon-v12-controlled-dynamics-20260825',
     'docs/BUILD110-AUDIOLAB-NEON-RIBBON-V12-CONTROLLED-DYNAMICS.md'
+  ],
+  [
+    'audiolab-neon-ribbon-v13-clean-dynamic-camera-20260825',
+    'docs/BUILD111-AUDIOLAB-NEON-RIBBON-V13-CLEAN-DYNAMIC-CAMERA.md'
   ]
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
