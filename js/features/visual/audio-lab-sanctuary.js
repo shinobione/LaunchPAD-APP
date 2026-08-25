@@ -8,6 +8,13 @@ import {
 
 const VIDEO_SELECTOR = 'video.track-video-player, video.lyrics-studio-canvas-video';
 const VIEW_LABELS = Object.freeze({ video: 'Video', player: 'Player' });
+const PRESET_LABEL_OVERRIDES = new Map([
+  ['gravity-lens', 'Halo Vector']
+]);
+
+function presetLabel(mode) {
+  return PRESET_LABEL_OVERRIDES.get(mode) || AUDIO_LAB_PRESET_LABELS.get(mode) || mode;
+}
 
 function setTextIfChanged(element, value) {
   const next = String(value ?? '');
@@ -49,7 +56,7 @@ function normalizePresetControls(root = document) {
 
     seen.add(mode);
     if (button.dataset.visual !== mode) button.dataset.visual = mode;
-    const label = AUDIO_LAB_PRESET_LABELS.get(mode) || mode;
+    const label = presetLabel(mode);
     setTextIfChanged(button, label);
     setAttributeIfChanged(button, 'aria-label', `Use ${label} visualizer`);
   });
@@ -67,7 +74,7 @@ function normalizePresetControls(root = document) {
 
 function normalizeVisualModePresentation(modeValue) {
   const mode = normalizeAudioLabMode(modeValue, AUDIO_LAB_DEFAULT_MODE);
-  const label = AUDIO_LAB_PRESET_LABELS.get(mode) || mode;
+  const label = presetLabel(mode);
   const heading = document.querySelector('.now-panel .panel-head h3');
   if (heading) setTextIfChanged(heading, label);
 
