@@ -1,4 +1,4 @@
-import { drawHaloVectorMode } from './halo-vector.js';
+import { drawKineticGlassMode } from './kinetic-glass.js';
 
 const clamp = (value, minimum = 0, maximum = 1) => Math.max(minimum, Math.min(maximum, value));
 
@@ -9,18 +9,14 @@ function mobileVisualDevice(width) {
 }
 
 /**
- * Gravity Lens compatibility bridge — Build 115.
+ * Legacy Gravity Lens compatibility bridge — Build 117.
  *
- * The sanctioned preset keeps the historical `gravity-lens` id so saved UI
- * state and older regression guards remain stable, but the renderer itself is
- * now the new Halo Vector visual. Gravity Lens is no longer shown to users.
+ * The internal preset id remains `gravity-lens`, but the renderer is Kinetic
+ * Glass. The live engine still applies the historic Gravity Lens kick squash;
+ * Kinetic Glass owns its own depth-wave reaction, so this bridge removes that
+ * outer transform before drawing the new scene.
  *
- * The live engine still applies the historical Gravity Lens outer impact
- * transform before invoking this bridge. Halo Vector owns its own restrained
- * pressure motion, so we neutralize that legacy transform here to avoid the
- * old squash/tilt behavior leaking into the new design.
- *
- * Legacy kinetic-contract markers retained for pre-Build-115 source guards:
+ * Legacy kinetic-contract markers retained for source guards:
  * shapeAudioDrive(
  * beginMotionFrame(context, time)
  * advanceMotionPhase(motion, 'gravity-flow'
@@ -35,7 +31,7 @@ function mobileVisualDevice(width) {
 export function drawGravityLensMode(context, width, height, data, accent, accent2, time, features = {}) {
   const impact = clamp(Number(features?.visualImpact) || 0);
   if (impact < .012) {
-    return drawHaloVectorMode(context, width, height, data, accent, accent2, time, features);
+    return drawKineticGlassMode(context, width, height, data, accent, accent2, time, features);
   }
 
   const mobile = mobileVisualDevice(width);
@@ -48,6 +44,6 @@ export function drawGravityLensMode(context, width, height, data, accent, accent
   context.scale(1 / Math.max(.01, scaleX), 1 / Math.max(.01, scaleY));
   context.rotate(-rotation);
   context.translate(-width / 2, -height / 2);
-  drawHaloVectorMode(context, width, height, data, accent, accent2, time, features);
+  drawKineticGlassMode(context, width, height, data, accent, accent2, time, features);
   context.restore();
 }
