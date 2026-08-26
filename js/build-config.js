@@ -1,9 +1,9 @@
 (() => {
   const config = Object.freeze({
-    id: '20260826-audiolab-kinetic-glass-v2-build118',
-    cache: 'shinobi-launchpad-v118',
-    revision: 'audiolab-kinetic-glass-v2',
-    display: '2026.08.26.118',
+    id: '20260826-audiolab-kinetic-glass-v3-build119',
+    cache: 'shinobi-launchpad-v119',
+    revision: 'audiolab-kinetic-glass-v3',
+    display: '2026.08.26.119',
     release: 'audiolab-kinetic-glass-20260826'
   });
 
