@@ -15,7 +15,6 @@ export const AUDIO_LAB_PRESETS = Object.freeze([
   Object.freeze({ id: 'void-bloom', label: 'Void Bloom', tier: 'core' }),
   Object.freeze({ id: 'creep-signal', label: 'Creep Signal', tier: 'core' })
 ]);
-// Legacy test/source marker only: id: 'gravity-lens', label: 'Gravity Lens'
 
 export const AUDIO_LAB_PRESET_IDS = Object.freeze(AUDIO_LAB_PRESETS.map(preset => preset.id));
 export const AUDIO_LAB_PRESET_LABELS = Object.freeze(new Map(AUDIO_LAB_PRESETS.map(preset => [preset.id, preset.label])));
