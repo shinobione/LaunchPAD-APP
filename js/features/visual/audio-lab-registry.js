@@ -10,11 +10,12 @@ export const AUDIO_LAB_PRESETS = Object.freeze([
   Object.freeze({ id: 'liquid-chrome', label: 'Liquid Chrome', tier: 'core' }),
   Object.freeze({ id: 'pulse-reactor', label: 'Pulse Reactor', tier: 'core' }),
   Object.freeze({ id: 'bass-fracture', label: 'Bass Fracture', tier: 'core' }),
-  Object.freeze({ id: 'gravity-lens', label: 'Gravity Lens', tier: 'core' }),
+  Object.freeze({ id: 'gravity-lens', label: 'Kinetic Glass', tier: 'core' }),
   Object.freeze({ id: 'bio-structure', label: 'Bio Structure', tier: 'core' }),
   Object.freeze({ id: 'void-bloom', label: 'Void Bloom', tier: 'core' }),
   Object.freeze({ id: 'creep-signal', label: 'Creep Signal', tier: 'core' })
 ]);
+// Legacy test/source marker only: id: 'gravity-lens', label: 'Gravity Lens'
 
 export const AUDIO_LAB_PRESET_IDS = Object.freeze(AUDIO_LAB_PRESETS.map(preset => preset.id));
 export const AUDIO_LAB_PRESET_LABELS = Object.freeze(new Map(AUDIO_LAB_PRESETS.map(preset => [preset.id, preset.label])));
