@@ -18,7 +18,7 @@ for (const required of [
   "id: 'neon-shatter', label: 'Neon Shatter'", "id: 'spectrum', label: 'Spectrum'",
   "id: 'neon-ribbon', label: 'Neon Ribbon'", "id: 'liquid-chrome', label: 'Liquid Chrome'",
   "id: 'pulse-reactor', label: 'Pulse Reactor'", "id: 'bass-fracture', label: 'Bass Fracture'",
-  "id: 'gravity-lens', label: 'Gravity Lens'", "id: 'bio-structure', label: 'Bio Structure'",
+  "id: 'gravity-lens', label: 'Kinetic Glass'", "id: 'bio-structure', label: 'Bio Structure'",
   "id: 'void-bloom', label: 'Void Bloom'", "id: 'creep-signal', label: 'Creep Signal'",
   "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum'])"
 ]) assert.ok(registry.includes(required), `Audio Lab registry is missing ${required}.`);
@@ -78,7 +78,14 @@ for (const required of [
   'export function drawGravityLensMode(', 'shapeAudioDrive(', 'const bandCount = mobile ? 4 : 6',
   'const arcCount = mobile ? 12 : 20', 'const streamCount = mobile ? 8 : 14',
   "springChannel(motion, 'warp'", "advanceMotionPhase(motion, 'gravity-flow'", 'const centerTravel =', 'context.quadraticCurveTo('
-]) assert.ok(lens.includes(required), `Gravity Lens contract is missing ${required}.`);
+]) assert.ok(lens.includes(required), `Gravity Lens compatibility bridge is missing ${required}.`);
+
+const glass = read('js/features/visual/kinetic-glass.js');
+for (const required of [
+  'export function drawKineticGlassMode(', 'shapeAudioDrive(', "springChannel(motion, 'glass-pressure'",
+  "advanceMotionPhase(motion, 'kinetic-glass-flow'", 'const plateCount = mobile ? 6 : 9',
+  'plates.sort((a, b) => a.depth - b.depth)', 'function plateGeometry(', 'function drawPlate('
+]) assert.ok(glass.includes(required), `Kinetic Glass contract is missing ${required}.`);
 
 const bio = read('js/features/visual/bio-structure.js');
 for (const required of [
@@ -109,7 +116,7 @@ for (const required of [
   'const reflectionHeight =', 'features.punch'
 ]) assert.ok(ribbon.includes(required), `Neon Ribbon contract is missing ${required}.`);
 
-for (const isolated of [reactor, fracture, lens, bio, bloom, creep, ribbon]) {
+for (const isolated of [reactor, fracture, lens, glass, bio, bloom, creep, ribbon]) {
   assert.ok(!isolated.includes('setInterval('));
   assert.ok(!isolated.includes('requestAnimationFrame('));
   assert.ok(!isolated.includes('Math.random('));
@@ -143,11 +150,11 @@ const worker = read('sw.js');
 for (const required of [
   "'./js/features/visual/audio-reactivity.js'", "'./js/features/visual/audio-lab-registry.js'",
   "'./js/features/visual/motion-spring.js'", "'./js/features/visual/pulse-reactor.js'",
-  "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'",
+  "'./js/features/visual/bass-fracture.js'", "'./js/features/visual/gravity-lens.js'", "'./js/features/visual/kinetic-glass.js'",
   "'./js/features/visual/bio-structure.js'", "'./js/features/visual/void-bloom.js'", "'./js/features/visual/creep-signal.js'",
   "'./js/features/visual/neon-ribbon.js'"
 ]) assert.ok(worker.includes(required), `PWA shell is missing ${required}.`);
 
 const build = assertCurrentBuild('Audio Lab current build');
 assert.ok(build.number >= 61, `Audio Lab ten-preset baseline requires Build 61 or newer, got ${build.display}.`);
-console.log(`Audio Lab exposes ten shared-FFT presets including Neon Ribbon with adaptive onset detection under ${build.display}.`);
+console.log(`Audio Lab exposes ten shared-FFT presets including Kinetic Glass and Neon Ribbon under ${build.display}.`);
