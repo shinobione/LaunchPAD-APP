@@ -153,6 +153,10 @@ const candidateDocs = new Map([
   [
     'audiolab-halo-vector-20260826',
     'docs/BUILD115-AUDIOLAB-HALO-VECTOR.md'
+  ],
+  [
+    'audiolab-kinetic-glass-20260826',
+    'docs/BUILD117-AUDIOLAB-KINETIC-GLASS.md'
   ]
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
