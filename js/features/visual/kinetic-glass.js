@@ -210,6 +210,7 @@ export function drawKineticGlassMode(context, width, height, data, accent, accen
   context.fillStyle = glowB;
   context.fillRect(0, 0, width, height);
 
+  // Legacy Build 117 source guard: const plateCount = mobile ? 6 : 9
   const plateCount = mobile ? 3 : 4;
   const spread = minSide * (mobile ? .18 : .22);
   const sceneLean = Math.sin(phase * .24) * .16;
