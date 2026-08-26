@@ -51,112 +51,104 @@ function mobileVisualDevice(width) {
 function transformPoint(cx, cy, angle, x, y) {
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);
-  return {
-    x: cx + x * cos - y * sin,
-    y: cy + x * sin + y * cos
-  };
+  return { x: cx + x * cos - y * sin, y: cy + x * sin + y * cos };
 }
 
-function plateGeometry(cx, cy, length, thickness, angle, skew, fold) {
+function plateGeometry(cx, cy, length, thickness, angle, curve) {
   const halfL = length * .5;
   const halfT = thickness * .5;
-  const bevel = Math.min(length * .13, thickness * .9);
-  const points = [
-    transformPoint(cx, cy, angle, -halfL + bevel + skew, -halfT),
-    transformPoint(cx, cy, angle, halfL - bevel * .7 - skew, -halfT * (1 - fold * .12)),
-    transformPoint(cx, cy, angle, halfL, -halfT * .18 + fold * halfT * .12),
-    transformPoint(cx, cy, angle, halfL - bevel * .55, halfT),
-    transformPoint(cx, cy, angle, -halfL + bevel * .45, halfT * (1 + fold * .08)),
-    transformPoint(cx, cy, angle, -halfL, halfT * .14 - fold * halfT * .12)
-  ];
-  const center = transformPoint(cx, cy, angle, length * (.08 + fold * .12), 0);
-  return { points, center };
+  const left = transformPoint(cx, cy, angle, -halfL, 0);
+  const right = transformPoint(cx, cy, angle, halfL, 0);
+  const topLeft = transformPoint(cx, cy, angle, -halfL * .92, -halfT * .72);
+  const topRight = transformPoint(cx, cy, angle, halfL * .92, -halfT * .72);
+  const bottomRight = transformPoint(cx, cy, angle, halfL * .92, halfT * .72);
+  const bottomLeft = transformPoint(cx, cy, angle, -halfL * .92, halfT * .72);
+  const controlTop = transformPoint(cx, cy, angle, 0, -halfT - curve);
+  const controlBottom = transformPoint(cx, cy, angle, 0, halfT + curve);
+  return { left, right, topLeft, topRight, bottomRight, bottomLeft, controlTop, controlBottom };
 }
 
 function tracePlate(context, geometry) {
-  const { points } = geometry;
+  const { left, right, topLeft, topRight, bottomRight, bottomLeft, controlTop, controlBottom } = geometry;
   context.beginPath();
-  context.moveTo(points[0].x, points[0].y);
-  for (let index = 1; index < points.length; index += 1) context.lineTo(points[index].x, points[index].y);
+  context.moveTo(left.x, left.y);
+  context.quadraticCurveTo(topLeft.x, topLeft.y, controlTop.x, controlTop.y);
+  context.quadraticCurveTo(topRight.x, topRight.y, right.x, right.y);
+  context.quadraticCurveTo(bottomRight.x, bottomRight.y, controlBottom.x, controlBottom.y);
+  context.quadraticCurveTo(bottomLeft.x, bottomLeft.y, left.x, left.y);
   context.closePath();
 }
 
-function drawPlate(context, plate, palette, reflection, high, depth, pressure) {
+function drawPlate(context, plate, palette, reflection, high, pressure) {
   const { geometry } = plate;
-  const { points, center } = geometry;
-  const near = Math.pow(depth, .72);
-  const fill = context.createLinearGradient(points[0].x, points[0].y, points[3].x, points[3].y);
-  const bodyAlpha = .065 + near * .09 + plate.drive * .065 + pressure * .025;
-  fill.addColorStop(0, rgba(palette.dark, .025 + near * .018));
-  fill.addColorStop(.18, rgba(palette.base, bodyAlpha * .72));
-  fill.addColorStop(.48, rgba(palette.secondary, bodyAlpha));
-  fill.addColorStop(.76, rgba(palette.base, bodyAlpha * .82));
-  fill.addColorStop(1, rgba(palette.dark, .035 + near * .025));
+  const near = plate.depth;
+  const leftColor = plate.index % 2 === 0 ? palette.base : palette.secondary;
+  const rightColor = plate.index % 2 === 0 ? palette.secondary : palette.base;
+
+  const body = context.createLinearGradient(
+    geometry.left.x, geometry.left.y,
+    geometry.right.x, geometry.right.y
+  );
+  body.addColorStop(0, rgba(leftColor, .08 + near * .07));
+  body.addColorStop(.22, rgba(leftColor, .16 + near * .12 + plate.drive * .06));
+  body.addColorStop(.52, rgba(rightColor, .2 + near * .14 + pressure * .04));
+  body.addColorStop(.8, rgba(leftColor, .14 + plate.drive * .08));
+  body.addColorStop(1, rgba(rightColor, .06 + near * .07));
 
   tracePlate(context, geometry);
-  context.fillStyle = fill;
+  context.fillStyle = body;
   context.fill();
 
-  // A dark facet gives the slab actual volume instead of a faint outline.
-  context.beginPath();
-  context.moveTo(points[0].x, points[0].y);
-  context.lineTo(center.x, center.y);
-  context.lineTo(points[4].x, points[4].y);
-  context.lineTo(points[5].x, points[5].y);
-  context.closePath();
-  context.fillStyle = rgba(palette.dark, .045 + near * .065 + plate.drive * .025);
-  context.fill();
-
-  context.beginPath();
-  context.moveTo(points[1].x, points[1].y);
-  context.lineTo(points[2].x, points[2].y);
-  context.lineTo(points[3].x, points[3].y);
-  context.lineTo(center.x, center.y);
-  context.closePath();
-  context.fillStyle = rgba(palette.highlight, .018 + plate.drive * .038 + high * .026);
-  context.fill();
-
-  tracePlate(context, geometry);
-  context.strokeStyle = rgba(palette.edge, .16 + near * .22 + plate.drive * .18);
-  context.lineWidth = .8 + near * 1.45 + plate.drive * .75;
-  context.stroke();
-
-  // Specular band crossing the pane. It is intentionally bright but narrow.
-  const span = plate.length * .78;
-  const sweep = (reflection - .5) * span;
+  const innerThickness = plate.thickness * (.18 + plate.drive * .05);
   const nx = -Math.sin(plate.angle);
   const ny = Math.cos(plate.angle);
   const ux = Math.cos(plate.angle);
   const uy = Math.sin(plate.angle);
-  const specularWidth = plate.thickness * (.08 + high * .13 + plate.drive * .07);
-  const sx = plate.cx + ux * sweep;
-  const sy = plate.cy + uy * sweep;
+  const innerStartX = plate.cx - ux * plate.length * .42;
+  const innerStartY = plate.cy - uy * plate.length * .42;
+  const innerEndX = plate.cx + ux * plate.length * .42;
+  const innerEndY = plate.cy + uy * plate.length * .42;
+  const inner = context.createLinearGradient(innerStartX, innerStartY, innerEndX, innerEndY);
+  inner.addColorStop(0, rgba(leftColor, .04));
+  inner.addColorStop(.35, rgba(palette.highlight, .12 + plate.drive * .1));
+  inner.addColorStop(.65, rgba(rightColor, .13 + plate.drive * .12));
+  inner.addColorStop(1, rgba(rightColor, .035));
+  context.strokeStyle = inner;
+  context.lineWidth = innerThickness;
+  context.lineCap = 'round';
   context.beginPath();
-  context.moveTo(sx - nx * plate.thickness * .54, sy - ny * plate.thickness * .54);
-  context.lineTo(sx + nx * plate.thickness * .54, sy + ny * plate.thickness * .54);
-  context.strokeStyle = rgba(palette.highlight, .08 + high * .24 + near * .08 + plate.drive * .1);
-  context.lineWidth = 1 + specularWidth;
+  context.moveTo(innerStartX, innerStartY);
+  context.quadraticCurveTo(
+    plate.cx + nx * plate.curve * .34,
+    plate.cy + ny * plate.curve * .34,
+    innerEndX,
+    innerEndY
+  );
   context.stroke();
 
-  // One restrained internal seam makes the geometry read as folded glass.
-  if (plate.drive > .08) {
-    context.beginPath();
-    context.moveTo(points[0].x, points[0].y);
-    context.lineTo(center.x, center.y);
-    context.lineTo(points[3].x, points[3].y);
-    context.strokeStyle = rgba(palette.secondary, .07 + plate.drive * .16 + near * .05);
-    context.lineWidth = .6 + plate.drive * .9;
-    context.stroke();
-  }
+  tracePlate(context, geometry);
+  context.strokeStyle = rgba(palette.edge, .34 + near * .2 + plate.drive * .12);
+  context.lineWidth = 1.05 + near * 1.3;
+  context.stroke();
+
+  const sweep = (reflection - .5) * plate.length * .68;
+  const sx = plate.cx + ux * sweep;
+  const sy = plate.cy + uy * sweep;
+  const spec = plate.thickness * (.42 + high * .28);
+  context.beginPath();
+  context.moveTo(sx - nx * spec, sy - ny * spec);
+  context.lineTo(sx + nx * spec, sy + ny * spec);
+  context.strokeStyle = rgba(palette.highlight, .18 + high * .28 + near * .08);
+  context.lineWidth = 1.25 + high * 2.2;
+  context.stroke();
 }
 
 /**
- * Kinetic Glass — Build 118 visual-impact pass.
+ * Kinetic Glass — Build 119 readability pass.
  *
- * The scene is deliberately bold without flashing: broad faceted slabs occupy
- * the frame, cross in depth, and visibly re-compose over several seconds.
- * Bass/punch push the stack toward camera, mids alter folding and fan angles,
- * and highs sweep restrained specular highlights across the glass.
+ * Build 118 proved that more panes did not create more impact; it created visual
+ * noise. Build 119 hard-limits the scene to three/four large glass ribbons with
+ * clear spacing, stronger track color, and obvious audio-driven depth changes.
  */
 export function drawKineticGlassMode(context, width, height, data, accent, accent2, time, features = {}) {
   const mobile = mobileVisualDevice(width);
@@ -166,106 +158,100 @@ export function drawKineticGlassMode(context, width, height, data, accent, accen
   const rawHigh = average(data, data.length * .66, data.length);
   const rawEnergy = average(data, 0, data.length);
 
-  const bass = shapeAudioDrive(rawBass, feature(features, 'bass'), { rawGain: 1.62, featureWeight: .34, exponent: .64 });
-  const mid = shapeAudioDrive(rawMid, feature(features, 'mid'), { rawGain: 1.54, featureWeight: .34, exponent: .66 });
-  const high = shapeAudioDrive(rawHigh, feature(features, 'high'), { rawGain: 1.6, featureWeight: .32, exponent: .64 });
-  const energy = shapeAudioDrive(rawEnergy, feature(features, 'energy'), { rawGain: 1.5, featureWeight: .34, exponent: .66 });
+  const bass = shapeAudioDrive(rawBass, feature(features, 'bass'), { rawGain: 1.72, featureWeight: .36, exponent: .62 });
+  const mid = shapeAudioDrive(rawMid, feature(features, 'mid'), { rawGain: 1.62, featureWeight: .34, exponent: .64 });
+  const high = shapeAudioDrive(rawHigh, feature(features, 'high'), { rawGain: 1.7, featureWeight: .32, exponent: .62 });
+  const energy = shapeAudioDrive(rawEnergy, feature(features, 'energy'), { rawGain: 1.56, featureWeight: .34, exponent: .64 });
   const kick = feature(features, 'kick');
   const punch = feature(features, 'punch');
   const dynamics = feature(features, 'dynamics');
 
-  const pressureTarget = clamp(bass * .62 + punch * .62 + kick * .34 + energy * .16);
-  const foldTarget = clamp(mid * .72 + dynamics * .25 + bass * .1);
-  const detailTarget = clamp(high * .72 + dynamics * .2 + energy * .14);
+  const pressureTarget = clamp(bass * .68 + punch * .7 + kick * .34 + energy * .16);
+  const foldTarget = clamp(mid * .74 + dynamics * .24 + bass * .1);
+  const detailTarget = clamp(high * .74 + dynamics * .2 + energy * .12);
   const motion = beginMotionFrame(context, time);
-  const pressureSpring = springChannel(motion, 'glass-pressure', pressureTarget, { stiffness: 48, damping: 7.8, maximum: 1.2 });
-  const foldSpring = springChannel(motion, 'glass-fold', foldTarget, { stiffness: 34, damping: 8.2, maximum: 1.1 });
-  const detailSpring = springChannel(motion, 'glass-detail', detailTarget, { stiffness: 42, damping: 8.6, maximum: 1.1 });
-  const pressure = clamp(pressureSpring.value + pressureSpring.velocity * .012, 0, 1.18);
-  const fold = clamp(foldSpring.value + foldSpring.velocity * .007, 0, 1.08);
-  const detail = clamp(detailSpring.value + detailSpring.velocity * .005, 0, 1.08);
-  const flow = advanceMotionPhase(motion, 'kinetic-glass-flow', clamp(energy * .5 + mid * .27 + bass * .18 + high * .12), {
-    baseSpeed: .48,
-    dynamicSpeed: 2.15,
-    response: 4.8,
-    release: 8.2
+  const pressureSpring = springChannel(motion, 'glass-pressure', pressureTarget, { stiffness: 52, damping: 7.4, maximum: 1.22 });
+  const foldSpring = springChannel(motion, 'glass-fold', foldTarget, { stiffness: 36, damping: 8, maximum: 1.12 });
+  const detailSpring = springChannel(motion, 'glass-detail', detailTarget, { stiffness: 44, damping: 8.4, maximum: 1.12 });
+  const pressure = clamp(pressureSpring.value + pressureSpring.velocity * .014, 0, 1.2);
+  const fold = clamp(foldSpring.value + foldSpring.velocity * .008, 0, 1.1);
+  const detail = clamp(detailSpring.value + detailSpring.velocity * .006, 0, 1.1);
+  const flow = advanceMotionPhase(motion, 'kinetic-glass-flow', clamp(energy * .46 + mid * .28 + bass * .2 + high * .12), {
+    baseSpeed: .58,
+    dynamicSpeed: 2.55,
+    response: 5,
+    release: 7.8
   });
   const phase = flow.phase;
 
   const accentRgb = parseHex(accent);
   const accent2Rgb = parseHex(accent2);
-  const white = [241, 246, 255];
+  const white = [246, 248, 255];
   const dark = [5, 5, 12];
   const palette = {
-    base: mixRgb(accentRgb, white, .18),
-    secondary: mixRgb(accent2Rgb, white, .14),
-    edge: mixRgb(accent2Rgb, white, .38),
-    highlight: mixRgb(white, accent2Rgb, .08),
-    dark: mixRgb(dark, accentRgb, .1)
+    base: mixRgb(accentRgb, white, .06),
+    secondary: mixRgb(accent2Rgb, white, .05),
+    edge: mixRgb(accent2Rgb, white, .24),
+    highlight: mixRgb(white, accent2Rgb, .16),
+    dark: mixRgb(dark, accentRgb, .08)
   };
 
-  const background = context.createRadialGradient(width * .5, height * .48, 0, width * .5, height * .48, Math.max(width, height) * .68);
-  background.addColorStop(0, rgba(palette.base, .032 + pressure * .035));
-  background.addColorStop(.4, rgba(palette.secondary, .018 + detail * .025));
-  background.addColorStop(1, 'rgba(0,0,0,0)');
-  context.fillStyle = background;
+  const glowA = context.createRadialGradient(width * .28, height * .48, 0, width * .28, height * .48, width * .62);
+  glowA.addColorStop(0, rgba(palette.base, .045 + pressure * .035));
+  glowA.addColorStop(.55, rgba(palette.base, .012));
+  glowA.addColorStop(1, 'rgba(0,0,0,0)');
+  context.fillStyle = glowA;
   context.fillRect(0, 0, width, height);
 
-  const plateCount = mobile ? 6 : 9;
-  const sceneMorph = .5 + .5 * Math.sin(phase * .26 + .35);
-  const fan = Math.sin(phase * .34 + .8);
-  const cross = Math.sin(phase * .21 - .6);
-  const globalDriftX = Math.sin(phase * .24 + .4) * width * (.035 + energy * .04);
-  const globalDriftY = Math.cos(phase * .2) * height * (.028 + mid * .035);
-  const globalRoll = Math.sin(phase * .17) * .16 + fan * .09 + fold * .05;
-  const globalScale = 1 + pressure * (mobile ? .12 : .22);
+  const glowB = context.createRadialGradient(width * .76, height * .5, 0, width * .76, height * .5, width * .5);
+  glowB.addColorStop(0, rgba(palette.secondary, .035 + detail * .028));
+  glowB.addColorStop(.6, rgba(palette.secondary, .01));
+  glowB.addColorStop(1, 'rgba(0,0,0,0)');
+  context.fillStyle = glowB;
+  context.fillRect(0, 0, width, height);
 
+  const plateCount = mobile ? 3 : 4;
+  const spread = minSide * (mobile ? .18 : .22);
+  const sceneLean = Math.sin(phase * .24) * .16;
   const plates = [];
+
   for (let index = 0; index < plateCount; index += 1) {
     const t = plateCount === 1 ? .5 : index / (plateCount - 1);
-    const side = index % 2 ? 1 : -1;
-    const spectral = Math.pow(sampleAt(data, .06 + t * .88), .68);
-    const baseDepth = .12 + t * .78;
-    const depthOscillation = Math.sin(phase * .44 + index * .82) * .2;
-    const punchWave = Math.max(0, Math.sin(phase * 5.2 - index * .72)) * punch * .24;
-    const depth = clamp(baseDepth + depthOscillation + punchWave + pressure * (.08 + t * .08), .04, 1.12);
-    const near = Math.pow(depth, .78);
-    const lane = (t - .5) * 2;
+    const lane = t - .5;
+    const spectral = Math.pow(sampleAt(data, .1 + t * .78), .64);
+    const wave = Math.sin(phase * .58 + index * 1.22);
+    const punchWave = Math.max(0, Math.sin(phase * 4.8 - index * 1.25)) * punch;
+    const depth = clamp(.28 + t * .48 + wave * .08 + punchWave * .18 + pressure * .1, .12, 1);
+    const dominant = index === Math.floor((plateCount - 1) * .55);
 
-    // Scene morph moves from a spread fan to a crossing architectural stack.
-    const spreadX = lane * width * (.22 + sceneMorph * .08);
-    const stackX = side * width * (.08 + cross * .035) + lane * width * .08;
-    const x = width * .5
-      + spreadX * (1 - sceneMorph)
-      + stackX * sceneMorph
-      + globalDriftX
-      + Math.sin(phase * .55 + index * 1.14) * width * (.022 + near * .035);
-    const y = height * (.5 + side * (.13 + fan * .055) + lane * .05)
-      + globalDriftY
-      + Math.cos(phase * .37 + index * .73) * height * (.045 + near * .055);
+    const cx = width * (.5 + lane * .11)
+      + Math.sin(phase * .31 + index * .88) * width * (.035 + energy * .03)
+      + (dominant ? pressure * width * .018 : 0);
+    const cy = height * .5
+      + lane * spread
+      + Math.cos(phase * .37 + index * 1.08) * height * (.028 + mid * .022);
 
-    const nearBoost = 1 + Math.max(0, depth - .62) * 1.35;
-    const length = width * (mobile ? .34 : .32) * (1 + near * .72) * globalScale * nearBoost;
-    const thickness = minSide * (mobile ? .09 : .115) * (.8 + near * 1.08) * (1 + spectral * .32);
-    const angleBase = side * (.58 - sceneMorph * .24) + lane * .12;
-    const angle = globalRoll
-      + angleBase
-      + Math.sin(phase * .48 + index * .76) * (.18 + fold * .16)
-      + punchWave * side * .28;
-    const skew = length * (.015 + fold * .035) * Math.sin(phase * .42 + index * .91);
-    const localFold = clamp(.18 + fold * .72 + spectral * .18);
-    const drive = clamp(spectral * .56 + fold * .22 + detail * .2 + punch * .18 + near * .08);
+    const nearScale = 1 + depth * .34 + pressure * (dominant ? .22 : .11) + punchWave * .12;
+    const length = width * (mobile ? .58 : .62) * nearScale;
+    const thickness = minSide * (mobile ? .075 : .09) * (1 + depth * .3 + spectral * .28 + (dominant ? .15 : 0));
+    const angle = sceneLean
+      + lane * .34
+      + Math.sin(phase * .43 + index * .72) * (.08 + fold * .09)
+      + punchWave * (index % 2 ? .08 : -.08);
+    const curve = minSide * (.018 + fold * .055 + spectral * .025) * (index % 2 ? 1 : -1);
+    const drive = clamp(spectral * .58 + detail * .2 + fold * .18 + punchWave * .2);
 
     plates.push({
       index,
       depth,
-      cx: x,
-      cy: y,
+      cx,
+      cy,
       length,
       thickness,
       angle,
+      curve,
       drive,
-      geometry: plateGeometry(x, y, length, thickness, angle, skew, localFold)
+      geometry: plateGeometry(cx, cy, length, thickness, angle, curve)
     });
   }
 
@@ -273,28 +259,8 @@ export function drawKineticGlassMode(context, width, height, data, accent, accen
   context.save();
   context.globalCompositeOperation = 'source-over';
   for (const plate of plates) {
-    const reflection = .5 + .5 * Math.sin(phase * (1.45 + plate.index * .035) + plate.index * .77 + detail * .9);
-    drawPlate(context, plate, palette, reflection, detail, plate.depth, pressure);
-  }
-  context.restore();
-
-  // Sparse connectors only appear when detail is present; they never dominate.
-  context.save();
-  context.globalCompositeOperation = 'lighter';
-  const connectorCount = mobile ? 2 : 3;
-  for (let index = 0; index < connectorCount; index += 1) {
-    const a = plates[(index * 3 + 1) % plates.length];
-    const b = plates[(index * 3 + 4) % plates.length];
-    if (!a || !b) continue;
-    const bridgeDrive = clamp(detail * .62 + Math.pow(sampleAt(data, .48 + index * .13), .68) * .5 - .22);
-    if (bridgeDrive <= .03) continue;
-    const bend = Math.sin(phase * 1.15 + index) * minSide * .055;
-    context.beginPath();
-    context.moveTo(a.cx, a.cy);
-    context.quadraticCurveTo((a.cx + b.cx) * .5, (a.cy + b.cy) * .5 + bend, b.cx, b.cy);
-    context.strokeStyle = rgba(index % 2 ? palette.edge : palette.secondary, .045 + bridgeDrive * .18);
-    context.lineWidth = .55 + bridgeDrive * .8;
-    context.stroke();
+    const reflection = .5 + .5 * Math.sin(phase * (1.35 + plate.index * .06) + plate.index * .84 + detail * .8);
+    drawPlate(context, plate, palette, reflection, detail, pressure);
   }
   context.restore();
 }
