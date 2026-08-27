@@ -144,8 +144,8 @@
   function installC3C6MobileCleanup() {
     ensureBuildStylesheet(
       'link[data-c3-c6-mobile-v97]',
-      'css/mobile-cleanup-v97.css',
-      'mobileCleanupV97'
+      'css/c3-c6-mobile-v97.css',
+      'c3C6MobileV97'
     );
 
     if (document.querySelector('script[data-c3-c6-mobile-v97]')) return;
