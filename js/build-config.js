@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260826-audiolab-kinetic-glass-v3-build119',
-    cache: 'shinobi-launchpad-v119',
-    revision: 'audiolab-kinetic-glass-v3',
-    display: '2026.08.26.119',
-    release: 'audiolab-kinetic-glass-20260826'
+    id: '20260827-audiolab-silk-flow-build120',
+    cache: 'shinobi-launchpad-v120',
+    revision: 'audiolab-silk-flow',
+    display: '2026.08.27.120',
+    release: 'audiolab-silk-flow-20260827'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
@@ -153,6 +153,11 @@
     script.src = `js/features/mobile-cleanup-v97.js?v=${encodeURIComponent(config.id)}`;
     script.async = false;
     script.dataset.c3C6MobileV97 = 'true';
+    script.addEventListener('load', () => {
+      script.dataset.loaded = 'true';
+      installNavigationStability();
+    }, { once: true });
+    script.addEventListener('error', installNavigationStability, { once: true });
     document.head.appendChild(script);
   }
 
