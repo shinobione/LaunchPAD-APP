@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260827-audiolab-silk-flow-build120',
-    cache: 'shinobi-launchpad-v120',
-    revision: 'audiolab-silk-flow',
-    display: '2026.08.27.120',
-    release: 'audiolab-silk-flow-20260827'
+    id: '20260827-audiolab-signal-bloom-build121',
+    cache: 'shinobi-launchpad-v121',
+    revision: 'audiolab-signal-bloom',
+    display: '2026.08.27.121',
+    release: 'audiolab-signal-bloom-20260827'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
