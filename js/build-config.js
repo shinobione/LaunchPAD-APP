@@ -144,8 +144,8 @@
   function installC3C6MobileCleanup() {
     ensureBuildStylesheet(
       'link[data-c3-c6-mobile-v97]',
-      'css/c3-c6-mobile-v97.css',
-      'c3C6MobileV97'
+      'css/mobile-cleanup-v97.css',
+      'mobileCleanupV97'
     );
 
     if (document.querySelector('script[data-c3-c6-mobile-v97]')) return;
@@ -153,11 +153,6 @@
     script.src = `js/features/mobile-cleanup-v97.js?v=${encodeURIComponent(config.id)}`;
     script.async = false;
     script.dataset.c3C6MobileV97 = 'true';
-    script.addEventListener('load', () => {
-      script.dataset.loaded = 'true';
-      installNavigationStability();
-    }, { once: true });
-    script.addEventListener('error', installNavigationStability, { once: true });
     document.head.appendChild(script);
   }
 
