@@ -8,6 +8,7 @@ import {
 import { drawPulseReactorMode } from './pulse-reactor.js';
 import { drawBassFractureMode } from './bass-fracture.js';
 import { drawGravityLensMode } from './gravity-lens.js';
+import { drawSignalBloomMode } from './signal-bloom.js';
 import { drawBioStructureMode } from './bio-structure.js';
 import { drawVoidBloomMode } from './void-bloom.js';
 import { drawCreepSignalMode } from './creep-signal.js';
@@ -16,13 +17,14 @@ import { drawNeonRibbonMode } from './neon-ribbon.js';
 const DEFAULT_MODE = 'neon-ribbon';
 // Legacy contract marker retained for older source guards: const DEFAULT_MODE = 'neon-shatter'
 // Legacy label marker retained for older source guards: { id: 'void-bloom', label: 'Void Bloom', renderer: drawVoidBloomMode }
+// Reversible compatibility marker: { id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }
 const CUSTOM_MODES = [
   { id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode },
   { id: 'neon-ribbon', label: 'Neon Ribbon', renderer: drawNeonRibbonMode },
   { id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode },
   { id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode },
   { id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode },
-  { id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode },
+  { id: 'gravity-lens', label: 'Signal Bloom', renderer: drawSignalBloomMode },
   { id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode },
   { id: 'void-bloom', label: 'Silk Flow', renderer: drawVoidBloomMode },
   { id: 'creep-signal', label: 'Creep Signal', renderer: drawCreepSignalMode }
@@ -34,7 +36,7 @@ const CONTROL_MODES = [
   { id: 'liquid-chrome', label: 'Liquid Chrome' },
   { id: 'pulse-reactor', label: 'Pulse Reactor' },
   { id: 'bass-fracture', label: 'Bass Fracture' },
-  { id: 'gravity-lens', label: 'Gravity Lens' },
+  { id: 'gravity-lens', label: 'Signal Bloom' },
   { id: 'bio-structure', label: 'Bio Structure' },
   { id: 'void-bloom', label: 'Silk Flow' },
   { id: 'creep-signal', label: 'Creep Signal' }
@@ -139,11 +141,7 @@ function applyDirectKineticImpact(context, width, height, mode, features) {
       1 - impact * (mobile ? .08 : .11)
     );
   } else if (mode === 'gravity-lens') {
-    context.rotate(-impact * (mobile ? .028 : .045));
-    context.scale(
-      1 - impact * (mobile ? .07 : .1),
-      1 + impact * (mobile ? .18 : .26)
-    );
+    // Signal Bloom owns impact internally as a local travelling field wave.
   } else if (mode === 'bio-structure') {
     context.translate(0, -minSide * impact * (mobile ? .02 : .03));
     context.scale(
