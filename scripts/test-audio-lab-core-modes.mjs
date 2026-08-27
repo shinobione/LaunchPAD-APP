@@ -86,6 +86,7 @@ for (const required of [
   "advanceMotionPhase(motion, 'signal-bloom-flow'", 'const lineCount = mobile ? 16 : 28',
   'const bundleCount = 4', 'context.bezierCurveTo(', 'const waveFront ='
 ]) assert.ok(signalBloom.includes(required), `Signal Bloom contract is missing ${required}.`);
+assert.ok(!signalBloom.includes('shadowBlur ='), 'Signal Bloom must stay bloom-free and crisp.');
 
 const glass = read('js/features/visual/kinetic-glass.js');
 for (const required of [
@@ -128,7 +129,6 @@ for (const isolated of [reactor, fracture, lens, signalBloom, glass, bio, bloom,
   assert.ok(!isolated.includes('requestAnimationFrame('));
   assert.ok(!isolated.includes('Math.random('));
   assert.ok(!isolated.includes('shapeMotionTarget('));
-  assert.ok(!isolated.includes('shadowBlur ='));
 }
 
 const base = read('js/features/visual/visual-engine-v2.js');
