@@ -19,7 +19,7 @@ for (const required of [
   "id: 'neon-ribbon', label: 'Neon Ribbon'", "id: 'liquid-chrome', label: 'Liquid Chrome'",
   "id: 'pulse-reactor', label: 'Pulse Reactor'", "id: 'bass-fracture', label: 'Bass Fracture'",
   "id: 'gravity-lens', label: 'Kinetic Glass'", "id: 'bio-structure', label: 'Bio Structure'",
-  "id: 'void-bloom', label: 'Void Bloom'", "id: 'creep-signal', label: 'Creep Signal'",
+  "id: 'void-bloom', label: 'Silk Flow'", "id: 'creep-signal', label: 'Creep Signal'",
   "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum'])"
 ]) assert.ok(registry.includes(required), `Audio Lab registry is missing ${required}.`);
 for (const forbidden of retiredIds) assert.ok(!registry.includes(forbidden), `Retired preset leaked into registry: ${forbidden}.`);
@@ -34,7 +34,7 @@ for (const required of [
   "{ id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode }",
   "{ id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }",
   "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
-  "{ id: 'void-bloom', label: 'Void Bloom', renderer: drawVoidBloomMode }",
+  "{ id: 'void-bloom', label: 'Silk Flow', renderer: drawVoidBloomMode }",
   "{ id: 'creep-signal', label: 'Creep Signal', renderer: drawCreepSignalMode }",
   "{ id: 'spectrum', label: 'Spectrum' }", "{ id: 'neon-ribbon', label: 'Neon Ribbon' }",
   'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)',
@@ -99,7 +99,7 @@ for (const required of [
   'export function drawVoidBloomMode(', 'shapeAudioDrive(', 'const petalCount = mobile ? 7 : 11',
   'const veinCount = mobile ? 7 : 16', "springChannel(motion, 'open'", "advanceMotionPhase(motion, 'void-bloom-flow'",
   'const driftRadius =', 'const globalTilt =', 'context.bezierCurveTo(', 'context.quadraticCurveTo('
-]) assert.ok(bloom.includes(required), `Void Bloom contract is missing ${required}.`);
+]) assert.ok(bloom.includes(required), `Silk Flow compatibility contract is missing ${required}.`);
 
 const creep = read('js/features/visual/creep-signal.js');
 for (const required of [
@@ -157,4 +157,4 @@ for (const required of [
 
 const build = assertCurrentBuild('Audio Lab current build');
 assert.ok(build.number >= 61, `Audio Lab ten-preset baseline requires Build 61 or newer, got ${build.display}.`);
-console.log(`Audio Lab exposes ten shared-FFT presets including Kinetic Glass and Neon Ribbon under ${build.display}.`);
+console.log(`Audio Lab exposes ten shared-FFT presets including Silk Flow, Kinetic Glass and Neon Ribbon under ${build.display}.`);

@@ -157,6 +157,10 @@ const candidateDocs = new Map([
   [
     'audiolab-kinetic-glass-20260826',
     'docs/BUILD117-AUDIOLAB-KINETIC-GLASS.md'
+  ],
+  [
+    'audiolab-silk-flow-20260827',
+    'docs/BUILD120-AUDIOLAB-SILK-FLOW.md'
   ]
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
