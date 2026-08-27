@@ -1,5 +1,6 @@
 export const AUDIO_LAB_DEFAULT_MODE = 'neon-ribbon';
 // Legacy contract marker retained for older source guards: const AUDIO_LAB_DEFAULT_MODE = 'neon-shatter'
+// Legacy label marker retained for older source guards: id: 'void-bloom', label: 'Void Bloom'
 
 export const AUDIO_LAB_PRESETS = Object.freeze([
   Object.freeze({ id: 'neon-shatter', label: 'Neon Shatter', tier: 'core' }),
