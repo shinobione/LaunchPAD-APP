@@ -36,7 +36,7 @@ requireAll(lens, ['shapeAudioDrive(', "advanceMotionPhase(motion, 'gravity-flow'
 const bio = read('js/features/visual/bio-structure.js');
 requireAll(bio, ['shapeAudioDrive(', "advanceMotionPhase(motion, 'bio-flow'", 'const driftRadius =', 'const ribCount = mobile ? 5 : 8', 'context.quadraticCurveTo('], 'Bio Structure');
 const bloom = read('js/features/visual/void-bloom.js');
-requireAll(bloom, ['shapeAudioDrive(', "advanceMotionPhase(motion, 'void-bloom-flow'", 'const petalCount = mobile ? 7 : 11', 'const veinCount = mobile ? 7 : 16', 'context.bezierCurveTo('], 'Void Bloom');
+requireAll(bloom, ['shapeAudioDrive(', "advanceMotionPhase(motion, 'void-bloom-flow'", 'const petalCount = mobile ? 7 : 11', 'const veinCount = mobile ? 7 : 16', 'context.bezierCurveTo('], 'Silk Flow compatibility');
 const creep = read('js/features/visual/creep-signal.js');
 requireAll(creep, ['shapeAudioDrive(', "advanceMotionPhase(motion, 'creep-flow'", 'const nodeCount = mobile ? 9 : 14', 'const branchCount = mobile ? 6 : 10', 'const pulseCount = mobile ? 7 : 12', 'context.quadraticCurveTo('], 'Creep Signal');
 const ribbon = read('js/features/visual/neon-ribbon.js');
@@ -57,7 +57,7 @@ const live = read('js/features/visual/visual-engine-live.js');
 requireAll(live, [
   "{ id: 'neon-ribbon', label: 'Neon Ribbon', renderer: drawNeonRibbonMode }",
   "{ id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode }",
-  "{ id: 'void-bloom', label: 'Void Bloom', renderer: drawVoidBloomMode }",
+  "{ id: 'void-bloom', label: 'Silk Flow', renderer: drawVoidBloomMode }",
   "{ id: 'creep-signal', label: 'Creep Signal', renderer: drawCreepSignalMode }",
   'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)',
   'function createAdaptiveLowPunchTracker()', 'relativeContrast', 'relativeFlux', 'relativeRise',
