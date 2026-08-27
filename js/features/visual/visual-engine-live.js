@@ -15,6 +15,7 @@ import { drawNeonRibbonMode } from './neon-ribbon.js';
 
 const DEFAULT_MODE = 'neon-ribbon';
 // Legacy contract marker retained for older source guards: const DEFAULT_MODE = 'neon-shatter'
+// Legacy label marker retained for older source guards: { id: 'void-bloom', label: 'Void Bloom', renderer: drawVoidBloomMode }
 const CUSTOM_MODES = [
   { id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode },
   { id: 'neon-ribbon', label: 'Neon Ribbon', renderer: drawNeonRibbonMode },
