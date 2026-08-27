@@ -23,7 +23,7 @@ const CUSTOM_MODES = [
   { id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode },
   { id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode },
   { id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode },
-  { id: 'void-bloom', label: 'Void Bloom', renderer: drawVoidBloomMode },
+  { id: 'void-bloom', label: 'Silk Flow', renderer: drawVoidBloomMode },
   { id: 'creep-signal', label: 'Creep Signal', renderer: drawCreepSignalMode }
 ];
 const CONTROL_MODES = [
@@ -35,7 +35,7 @@ const CONTROL_MODES = [
   { id: 'bass-fracture', label: 'Bass Fracture' },
   { id: 'gravity-lens', label: 'Gravity Lens' },
   { id: 'bio-structure', label: 'Bio Structure' },
-  { id: 'void-bloom', label: 'Void Bloom' },
+  { id: 'void-bloom', label: 'Silk Flow' },
   { id: 'creep-signal', label: 'Creep Signal' }
 ];
 const CUSTOM_RENDERERS = new Map(CUSTOM_MODES.map(mode => [mode.id, mode.renderer]));
@@ -150,9 +150,7 @@ function applyDirectKineticImpact(context, width, height, mode, features) {
       1 - impact * (mobile ? .11 : .16)
     );
   } else if (mode === 'void-bloom') {
-    const scale = 1 + impact * (mobile ? .22 : .3);
-    context.rotate(impact * (mobile ? .055 : .08));
-    context.scale(scale, scale);
+    // Silk Flow owns impact internally as a traveling material wave.
   } else if (mode === 'creep-signal') {
     context.translate(width * impact * (mobile ? .035 : .05), -minSide * impact * (mobile ? .012 : .018));
     context.rotate(-impact * (mobile ? .022 : .032));
