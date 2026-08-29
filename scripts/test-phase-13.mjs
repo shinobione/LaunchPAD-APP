@@ -12,14 +12,14 @@ const base = read('js/features/visual/visual-engine-v2.js');
 requireAll(base, ["{ id: 'spectrum', label: 'Spectrum' }", 'function drawSpectrum(', 'function readSpectrum(target)', 'analyser.getByteFrequencyData(target)'], 'Spectrum reference');
 
 const premium = [
-  ['js/features/visual/neon-horizon.js', ['drawNeonHorizonMode(', 'drawCyberFigure(', 'drawHudSpectrum(', 'drawCyberStreaks(', "fillText('AUDIO REACTIVE'"]],
-  ['js/features/visual/pulse-line.js', ['drawPulseLineMode(', 'tracePoints(', 'strokeTrace(', 'const amplitude =', 'const transientX =']],
-  ['js/features/visual/chroma-spectrum.js', ['drawChromaSpectrumMode(', 'const barCount = mobile ? 68 : 126', 'const PEAKS = new WeakMap()', "fillText('CHROMA SPECTRUM'", 'const shimmerX =']]
+  ['js/features/visual/neon-horizon.js', ['drawNeonHorizonMode(', 'drawCyberArchitecture(', 'drawOrangeSpectrum(', 'drawLightStreaks(', 'drawDiagonalBeams(']],
+  ['js/features/visual/pulse-line.js', ['drawPulseLineMode(', 'waveformPoints(', 'strokeWave(', 'const amplitude =', 'const ghost = points.map(']],
+  ['js/features/visual/chroma-spectrum.js', ['drawChromaSpectrumMode(', 'const barCount = mobile ? 92 : 176', 'const PEAKS = new WeakMap()', 'spectrumGradient(', 'const haze = context.createRadialGradient(']]
 ];
 for (const [file, required] of premium) {
   const source = read(file);
   requireAll(source, required, file);
-  for (const forbidden of ['Math.random(', 'requestAnimationFrame(', 'setInterval(', 'shapeMotionTarget(']) assert.ok(!source.includes(forbidden), `${file} contains ${forbidden}`);
+  for (const forbidden of ['Math.random(', 'requestAnimationFrame(', 'setInterval(', 'shapeMotionTarget(', 'fillText(']) assert.ok(!source.includes(forbidden), `${file} contains ${forbidden}`);
 }
 
 const registry = read('js/features/visual/audio-lab-registry.js');
@@ -48,8 +48,8 @@ const worker = read('sw.js');
 requireAll(worker, ["'./js/features/visual/neon-horizon.js'", "'./js/features/visual/pulse-line.js'", "'./js/features/visual/chroma-spectrum.js'", "event.data?.type === 'GET_RELEASE'"], 'PWA shell');
 
 const build = assertCurrentBuild('Phase 13/current release');
-assert.ok(build.number >= 124, `Build 124 reference-led visual pass expected, got ${build.display}.`);
+assert.ok(build.number >= 125, `Build 125 strict-reference visual pass expected, got ${build.display}.`);
 
 await import('./test-milestone-4.mjs');
 await import('./test-milestone-6.mjs');
-console.log(`Phase 13 remains valid with the shared-FFT ${presetCount}-preset Audio Lab reference-led pass under ${build.display}.`);
+console.log(`Phase 13 remains valid with the shared-FFT ${presetCount}-preset Audio Lab strict-reference pass under ${build.display}.`);
