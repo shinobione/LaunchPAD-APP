@@ -31,8 +31,8 @@ for (const forbidden of ['synthesizePlaybackSpectrum', 'readAudioLabAmplitude'])
 }
 
 const premium = [
-  ['js/features/visual/prism-tunnel.js', ['drawPrismTunnelMode(', 'depthFrame(', 'drawConnectorRibs(', 'drawSpectralSparks(']],
-  ['js/features/visual/pulse-line.js', ['drawPulseLineMode(', 'waveformPoints(', 'strokeWave(', 'strongestPeaks(', 'const echo = points.map(']],
+  ['js/features/visual/prism-tunnel.js', ['drawPrismTunnelMode(', 'curtainPoints(', 'traceCurtain(', 'drawSpectralDust(']],
+  ['js/features/visual/pulse-line.js', ['drawPulseLineMode(', 'const SIGNAL_HOLD = new WeakMap()', 'stableSpectrum(', 'waveformPoints(', 'strongestPeaks(', 'const echo = points.map(']],
   ['js/features/visual/chroma-spectrum.js', ['drawChromaSpectrumMode(', 'const PEAKS = new WeakMap()', 'const barCount = mobile ? 96 : 184', 'spectrumGradient(', 'drawRearField(']]
 ];
 for (const [file, required] of premium) {
@@ -41,6 +41,9 @@ for (const [file, required] of premium) {
   for (const forbidden of ['requestAnimationFrame(', 'setInterval(', 'Math.random(', 'fillText(']) assert.ok(!source.includes(forbidden), `${file} contains ${forbidden}`);
 }
 
+const registry = read('js/features/visual/audio-lab-registry.js');
+assert.ok(registry.includes("id: 'gravity-lens', label: 'Aurora Field'"), 'Aurora Field must be the user-facing gravity-lens label.');
+
 const base = read('js/features/visual/visual-engine-v2.js');
 for (const required of ['function readSpectrum(target)', 'analyser.getByteFrequencyData(target)', 'function drawSpectrum(', 'return { resume, setMode, readSpectrum }']) {
   assert.ok(base.includes(required), `Shared Spectrum analyser contract is missing ${required}.`);
@@ -48,4 +51,4 @@ for (const required of ['function readSpectrum(target)', 'analyser.getByteFreque
 
 const bridge = read('js/features/visual/visual-engine.js').trim();
 assert.equal(bridge, "export { createVisualController } from './visual-engine-live.js';");
-console.log('Audio Lab keeps shared-FFT live reactivity and exposes the Build 126 premium polish + Prism Tunnel pass.');
+console.log('Audio Lab keeps shared-FFT live reactivity with the Build 127 Aurora corrective pass and Pulse Line dropout guard.');
