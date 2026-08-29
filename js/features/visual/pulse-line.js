@@ -10,40 +10,39 @@ function rgba(color, alpha, fallback = '71, 220, 255') {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function waveformPath(context, width, centerY, data, amplitude, time, energy, opts = {}) {
-  const { reflection = false, phaseOffset = 0, scale = 1, harmonic = .12 } = opts;
-  const samples = Math.min(168, Math.max(72, Math.floor(width / 15)));
-  context.beginPath();
-  for (let i = 0; i < samples; i += 1) {
-    const t = i / (samples - 1);
-    const dataIndex = Math.min(data.length - 1, Math.floor(t * data.length));
-    const raw = (data[dataIndex] || 0) / 255;
-    const neighbor = (data[Math.min(data.length - 1, dataIndex + 2)] || 0) / 255;
-    const envelope = Math.pow(Math.sin(Math.PI * t), .5);
-    const carrier = Math.sin(time * 2.2 + t * 20 + phaseOffset) * harmonic + Math.sin(time * .93 - t * 9.5 + phaseOffset) * .065;
-    const detail = Math.sin(time * 4.8 - t * 42 + phaseOffset) * raw * .035;
-    const response = Math.pow(raw * .78 + neighbor * .22, 1.42) * (.72 + energy * .92);
-    const yOffset = (response + carrier * raw + detail) * amplitude * envelope * scale;
-    const y = reflection ? centerY + yOffset : centerY - yOffset;
-    const x = t * width;
-    if (i === 0) context.moveTo(x, y);
-    else context.lineTo(x, y);
-  }
+function readBin(data, t) {
+  if (!data?.length) return 0;
+  const index = Math.max(0, Math.min(data.length - 1, Math.round(t * (data.length - 1))));
+  return (data[index] || 0) / 255;
 }
 
-function drawParticleTicks(context, width, centerY, data, time, high, accent, accent2) {
-  const count = width < 800 ? 28 : 52;
+function tracePoints(width, centerY, data, amplitude, time, energy, punch) {
+  const count = Math.min(220, Math.max(96, Math.floor(width / 10)));
+  const points = [];
   for (let i = 0; i < count; i += 1) {
-    const t = (i + .5) / count;
-    const index = Math.min(data.length - 1, Math.floor(t * data.length));
-    const raw = (data[index] || 0) / 255;
-    if (raw < .14) continue;
-    const drift = Math.sin(time * (1.2 + (i % 5) * .18) + i * 2.41);
-    const y = centerY + drift * (9 + raw * 22);
-    const alpha = clamp((raw - .1) * (.55 + high * .8));
-    context.fillStyle = i % 4 === 0 ? 'rgba(255,255,255,.92)' : (i % 2 === 0 ? rgba(accent2, alpha, '198,72,255') : rgba(accent, alpha));
-    context.fillRect(t * width, y, i % 7 === 0 ? 2 : 1, i % 7 === 0 ? 2 : 1);
+    const t = i / (count - 1);
+    const raw = readBin(data, t);
+    const near = readBin(data, clamp(t + .012));
+    const shaped = Math.pow(raw * .76 + near * .24, 1.7);
+    const calm = Math.sin(time * 2.2 + t * 28) * .012 + Math.sin(time * .72 - t * 10) * .009;
+    const attack = shaped * (0.72 + energy * .72 + punch * .28);
+    const localized = Math.pow(Math.max(0, Math.sin(t * Math.PI * 6 + time * .55)), 4) * shaped * .18;
+    const y = centerY - (attack + localized + calm) * amplitude;
+    points.push([t * width, y]);
   }
+  return points;
+}
+
+function strokeTrace(context, points, style, width, alpha = 1) {
+  context.globalAlpha = alpha;
+  context.strokeStyle = style;
+  context.lineWidth = width;
+  context.lineCap = 'round';
+  context.lineJoin = 'round';
+  context.beginPath();
+  points.forEach(([x, y], index) => index === 0 ? context.moveTo(x, y) : context.lineTo(x, y));
+  context.stroke();
+  context.globalAlpha = 1;
 }
 
 export function drawPulseLineMode(context, width, height, data, accent, accent2, time, features = {}) {
@@ -52,123 +51,88 @@ export function drawPulseLineMode(context, width, height, data, accent, accent2,
   const high = clamp(features.high || 0);
   const energy = clamp(features.energy || 0);
   const punch = clamp(features.punch || features.kick || 0);
-  const centerY = height * (.505 + Math.sin(time * .18) * .004);
-  const amplitude = height * (.17 + bass * .28 + punch * .16);
+  const centerY = height * .5;
+  const amplitude = height * (.16 + bass * .28 + punch * .16);
 
   const background = context.createLinearGradient(0, 0, 0, height);
-  background.addColorStop(0, '#01040a');
-  background.addColorStop(.44, '#040914');
-  background.addColorStop(.56, '#06101c');
-  background.addColorStop(1, '#010207');
+  background.addColorStop(0, '#01050a');
+  background.addColorStop(.44, '#020912');
+  background.addColorStop(.56, '#03111b');
+  background.addColorStop(1, '#010308');
   context.fillStyle = background;
   context.fillRect(0, 0, width, height);
 
-  const aura = context.createRadialGradient(width * .5, centerY, 0, width * .5, centerY, width * .52);
-  aura.addColorStop(0, rgba(accent, .22 + energy * .08));
-  aura.addColorStop(.34, rgba(accent2, .09 + mid * .05, '179, 69, 255'));
-  aura.addColorStop(.72, rgba(accent, .025));
-  aura.addColorStop(1, rgba(accent, 0));
-  context.fillStyle = aura;
-  context.fillRect(0, centerY - height * .38, width, height * .76);
+  const beam = context.createLinearGradient(0, centerY - height * .16, 0, centerY + height * .16);
+  beam.addColorStop(0, rgba(accent, 0));
+  beam.addColorStop(.28, rgba(accent, .035 + energy * .035));
+  beam.addColorStop(.46, rgba(accent, .13 + energy * .07));
+  beam.addColorStop(.5, 'rgba(225,250,255,.22)');
+  beam.addColorStop(.54, rgba(accent, .13 + energy * .07));
+  beam.addColorStop(.72, rgba(accent, .035 + energy * .035));
+  beam.addColorStop(1, rgba(accent, 0));
+  context.fillStyle = beam;
+  context.fillRect(0, centerY - height * .18, width, height * .36);
 
-  const waveformGradient = context.createLinearGradient(0, 0, width, 0);
-  waveformGradient.addColorStop(0, rgba(accent, .95));
-  waveformGradient.addColorStop(.24, 'rgba(115,238,255,.98)');
-  waveformGradient.addColorStop(.5, 'rgba(248,253,255,1)');
-  waveformGradient.addColorStop(.76, rgba(accent2, .98, '208, 78, 255'));
-  waveformGradient.addColorStop(1, rgba(accent, .92));
+  const halo = context.createRadialGradient(width * .48, centerY, 0, width * .48, centerY, width * .58);
+  halo.addColorStop(0, rgba(accent, .19 + energy * .08));
+  halo.addColorStop(.42, rgba(accent, .055));
+  halo.addColorStop(1, rgba(accent, 0));
+  context.fillStyle = halo;
+  context.fillRect(0, centerY - height * .25, width, height * .5);
 
-  const echoes = [
-    { alpha: .12, width: 2.4, scale: .74, offset: -0.18, y: -height * .018 },
-    { alpha: .09, width: 1.6, scale: .58, offset: .22, y: height * .022 }
-  ];
-  for (const echo of echoes) {
-    context.globalAlpha = echo.alpha + energy * .05;
-    context.strokeStyle = waveformGradient;
-    context.lineWidth = echo.width;
-    context.lineJoin = 'round';
-    context.lineCap = 'round';
-    waveformPath(context, width, centerY + echo.y, data, amplitude, time, energy, { phaseOffset: echo.offset, scale: echo.scale, harmonic: .16 });
-    context.stroke();
-  }
+  const points = tracePoints(width, centerY, data, amplitude, time, energy, punch);
+  const cyan = context.createLinearGradient(0, 0, width, 0);
+  cyan.addColorStop(0, rgba(accent, .82));
+  cyan.addColorStop(.3, 'rgba(134,240,255,.98)');
+  cyan.addColorStop(.5, 'rgba(244,253,255,1)');
+  cyan.addColorStop(.72, 'rgba(112,228,255,.98)');
+  cyan.addColorStop(1, rgba(accent, .82));
+
+  strokeTrace(context, points, cyan, 34 + punch * 14, .035 + energy * .02);
+  strokeTrace(context, points, cyan, 18 + punch * 9, .07 + energy * .035);
+  strokeTrace(context, points, cyan, 8 + punch * 3, .2 + energy * .06);
+  strokeTrace(context, points, cyan, 2.1, .95);
+  strokeTrace(context, points, 'rgba(248,254,255,.98)', .9, .95);
+
+  context.globalAlpha = .16 + high * .16;
+  const reflection = points.map(([x, y]) => [x, centerY + (centerY - y) * .72]);
+  strokeTrace(context, reflection, cyan, 1.15, .22 + high * .14);
   context.globalAlpha = 1;
 
-  for (const layer of [
-    { width: 30 + punch * 18, alpha: .055 },
-    { width: 16 + punch * 9, alpha: .11 },
-    { width: 7 + punch * 3, alpha: .31 },
-    { width: 2.2, alpha: .88 }
-  ]) {
-    context.globalAlpha = layer.alpha;
-    context.strokeStyle = waveformGradient;
-    context.lineWidth = layer.width;
-    context.lineJoin = 'round';
-    context.lineCap = 'round';
-    waveformPath(context, width, centerY, data, amplitude, time, energy, { harmonic: .14 });
-    context.stroke();
-  }
-
-  context.globalAlpha = .95;
-  context.strokeStyle = 'rgba(248,253,255,.98)';
-  context.lineWidth = 1.05;
-  waveformPath(context, width, centerY, data, amplitude * .92, time, energy, { harmonic: .1 });
-  context.stroke();
-  context.globalAlpha = 1;
-
-  context.globalAlpha = .24 + high * .16;
-  context.strokeStyle = waveformGradient;
-  context.lineWidth = 1.1;
-  waveformPath(context, width, centerY + height * .035, data, amplitude * .5, time + .08, energy, { reflection: true, scale: .72, harmonic: .08 });
-  context.stroke();
-  context.globalAlpha = 1;
-
-  drawParticleTicks(context, width, centerY, data, time, high, accent, accent2);
-
-  const baseLine = context.createLinearGradient(0, 0, width, 0);
-  baseLine.addColorStop(0, 'rgba(255,255,255,0)');
-  baseLine.addColorStop(.12, rgba(accent, .28));
-  baseLine.addColorStop(.34, rgba(accent, .52));
-  baseLine.addColorStop(.5, 'rgba(255,255,255,.82)');
-  baseLine.addColorStop(.66, rgba(accent2, .55, '208, 78, 255'));
-  baseLine.addColorStop(.88, rgba(accent2, .3, '208,78,255'));
-  baseLine.addColorStop(1, 'rgba(255,255,255,0)');
-  context.strokeStyle = baseLine;
-  context.lineWidth = 1;
+  context.strokeStyle = 'rgba(236,252,255,.86)';
+  context.lineWidth = .8;
   context.beginPath();
   context.moveTo(0, centerY);
   context.lineTo(width, centerY);
   context.stroke();
 
-  const tickCount = width < 800 ? 28 : 54;
-  context.globalAlpha = .36 + high * .2;
-  for (let i = 0; i <= tickCount; i += 1) {
-    const x = i / tickCount * width;
-    const major = i % 6 === 0;
-    context.strokeStyle = major ? 'rgba(255,255,255,.62)' : rgba(accent, .44);
-    context.lineWidth = major ? 1 : .7;
-    context.beginPath();
-    context.moveTo(x, centerY - (major ? 5 : 2));
-    context.lineTo(x, centerY + (major ? 5 : 2));
-    context.stroke();
+  const pulseCount = width < 800 ? 22 : 44;
+  for (let i = 0; i < pulseCount; i += 1) {
+    const t = (i + .5) / pulseCount;
+    const raw = readBin(data, t);
+    if (raw < .18) continue;
+    const x = t * width;
+    const heightPx = 4 + Math.pow(raw, 1.8) * (12 + high * 24);
+    context.globalAlpha = .18 + raw * .45;
+    context.fillStyle = i % 5 === 0 ? 'rgba(255,255,255,.95)' : rgba(accent, .9);
+    context.fillRect(x, centerY - heightPx * .5, 1, heightPx);
   }
   context.globalAlpha = 1;
 
-  const flareX = ((time * (.15 + high * .14 + energy * .04)) % 1) * width;
-  const flare = context.createRadialGradient(flareX, centerY, 0, flareX, centerY, Math.max(80, width * .085));
-  flare.addColorStop(0, 'rgba(255,255,255,.9)');
-  flare.addColorStop(.14, rgba(accent, .4));
-  flare.addColorStop(.46, rgba(accent2, .14, '208,78,255'));
-  flare.addColorStop(1, rgba(accent, 0));
-  context.globalAlpha = .32 + high * .42;
-  context.fillStyle = flare;
-  context.fillRect(flareX - width * .09, centerY - height * .15, width * .18, height * .3);
+  const transientX = ((time * (.11 + energy * .06 + high * .05)) % 1) * width;
+  const transient = context.createRadialGradient(transientX, centerY, 0, transientX, centerY, Math.max(70, width * .075));
+  transient.addColorStop(0, `rgba(255,255,255,${.38 + punch * .5})`);
+  transient.addColorStop(.15, rgba(accent, .28 + punch * .28));
+  transient.addColorStop(.5, rgba(accent, .07));
+  transient.addColorStop(1, rgba(accent, 0));
+  context.fillStyle = transient;
+  context.globalAlpha = .35 + high * .28;
+  context.fillRect(transientX - width * .08, centerY - height * .18, width * .16, height * .36);
   context.globalAlpha = 1;
 
-  const edgeFade = context.createLinearGradient(0, 0, width, 0);
-  edgeFade.addColorStop(0, 'rgba(0,0,0,.58)');
-  edgeFade.addColorStop(.065, 'rgba(0,0,0,0)');
-  edgeFade.addColorStop(.935, 'rgba(0,0,0,0)');
-  edgeFade.addColorStop(1, 'rgba(0,0,0,.58)');
-  context.fillStyle = edgeFade;
+  const vignette = context.createRadialGradient(width * .5, centerY, width * .08, width * .5, centerY, width * .72);
+  vignette.addColorStop(0, 'rgba(0,0,0,0)');
+  vignette.addColorStop(1, 'rgba(0,0,0,.54)');
+  context.fillStyle = vignette;
   context.fillRect(0, 0, width, height);
 }
