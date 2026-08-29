@@ -51,7 +51,8 @@ const candidateDocs = new Map([
   ['audiolab-signal-bloom-20260827','docs/BUILD121-AUDIOLAB-SIGNAL-BLOOM.md'],
   ['audiolab-premium-visual-pack-20260829','docs/BUILD122-AUDIOLAB-PREMIUM-VISUAL-PACK.md'],
   ['audiolab-premium-detail-20260829','docs/BUILD123-AUDIOLAB-PREMIUM-DETAIL.md'],
-  ['audiolab-reference-led-20260829','docs/BUILD124-AUDIOLAB-REFERENCE-LED.md']
+  ['audiolab-reference-led-20260829','docs/BUILD124-AUDIOLAB-REFERENCE-LED.md'],
+  ['audiolab-strict-reference-20260829','docs/BUILD125-AUDIOLAB-STRICT-REFERENCE.md']
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
   ? [candidateDocs.get(release)]
