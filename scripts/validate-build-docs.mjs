@@ -53,7 +53,8 @@ const candidateDocs = new Map([
   ['audiolab-premium-detail-20260829','docs/BUILD123-AUDIOLAB-PREMIUM-DETAIL.md'],
   ['audiolab-reference-led-20260829','docs/BUILD124-AUDIOLAB-REFERENCE-LED.md'],
   ['audiolab-strict-reference-20260829','docs/BUILD125-AUDIOLAB-STRICT-REFERENCE.md'],
-  ['audiolab-premium-polish-prism-20260829','docs/BUILD126-AUDIOLAB-PREMIUM-POLISH-PRISM.md']
+  ['audiolab-premium-polish-prism-20260829','docs/BUILD126-AUDIOLAB-PREMIUM-POLISH-PRISM.md'],
+  ['audiolab-reactivity-aurora-20260829','docs/BUILD127-AUDIOLAB-REACTIVITY-AURORA.md']
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
   ? [candidateDocs.get(release)]
@@ -67,10 +68,5 @@ for (const relative of livingReleaseDocs) {
   if (!content.includes(display) || !content.includes(release)) stale.push(relative);
 }
 
-assert.deepEqual(
-  stale,
-  [],
-  `Living release docs must mention current build ${display} and release ${release}. Stale: ${stale.join(', ')}`
-);
-
+assert.deepEqual(stale, [], `Living release docs must mention current build ${display} and release ${release}. Stale: ${stale.join(', ')}`);
 console.log(`Build documentation is coherent: ${livingReleaseDocs.join(', ')} matches ${display} / ${release}.`);
