@@ -49,7 +49,8 @@ const candidateDocs = new Map([
   ['audiolab-kinetic-glass-20260826','docs/BUILD117-AUDIOLAB-KINETIC-GLASS.md'],
   ['audiolab-silk-flow-20260827','docs/BUILD120-AUDIOLAB-SILK-FLOW.md'],
   ['audiolab-signal-bloom-20260827','docs/BUILD121-AUDIOLAB-SIGNAL-BLOOM.md'],
-  ['audiolab-premium-visual-pack-20260829','docs/BUILD122-AUDIOLAB-PREMIUM-VISUAL-PACK.md']
+  ['audiolab-premium-visual-pack-20260829','docs/BUILD122-AUDIOLAB-PREMIUM-VISUAL-PACK.md'],
+  ['audiolab-premium-detail-20260829','docs/BUILD123-AUDIOLAB-PREMIUM-DETAIL.md']
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
   ? [candidateDocs.get(release)]
