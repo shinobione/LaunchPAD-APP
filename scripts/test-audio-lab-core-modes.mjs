@@ -33,14 +33,15 @@ for (const required of [
 ]) assert.ok(live.includes(required), `Audio Lab integration is missing ${required}.`);
 
 const premiumFiles = [
-  ['js/features/visual/neon-horizon.js', ['export function drawNeonHorizonMode(', 'function drawCyberFigure(', 'function drawHudSpectrum(', 'function drawCyberStreaks(', "context.fillText('AUDIO REACTIVE'", "context.fillText(`ENERGY"]],
-  ['js/features/visual/pulse-line.js', ['export function drawPulseLineMode(', 'function tracePoints(', 'function strokeTrace(', 'const points = tracePoints(', 'const transientX =']],
-  ['js/features/visual/chroma-spectrum.js', ['export function drawChromaSpectrumMode(', 'const PEAKS = new WeakMap()', 'const barCount = mobile ? 68 : 126', "context.fillText('CHROMA SPECTRUM'", 'const shimmerX =']]
+  ['js/features/visual/neon-horizon.js', ['export function drawNeonHorizonMode(', 'function drawCyberArchitecture(', 'function drawOrangeSpectrum(', 'function drawLightStreaks(', 'function drawDiagonalBeams(']],
+  ['js/features/visual/pulse-line.js', ['export function drawPulseLineMode(', 'function waveformPoints(', 'function strokeWave(', 'const points = waveformPoints(', 'const ghost = points.map(']],
+  ['js/features/visual/chroma-spectrum.js', ['export function drawChromaSpectrumMode(', 'const PEAKS = new WeakMap()', 'const barCount = mobile ? 92 : 176', 'function spectrumGradient(', 'const haze = context.createRadialGradient(']]
 ];
 for (const [file, required] of premiumFiles) {
   const source = read(file);
   for (const value of required) assert.ok(source.includes(value), `${file} is missing ${value}.`);
   for (const forbidden of ['Math.random(', 'requestAnimationFrame(', 'setInterval(', 'shapeMotionTarget(']) assert.ok(!source.includes(forbidden), `${file} must not contain ${forbidden}.`);
+  assert.ok(!source.includes('fillText('), `${file} must not contain visualizer typography in the strict reference pass.`);
 }
 
 const base = read('js/features/visual/visual-engine-v2.js');
@@ -72,5 +73,5 @@ for (const required of ["'./js/features/visual/neon-horizon.js'", "'./js/feature
 }
 
 const build = assertCurrentBuild('Audio Lab current build');
-assert.ok(build.number >= 124, `Audio Lab reference-led pack requires Build 124 or newer, got ${build.display}.`);
-console.log(`Audio Lab exposes ten shared-FFT presets including Cyber Scene, Pulse Line and Chroma Spectrum under ${build.display}.`);
+assert.ok(build.number >= 125, `Audio Lab strict reference pass requires Build 125 or newer, got ${build.display}.`);
+console.log(`Audio Lab exposes ten shared-FFT presets including the strict-reference Cyber Scene, Pulse Line and Chroma Spectrum under ${build.display}.`);
