@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260829-audiolab-premium-visual-pack-build122',
-    cache: 'shinobi-launchpad-v122',
-    revision: 'audiolab-premium-visual-pack',
-    display: '2026.08.29.122',
-    release: 'audiolab-premium-visual-pack-20260829'
+    id: '20260829-audiolab-premium-detail-build123',
+    cache: 'shinobi-launchpad-v123',
+    revision: 'audiolab-premium-detail',
+    display: '2026.08.29.123',
+    release: 'audiolab-premium-detail-20260829'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
