@@ -9,7 +9,7 @@ for (const required of [
   "{ id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode }",
   "{ id: 'spectrum', label: 'Spectrum' }",
   "{ id: 'neon-ribbon', label: 'Neon Ribbon', renderer: drawNeonRibbonMode }",
-  "{ id: 'gravity-lens', label: 'Neon Horizon', renderer: drawNeonHorizonMode }",
+  "{ id: 'gravity-lens', label: 'Prism Tunnel', renderer: drawPrismTunnelMode }",
   "{ id: 'void-bloom', label: 'Pulse Line', renderer: drawPulseLineMode }",
   "{ id: 'creep-signal', label: 'Chroma Spectrum', renderer: drawChromaSpectrumMode }",
   "const KINETIC_MODE_IDS = new Set(['pulse-reactor', 'bass-fracture', 'gravity-lens', 'bio-structure', 'void-bloom', 'creep-signal'])",
@@ -31,9 +31,9 @@ for (const forbidden of ['synthesizePlaybackSpectrum', 'readAudioLabAmplitude'])
 }
 
 const premium = [
-  ['js/features/visual/neon-horizon.js', ['drawNeonHorizonMode(', 'drawCyberArchitecture(', 'drawOrangeSpectrum(', 'drawLightStreaks(', 'drawDiagonalBeams(']],
-  ['js/features/visual/pulse-line.js', ['drawPulseLineMode(', 'waveformPoints(', 'strokeWave(', 'const ghost = points.map(']],
-  ['js/features/visual/chroma-spectrum.js', ['drawChromaSpectrumMode(', 'const PEAKS = new WeakMap()', 'const barCount = mobile ? 92 : 176', 'spectrumGradient(']]
+  ['js/features/visual/prism-tunnel.js', ['drawPrismTunnelMode(', 'depthFrame(', 'drawConnectorRibs(', 'drawSpectralSparks(']],
+  ['js/features/visual/pulse-line.js', ['drawPulseLineMode(', 'waveformPoints(', 'strokeWave(', 'strongestPeaks(', 'const echo = points.map(']],
+  ['js/features/visual/chroma-spectrum.js', ['drawChromaSpectrumMode(', 'const PEAKS = new WeakMap()', 'const barCount = mobile ? 96 : 184', 'spectrumGradient(', 'drawRearField(']]
 ];
 for (const [file, required] of premium) {
   const source = read(file);
@@ -48,4 +48,4 @@ for (const required of ['function readSpectrum(target)', 'analyser.getByteFreque
 
 const bridge = read('js/features/visual/visual-engine.js').trim();
 assert.equal(bridge, "export { createVisualController } from './visual-engine-live.js';");
-console.log('Audio Lab keeps shared-FFT live reactivity and exposes the Build 125 strict-reference visual pass.');
+console.log('Audio Lab keeps shared-FFT live reactivity and exposes the Build 126 premium polish + Prism Tunnel pass.');
