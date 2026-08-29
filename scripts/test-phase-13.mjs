@@ -12,9 +12,9 @@ const base = read('js/features/visual/visual-engine-v2.js');
 requireAll(base, ["{ id: 'spectrum', label: 'Spectrum' }", 'function drawSpectrum(', 'function readSpectrum(target)', 'analyser.getByteFrequencyData(target)'], 'Spectrum reference');
 
 const premium = [
-  ['js/features/visual/neon-horizon.js', ['drawNeonHorizonMode(', 'const rowCount = 24', 'const colCount =', 'const punchWave =']],
-  ['js/features/visual/pulse-line.js', ['drawPulseLineMode(', 'waveformPath(', 'const amplitude =', 'const flareX =']],
-  ['js/features/visual/chroma-spectrum.js', ['drawChromaSpectrumMode(', 'const barCount =', 'const PEAKS = new WeakMap()', 'const sweepX =']]
+  ['js/features/visual/neon-horizon.js', ['drawNeonHorizonMode(', 'const rowCount = width < 800 ? 24 : 34', 'terrainHeight(', 'drawStars(', 'const punchWave =']],
+  ['js/features/visual/pulse-line.js', ['drawPulseLineMode(', 'waveformPath(', 'drawParticleTicks(', 'const amplitude =', 'const flareX =']],
+  ['js/features/visual/chroma-spectrum.js', ['drawChromaSpectrumMode(', 'const barCount = mobile ? 34 : 64', 'const PEAKS = new WeakMap()', 'const points = []', 'const sweepX =']]
 ];
 for (const [file, required] of premium) {
   const source = read(file);
@@ -48,8 +48,8 @@ const worker = read('sw.js');
 requireAll(worker, ["'./js/features/visual/neon-horizon.js'", "'./js/features/visual/pulse-line.js'", "'./js/features/visual/chroma-spectrum.js'", "event.data?.type === 'GET_RELEASE'"], 'PWA shell');
 
 const build = assertCurrentBuild('Phase 13/current release');
-assert.ok(build.number >= 122, `Build 122 premium pack expected, got ${build.display}.`);
+assert.ok(build.number >= 123, `Build 123 premium detail pass expected, got ${build.display}.`);
 
 await import('./test-milestone-4.mjs');
 await import('./test-milestone-6.mjs');
-console.log(`Phase 13 remains valid with the shared-FFT ${presetCount}-preset Audio Lab premium pack under ${build.display}.`);
+console.log(`Phase 13 remains valid with the shared-FFT ${presetCount}-preset Audio Lab premium detail pass under ${build.display}.`);
