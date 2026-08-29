@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260827-audiolab-signal-bloom-build121',
-    cache: 'shinobi-launchpad-v121',
-    revision: 'audiolab-signal-bloom',
-    display: '2026.08.27.121',
-    release: 'audiolab-signal-bloom-20260827'
+    id: '20260829-audiolab-premium-visual-pack-build122',
+    cache: 'shinobi-launchpad-v122',
+    revision: 'audiolab-premium-visual-pack',
+    display: '2026.08.29.122',
+    release: 'audiolab-premium-visual-pack-20260829'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
