@@ -12,9 +12,9 @@ const base = read('js/features/visual/visual-engine-v2.js');
 requireAll(base, ["{ id: 'spectrum', label: 'Spectrum' }", 'function drawSpectrum(', 'function readSpectrum(target)', 'analyser.getByteFrequencyData(target)'], 'Spectrum reference');
 
 const premium = [
-  ['js/features/visual/neon-horizon.js', ['drawNeonHorizonMode(', 'drawCyberArchitecture(', 'drawOrangeSpectrum(', 'drawLightStreaks(', 'drawDiagonalBeams(']],
-  ['js/features/visual/pulse-line.js', ['drawPulseLineMode(', 'waveformPoints(', 'strokeWave(', 'const amplitude =', 'const ghost = points.map(']],
-  ['js/features/visual/chroma-spectrum.js', ['drawChromaSpectrumMode(', 'const barCount = mobile ? 92 : 176', 'const PEAKS = new WeakMap()', 'spectrumGradient(', 'const haze = context.createRadialGradient(']]
+  ['js/features/visual/prism-tunnel.js', ['drawPrismTunnelMode(', 'depthFrame(', 'drawConnectorRibs(', 'drawSpectralSparks(', 'const frameCount = width < 760 ? 9 : 13']],
+  ['js/features/visual/pulse-line.js', ['drawPulseLineMode(', 'waveformPoints(', 'strokeWave(', 'const amplitude =', 'strongestPeaks(', 'const echo = points.map(']],
+  ['js/features/visual/chroma-spectrum.js', ['drawChromaSpectrumMode(', 'const barCount = mobile ? 96 : 184', 'const PEAKS = new WeakMap()', 'spectrumGradient(', 'drawRearField(', 'const haze = context.createRadialGradient(']]
 ];
 for (const [file, required] of premium) {
   const source = read(file);
@@ -25,11 +25,11 @@ for (const [file, required] of premium) {
 const registry = read('js/features/visual/audio-lab-registry.js');
 const presetCount = (registry.match(/id: '[^']+'/g) || []).length;
 assert.equal(presetCount, 10, 'Audio Lab must keep ten sanctioned presets.');
-requireAll(registry, ["id: 'gravity-lens', label: 'Cyber Scene'", "id: 'void-bloom', label: 'Pulse Line'", "id: 'creep-signal', label: 'Chroma Spectrum'"], 'Premium registry');
+requireAll(registry, ["id: 'gravity-lens', label: 'Prism Tunnel'", "id: 'void-bloom', label: 'Pulse Line'", "id: 'creep-signal', label: 'Chroma Spectrum'"], 'Premium registry');
 
 const live = read('js/features/visual/visual-engine-live.js');
 requireAll(live, [
-  "{ id: 'gravity-lens', label: 'Neon Horizon', renderer: drawNeonHorizonMode }",
+  "{ id: 'gravity-lens', label: 'Prism Tunnel', renderer: drawPrismTunnelMode }",
   "{ id: 'void-bloom', label: 'Pulse Line', renderer: drawPulseLineMode }",
   "{ id: 'creep-signal', label: 'Chroma Spectrum', renderer: drawChromaSpectrumMode }",
   'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)',
@@ -45,11 +45,11 @@ assert.ok(!signal.includes('captureStream('));
 assert.ok(!signal.includes('createMediaStreamSource('));
 
 const worker = read('sw.js');
-requireAll(worker, ["'./js/features/visual/neon-horizon.js'", "'./js/features/visual/pulse-line.js'", "'./js/features/visual/chroma-spectrum.js'", "event.data?.type === 'GET_RELEASE'"], 'PWA shell');
+requireAll(worker, ["'./js/features/visual/prism-tunnel.js'", "'./js/features/visual/pulse-line.js'", "'./js/features/visual/chroma-spectrum.js'", "event.data?.type === 'GET_RELEASE'"], 'PWA shell');
 
 const build = assertCurrentBuild('Phase 13/current release');
-assert.ok(build.number >= 125, `Build 125 strict-reference visual pass expected, got ${build.display}.`);
+assert.ok(build.number >= 126, `Build 126 premium polish + Prism Tunnel expected, got ${build.display}.`);
 
 await import('./test-milestone-4.mjs');
 await import('./test-milestone-6.mjs');
-console.log(`Phase 13 remains valid with the shared-FFT ${presetCount}-preset Audio Lab strict-reference pass under ${build.display}.`);
+console.log(`Phase 13 remains valid with the shared-FFT ${presetCount}-preset Audio Lab premium polish pass under ${build.display}.`);
