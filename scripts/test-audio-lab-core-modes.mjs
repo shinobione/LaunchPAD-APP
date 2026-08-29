@@ -10,7 +10,7 @@ assert.equal(bridge, "export { createVisualController } from './visual-engine-li
 const registry = read('js/features/visual/audio-lab-registry.js');
 for (const required of [
   "export const AUDIO_LAB_DEFAULT_MODE = 'neon-ribbon'",
-  "id: 'gravity-lens', label: 'Prism Tunnel'",
+  "id: 'gravity-lens', label: 'Aurora Field'",
   "id: 'void-bloom', label: 'Pulse Line'",
   "id: 'creep-signal', label: 'Chroma Spectrum'",
   "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum'])"
@@ -33,8 +33,8 @@ for (const required of [
 ]) assert.ok(live.includes(required), `Audio Lab integration is missing ${required}.`);
 
 const premiumFiles = [
-  ['js/features/visual/prism-tunnel.js', ['export function drawPrismTunnelMode(', 'function depthFrame(', 'function drawConnectorRibs(', 'function drawSpectralSparks(', 'const frameCount = width < 760 ? 9 : 13']],
-  ['js/features/visual/pulse-line.js', ['export function drawPulseLineMode(', 'function waveformPoints(', 'function strokeWave(', 'function strongestPeaks(', 'const points = waveformPoints(', 'const echo = points.map(']],
+  ['js/features/visual/prism-tunnel.js', ['export function drawPrismTunnelMode(', 'function curtainPoints(', 'function traceCurtain(', 'function drawSpectralDust(', "Historical export name retained"]],
+  ['js/features/visual/pulse-line.js', ['export function drawPulseLineMode(', 'const SIGNAL_HOLD = new WeakMap()', 'function stableSpectrum(', 'function waveformPoints(', 'function strongestPeaks(', 'const liveData = stableSpectrum(']],
   ['js/features/visual/chroma-spectrum.js', ['export function drawChromaSpectrumMode(', 'const PEAKS = new WeakMap()', 'const barCount = mobile ? 96 : 184', 'function spectrumGradient(', 'function drawRearField(', 'const edgeLight =']]
 ];
 for (const [file, required] of premiumFiles) {
@@ -73,5 +73,5 @@ for (const required of ["'./js/features/visual/prism-tunnel.js'", "'./js/feature
 }
 
 const build = assertCurrentBuild('Audio Lab current build');
-assert.ok(build.number >= 126, `Audio Lab premium polish + Prism Tunnel requires Build 126 or newer, got ${build.display}.`);
-console.log(`Audio Lab exposes ten shared-FFT presets including Prism Tunnel plus polished Pulse Line and Chroma Spectrum under ${build.display}.`);
+assert.ok(build.number >= 127, `Audio Lab corrective Aurora pass requires Build 127 or newer, got ${build.display}.`);
+console.log(`Audio Lab exposes ten shared-FFT presets with Aurora Field presentation and Pulse Line dropout hardening under ${build.display}.`);
