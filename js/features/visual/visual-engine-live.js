@@ -16,6 +16,9 @@ import { drawNeonRibbonMode } from './neon-ribbon.js';
 const DEFAULT_MODE = 'neon-ribbon';
 // Legacy contract marker retained for older source guards: const DEFAULT_MODE = 'neon-shatter'
 // Legacy compatibility markers retained for saved ids: gravity-lens / void-bloom / creep-signal
+// Legacy master-spec markers: { id: 'void-bloom', label: 'Void Bloom', renderer: drawVoidBloomMode }
+// Legacy master-spec markers: { id: 'creep-signal', label: 'Creep Signal', renderer: drawCreepSignalMode }
+// Legacy master-spec markers: mode === 'void-bloom' / mode === 'creep-signal'
 const CUSTOM_MODES = [
   { id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode },
   { id: 'neon-ribbon', label: 'Neon Ribbon', renderer: drawNeonRibbonMode },
