@@ -1,6 +1,6 @@
 const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
 
-function rgba(color, alpha, fallback = '77, 226, 255') {
+function rgba(color, alpha, fallback = '75, 224, 255') {
   const value = String(color || '').trim();
   const hex = value.match(/^#([0-9a-f]{6})$/i)?.[1];
   if (!hex) return `rgba(${fallback}, ${alpha})`;
@@ -19,104 +19,66 @@ function sample(data, t) {
   return (((data[index] || 0) * (1 - mix)) + ((data[next] || 0) * mix)) / 255;
 }
 
-function polygonPoint(cx, cy, radiusX, radiusY, sides, index, rotation, wobble) {
-  const angle = rotation + index / sides * Math.PI * 2;
-  const warp = 1 + Math.sin(angle * 3 + wobble) * .055 + Math.cos(angle * 2 - wobble * .7) * .035;
-  return [
-    cx + Math.cos(angle) * radiusX * warp,
-    cy + Math.sin(angle) * radiusY * warp
-  ];
+function curtainPoints(width, height, data, time, layer, features) {
+  const { bass, mid, high, energy, punch } = features;
+  const count = width < 760 ? 26 : 42;
+  const points = [];
+  const baseY = height * (.42 + layer * .12);
+  const amplitude = height * (.08 + layer * .025 + bass * .15 + punch * .09);
+  const drift = time * (.18 + energy * .16) + layer * 1.37;
+
+  for (let i = 0; i < count; i += 1) {
+    const t = i / (count - 1);
+    const spectral = Math.pow(sample(data, clamp(t * .88 + layer * .035)), 1.35);
+    const broad = Math.sin(t * Math.PI * (1.8 + layer * .24) + drift) * (.52 + mid * .2);
+    const secondary = Math.sin(t * Math.PI * 5.2 - drift * 1.45 + layer) * (.18 + high * .09);
+    const transient = Math.pow(Math.max(0, Math.sin(t * Math.PI * 7 - time * 1.7 - layer)), 10) * punch * .4;
+    const y = baseY + (broad + secondary) * amplitude - spectral * amplitude * (.72 + layer * .1) - transient * amplitude;
+    points.push([t * width, y, spectral]);
+  }
+  return points;
 }
 
-function traceFrame(context, cx, cy, radiusX, radiusY, sides, rotation, wobble, style, lineWidth, alpha) {
+function traceCurtain(context, points, floorY, fillStyle, edgeStyle, alpha, width) {
   context.globalAlpha = alpha;
-  context.strokeStyle = style;
-  context.lineWidth = lineWidth;
+  context.fillStyle = fillStyle;
+  context.beginPath();
+  context.moveTo(points[0][0], floorY);
+  for (const [x, y] of points) context.lineTo(x, y);
+  context.lineTo(points[points.length - 1][0], floorY);
+  context.closePath();
+  context.fill();
+
+  context.globalAlpha = Math.min(1, alpha * 2.4);
+  context.strokeStyle = edgeStyle;
+  context.lineWidth = width;
+  context.lineCap = 'round';
   context.lineJoin = 'round';
   context.beginPath();
-  for (let i = 0; i <= sides; i += 1) {
-    const [x, y] = polygonPoint(cx, cy, radiusX, radiusY, sides, i % sides, rotation, wobble);
-    if (i === 0) context.moveTo(x, y);
-    else context.lineTo(x, y);
-  }
+  points.forEach(([x, y], index) => index === 0 ? context.moveTo(x, y) : context.lineTo(x, y));
   context.stroke();
   context.globalAlpha = 1;
 }
 
-function depthFrame(context, width, height, depth, index, time, features, accent, accent2) {
-  const { bass, mid, high, energy, punch } = features;
-  const perspective = Math.pow(depth, 1.85);
-  const vanishingX = width * (.5 + Math.sin(time * .21) * .055 + mid * .022);
-  const vanishingY = height * (.47 + Math.cos(time * .17) * .025 - bass * .018);
-  const nearScale = .18 + perspective * 1.18;
-  const breathing = 1 + bass * .11 + punch * .10 * perspective;
-  const radiusX = width * .44 * nearScale * breathing;
-  const radiusY = height * .39 * nearScale * (1 + mid * .06);
-  const driftX = Math.sin(index * 1.7 + time * .35) * width * .018 * perspective;
-  const driftY = Math.cos(index * 1.21 - time * .28) * height * .018 * perspective;
-  const cx = vanishingX + driftX;
-  const cy = vanishingY + driftY;
-  const rotation = time * (.07 + energy * .035) * (index % 2 ? 1 : -1) + index * .18 + mid * .15;
-  const wobble = time * (.62 + high * .4) + index * .73;
-  const sides = width < 760 ? 5 : 6;
-
-  const frameColor = context.createLinearGradient(cx - radiusX, cy, cx + radiusX, cy);
-  frameColor.addColorStop(0, rgba(accent, .88));
-  frameColor.addColorStop(.42, 'rgba(218,251,255,.98)');
-  frameColor.addColorStop(.58, 'rgba(244,248,255,.98)');
-  frameColor.addColorStop(1, rgba(accent2 || accent, .88, '221,82,255'));
-
-  const glowAlpha = .025 + perspective * .09 + energy * .035;
-  traceFrame(context, cx, cy, radiusX, radiusY, sides, rotation, wobble, frameColor, 18 + perspective * 18, glowAlpha);
-  traceFrame(context, cx, cy, radiusX, radiusY, sides, rotation, wobble, frameColor, 7 + perspective * 6, .08 + perspective * .16);
-  traceFrame(context, cx, cy, radiusX, radiusY, sides, rotation, wobble, frameColor, 1.2 + perspective * 1.2, .45 + perspective * .48);
-  traceFrame(context, cx, cy, radiusX, radiusY, sides, rotation, wobble, 'rgba(248,254,255,.98)', .42 + perspective * .28, .54 + perspective * .32);
-
-  return { cx, cy, radiusX, radiusY, sides, rotation, wobble, perspective };
-}
-
-function drawConnectorRibs(context, previous, current, accent, accent2, high) {
-  if (!previous || !current) return;
-  const sides = Math.min(previous.sides, current.sides);
-  for (let i = 0; i < sides; i += 1) {
-    const p1 = polygonPoint(previous.cx, previous.cy, previous.radiusX, previous.radiusY, previous.sides, i, previous.rotation, previous.wobble);
-    const p2 = polygonPoint(current.cx, current.cy, current.radiusX, current.radiusY, current.sides, i, current.rotation, current.wobble);
-    const gradient = context.createLinearGradient(p1[0], p1[1], p2[0], p2[1]);
-    gradient.addColorStop(0, rgba(accent, .06 + high * .045));
-    gradient.addColorStop(.5, 'rgba(240,252,255,.08)');
-    gradient.addColorStop(1, rgba(accent2 || accent, .06 + high * .045, '221,82,255'));
-    context.strokeStyle = gradient;
-    context.globalAlpha = .18 + current.perspective * .16;
-    context.lineWidth = .6 + current.perspective * .6;
-    context.beginPath();
-    context.moveTo(p1[0], p1[1]);
-    context.lineTo(p2[0], p2[1]);
-    context.stroke();
-  }
-  context.globalAlpha = 1;
-}
-
-function drawSpectralSparks(context, width, height, data, time, high, energy, accent, accent2) {
-  const count = width < 760 ? 20 : 38;
+function drawSpectralDust(context, width, height, data, time, high, energy, accent, accent2) {
+  const count = width < 760 ? 18 : 34;
   for (let i = 0; i < count; i += 1) {
     const t = (i + .5) / count;
     const raw = sample(data, t);
-    if (raw < .22) continue;
-    const phase = i * 2.37 + time * (.7 + energy * .5);
-    const x = width * (.5 + Math.sin(phase * .41) * (.12 + t * .42));
-    const y = height * (.5 + Math.cos(phase * .53) * (.08 + t * .34));
-    const len = 4 + raw * (12 + high * 18);
-    context.globalAlpha = .14 + raw * .35 + high * .12;
-    context.strokeStyle = i % 3 === 0 ? rgba(accent2 || accent, .9, '221,82,255') : rgba(accent, .9);
-    context.lineWidth = i % 7 === 0 ? 1.6 : .8;
+    if (raw < .18) continue;
+    const x = width * t;
+    const y = height * (.16 + ((Math.sin(i * 2.31 + time * .35) + 1) * .5) * .62);
+    const radius = .7 + raw * (1.4 + high * 1.8);
+    context.globalAlpha = .12 + raw * .28 + energy * .06;
+    context.fillStyle = i % 3 === 0 ? rgba(accent2 || accent, .9, '205,89,255') : rgba(accent, .9);
     context.beginPath();
-    context.moveTo(x - len * .6, y + len * .16);
-    context.lineTo(x + len * .6, y - len * .16);
-    context.stroke();
+    context.arc(x, y, radius, 0, Math.PI * 2);
+    context.fill();
   }
   context.globalAlpha = 1;
 }
 
+// Historical export name retained because gravity-lens remains the saved compatibility id.
 export function drawPrismTunnelMode(context, width, height, data, accent, accent2, time, features = {}) {
   const bass = clamp(features.bass || 0);
   const mid = clamp(features.mid || 0);
@@ -125,82 +87,61 @@ export function drawPrismTunnelMode(context, width, height, data, accent, accent
   const punch = clamp(features.punch || features.kick || 0);
 
   const background = context.createLinearGradient(0, 0, width, height);
-  background.addColorStop(0, '#02040a');
-  background.addColorStop(.28, '#05101a');
-  background.addColorStop(.52, '#08091b');
-  background.addColorStop(.78, '#12091f');
-  background.addColorStop(1, '#040208');
+  background.addColorStop(0, '#01040a');
+  background.addColorStop(.46, '#06101c');
+  background.addColorStop(.72, '#0c0920');
+  background.addColorStop(1, '#030207');
   context.fillStyle = background;
   context.fillRect(0, 0, width, height);
 
-  const centerGlow = context.createRadialGradient(width * .5, height * .48, 0, width * .5, height * .48, width * .5);
-  centerGlow.addColorStop(0, rgba(accent, .13 + energy * .08));
-  centerGlow.addColorStop(.28, rgba(accent2 || accent, .05 + mid * .025, '221,82,255'));
-  centerGlow.addColorStop(.65, rgba(accent, .016));
-  centerGlow.addColorStop(1, 'rgba(0,0,0,0)');
-  context.fillStyle = centerGlow;
+  const atmosphere = context.createRadialGradient(width * .52, height * .42, 0, width * .52, height * .42, width * .62);
+  atmosphere.addColorStop(0, rgba(accent, .09 + energy * .055));
+  atmosphere.addColorStop(.42, rgba(accent2 || accent, .035 + mid * .018, '205,89,255'));
+  atmosphere.addColorStop(1, 'rgba(0,0,0,0)');
+  context.fillStyle = atmosphere;
   context.fillRect(0, 0, width, height);
 
-  const frameCount = width < 760 ? 9 : 13;
-  const speed = .085 + energy * .11 + bass * .025;
-  let previous = null;
-  for (let i = 0; i < frameCount; i += 1) {
-    const normalized = (i / frameCount + time * speed) % 1;
-    const depth = .05 + normalized * .95;
-    const current = depthFrame(
-      context,
-      width,
-      height,
-      depth,
-      i,
-      time,
-      { bass, mid, high, energy, punch },
-      accent,
-      accent2
-    );
-    drawConnectorRibs(context, previous, current, accent, accent2, high);
-    previous = current;
+  const layers = width < 760 ? 2 : 3;
+  for (let layer = layers - 1; layer >= 0; layer -= 1) {
+    const points = curtainPoints(width, height, data, time, layer, { bass, mid, high, energy, punch });
+    const floorY = height * (.82 + layer * .035);
+    const fill = context.createLinearGradient(0, height * .2, 0, floorY);
+    fill.addColorStop(0, rgba(accent, 0));
+    fill.addColorStop(.18, rgba(accent, .035 + energy * .025));
+    fill.addColorStop(.52, layer % 2 === 0 ? rgba(accent, .16 + bass * .055) : rgba(accent2 || accent, .13 + mid * .045, '205,89,255'));
+    fill.addColorStop(.82, rgba(accent2 || accent, .04, '205,89,255'));
+    fill.addColorStop(1, rgba(accent, 0));
+
+    const edge = context.createLinearGradient(0, 0, width, 0);
+    edge.addColorStop(0, rgba(accent, .18));
+    edge.addColorStop(.33, rgba(accent, .76));
+    edge.addColorStop(.52, 'rgba(241,253,255,.95)');
+    edge.addColorStop(.72, rgba(accent2 || accent, .72, '205,89,255'));
+    edge.addColorStop(1, rgba(accent2 || accent, .14, '205,89,255'));
+
+    traceCurtain(context, points, floorY, fill, edge, .11 + (layers - layer) * .035 + energy * .02, 1 + (layers - layer) * .35);
   }
 
-  const pulsePhase = (time * (.58 + energy * .34)) % 1;
-  const pulseDepth = clamp(pulsePhase + punch * .12);
-  const pulse = depthFrame(
-    context,
-    width,
-    height,
-    pulseDepth,
-    frameCount + 2,
-    time + .17,
-    { bass: clamp(bass + punch * .35), mid, high, energy: clamp(energy + punch * .3), punch },
-    accent,
-    accent2
-  );
-  traceFrame(
-    context,
-    pulse.cx,
-    pulse.cy,
-    pulse.radiusX * 1.02,
-    pulse.radiusY * 1.02,
-    pulse.sides,
-    pulse.rotation,
-    pulse.wobble,
-    'rgba(255,255,255,.98)',
-    .7 + punch * 1.6,
-    .08 + punch * .42
-  );
+  const horizon = context.createLinearGradient(0, 0, width, 0);
+  horizon.addColorStop(0, 'rgba(255,255,255,0)');
+  horizon.addColorStop(.18, rgba(accent, .18));
+  horizon.addColorStop(.5, 'rgba(235,252,255,.46)');
+  horizon.addColorStop(.82, rgba(accent2 || accent, .18, '205,89,255'));
+  horizon.addColorStop(1, 'rgba(255,255,255,0)');
+  context.globalAlpha = .35 + bass * .18 + punch * .16;
+  context.strokeStyle = horizon;
+  context.lineWidth = .7 + punch * .9;
+  context.beginPath();
+  context.moveTo(width * .05, height * .78);
+  context.lineTo(width * .95, height * .78);
+  context.stroke();
+  context.globalAlpha = 1;
 
-  drawSpectralSparks(context, width, height, data, time, high, energy, accent, accent2);
+  drawSpectralDust(context, width, height, data, time, high, energy, accent, accent2);
 
-  const floor = context.createLinearGradient(0, height * .72, 0, height);
-  floor.addColorStop(0, 'rgba(255,255,255,0)');
-  floor.addColorStop(.72, rgba(accent2 || accent, .025 + bass * .02, '221,82,255'));
-  floor.addColorStop(1, rgba(accent, .045 + energy * .025));
-  context.fillStyle = floor;
-  context.fillRect(0, height * .68, width, height * .32);
-
-  const vignette = context.createRadialGradient(width * .5, height * .5, width * .08, width * .5, height * .5, width * .74);
+  const vignette = context.createRadialGradient(width * .5, height * .5, width * .12, width * .5, height * .5, width * .76);
   vignette.addColorStop(0, 'rgba(0,0,0,0)');
-  vignette.addColorStop(1, 'rgba(0,0,0,.58)');
+  vignette.addColorStop(1, 'rgba(0,0,0,.56)');
   context.fillStyle = vignette;
   context.fillRect(0, 0, width, height);
 }
