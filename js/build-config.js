@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260829-audiolab-reference-led-build124',
-    cache: 'shinobi-launchpad-v124',
-    revision: 'audiolab-reference-led',
-    display: '2026.08.29.124',
-    release: 'audiolab-reference-led-20260829'
+    id: '20260829-audiolab-strict-reference-build125',
+    cache: 'shinobi-launchpad-v125',
+    revision: 'audiolab-strict-reference',
+    display: '2026.08.29.125',
+    release: 'audiolab-strict-reference-20260829'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;

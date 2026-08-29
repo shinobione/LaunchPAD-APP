@@ -13,19 +13,22 @@ function rgba(color, alpha, fallback = '74, 220, 255') {
 
 function sample(data, t) {
   if (!data?.length) return 0;
-  const index = Math.max(0, Math.min(data.length - 1, Math.floor(t * data.length)));
+  const position = clamp(t) * (data.length - 1);
+  const index = Math.floor(position);
   const next = Math.min(data.length - 1, index + 1);
-  return ((data[index] || 0) * .78 + (data[next] || 0) * .22) / 255;
+  const mix = position - index;
+  return (((data[index] || 0) * (1 - mix)) + ((data[next] || 0) * mix)) / 255;
 }
 
-function chromaAt(context, x, width, accent, accent2) {
+function spectrumGradient(context, width, accent, accent2) {
   const gradient = context.createLinearGradient(0, 0, width, 0);
   gradient.addColorStop(0, rgba(accent, .98));
-  gradient.addColorStop(.22, 'rgba(65,226,255,.99)');
-  gradient.addColorStop(.46, 'rgba(232,251,255,1)');
-  gradient.addColorStop(.64, 'rgba(153,111,255,.99)');
-  gradient.addColorStop(.82, 'rgba(236,68,255,.99)');
-  gradient.addColorStop(1, rgba(accent2, .98, '255,74,205'));
+  gradient.addColorStop(.16, 'rgba(30,222,255,.99)');
+  gradient.addColorStop(.38, 'rgba(87,232,255,1)');
+  gradient.addColorStop(.5, 'rgba(238,251,255,1)');
+  gradient.addColorStop(.62, 'rgba(170,118,255,.99)');
+  gradient.addColorStop(.82, 'rgba(235,55,255,.99)');
+  gradient.addColorStop(1, rgba(accent2, .98, '255,63,198'));
   return gradient;
 }
 
@@ -36,31 +39,31 @@ export function drawChromaSpectrumMode(context, width, height, data, accent, acc
   const high = clamp(features.high || 0);
   const punch = clamp(features.punch || features.kick || 0);
   const mobile = width < 760;
-  const barCount = mobile ? 68 : 126;
-  const baseline = height * .62;
-  const maxHeight = height * (.31 + bass * .2 + punch * .09);
+  const barCount = mobile ? 92 : 176;
+  const baseline = height * .61;
+  const maxHeight = height * (.28 + bass * .22 + punch * .1);
 
   const background = context.createLinearGradient(0, 0, width, height);
-  background.addColorStop(0, '#060317');
-  background.addColorStop(.33, '#08102b');
-  background.addColorStop(.62, '#090b28');
-  background.addColorStop(1, '#19041f');
+  background.addColorStop(0, '#0a031a');
+  background.addColorStop(.25, '#091433');
+  background.addColorStop(.52, '#0d1030');
+  background.addColorStop(.78, '#16072b');
+  background.addColorStop(1, '#26051f');
   context.fillStyle = background;
   context.fillRect(0, 0, width, height);
 
-  const atmosphere = context.createRadialGradient(width * .5, baseline, 0, width * .5, baseline, width * .62);
-  atmosphere.addColorStop(0, 'rgba(81,119,255,.16)');
-  atmosphere.addColorStop(.28, rgba(accent, .09));
-  atmosphere.addColorStop(.58, rgba(accent2, .075, '255,74,205'));
-  atmosphere.addColorStop(1, 'rgba(0,0,0,0)');
-  context.fillStyle = atmosphere;
+  const upperGlow = context.createRadialGradient(width * .47, height * .38, 0, width * .47, height * .38, width * .52);
+  upperGlow.addColorStop(0, 'rgba(66,116,255,.12)');
+  upperGlow.addColorStop(.42, rgba(accent2, .055, '224,69,255'));
+  upperGlow.addColorStop(1, 'rgba(0,0,0,0)');
+  context.fillStyle = upperGlow;
   context.fillRect(0, 0, width, height);
 
-  const spectrumColor = chromaAt(context, 0, width, accent, accent2);
-  const gap = mobile ? 1.4 : 1.7;
-  const totalGap = gap * (barCount - 1);
-  const barWidth = Math.max(.85, (width * .88 - totalGap) / barCount);
-  const startX = width * .06;
+  const spectrumColor = spectrumGradient(context, width, accent, accent2);
+  const span = width * .9;
+  const startX = width * .05;
+  const gap = mobile ? .75 : .9;
+  const barWidth = Math.max(.7, (span - gap * (barCount - 1)) / barCount);
 
   let peaks = PEAKS.get(context);
   if (!peaks || peaks.length !== barCount) {
@@ -68,81 +71,69 @@ export function drawChromaSpectrumMode(context, width, height, data, accent, acc
     PEAKS.set(context, peaks);
   }
 
-  const baselineGlow = context.createLinearGradient(0, baseline - height * .06, 0, baseline + height * .06);
-  baselineGlow.addColorStop(0, 'rgba(255,255,255,0)');
-  baselineGlow.addColorStop(.45, rgba(accent, .1 + energy * .05));
-  baselineGlow.addColorStop(.5, 'rgba(238,250,255,.3)');
-  baselineGlow.addColorStop(.55, rgba(accent2, .08, '255,74,205'));
-  baselineGlow.addColorStop(1, 'rgba(255,255,255,0)');
-  context.fillStyle = baselineGlow;
-  context.fillRect(0, baseline - height * .07, width, height * .14);
+  const floorGlow = context.createLinearGradient(0, baseline - height * .1, 0, baseline + height * .1);
+  floorGlow.addColorStop(0, 'rgba(255,255,255,0)');
+  floorGlow.addColorStop(.44, rgba(accent, .05 + energy * .03));
+  floorGlow.addColorStop(.5, 'rgba(230,248,255,.18)');
+  floorGlow.addColorStop(.56, rgba(accent2, .045, '255,63,198'));
+  floorGlow.addColorStop(1, 'rgba(255,255,255,0)');
+  context.fillStyle = floorGlow;
+  context.fillRect(0, baseline - height * .11, width, height * .22);
 
   for (let i = 0; i < barCount; i += 1) {
     const t = i / (barCount - 1);
     const raw = sample(data, t);
-    const shaped = Math.pow(raw, 1.52);
-    const contour = .72 + Math.sin(Math.PI * t) * .22;
-    const target = clamp(shaped * contour * (1 + energy * .38 + mid * .08));
-    peaks[i] = Math.max(target, peaks[i] * (.953 - high * .018));
+    const neighbor = sample(data, clamp(t + .006));
+    const shaped = Math.pow(raw * .8 + neighbor * .2, 1.62);
+    const musicalContour = .74 + Math.sin(Math.PI * t) * .2 + Math.sin(t * 17 + time * .22) * .025 * mid;
+    const target = clamp(shaped * musicalContour * (1 + energy * .4));
+    peaks[i] = Math.max(target, peaks[i] * (.962 - high * .018));
 
-    const h = Math.max(1, target * maxHeight);
-    const reflection = h * (.14 + high * .08);
+    const h = Math.max(.75, target * maxHeight);
     const x = startX + i * (barWidth + gap);
 
-    context.globalAlpha = .1 + energy * .05;
+    context.globalAlpha = .075 + energy * .035;
     context.fillStyle = spectrumColor;
-    context.fillRect(x - .7, baseline - h - 5, barWidth + 1.4, h + reflection + 10);
+    context.fillRect(x - .5, baseline - h - 3, barWidth + 1, h + 6);
 
-    context.globalAlpha = .92;
+    context.globalAlpha = .94;
     context.fillStyle = spectrumColor;
     context.fillRect(x, baseline - h, barWidth, h);
 
-    context.globalAlpha = .22 + high * .12;
+    const reflection = h * (.12 + high * .055);
+    context.globalAlpha = .14 + high * .05;
     context.fillRect(x, baseline + 1, barWidth, reflection);
 
-    const peakY = baseline - peaks[i] * maxHeight - 3;
-    context.globalAlpha = .62 + peaks[i] * .3;
-    context.fillStyle = i % 5 === 0 ? 'rgba(255,255,255,.98)' : spectrumColor;
-    context.fillRect(x, peakY, barWidth, 1.25);
+    const peakY = baseline - peaks[i] * maxHeight - 2;
+    context.globalAlpha = .38 + peaks[i] * .26;
+    context.fillStyle = i % 8 === 0 ? 'rgba(245,253,255,.9)' : spectrumColor;
+    context.fillRect(x, peakY, barWidth, .8);
   }
   context.globalAlpha = 1;
 
-  context.strokeStyle = 'rgba(238,250,255,.72)';
-  context.lineWidth = .75;
+  const axis = context.createLinearGradient(0, 0, width, 0);
+  axis.addColorStop(0, 'rgba(255,255,255,0)');
+  axis.addColorStop(.08, rgba(accent, .42));
+  axis.addColorStop(.5, 'rgba(245,253,255,.78)');
+  axis.addColorStop(.92, rgba(accent2, .42, '255,63,198'));
+  axis.addColorStop(1, 'rgba(255,255,255,0)');
+  context.strokeStyle = axis;
+  context.lineWidth = .65;
   context.beginPath();
-  context.moveTo(startX - 8, baseline);
-  context.lineTo(width - startX + 8, baseline);
+  context.moveTo(startX, baseline);
+  context.lineTo(width - startX, baseline);
   context.stroke();
 
-  const titleY = height * .30;
-  context.textAlign = 'center';
-  context.textBaseline = 'middle';
-  context.font = `600 ${Math.max(9, Math.min(12, width * .008))}px Arial, sans-serif`;
-  context.fillStyle = 'rgba(223,232,255,.78)';
-  context.fillText('SHINOBIWAN', width * .5, titleY - 15);
-  context.font = `700 ${Math.max(15, Math.min(25, width * .018))}px Arial, sans-serif`;
-  const titleGradient = context.createLinearGradient(width * .38, 0, width * .62, 0);
-  titleGradient.addColorStop(0, 'rgba(111,228,255,.96)');
-  titleGradient.addColorStop(.5, 'rgba(247,251,255,1)');
-  titleGradient.addColorStop(1, 'rgba(238,87,255,.97)');
-  context.fillStyle = titleGradient;
-  context.fillText('CHROMA SPECTRUM', width * .5, titleY + 5);
+  const haze = context.createRadialGradient(width * .5, baseline, 0, width * .5, baseline, width * .48);
+  haze.addColorStop(0, `rgba(204,219,255,${.035 + energy * .025})`);
+  haze.addColorStop(.42, rgba(accent2, .022, '255,63,198'));
+  haze.addColorStop(1, 'rgba(0,0,0,0)');
+  context.fillStyle = haze;
+  context.fillRect(0, baseline - height * .2, width, height * .4);
 
-  context.font = `500 ${Math.max(8, Math.min(10, width * .0065))}px Arial, sans-serif`;
-  context.fillStyle = 'rgba(216,229,255,.55)';
-  context.fillText('AUDIO LAB  /  LIVE SPECTRAL FIELD', width * .5, baseline + height * .105);
-
-  const shimmerX = startX + ((time * (.08 + high * .07)) % 1) * (width - startX * 2);
-  const shimmer = context.createLinearGradient(shimmerX - width * .05, 0, shimmerX + width * .05, 0);
-  shimmer.addColorStop(0, 'rgba(255,255,255,0)');
-  shimmer.addColorStop(.5, `rgba(255,255,255,${.08 + high * .16})`);
-  shimmer.addColorStop(1, 'rgba(255,255,255,0)');
-  context.fillStyle = shimmer;
-  context.fillRect(shimmerX - width * .05, baseline - maxHeight, width * .1, maxHeight * 1.3);
-
-  const vignette = context.createRadialGradient(width * .5, height * .5, width * .12, width * .5, height * .5, width * .7);
+  const vignette = context.createRadialGradient(width * .5, height * .5, width * .12, width * .5, height * .5, width * .72);
   vignette.addColorStop(0, 'rgba(0,0,0,0)');
-  vignette.addColorStop(1, 'rgba(0,0,0,.48)');
+  vignette.addColorStop(1, 'rgba(0,0,0,.5)');
   context.fillStyle = vignette;
   context.fillRect(0, 0, width, height);
 }

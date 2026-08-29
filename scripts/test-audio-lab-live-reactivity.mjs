@@ -31,14 +31,14 @@ for (const forbidden of ['synthesizePlaybackSpectrum', 'readAudioLabAmplitude'])
 }
 
 const premium = [
-  ['js/features/visual/neon-horizon.js', ['drawNeonHorizonMode(', 'function drawCyberFigure(', 'function drawHudSpectrum(', 'function drawCyberStreaks(']],
-  ['js/features/visual/pulse-line.js', ['drawPulseLineMode(', 'tracePoints(', 'strokeTrace(', 'const transientX =']],
-  ['js/features/visual/chroma-spectrum.js', ['drawChromaSpectrumMode(', 'const PEAKS = new WeakMap()', 'const barCount = mobile ? 68 : 126', "fillText('CHROMA SPECTRUM'"]]
+  ['js/features/visual/neon-horizon.js', ['drawNeonHorizonMode(', 'drawCyberArchitecture(', 'drawOrangeSpectrum(', 'drawLightStreaks(', 'drawDiagonalBeams(']],
+  ['js/features/visual/pulse-line.js', ['drawPulseLineMode(', 'waveformPoints(', 'strokeWave(', 'const ghost = points.map(']],
+  ['js/features/visual/chroma-spectrum.js', ['drawChromaSpectrumMode(', 'const PEAKS = new WeakMap()', 'const barCount = mobile ? 92 : 176', 'spectrumGradient(']]
 ];
 for (const [file, required] of premium) {
   const source = read(file);
   required.forEach(value => assert.ok(source.includes(value), `${file} missing ${value}`));
-  for (const forbidden of ['requestAnimationFrame(', 'setInterval(', 'Math.random(']) assert.ok(!source.includes(forbidden), `${file} contains ${forbidden}`);
+  for (const forbidden of ['requestAnimationFrame(', 'setInterval(', 'Math.random(', 'fillText(']) assert.ok(!source.includes(forbidden), `${file} contains ${forbidden}`);
 }
 
 const base = read('js/features/visual/visual-engine-v2.js');
@@ -48,4 +48,4 @@ for (const required of ['function readSpectrum(target)', 'analyser.getByteFreque
 
 const bridge = read('js/features/visual/visual-engine.js').trim();
 assert.equal(bridge, "export { createVisualController } from './visual-engine-live.js';");
-console.log('Audio Lab keeps shared-FFT live reactivity and exposes the Build 124 reference-led visual pass.');
+console.log('Audio Lab keeps shared-FFT live reactivity and exposes the Build 125 strict-reference visual pass.');

@@ -2,8 +2,11 @@ const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
 
 function sample(data, normalized) {
   if (!data?.length) return 0;
-  const index = Math.max(0, Math.min(data.length - 1, Math.round(normalized * (data.length - 1))));
-  return (data[index] || 0) / 255;
+  const position = clamp(normalized) * (data.length - 1);
+  const index = Math.floor(position);
+  const next = Math.min(data.length - 1, index + 1);
+  const mix = position - index;
+  return (((data[index] || 0) * (1 - mix)) + ((data[next] || 0) * mix)) / 255;
 }
 
 function rgba(color, alpha, fallback = '79, 225, 255') {
@@ -16,148 +19,145 @@ function rgba(color, alpha, fallback = '79, 225, 255') {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function drawCyberFigure(context, width, height, time, bass, mid, energy, punch, accent, accent2) {
-  const cx = width * (.54 + Math.sin(time * .17) * .012);
-  const cy = height * .47;
-  const scale = Math.min(width, height) * (.28 + energy * .025 + punch * .018);
-  const tilt = Math.sin(time * .31) * .035 + mid * .02;
+function drawCyberArchitecture(context, width, height, time, bass, mid, energy, punch, accent) {
+  const centerX = width * (.53 + Math.sin(time * .18) * .012);
+  const centerY = height * .5;
+  const scale = Math.min(width, height) * (.42 + bass * .025 + punch * .025);
+
+  const backGlow = context.createRadialGradient(centerX, centerY, 0, centerX, centerY, scale * 1.3);
+  backGlow.addColorStop(0, rgba(accent, .12 + energy * .07));
+  backGlow.addColorStop(.48, 'rgba(33,96,127,.045)');
+  backGlow.addColorStop(1, 'rgba(0,0,0,0)');
+  context.fillStyle = backGlow;
+  context.fillRect(centerX - scale * 1.5, centerY - scale * 1.25, scale * 3, scale * 2.5);
 
   context.save();
-  context.translate(cx, cy);
-  context.rotate(tilt);
+  context.translate(centerX, centerY);
+  context.rotate(Math.sin(time * .22) * .018 + mid * .012);
 
-  const aura = context.createRadialGradient(0, 0, 0, 0, 0, scale * 1.45);
-  aura.addColorStop(0, rgba(accent, .14 + energy * .06));
-  aura.addColorStop(.46, rgba(accent2, .07 + bass * .05, '255,83,49'));
-  aura.addColorStop(1, 'rgba(0,0,0,0)');
-  context.fillStyle = aura;
-  context.fillRect(-scale * 1.5, -scale * 1.5, scale * 3, scale * 3);
+  const plates = [
+    [-.92,-.52,-.22,-.82,.18,-.18,-.46,.08],
+    [-.5,-.02,.02,-.42,.66,-.22,.36,.24],
+    [-.68,.18,-.18,-.12,.42,.22,.08,.58],
+    [.2,-.56,.86,-.3,.62,.04,.08,-.14],
+    [.34,.04,.96,.22,.58,.58,.04,.42],
+    [-.18,.42,.22,.26,.7,.62,.12,.88]
+  ];
 
-  context.globalAlpha = .96;
-  const body = context.createLinearGradient(0, -scale, 0, scale);
-  body.addColorStop(0, 'rgba(20,38,54,.98)');
-  body.addColorStop(.42, 'rgba(9,20,31,.98)');
-  body.addColorStop(.72, 'rgba(24,13,17,.98)');
-  body.addColorStop(1, 'rgba(7,8,12,.98)');
-  context.fillStyle = body;
+  plates.forEach((plate, index) => {
+    const [x1,y1,x2,y2,x3,y3,x4,y4] = plate;
+    const shade = context.createLinearGradient(-scale, -scale, scale, scale);
+    if (index % 2 === 0) {
+      shade.addColorStop(0, 'rgba(21,44,58,.96)');
+      shade.addColorStop(.52, 'rgba(8,18,26,.97)');
+      shade.addColorStop(1, 'rgba(28,16,15,.97)');
+    } else {
+      shade.addColorStop(0, 'rgba(12,28,39,.97)');
+      shade.addColorStop(.62, 'rgba(6,12,18,.98)');
+      shade.addColorStop(1, 'rgba(42,18,13,.96)');
+    }
+    context.fillStyle = shade;
+    context.strokeStyle = index % 3 === 0 ? rgba(accent, .55 + energy * .2) : 'rgba(255,112,35,.38)';
+    context.lineWidth = 1 + (index % 2) * .45;
+    context.beginPath();
+    context.moveTo(x1 * scale, y1 * scale);
+    context.lineTo(x2 * scale, y2 * scale);
+    context.lineTo(x3 * scale, y3 * scale);
+    context.lineTo(x4 * scale, y4 * scale);
+    context.closePath();
+    context.fill();
+    context.stroke();
+  });
 
-  context.beginPath();
-  context.moveTo(-scale * .42, -scale * .25);
-  context.lineTo(-scale * .55, scale * .1);
-  context.lineTo(-scale * .35, scale * .68);
-  context.lineTo(-scale * .12, scale * .95);
-  context.lineTo(scale * .18, scale * .86);
-  context.lineTo(scale * .44, scale * .42);
-  context.lineTo(scale * .52, -scale * .04);
-  context.lineTo(scale * .34, -scale * .38);
-  context.closePath();
-  context.fill();
-
-  const headY = -scale * .58;
-  context.beginPath();
-  context.ellipse(0, headY, scale * .28, scale * .34, -.12, 0, Math.PI * 2);
-  context.fill();
-
-  context.strokeStyle = 'rgba(158,230,255,.38)';
-  context.lineWidth = Math.max(1, scale * .008);
-  context.beginPath();
-  context.moveTo(-scale * .24, headY - scale * .07);
-  context.quadraticCurveTo(0, headY - scale * .17, scale * .23, headY - scale * .02);
-  context.moveTo(-scale * .18, headY + scale * .1);
-  context.quadraticCurveTo(0, headY + scale * .2, scale * .17, headY + scale * .08);
-  context.stroke();
-
-  const eyeGlow = context.createLinearGradient(-scale * .16, 0, scale * .16, 0);
-  eyeGlow.addColorStop(0, rgba(accent, .15));
-  eyeGlow.addColorStop(.5, 'rgba(235,252,255,.98)');
-  eyeGlow.addColorStop(1, rgba(accent, .15));
-  context.strokeStyle = eyeGlow;
-  context.lineWidth = Math.max(1.2, scale * .012);
-  context.beginPath();
-  context.moveTo(-scale * .16, headY - scale * .025);
-  context.lineTo(scale * .16, headY - scale * .01);
-  context.stroke();
-
-  const coreY = scale * .2;
-  const coreRadius = scale * (.12 + bass * .04 + punch * .04);
-  const core = context.createRadialGradient(0, coreY, 0, 0, coreY, coreRadius * 2.8);
-  core.addColorStop(0, 'rgba(255,246,226,1)');
-  core.addColorStop(.16, 'rgba(255,111,38,.98)');
-  core.addColorStop(.44, rgba(accent2, .72, '255,72,32'));
-  core.addColorStop(1, 'rgba(255,70,20,0)');
+  const coreRadius = scale * (.095 + bass * .035 + punch * .05);
+  const core = context.createRadialGradient(0, scale * .08, 0, 0, scale * .08, coreRadius * 3.2);
+  core.addColorStop(0, 'rgba(255,252,238,1)');
+  core.addColorStop(.14, 'rgba(255,151,56,.98)');
+  core.addColorStop(.42, 'rgba(255,71,24,.72)');
+  core.addColorStop(1, 'rgba(255,58,18,0)');
   context.fillStyle = core;
   context.beginPath();
-  context.arc(0, coreY, coreRadius * 2.8, 0, Math.PI * 2);
+  context.arc(0, scale * .08, coreRadius * 3.2, 0, Math.PI * 2);
   context.fill();
 
-  context.strokeStyle = rgba(accent, .55 + mid * .25);
-  context.lineWidth = Math.max(1, scale * .007);
+  context.strokeStyle = rgba(accent, .48 + mid * .24);
+  context.lineWidth = 1;
   for (let ring = 0; ring < 4; ring += 1) {
     context.beginPath();
-    context.ellipse(0, coreY, coreRadius * (1.3 + ring * .44), coreRadius * (.62 + ring * .22), time * .08 + ring * .42, 0, Math.PI * 2);
+    context.ellipse(0, scale * .08, coreRadius * (1.5 + ring * .48), coreRadius * (.62 + ring * .2), time * .055 + ring * .35, 0, Math.PI * 2);
     context.stroke();
   }
-
-  context.strokeStyle = 'rgba(255,108,34,.52)';
-  context.lineWidth = Math.max(1, scale * .009);
-  context.beginPath();
-  context.moveTo(-scale * .38, scale * .05);
-  context.lineTo(-scale * .58, scale * .38);
-  context.lineTo(-scale * .44, scale * .68);
-  context.moveTo(scale * .35, scale * .02);
-  context.lineTo(scale * .58, scale * .32);
-  context.lineTo(scale * .42, scale * .62);
-  context.stroke();
 
   context.restore();
-  context.globalAlpha = 1;
 }
 
-function drawHudSpectrum(context, width, height, data, time, bass, high, accent) {
-  const startX = width * .08;
-  const baseline = height * .79;
-  const span = width * .26;
-  const bars = width < 800 ? 32 : 48;
-  const barWidth = Math.max(1, span / bars * .42);
+function drawOrangeSpectrum(context, width, height, data, bass, high, energy) {
+  const startX = width * .07;
+  const baseline = height * .78;
+  const span = width * .34;
+  const bars = width < 800 ? 46 : 72;
+  const gap = 2;
+  const barWidth = Math.max(1, (span - gap * (bars - 1)) / bars);
+
   for (let i = 0; i < bars; i += 1) {
     const t = i / (bars - 1);
-    const raw = sample(data, t * .42);
-    const h = Math.max(2, Math.pow(raw, 1.45) * height * (.18 + bass * .14));
-    const x = startX + t * span;
-    context.globalAlpha = .35 + raw * .55;
-    context.fillStyle = i % 7 === 0 ? 'rgba(255,240,220,.96)' : 'rgba(255,91,28,.86)';
+    const raw = sample(data, t * .5);
+    const shaped = Math.pow(raw, 1.55);
+    const h = Math.max(2, shaped * height * (.16 + bass * .17));
+    const x = startX + i * (barWidth + gap);
+
+    context.globalAlpha = .13 + energy * .08;
+    context.fillStyle = 'rgba(255,91,27,.9)';
+    context.fillRect(x - 1, baseline - h - 4, barWidth + 2, h + 8);
+
+    context.globalAlpha = .76 + raw * .2;
+    context.fillStyle = i % 9 === 0 ? 'rgba(255,238,202,.98)' : 'rgba(255,91,27,.96)';
     context.fillRect(x, baseline - h, barWidth, h);
+
+    context.globalAlpha = .1 + high * .05;
+    context.fillRect(x, baseline + 2, barWidth, h * .16);
   }
   context.globalAlpha = 1;
-
-  context.strokeStyle = 'rgba(255,114,39,.62)';
-  context.lineWidth = 1;
-  context.beginPath();
-  context.moveTo(startX, baseline + 4);
-  context.lineTo(startX + span, baseline + 4);
-  context.stroke();
-
-  const cursorX = startX + ((time * (.13 + high * .08)) % 1) * span;
-  context.fillStyle = 'rgba(255,244,226,.9)';
-  context.fillRect(cursorX, baseline - height * .22, 1, height * .24);
 }
 
-function drawCyberStreaks(context, width, height, time, high, energy, accent) {
-  const count = width < 800 ? 18 : 32;
+function drawLightStreaks(context, width, height, time, high, energy, accent) {
+  const count = width < 800 ? 16 : 30;
   for (let i = 0; i < count; i += 1) {
-    const seed = i * 1.731;
-    const x = (Math.sin(seed * 2.4) * .5 + .5) * width;
-    const y = ((Math.sin(seed * 4.1) * .5 + .5) * height + time * (20 + energy * 38) * (i % 2 ? 1 : .6)) % height;
-    const length = 5 + (i % 5) * 4 + high * 12;
-    context.globalAlpha = .12 + (i % 4) * .045 + high * .12;
-    context.strokeStyle = i % 3 === 0 ? 'rgba(255,94,26,.7)' : rgba(accent, .72);
-    context.lineWidth = i % 6 === 0 ? 2 : 1;
+    const seed = i * 2.173;
+    const x = (Math.sin(seed * 1.8) * .5 + .5) * width;
+    const y = ((Math.cos(seed * 2.6) * .5 + .5) * height + time * (14 + energy * 42) * (i % 3 === 0 ? 1 : .58)) % height;
+    const length = 8 + (i % 6) * 6 + high * 24;
+    context.globalAlpha = .08 + (i % 4) * .035 + high * .12;
+    context.strokeStyle = i % 4 === 0 ? 'rgba(255,101,31,.84)' : rgba(accent, .76);
+    context.lineWidth = i % 7 === 0 ? 2 : 1;
     context.beginPath();
-    context.moveTo(x, y - length);
-    context.lineTo(x + (i % 2 ? 4 : -3), y + length);
+    context.moveTo(x - length * .18, y + length * .55);
+    context.lineTo(x + length * .18, y - length * .55);
     context.stroke();
   }
   context.globalAlpha = 1;
+}
+
+function drawDiagonalBeams(context, width, height, time, high, energy, accent) {
+  const beams = width < 800 ? 5 : 8;
+  for (let i = 0; i < beams; i += 1) {
+    const offset = ((i / beams + time * (.012 + energy * .008)) % 1.25) - .12;
+    const x = width * offset;
+    const beamWidth = width * (.018 + high * .008);
+    const gradient = context.createLinearGradient(x - beamWidth, 0, x + beamWidth, 0);
+    gradient.addColorStop(0, rgba(accent, 0));
+    gradient.addColorStop(.46, rgba(accent, .045 + high * .045));
+    gradient.addColorStop(.5, 'rgba(205,247,255,.16)');
+    gradient.addColorStop(.54, rgba(accent, .045 + high * .045));
+    gradient.addColorStop(1, rgba(accent, 0));
+    context.save();
+    context.translate(width * .5, height * .5);
+    context.rotate(-.33);
+    context.translate(-width * .5, -height * .5);
+    context.fillStyle = gradient;
+    context.fillRect(x - beamWidth, -height * .4, beamWidth * 2, height * 1.8);
+    context.restore();
+  }
 }
 
 export function drawNeonHorizonMode(context, width, height, data, accent, accent2, time, features = {}) {
@@ -168,65 +168,46 @@ export function drawNeonHorizonMode(context, width, height, data, accent, accent
   const punch = clamp(features.punch || features.kick || 0);
 
   const background = context.createLinearGradient(0, 0, width, height);
-  background.addColorStop(0, '#020811');
-  background.addColorStop(.38, '#061521');
-  background.addColorStop(.63, '#0b1019');
-  background.addColorStop(1, '#180706');
+  background.addColorStop(0, '#020912');
+  background.addColorStop(.32, '#071723');
+  background.addColorStop(.58, '#0a1018');
+  background.addColorStop(.78, '#130b0a');
+  background.addColorStop(1, '#210805');
   context.fillStyle = background;
   context.fillRect(0, 0, width, height);
 
-  const cyanGlow = context.createRadialGradient(width * .38, height * .18, 0, width * .38, height * .18, width * .48);
-  cyanGlow.addColorStop(0, rgba(accent, .17 + energy * .05));
-  cyanGlow.addColorStop(.5, rgba(accent, .05));
-  cyanGlow.addColorStop(1, rgba(accent, 0));
-  context.fillStyle = cyanGlow;
+  const coolGlow = context.createRadialGradient(width * .33, height * .18, 0, width * .33, height * .18, width * .55);
+  coolGlow.addColorStop(0, rgba(accent, .18 + energy * .055));
+  coolGlow.addColorStop(.42, rgba(accent, .05));
+  coolGlow.addColorStop(1, rgba(accent, 0));
+  context.fillStyle = coolGlow;
   context.fillRect(0, 0, width, height);
 
-  const orangeGlow = context.createRadialGradient(width * .48, height * .76, 0, width * .48, height * .76, width * .42);
-  orangeGlow.addColorStop(0, 'rgba(255,80,20,.16)');
-  orangeGlow.addColorStop(.45, 'rgba(255,63,12,.05)');
-  orangeGlow.addColorStop(1, 'rgba(255,63,12,0)');
-  context.fillStyle = orangeGlow;
+  const warmGlow = context.createRadialGradient(width * .35, height * .82, 0, width * .35, height * .82, width * .5);
+  warmGlow.addColorStop(0, 'rgba(255,80,18,.22)');
+  warmGlow.addColorStop(.45, 'rgba(255,57,10,.06)');
+  warmGlow.addColorStop(1, 'rgba(255,57,10,0)');
+  context.fillStyle = warmGlow;
   context.fillRect(0, 0, width, height);
 
-  drawCyberStreaks(context, width, height, time, high, energy, accent);
-  drawCyberFigure(context, width, height, time, bass, mid, energy, punch, accent, accent2);
-  drawHudSpectrum(context, width, height, data, time, bass, high, accent);
+  drawDiagonalBeams(context, width, height, time, high, energy, accent);
+  drawLightStreaks(context, width, height, time, high, energy, accent);
+  drawCyberArchitecture(context, width, height, time, bass, mid, energy, punch, accent);
+  drawOrangeSpectrum(context, width, height, data, bass, high, energy);
 
-  context.save();
-  context.translate(width * .5, height * .34);
-  context.rotate(-.16);
-  context.textAlign = 'center';
-  context.textBaseline = 'middle';
-  context.font = `800 ${Math.max(18, Math.min(42, width * .033))}px Arial, sans-serif`;
-  context.fillStyle = 'rgba(45,224,255,.2)';
-  context.fillText('AUDIO REACTIVE', 4, 5);
-  context.fillStyle = 'rgba(45,224,255,.94)';
-  context.fillText('AUDIO REACTIVE', 0, 0);
-  context.font = `700 ${Math.max(11, Math.min(19, width * .014))}px Arial, sans-serif`;
-  context.fillStyle = 'rgba(236,250,255,.9)';
-  context.fillText('CYBER SCENE', width * .045, Math.max(22, height * .055));
-  context.restore();
+  const lowerBeam = context.createLinearGradient(0, height * .72, 0, height);
+  lowerBeam.addColorStop(0, 'rgba(255,72,16,0)');
+  lowerBeam.addColorStop(.55, 'rgba(255,72,16,.045)');
+  lowerBeam.addColorStop(1, 'rgba(255,72,16,.11)');
+  context.fillStyle = lowerBeam;
+  context.fillRect(0, height * .68, width, height * .32);
 
-  context.textAlign = 'left';
-  context.textBaseline = 'alphabetic';
-  context.font = `600 ${Math.max(8, Math.min(11, width * .007))}px monospace`;
-  context.fillStyle = 'rgba(255,190,79,.86)';
-  context.fillText(`ENERGY ${Math.round(energy * 99).toString().padStart(2, '0')}`, width * .76, height * .62);
-  context.fillText(`BASS   ${Math.round(bass * 99).toString().padStart(2, '0')}`, width * .76, height * .65);
-  context.fillText(`PUNCH  ${Math.round(punch * 99).toString().padStart(2, '0')}`, width * .76, height * .68);
-
-  context.strokeStyle = 'rgba(255,135,52,.42)';
-  context.lineWidth = 1;
-  context.strokeRect(width * .745, height * .585, width * .16, height * .12);
-
-  context.globalAlpha = .1 + high * .08;
-  const scan = 4;
-  context.fillStyle = 'rgba(255,255,255,.12)';
-  for (let y = 0; y < height; y += scan) context.fillRect(0, y, width, 1);
+  context.globalAlpha = .07 + high * .07;
+  context.fillStyle = 'rgba(220,249,255,.14)';
+  for (let y = 0; y < height; y += 5) context.fillRect(0, y, width, 1);
   context.globalAlpha = 1;
 
-  const vignette = context.createRadialGradient(width * .5, height * .48, width * .08, width * .5, height * .48, width * .72);
+  const vignette = context.createRadialGradient(width * .5, height * .48, width * .08, width * .5, height * .48, width * .74);
   vignette.addColorStop(0, 'rgba(0,0,0,0)');
   vignette.addColorStop(1, 'rgba(0,0,0,.5)');
   context.fillStyle = vignette;
