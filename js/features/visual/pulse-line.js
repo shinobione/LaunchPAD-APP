@@ -1,4 +1,5 @@
 const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
+const SIGNAL_HOLD = new WeakMap();
 
 function rgba(color, alpha, fallback = '71, 220, 255') {
   const value = String(color || '').trim();
@@ -8,6 +9,28 @@ function rgba(color, alpha, fallback = '71, 220, 255') {
   const g = parseInt(hex.slice(2, 4), 16);
   const b = parseInt(hex.slice(4, 6), 16);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function stableSpectrum(context, data, time) {
+  let state = SIGNAL_HOLD.get(context);
+  if (!state || state.buffer.length !== data.length) {
+    state = { buffer: new Uint8Array(data.length), lastActive: -Infinity, scratch: new Uint8Array(data.length) };
+    SIGNAL_HOLD.set(context, state);
+  }
+  let peak = 0;
+  for (let i = 0; i < data.length; i += 1) peak = Math.max(peak, data[i] || 0);
+  if (peak > 4) {
+    state.buffer.set(data);
+    state.lastActive = time;
+    return data;
+  }
+  const age = time - state.lastActive;
+  if (age >= 0 && age < .58) {
+    const decay = Math.pow(1 - age / .58, 1.45);
+    for (let i = 0; i < state.buffer.length; i += 1) state.scratch[i] = Math.round(state.buffer[i] * decay);
+    return state.scratch;
+  }
+  return data;
 }
 
 function readBin(data, t) {
@@ -33,7 +56,6 @@ function waveformPoints(width, centerY, data, amplitude, time, energy, bass, mid
     const transientWindow = Math.pow(Math.max(0, Math.sin(t * Math.PI * 9 - time * .58)), 12);
     const transient = transientWindow * punch * (.16 + shaped * .18);
     const envelope = clamp((shaped + lowBias + transient) * (.82 + energy * .62));
-
     const primary = Math.sin(t * 31 + time * (1.7 + energy * .45));
     const secondary = Math.sin(t * 71 - time * (1.02 + mid * .55));
     const tertiary = Math.sin(t * 143 + time * (2.8 + high * 1.5));
@@ -60,10 +82,7 @@ function strokeWave(context, points, style, width, alpha = 1) {
 }
 
 function strongestPeaks(points, count = 7) {
-  return [...points]
-    .filter((_, index) => index % 5 === 0)
-    .sort((a, b) => b[2] - a[2])
-    .slice(0, count);
+  return [...points].filter((_, index) => index % 5 === 0).sort((a, b) => b[2] - a[2]).slice(0, count);
 }
 
 export function drawPulseLineMode(context, width, height, data, accent, accent2, time, features = {}) {
@@ -72,6 +91,7 @@ export function drawPulseLineMode(context, width, height, data, accent, accent2,
   const high = clamp(features.high || 0);
   const energy = clamp(features.energy || 0);
   const punch = clamp(features.punch || features.kick || 0);
+  const liveData = stableSpectrum(context, data, time);
   const centerY = height * .5;
   const amplitude = height * (.145 + bass * .31 + punch * .21);
 
@@ -103,7 +123,7 @@ export function drawPulseLineMode(context, width, height, data, accent, accent2,
   context.fillStyle = aura;
   context.fillRect(0, centerY - height * .36, width, height * .72);
 
-  const points = waveformPoints(width, centerY, data, amplitude, time, energy, bass, mid, high, punch);
+  const points = waveformPoints(width, centerY, liveData, amplitude, time, energy, bass, mid, high, punch);
   const color = context.createLinearGradient(0, 0, width, 0);
   color.addColorStop(0, rgba(accent, .88));
   color.addColorStop(.18, 'rgba(65,222,255,.99)');
@@ -123,7 +143,6 @@ export function drawPulseLineMode(context, width, height, data, accent, accent2,
 
   const ghost = points.map(([x, y, shaped]) => [x, centerY + (centerY - y) * .28, shaped]);
   strokeWave(context, ghost, color, 1.15, .08 + high * .07);
-
   const echo = points.map(([x, y, shaped]) => [x, centerY + (y - centerY) * .72 + Math.sin(x * .018 + time * 1.2) * 2, shaped]);
   strokeWave(context, echo, rgba(accent2 || accent, .55), .9, .055 + mid * .045);
 
@@ -136,7 +155,6 @@ export function drawPulseLineMode(context, width, height, data, accent, accent2,
     bloom.addColorStop(1, rgba(accent, 0));
     context.fillStyle = bloom;
     context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
-
     if (index % 2 === 0) {
       context.globalAlpha = .18 + high * .22;
       context.strokeStyle = 'rgba(235,252,255,.85)';
