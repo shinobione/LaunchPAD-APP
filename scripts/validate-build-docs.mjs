@@ -20,7 +20,7 @@ const candidateDocs = new Map([
   ['phase-ux-c2-5-a-mobile-player-ui-polish-20260810','docs/PHASE-UX-C2-5-A-BUILD86-MOBILE-PLAYER-UI-POLISH.md'],
   ['phase-ux-c2-5-a-global-touch-polish-20260810','docs/PHASE-UX-C2-5-A-BUILD87-GLOBAL-TOUCH-POLISH.md'],
   ['phase-ux-c2-5-b-canonical-album-read-model-20260810','docs/PHASE-UX-C2-5-B-BUILD88-CANONICAL-ALBUM-READ-MODEL.md'],
-  ['phase-ux-c2-5-f-canonical-album-public-cutover-20260811','docs/PHASE-UX-C2-5-F-BUILD89-CANONICAL-ALBUM-PUBLIC-CUTOVER.md'],
+  ['phase-ux-c2-5-f-canonical-album-public-cutover-20260811','docs/PHASE-UX-C2-5-F-BUILD89-CANONICAL-PUBLIC-CUTOVER.md'],
   ['phase-ux-c3-c-premium-feel-20260811','docs/PHASE-UX-C3-C-BUILD91-PREMIUM-FEEL.md'],
   ['phase-ux-c3-c1-premium-feel-20260811','docs/PHASE-UX-C3-C1-BUILD92-PREMIUM-FEEL.md'],
   ['phase-ux-c3-c2-transition-glow-20260811','docs/PHASE-UX-C3-C2-BUILD93-TRANSITION-GLOW-TUNING.md'],
@@ -50,7 +50,8 @@ const candidateDocs = new Map([
   ['audiolab-silk-flow-20260827','docs/BUILD120-AUDIOLAB-SILK-FLOW.md'],
   ['audiolab-signal-bloom-20260827','docs/BUILD121-AUDIOLAB-SIGNAL-BLOOM.md'],
   ['audiolab-premium-visual-pack-20260829','docs/BUILD122-AUDIOLAB-PREMIUM-VISUAL-PACK.md'],
-  ['audiolab-premium-detail-20260829','docs/BUILD123-AUDIOLAB-PREMIUM-DETAIL.md']
+  ['audiolab-premium-detail-20260829','docs/BUILD123-AUDIOLAB-PREMIUM-DETAIL.md'],
+  ['audiolab-reference-led-20260829','docs/BUILD124-AUDIOLAB-REFERENCE-LED.md']
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
   ? [candidateDocs.get(release)]
