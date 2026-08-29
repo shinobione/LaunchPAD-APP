@@ -33,9 +33,9 @@ for (const required of [
 ]) assert.ok(live.includes(required), `Audio Lab integration is missing ${required}.`);
 
 const premiumFiles = [
-  ['js/features/visual/neon-horizon.js', ['export function drawNeonHorizonMode(', 'const rowCount = 24', 'const punchWave =', 'context.arc(sunX, sunY, sunRadius']],
-  ['js/features/visual/pulse-line.js', ['export function drawPulseLineMode(', 'function waveformPath(', 'const waveformGradient =', 'const flareX =']],
-  ['js/features/visual/chroma-spectrum.js', ['export function drawChromaSpectrumMode(', 'const PEAKS = new WeakMap()', 'const barCount = mobile ? 54 : 104', 'const sweepX =']]
+  ['js/features/visual/neon-horizon.js', ['export function drawNeonHorizonMode(', 'const rowCount = width < 800 ? 24 : 34', 'function terrainHeight(', 'function drawStars(', 'const punchWave =', 'context.arc(sunX, sunY, sunRadius']],
+  ['js/features/visual/pulse-line.js', ['export function drawPulseLineMode(', 'function waveformPath(', 'function drawParticleTicks(', 'const waveformGradient =', 'const flareX =']],
+  ['js/features/visual/chroma-spectrum.js', ['export function drawChromaSpectrumMode(', 'const PEAKS = new WeakMap()', 'const barCount = mobile ? 34 : 64', 'const points = []', 'const sweepX =']]
 ];
 for (const [file, required] of premiumFiles) {
   const source = read(file);
@@ -72,5 +72,5 @@ for (const required of ["'./js/features/visual/neon-horizon.js'", "'./js/feature
 }
 
 const build = assertCurrentBuild('Audio Lab current build');
-assert.ok(build.number >= 122, `Audio Lab premium pack requires Build 122 or newer, got ${build.display}.`);
-console.log(`Audio Lab exposes ten shared-FFT presets including Neon Horizon, Pulse Line and Chroma Spectrum under ${build.display}.`);
+assert.ok(build.number >= 123, `Audio Lab premium detail pass requires Build 123 or newer, got ${build.display}.`);
+console.log(`Audio Lab exposes ten shared-FFT presets including the detailed Neon Horizon, Pulse Line and Chroma Spectrum under ${build.display}.`);

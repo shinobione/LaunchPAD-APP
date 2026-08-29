@@ -14,23 +14,26 @@ function rgba(color, alpha, fallback = '74, 220, 255') {
 export function drawChromaSpectrumMode(context, width, height, data, accent, accent2, time, features = {}) {
   const energy = clamp(features.energy || 0);
   const bass = clamp(features.bass || 0);
+  const mid = clamp(features.mid || 0);
   const high = clamp(features.high || 0);
   const punch = clamp(features.punch || features.kick || 0);
   const mobile = width < 760;
-  const barCount = mobile ? 54 : 104;
-  const baseline = height * .82;
-  const maxHeight = height * (.52 + bass * .16 + punch * .08);
+  const barCount = mobile ? 34 : 64;
+  const baseline = height * .79;
+  const maxHeight = height * (.5 + bass * .18 + punch * .1);
 
   const background = context.createLinearGradient(0, 0, width, height);
-  background.addColorStop(0, '#030712');
-  background.addColorStop(.48, '#06081a');
-  background.addColorStop(1, '#11051a');
+  background.addColorStop(0, '#020611');
+  background.addColorStop(.44, '#07091a');
+  background.addColorStop(.7, '#0b071d');
+  background.addColorStop(1, '#16051b');
   context.fillStyle = background;
   context.fillRect(0, 0, width, height);
 
-  const atmosphere = context.createRadialGradient(width * .54, baseline * .72, 0, width * .54, baseline * .72, width * .52);
-  atmosphere.addColorStop(0, rgba(accent2, .12, '198, 66, 255'));
-  atmosphere.addColorStop(.38, rgba(accent, .09));
+  const atmosphere = context.createRadialGradient(width * .54, baseline * .66, 0, width * .54, baseline * .66, width * .56);
+  atmosphere.addColorStop(0, rgba(accent2, .15 + energy * .05, '198, 66, 255'));
+  atmosphere.addColorStop(.34, rgba(accent, .11));
+  atmosphere.addColorStop(.74, rgba(accent2, .035, '198,66,255'));
   atmosphere.addColorStop(1, rgba(accent, 0));
   context.fillStyle = atmosphere;
   context.fillRect(0, 0, width, height);
@@ -41,72 +44,125 @@ export function drawChromaSpectrumMode(context, width, height, data, accent, acc
     PEAKS.set(context, peaks);
   }
 
-  const gap = mobile ? 2 : 2.5;
+  const gap = mobile ? 4 : 5;
   const totalGap = gap * (barCount - 1);
-  const barWidth = Math.max(1.5, (width - totalGap) / barCount);
+  const barWidth = Math.max(2, (width - totalGap) / barCount);
   const gradient = context.createLinearGradient(0, 0, width, 0);
   gradient.addColorStop(0, rgba(accent, .98));
-  gradient.addColorStop(.32, 'rgba(112,236,255,.98)');
-  gradient.addColorStop(.52, 'rgba(248,250,255,1)');
-  gradient.addColorStop(.72, 'rgba(198,92,255,.98)');
+  gradient.addColorStop(.28, 'rgba(103,235,255,.98)');
+  gradient.addColorStop(.5, 'rgba(250,252,255,1)');
+  gradient.addColorStop(.72, 'rgba(199,94,255,.98)');
   gradient.addColorStop(1, rgba(accent2, .98, '255,70,210'));
 
+  const points = [];
   for (let i = 0; i < barCount; i += 1) {
     const t = i / (barCount - 1);
     const index = Math.min(data.length - 1, Math.floor(t * data.length));
     const raw = (data[index] || 0) / 255;
-    const shaped = Math.pow(raw, 1.45);
-    const centerLift = .78 + Math.sin(Math.PI * t) * .28;
-    const target = clamp(shaped * centerLift * (1 + energy * .34));
-    peaks[i] = Math.max(target, peaks[i] * (.955 - high * .02));
+    const neighbor = (data[Math.min(data.length - 1, index + 1)] || 0) / 255;
+    const shaped = Math.pow(raw * .76 + neighbor * .24, 1.38);
+    const arch = .72 + Math.sin(Math.PI * t) * (.3 + mid * .08);
+    const breathing = 1 + Math.sin(time * .8 + t * 7) * (.035 + mid * .04);
+    const target = clamp(shaped * arch * breathing * (1 + energy * .38));
+    peaks[i] = Math.max(target, peaks[i] * (.95 - high * .025));
 
     const h = Math.max(2, target * maxHeight);
     const x = i * (barWidth + gap);
     const y = baseline - h;
+    const centerX = x + barWidth * .5;
+    points.push([centerX, y]);
 
-    context.globalAlpha = .12 + energy * .08;
+    const depthEcho = h * (.15 + .08 * Math.sin(time * 1.1 + i * .34));
+    context.globalAlpha = .09 + energy * .05;
     context.fillStyle = gradient;
-    context.fillRect(x - 1, y - 10, barWidth + 2, h + 20);
+    context.fillRect(x + barWidth * .18, y - depthEcho - 8, barWidth * .64, h + depthEcho + 16);
 
-    context.globalAlpha = .98;
+    context.globalAlpha = .22 + energy * .06;
     context.fillStyle = gradient;
-    context.fillRect(x, y, barWidth, h);
+    context.fillRect(x - 1, y - 5, barWidth + 2, h + 10);
+
+    context.globalAlpha = .97;
+    context.fillStyle = gradient;
+    const cap = Math.min(4, barWidth * .45);
+    context.fillRect(x, y + cap, barWidth, Math.max(0, h - cap));
+    context.beginPath();
+    context.roundRect?.(x, y, barWidth, Math.min(h, cap * 2.2), cap);
+    if (context.roundRect) context.fill();
+    else context.fillRect(x, y, barWidth, Math.min(h, cap * 2));
 
     const peakY = baseline - peaks[i] * maxHeight;
-    context.globalAlpha = .8;
-    context.fillStyle = i % 2 === 0 ? 'rgba(255,255,255,.95)' : gradient;
-    context.fillRect(x, peakY - 3, barWidth, 2);
+    context.globalAlpha = .86;
+    context.fillStyle = i % 3 === 0 ? 'rgba(255,255,255,.98)' : gradient;
+    context.fillRect(x, peakY - 4, barWidth, 2);
   }
   context.globalAlpha = 1;
 
-  const floorGlow = context.createLinearGradient(0, baseline - 12, 0, baseline + height * .12);
-  floorGlow.addColorStop(0, 'rgba(255,255,255,.18)');
-  floorGlow.addColorStop(.18, rgba(accent, .12));
+  context.strokeStyle = 'rgba(255,255,255,.62)';
+  context.lineWidth = 1.15;
+  context.beginPath();
+  points.forEach(([x, y], index) => {
+    if (index === 0) context.moveTo(x, y - 5);
+    else context.lineTo(x, y - 5);
+  });
+  context.stroke();
+
+  context.globalAlpha = .22 + high * .14;
+  context.strokeStyle = gradient;
+  context.lineWidth = 2.4;
+  context.beginPath();
+  points.forEach(([x, y], index) => {
+    const waveY = y - 10 - Math.sin(time * 2.1 + index * .32) * (2 + high * 6);
+    if (index === 0) context.moveTo(x, waveY);
+    else context.lineTo(x, waveY);
+  });
+  context.stroke();
+  context.globalAlpha = 1;
+
+  const floorGlow = context.createLinearGradient(0, baseline - 16, 0, height);
+  floorGlow.addColorStop(0, 'rgba(255,255,255,.2)');
+  floorGlow.addColorStop(.12, rgba(accent, .14));
+  floorGlow.addColorStop(.48, rgba(accent2, .04, '255,70,210'));
   floorGlow.addColorStop(1, rgba(accent2, 0, '255,70,210'));
   context.fillStyle = floorGlow;
-  context.fillRect(0, baseline - 12, width, height - baseline + 12);
+  context.fillRect(0, baseline - 16, width, height - baseline + 16);
 
-  context.globalAlpha = .16 + high * .08;
+  context.globalAlpha = .1 + high * .08;
   context.save();
-  context.translate(0, baseline * 2 + height * .045);
-  context.scale(1, -0.28);
+  context.translate(0, baseline * 2 + height * .05);
+  context.scale(1, -0.22);
   context.fillStyle = gradient;
   for (let i = 0; i < barCount; i += 1) {
     const t = i / (barCount - 1);
     const index = Math.min(data.length - 1, Math.floor(t * data.length));
     const raw = (data[index] || 0) / 255;
-    const h = Math.max(1, Math.pow(raw, 1.5) * maxHeight * .48);
+    const h = Math.max(1, Math.pow(raw, 1.35) * maxHeight * .52);
     const x = i * (barWidth + gap);
     context.fillRect(x, baseline - h, barWidth, h);
   }
   context.restore();
   context.globalAlpha = 1;
 
-  const sweepX = ((time * (.07 + high * .06)) % 1) * width;
-  const sweep = context.createLinearGradient(sweepX - width * .08, 0, sweepX + width * .08, 0);
+  const sparkCount = mobile ? 16 : 30;
+  for (let i = 0; i < sparkCount; i += 1) {
+    const t = (i + .5) / sparkCount;
+    const index = Math.min(data.length - 1, Math.floor(t * data.length));
+    const raw = (data[index] || 0) / 255;
+    if (raw < .18) continue;
+    const x = t * width + Math.sin(time * 1.3 + i * 2.11) * 8;
+    const y = baseline - raw * maxHeight - 16 - Math.abs(Math.sin(time * 1.7 + i)) * (8 + high * 20);
+    context.globalAlpha = clamp(raw * (.42 + high * .55));
+    context.fillStyle = i % 4 === 0 ? 'rgba(255,255,255,.98)' : (i % 2 === 0 ? rgba(accent, .9) : rgba(accent2, .9, '255,70,210'));
+    context.fillRect(x, y, i % 5 === 0 ? 2 : 1, i % 5 === 0 ? 2 : 1);
+  }
+  context.globalAlpha = 1;
+
+  const sweepX = ((time * (.085 + high * .08 + energy * .04)) % 1) * width;
+  const sweep = context.createLinearGradient(sweepX - width * .09, 0, sweepX + width * .09, 0);
   sweep.addColorStop(0, 'rgba(255,255,255,0)');
-  sweep.addColorStop(.5, `rgba(255,255,255,${.08 + high * .14})`);
+  sweep.addColorStop(.42, rgba(accent, .03));
+  sweep.addColorStop(.5, `rgba(255,255,255,${.11 + high * .16})`);
+  sweep.addColorStop(.58, rgba(accent2, .04, '255,70,210'));
   sweep.addColorStop(1, 'rgba(255,255,255,0)');
   context.fillStyle = sweep;
-  context.fillRect(sweepX - width * .08, 0, width * .16, baseline);
+  context.fillRect(sweepX - width * .09, 0, width * .18, baseline);
 }
