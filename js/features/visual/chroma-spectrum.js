@@ -32,12 +32,19 @@ function spectrumGradient(context, width, accent, accent2, alpha = 1) {
   return gradient;
 }
 
+function rearFieldColor(t, accent, accent2, alpha) {
+  if (t < .22) return rgba(accent, alpha);
+  if (t < .42) return `rgba(58,226,255,${alpha})`;
+  if (t < .58) return `rgba(239,251,255,${Math.min(1, alpha * 1.12)})`;
+  if (t < .78) return `rgba(177,103,255,${alpha})`;
+  return rgba(accent2, alpha, '255,63,198');
+}
+
 function drawRearField(context, width, height, data, baseline, maxHeight, energy, bass, accent, accent2) {
   const count = width < 760 ? 30 : 46;
   const span = width * .92;
   const startX = width * .04;
   const step = span / count;
-  const rear = spectrumGradient(context, width, accent, accent2, .38);
   for (let i = 0; i < count; i += 1) {
     const t = i / Math.max(1, count - 1);
     const raw = sample(data, t);
@@ -47,7 +54,7 @@ function drawRearField(context, width, height, data, baseline, maxHeight, energy
     const band = Math.max(3, step * .62);
     const fog = context.createLinearGradient(0, baseline - h, 0, baseline + 8);
     fog.addColorStop(0, 'rgba(255,255,255,0)');
-    fog.addColorStop(.28, rear);
+    fog.addColorStop(.28, rearFieldColor(t, accent, accent2, .13 + energy * .035));
     fog.addColorStop(1, 'rgba(255,255,255,0)');
     context.globalAlpha = .055 + energy * .035;
     context.fillStyle = fog;
