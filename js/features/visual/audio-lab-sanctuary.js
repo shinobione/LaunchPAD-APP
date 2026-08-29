@@ -9,7 +9,7 @@ import {
 const VIDEO_SELECTOR = 'video.track-video-player, video.lyrics-studio-canvas-video';
 const VIEW_LABELS = Object.freeze({ video: 'Video', player: 'Player' });
 const PRESET_LABEL_OVERRIDES = new Map([
-  ['gravity-lens', 'Cyber Scene']
+  ['gravity-lens', 'Prism Tunnel']
 ]);
 
 function presetLabel(mode) {

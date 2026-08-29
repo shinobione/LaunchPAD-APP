@@ -20,16 +20,40 @@ function sample(data, t) {
   return (((data[index] || 0) * (1 - mix)) + ((data[next] || 0) * mix)) / 255;
 }
 
-function spectrumGradient(context, width, accent, accent2) {
+function spectrumGradient(context, width, accent, accent2, alpha = 1) {
   const gradient = context.createLinearGradient(0, 0, width, 0);
-  gradient.addColorStop(0, rgba(accent, .98));
-  gradient.addColorStop(.16, 'rgba(30,222,255,.99)');
-  gradient.addColorStop(.38, 'rgba(87,232,255,1)');
-  gradient.addColorStop(.5, 'rgba(238,251,255,1)');
-  gradient.addColorStop(.62, 'rgba(170,118,255,.99)');
-  gradient.addColorStop(.82, 'rgba(235,55,255,.99)');
-  gradient.addColorStop(1, rgba(accent2, .98, '255,63,198'));
+  gradient.addColorStop(0, rgba(accent, .98 * alpha));
+  gradient.addColorStop(.14, `rgba(26,220,255,${.99 * alpha})`);
+  gradient.addColorStop(.34, `rgba(85,233,255,${1 * alpha})`);
+  gradient.addColorStop(.49, `rgba(242,253,255,${1 * alpha})`);
+  gradient.addColorStop(.63, `rgba(164,122,255,${.99 * alpha})`);
+  gradient.addColorStop(.82, `rgba(236,58,255,${.99 * alpha})`);
+  gradient.addColorStop(1, rgba(accent2, .98 * alpha, '255,63,198'));
   return gradient;
+}
+
+function drawRearField(context, width, height, data, baseline, maxHeight, energy, bass, accent, accent2) {
+  const count = width < 760 ? 30 : 46;
+  const span = width * .92;
+  const startX = width * .04;
+  const step = span / count;
+  const rear = spectrumGradient(context, width, accent, accent2, .38);
+  for (let i = 0; i < count; i += 1) {
+    const t = i / Math.max(1, count - 1);
+    const raw = sample(data, t);
+    const shaped = Math.pow(raw, 1.35);
+    const h = shaped * maxHeight * (.72 + bass * .12);
+    const x = startX + i * step;
+    const band = Math.max(3, step * .62);
+    const fog = context.createLinearGradient(0, baseline - h, 0, baseline + 8);
+    fog.addColorStop(0, 'rgba(255,255,255,0)');
+    fog.addColorStop(.28, rear);
+    fog.addColorStop(1, 'rgba(255,255,255,0)');
+    context.globalAlpha = .055 + energy * .035;
+    context.fillStyle = fog;
+    context.fillRect(x - band * .5, baseline - h, band, h + 10);
+  }
+  context.globalAlpha = 1;
 }
 
 export function drawChromaSpectrumMode(context, width, height, data, accent, accent2, time, features = {}) {
@@ -39,31 +63,44 @@ export function drawChromaSpectrumMode(context, width, height, data, accent, acc
   const high = clamp(features.high || 0);
   const punch = clamp(features.punch || features.kick || 0);
   const mobile = width < 760;
-  const barCount = mobile ? 92 : 176;
-  const baseline = height * .61;
-  const maxHeight = height * (.28 + bass * .22 + punch * .1);
+  const barCount = mobile ? 96 : 184;
+  const baseline = height * .615;
+  const maxHeight = height * (.285 + bass * .225 + punch * .105);
 
   const background = context.createLinearGradient(0, 0, width, height);
-  background.addColorStop(0, '#0a031a');
-  background.addColorStop(.25, '#091433');
-  background.addColorStop(.52, '#0d1030');
-  background.addColorStop(.78, '#16072b');
-  background.addColorStop(1, '#26051f');
+  background.addColorStop(0, '#080219');
+  background.addColorStop(.22, '#08132f');
+  background.addColorStop(.49, '#0c1030');
+  background.addColorStop(.78, '#18072c');
+  background.addColorStop(1, '#25041f');
   context.fillStyle = background;
   context.fillRect(0, 0, width, height);
 
-  const upperGlow = context.createRadialGradient(width * .47, height * .38, 0, width * .47, height * .38, width * .52);
-  upperGlow.addColorStop(0, 'rgba(66,116,255,.12)');
-  upperGlow.addColorStop(.42, rgba(accent2, .055, '224,69,255'));
-  upperGlow.addColorStop(1, 'rgba(0,0,0,0)');
-  context.fillStyle = upperGlow;
+  const topAtmosphere = context.createRadialGradient(width * .48, height * .3, 0, width * .48, height * .3, width * .56);
+  topAtmosphere.addColorStop(0, 'rgba(76,116,255,.13)');
+  topAtmosphere.addColorStop(.32, rgba(accent, .05));
+  topAtmosphere.addColorStop(.58, rgba(accent2, .045, '224,69,255'));
+  topAtmosphere.addColorStop(1, 'rgba(0,0,0,0)');
+  context.fillStyle = topAtmosphere;
   context.fillRect(0, 0, width, height);
 
+  context.globalAlpha = .055 + high * .025;
+  context.strokeStyle = 'rgba(191,213,255,.18)';
+  context.lineWidth = .5;
+  const gridStep = Math.max(42, width / 24);
+  for (let x = gridStep; x < width; x += gridStep) {
+    context.beginPath();
+    context.moveTo(x, height * .12);
+    context.lineTo(x, height * .86);
+    context.stroke();
+  }
+  context.globalAlpha = 1;
+
+  const span = width * .91;
+  const startX = width * .045;
+  const gap = mobile ? .65 : .78;
+  const barWidth = Math.max(.68, (span - gap * (barCount - 1)) / barCount);
   const spectrumColor = spectrumGradient(context, width, accent, accent2);
-  const span = width * .9;
-  const startX = width * .05;
-  const gap = mobile ? .75 : .9;
-  const barWidth = Math.max(.7, (span - gap * (barCount - 1)) / barCount);
 
   let peaks = PEAKS.get(context);
   if (!peaks || peaks.length !== barCount) {
@@ -71,65 +108,81 @@ export function drawChromaSpectrumMode(context, width, height, data, accent, acc
     PEAKS.set(context, peaks);
   }
 
-  const floorGlow = context.createLinearGradient(0, baseline - height * .1, 0, baseline + height * .1);
+  const floorGlow = context.createLinearGradient(0, baseline - height * .12, 0, baseline + height * .15);
   floorGlow.addColorStop(0, 'rgba(255,255,255,0)');
-  floorGlow.addColorStop(.44, rgba(accent, .05 + energy * .03));
-  floorGlow.addColorStop(.5, 'rgba(230,248,255,.18)');
-  floorGlow.addColorStop(.56, rgba(accent2, .045, '255,63,198'));
+  floorGlow.addColorStop(.42, rgba(accent, .045 + energy * .035));
+  floorGlow.addColorStop(.5, 'rgba(236,250,255,.20)');
+  floorGlow.addColorStop(.58, rgba(accent2, .04 + energy * .02, '255,63,198'));
   floorGlow.addColorStop(1, 'rgba(255,255,255,0)');
   context.fillStyle = floorGlow;
-  context.fillRect(0, baseline - height * .11, width, height * .22);
+  context.fillRect(0, baseline - height * .13, width, height * .28);
+
+  drawRearField(context, width, height, data, baseline, maxHeight, energy, bass, accent, accent2);
 
   for (let i = 0; i < barCount; i += 1) {
     const t = i / (barCount - 1);
     const raw = sample(data, t);
-    const neighbor = sample(data, clamp(t + .006));
-    const shaped = Math.pow(raw * .8 + neighbor * .2, 1.62);
-    const musicalContour = .74 + Math.sin(Math.PI * t) * .2 + Math.sin(t * 17 + time * .22) * .025 * mid;
-    const target = clamp(shaped * musicalContour * (1 + energy * .4));
-    peaks[i] = Math.max(target, peaks[i] * (.962 - high * .018));
+    const left = sample(data, clamp(t - .0045));
+    const right = sample(data, clamp(t + .0045));
+    const shaped = Math.pow(raw * .62 + left * .19 + right * .19, 1.58);
+    const contour = .76 + Math.sin(Math.PI * t) * .18 + Math.sin(t * 14 + time * .19) * .018 * mid;
+    const target = clamp(shaped * contour * (1 + energy * .42 + punch * .08));
+    peaks[i] = Math.max(target, peaks[i] * (.965 - high * .02));
 
-    const h = Math.max(.75, target * maxHeight);
+    const h = Math.max(.8, target * maxHeight);
     const x = startX + i * (barWidth + gap);
+    const reflection = h * (.115 + high * .055);
 
-    context.globalAlpha = .075 + energy * .035;
+    context.globalAlpha = .06 + energy * .035;
     context.fillStyle = spectrumColor;
-    context.fillRect(x - .5, baseline - h - 3, barWidth + 1, h + 6);
+    context.fillRect(x - .7, baseline - h - 4, barWidth + 1.4, h + 6);
 
-    context.globalAlpha = .94;
+    context.globalAlpha = .93;
     context.fillStyle = spectrumColor;
     context.fillRect(x, baseline - h, barWidth, h);
 
-    const reflection = h * (.12 + high * .055);
-    context.globalAlpha = .14 + high * .05;
+    context.globalAlpha = .62 + target * .28;
+    context.fillStyle = 'rgba(247,253,255,.94)';
+    context.fillRect(x, baseline - h, Math.max(.45, barWidth * .28), Math.min(2.2, 1 + target * 1.2));
+
+    context.globalAlpha = .13 + high * .055;
+    context.fillStyle = spectrumColor;
     context.fillRect(x, baseline + 1, barWidth, reflection);
 
-    const peakY = baseline - peaks[i] * maxHeight - 2;
-    context.globalAlpha = .38 + peaks[i] * .26;
-    context.fillStyle = i % 8 === 0 ? 'rgba(245,253,255,.9)' : spectrumColor;
-    context.fillRect(x, peakY, barWidth, .8);
+    const peakY = baseline - peaks[i] * maxHeight - 2.5;
+    context.globalAlpha = .34 + peaks[i] * .28;
+    context.fillStyle = i % 11 === 0 ? 'rgba(250,254,255,.96)' : spectrumColor;
+    context.fillRect(x, peakY, barWidth, .75);
   }
   context.globalAlpha = 1;
 
   const axis = context.createLinearGradient(0, 0, width, 0);
   axis.addColorStop(0, 'rgba(255,255,255,0)');
-  axis.addColorStop(.08, rgba(accent, .42));
-  axis.addColorStop(.5, 'rgba(245,253,255,.78)');
-  axis.addColorStop(.92, rgba(accent2, .42, '255,63,198'));
+  axis.addColorStop(.08, rgba(accent, .34));
+  axis.addColorStop(.5, 'rgba(247,253,255,.75)');
+  axis.addColorStop(.92, rgba(accent2, .34, '255,63,198'));
   axis.addColorStop(1, 'rgba(255,255,255,0)');
   context.strokeStyle = axis;
-  context.lineWidth = .65;
+  context.lineWidth = .58;
   context.beginPath();
   context.moveTo(startX, baseline);
   context.lineTo(width - startX, baseline);
   context.stroke();
 
-  const haze = context.createRadialGradient(width * .5, baseline, 0, width * .5, baseline, width * .48);
-  haze.addColorStop(0, `rgba(204,219,255,${.035 + energy * .025})`);
-  haze.addColorStop(.42, rgba(accent2, .022, '255,63,198'));
+  const haze = context.createRadialGradient(width * .5, baseline, 0, width * .5, baseline, width * .5);
+  haze.addColorStop(0, `rgba(210,224,255,${.04 + energy * .03})`);
+  haze.addColorStop(.36, rgba(accent2, .024, '255,63,198'));
   haze.addColorStop(1, 'rgba(0,0,0,0)');
   context.fillStyle = haze;
-  context.fillRect(0, baseline - height * .2, width, height * .4);
+  context.fillRect(0, baseline - height * .22, width, height * .45);
+
+  const edgeLight = context.createLinearGradient(0, 0, width, 0);
+  edgeLight.addColorStop(0, rgba(accent, .08 + high * .04));
+  edgeLight.addColorStop(.2, 'rgba(255,255,255,0)');
+  edgeLight.addColorStop(.8, 'rgba(255,255,255,0)');
+  edgeLight.addColorStop(1, rgba(accent2, .08 + high * .04, '255,63,198'));
+  context.fillStyle = edgeLight;
+  context.fillRect(0, height * .12, width, height * .75);
 
   const vignette = context.createRadialGradient(width * .5, height * .5, width * .12, width * .5, height * .5, width * .72);
   vignette.addColorStop(0, 'rgba(0,0,0,0)');
