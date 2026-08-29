@@ -10,7 +10,7 @@ assert.equal(bridge, "export { createVisualController } from './visual-engine-li
 const registry = read('js/features/visual/audio-lab-registry.js');
 for (const required of [
   "export const AUDIO_LAB_DEFAULT_MODE = 'neon-ribbon'",
-  "id: 'gravity-lens', label: 'Cyber Scene'",
+  "id: 'gravity-lens', label: 'Prism Tunnel'",
   "id: 'void-bloom', label: 'Pulse Line'",
   "id: 'creep-signal', label: 'Chroma Spectrum'",
   "AUDIO_LAB_SANCTUARY_IDS = Object.freeze(['spectrum'])"
@@ -19,7 +19,7 @@ assert.equal((registry.match(/id: '[^']+'/g) || []).length, 10, 'Audio Lab must 
 
 const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
-  "{ id: 'gravity-lens', label: 'Neon Horizon', renderer: drawNeonHorizonMode }",
+  "{ id: 'gravity-lens', label: 'Prism Tunnel', renderer: drawPrismTunnelMode }",
   "{ id: 'void-bloom', label: 'Pulse Line', renderer: drawPulseLineMode }",
   "{ id: 'creep-signal', label: 'Chroma Spectrum', renderer: drawChromaSpectrumMode }",
   "{ id: 'neon-ribbon', label: 'Neon Ribbon', renderer: drawNeonRibbonMode }",
@@ -33,15 +33,15 @@ for (const required of [
 ]) assert.ok(live.includes(required), `Audio Lab integration is missing ${required}.`);
 
 const premiumFiles = [
-  ['js/features/visual/neon-horizon.js', ['export function drawNeonHorizonMode(', 'function drawCyberArchitecture(', 'function drawOrangeSpectrum(', 'function drawLightStreaks(', 'function drawDiagonalBeams(']],
-  ['js/features/visual/pulse-line.js', ['export function drawPulseLineMode(', 'function waveformPoints(', 'function strokeWave(', 'const points = waveformPoints(', 'const ghost = points.map(']],
-  ['js/features/visual/chroma-spectrum.js', ['export function drawChromaSpectrumMode(', 'const PEAKS = new WeakMap()', 'const barCount = mobile ? 92 : 176', 'function spectrumGradient(', 'const haze = context.createRadialGradient(']]
+  ['js/features/visual/prism-tunnel.js', ['export function drawPrismTunnelMode(', 'function depthFrame(', 'function drawConnectorRibs(', 'function drawSpectralSparks(', 'const frameCount = width < 760 ? 9 : 13']],
+  ['js/features/visual/pulse-line.js', ['export function drawPulseLineMode(', 'function waveformPoints(', 'function strokeWave(', 'function strongestPeaks(', 'const points = waveformPoints(', 'const echo = points.map(']],
+  ['js/features/visual/chroma-spectrum.js', ['export function drawChromaSpectrumMode(', 'const PEAKS = new WeakMap()', 'const barCount = mobile ? 96 : 184', 'function spectrumGradient(', 'function drawRearField(', 'const edgeLight =']]
 ];
 for (const [file, required] of premiumFiles) {
   const source = read(file);
   for (const value of required) assert.ok(source.includes(value), `${file} is missing ${value}.`);
   for (const forbidden of ['Math.random(', 'requestAnimationFrame(', 'setInterval(', 'shapeMotionTarget(']) assert.ok(!source.includes(forbidden), `${file} must not contain ${forbidden}.`);
-  assert.ok(!source.includes('fillText('), `${file} must not contain visualizer typography in the strict reference pass.`);
+  assert.ok(!source.includes('fillText('), `${file} must not contain visualizer typography.`);
 }
 
 const base = read('js/features/visual/visual-engine-v2.js');
@@ -68,10 +68,10 @@ assert.ok(!signal.includes('captureStream('));
 assert.ok(!signal.includes('createMediaStreamSource('));
 
 const worker = read('sw.js');
-for (const required of ["'./js/features/visual/neon-horizon.js'", "'./js/features/visual/pulse-line.js'", "'./js/features/visual/chroma-spectrum.js'", "'./js/features/visual/neon-ribbon.js'"]) {
+for (const required of ["'./js/features/visual/prism-tunnel.js'", "'./js/features/visual/pulse-line.js'", "'./js/features/visual/chroma-spectrum.js'", "'./js/features/visual/neon-ribbon.js'"]) {
   assert.ok(worker.includes(required), `PWA shell is missing ${required}.`);
 }
 
 const build = assertCurrentBuild('Audio Lab current build');
-assert.ok(build.number >= 125, `Audio Lab strict reference pass requires Build 125 or newer, got ${build.display}.`);
-console.log(`Audio Lab exposes ten shared-FFT presets including the strict-reference Cyber Scene, Pulse Line and Chroma Spectrum under ${build.display}.`);
+assert.ok(build.number >= 126, `Audio Lab premium polish + Prism Tunnel requires Build 126 or newer, got ${build.display}.`);
+console.log(`Audio Lab exposes ten shared-FFT presets including Prism Tunnel plus polished Pulse Line and Chroma Spectrum under ${build.display}.`);
