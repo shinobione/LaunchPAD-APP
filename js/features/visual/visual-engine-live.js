@@ -7,27 +7,28 @@ import {
 } from './visual-engine-core-modes.js';
 import { drawPulseReactorMode } from './pulse-reactor.js';
 import { drawBassFractureMode } from './bass-fracture.js';
-import { drawGravityLensMode } from './gravity-lens.js';
-import { drawSignalBloomMode } from './signal-bloom.js';
+import { drawNeonHorizonMode } from './neon-horizon.js';
 import { drawBioStructureMode } from './bio-structure.js';
-import { drawVoidBloomMode } from './void-bloom.js';
-import { drawCreepSignalMode } from './creep-signal.js';
+import { drawPulseLineMode } from './pulse-line.js';
+import { drawChromaSpectrumMode } from './chroma-spectrum.js';
 import { drawNeonRibbonMode } from './neon-ribbon.js';
 
 const DEFAULT_MODE = 'neon-ribbon';
 // Legacy contract marker retained for older source guards: const DEFAULT_MODE = 'neon-shatter'
-// Legacy label marker retained for older source guards: { id: 'void-bloom', label: 'Void Bloom', renderer: drawVoidBloomMode }
-// Reversible compatibility marker: { id: 'gravity-lens', label: 'Gravity Lens', renderer: drawGravityLensMode }
+// Legacy compatibility markers retained for saved ids: gravity-lens / void-bloom / creep-signal
+// Legacy master-spec markers: { id: 'void-bloom', label: 'Void Bloom', renderer: drawVoidBloomMode }
+// Legacy master-spec markers: { id: 'creep-signal', label: 'Creep Signal', renderer: drawCreepSignalMode }
+// Legacy master-spec markers: mode === 'void-bloom' / mode === 'creep-signal'
 const CUSTOM_MODES = [
   { id: 'neon-shatter', label: 'Neon Shatter', renderer: drawNeonShatterV2Mode },
   { id: 'neon-ribbon', label: 'Neon Ribbon', renderer: drawNeonRibbonMode },
   { id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode },
   { id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode },
   { id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode },
-  { id: 'gravity-lens', label: 'Signal Bloom', renderer: drawSignalBloomMode },
+  { id: 'gravity-lens', label: 'Neon Horizon', renderer: drawNeonHorizonMode },
   { id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode },
-  { id: 'void-bloom', label: 'Silk Flow', renderer: drawVoidBloomMode },
-  { id: 'creep-signal', label: 'Creep Signal', renderer: drawCreepSignalMode }
+  { id: 'void-bloom', label: 'Pulse Line', renderer: drawPulseLineMode },
+  { id: 'creep-signal', label: 'Chroma Spectrum', renderer: drawChromaSpectrumMode }
 ];
 const CONTROL_MODES = [
   { id: 'neon-shatter', label: 'Neon Shatter' },
@@ -36,10 +37,10 @@ const CONTROL_MODES = [
   { id: 'liquid-chrome', label: 'Liquid Chrome' },
   { id: 'pulse-reactor', label: 'Pulse Reactor' },
   { id: 'bass-fracture', label: 'Bass Fracture' },
-  { id: 'gravity-lens', label: 'Signal Bloom' },
+  { id: 'gravity-lens', label: 'Neon Horizon' },
   { id: 'bio-structure', label: 'Bio Structure' },
-  { id: 'void-bloom', label: 'Silk Flow' },
-  { id: 'creep-signal', label: 'Creep Signal' }
+  { id: 'void-bloom', label: 'Pulse Line' },
+  { id: 'creep-signal', label: 'Chroma Spectrum' }
 ];
 const CUSTOM_RENDERERS = new Map(CUSTOM_MODES.map(mode => [mode.id, mode.renderer]));
 const CUSTOM_MODE_IDS = CUSTOM_MODES.map(mode => mode.id);
@@ -140,26 +141,13 @@ function applyDirectKineticImpact(context, width, height, mode, features) {
       1 + impact * (mobile ? .2 : .26),
       1 - impact * (mobile ? .08 : .11)
     );
-  } else if (mode === 'gravity-lens') {
-    // Signal Bloom owns impact internally as a local travelling field wave.
+  } else if (mode === 'gravity-lens' || mode === 'void-bloom' || mode === 'creep-signal') {
+    // Premium scene renderers own their audio response internally.
   } else if (mode === 'bio-structure') {
     context.translate(0, -minSide * impact * (mobile ? .02 : .03));
     context.scale(
       1 + impact * (mobile ? .16 : .22),
       1 - impact * (mobile ? .11 : .16)
-    );
-  } else if (mode === 'void-bloom') {
-    // Silk Flow owns impact internally as a traveling material wave.
-  } else if (mode === 'creep-signal') {
-    context.translate(width * impact * (mobile ? .035 : .05), -minSide * impact * (mobile ? .012 : .018));
-    context.rotate(-impact * (mobile ? .022 : .032));
-    context.transform(
-      1 + impact * (mobile ? .13 : .18),
-      impact * (mobile ? .025 : .038),
-      impact * (mobile ? .04 : .06),
-      1 - impact * (mobile ? .055 : .075),
-      0,
-      0
     );
   }
 

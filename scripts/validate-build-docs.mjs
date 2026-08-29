@@ -10,9 +10,6 @@ const release = /release:\s*'([^']+)'/.exec(buildConfig)?.[1];
 assert.ok(display, 'Unable to read build display from js/build-config.js.');
 assert.ok(release, 'Unable to read build release from js/build-config.js.');
 
-// README remains the accepted-release marker. Candidate builds use a dedicated
-// release document until real-user smoke passes, so README never claims an
-// unvalidated public release as accepted.
 const candidateDocs = new Map([
   ['phase-ux-c2-5-a-android-studio-passive-canvas-guard-20260810','docs/PHASE-UX-C2-5-A-BUILD80-ANDROID-STUDIO-PASSIVE-GUARD.md'],
   ['phase-ux-c2-5-a-android-studio-media-teardown-20260810','docs/PHASE-UX-C2-5-A-BUILD81-ANDROID-STUDIO-MEDIA-TEARDOWN.md'],
@@ -51,7 +48,8 @@ const candidateDocs = new Map([
   ['audiolab-halo-vector-20260826','docs/BUILD115-AUDIOLAB-HALO-VECTOR.md'],
   ['audiolab-kinetic-glass-20260826','docs/BUILD117-AUDIOLAB-KINETIC-GLASS.md'],
   ['audiolab-silk-flow-20260827','docs/BUILD120-AUDIOLAB-SILK-FLOW.md'],
-  ['audiolab-signal-bloom-20260827','docs/BUILD121-AUDIOLAB-SIGNAL-BLOOM.md']
+  ['audiolab-signal-bloom-20260827','docs/BUILD121-AUDIOLAB-SIGNAL-BLOOM.md'],
+  ['audiolab-premium-visual-pack-20260829','docs/BUILD122-AUDIOLAB-PREMIUM-VISUAL-PACK.md']
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
   ? [candidateDocs.get(release)]
