@@ -7,7 +7,7 @@ import {
 } from './visual-engine-core-modes.js';
 import { drawPulseReactorMode } from './pulse-reactor.js';
 import { drawBassFractureMode } from './bass-fracture.js';
-import { drawNeonHorizonMode } from './neon-horizon.js';
+import { drawPrismTunnelMode } from './prism-tunnel.js';
 import { drawBioStructureMode } from './bio-structure.js';
 import { drawPulseLineMode } from './pulse-line.js';
 import { drawChromaSpectrumMode } from './chroma-spectrum.js';
@@ -25,7 +25,7 @@ const CUSTOM_MODES = [
   { id: 'liquid-chrome', label: 'Liquid Chrome', renderer: drawLiquidChromeV2Mode },
   { id: 'pulse-reactor', label: 'Pulse Reactor', renderer: drawPulseReactorMode },
   { id: 'bass-fracture', label: 'Bass Fracture', renderer: drawBassFractureMode },
-  { id: 'gravity-lens', label: 'Neon Horizon', renderer: drawNeonHorizonMode },
+  { id: 'gravity-lens', label: 'Prism Tunnel', renderer: drawPrismTunnelMode },
   { id: 'bio-structure', label: 'Bio Structure', renderer: drawBioStructureMode },
   { id: 'void-bloom', label: 'Pulse Line', renderer: drawPulseLineMode },
   { id: 'creep-signal', label: 'Chroma Spectrum', renderer: drawChromaSpectrumMode }
@@ -37,7 +37,7 @@ const CONTROL_MODES = [
   { id: 'liquid-chrome', label: 'Liquid Chrome' },
   { id: 'pulse-reactor', label: 'Pulse Reactor' },
   { id: 'bass-fracture', label: 'Bass Fracture' },
-  { id: 'gravity-lens', label: 'Neon Horizon' },
+  { id: 'gravity-lens', label: 'Prism Tunnel' },
   { id: 'bio-structure', label: 'Bio Structure' },
   { id: 'void-bloom', label: 'Pulse Line' },
   { id: 'creep-signal', label: 'Chroma Spectrum' }
