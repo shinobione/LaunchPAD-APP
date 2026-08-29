@@ -34,7 +34,7 @@ function collectFiles(root, extensions) {
 }
 const productionFiles = ['index.html', 'sw.js', ...collectFiles('js/features/visual', ['.js']), ...collectFiles('css', ['.css'])];
 const productionSource = productionFiles.map(file => `\n/* ${file} */\n${read(file)}`).join('\n');
-for (const slug of ['cyber-rain','quantum-grid','prism-tunnel','tesla-veins','hyperdrive','wave-cathedral','hex-reactor']) {
+for (const slug of ['cyber-rain','quantum-grid','tesla-veins','hyperdrive','wave-cathedral','hex-reactor']) {
   assert.ok(!productionSource.toLowerCase().includes(slug), `Retired Audio Lab preset leaked into production source: ${slug}.`);
 }
 
@@ -55,19 +55,19 @@ const actualSpectrumHash = crypto.createHash('sha256').update(extractFunction(ba
 assert.equal(actualSpectrumHash, spectrumHash, 'Spectrum is sanctuary-protected and must not change.');
 
 const premiumFiles = [
-  ['js/features/visual/neon-horizon.js', 'drawNeonHorizonMode('],
+  ['js/features/visual/prism-tunnel.js', 'drawPrismTunnelMode('],
   ['js/features/visual/pulse-line.js', 'drawPulseLineMode('],
   ['js/features/visual/chroma-spectrum.js', 'drawChromaSpectrumMode(']
 ];
 for (const [file, marker] of premiumFiles) {
   const source = read(file);
   assert.ok(source.includes(marker), `${file} missing ${marker}`);
-  for (const forbidden of ['Math.random(', 'requestAnimationFrame(', 'setInterval(']) assert.ok(!source.includes(forbidden), `${file} contains ${forbidden}`);
+  for (const forbidden of ['Math.random(', 'requestAnimationFrame(', 'setInterval(', 'fillText(']) assert.ok(!source.includes(forbidden), `${file} contains ${forbidden}`);
 }
 
 const live = read('js/features/visual/visual-engine-live.js');
 for (const required of [
-  "{ id: 'gravity-lens', label: 'Neon Horizon', renderer: drawNeonHorizonMode }",
+  "{ id: 'gravity-lens', label: 'Prism Tunnel', renderer: drawPrismTunnelMode }",
   "{ id: 'void-bloom', label: 'Pulse Line', renderer: drawPulseLineMode }",
   "{ id: 'creep-signal', label: 'Chroma Spectrum', renderer: drawChromaSpectrumMode }",
   'base.readSpectrum?.(raw)', 'reading = readAudioLabSpectrum(raw)',
@@ -81,8 +81,8 @@ for (const required of ['AUDIO_LAB_PRESET_IDS','isSanctionedAudioLabMode','funct
 }
 
 const worker = read('sw.js');
-for (const required of ["'./js/features/visual/neon-horizon.js'", "'./js/features/visual/pulse-line.js'", "'./js/features/visual/chroma-spectrum.js'"]) assert.ok(worker.includes(required));
+for (const required of ["'./js/features/visual/prism-tunnel.js'", "'./js/features/visual/pulse-line.js'", "'./js/features/visual/chroma-spectrum.js'"]) assert.ok(worker.includes(required));
 
 const build = assertCurrentBuild('Milestone 7/current release');
-assert.ok(build.number >= 122, `Milestone 7 premium visual pack requires Build 122 or newer, got ${build.display}.`);
-console.log(`Milestone 7 protects ${AUDIO_LAB_PRESET_IDS.length} sanctioned Audio Lab presets with the premium scene pack under Build ${build.number}.`);
+assert.ok(build.number >= 126, `Milestone 7 premium visual pack requires Build 126 or newer, got ${build.display}.`);
+console.log(`Milestone 7 protects ${AUDIO_LAB_PRESET_IDS.length} sanctioned Audio Lab presets with Prism Tunnel and the polished premium pack under Build ${build.number}.`);
