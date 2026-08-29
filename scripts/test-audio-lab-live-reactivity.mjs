@@ -31,9 +31,9 @@ for (const forbidden of ['synthesizePlaybackSpectrum', 'readAudioLabAmplitude'])
 }
 
 const premium = [
-  ['js/features/visual/neon-horizon.js', ['drawNeonHorizonMode(', 'const punchWave =', 'const rowCount = 24']],
-  ['js/features/visual/pulse-line.js', ['drawPulseLineMode(', 'waveformPath(', 'const flareX =']],
-  ['js/features/visual/chroma-spectrum.js', ['drawChromaSpectrumMode(', 'const PEAKS = new WeakMap()', 'const barCount = mobile ? 54 : 104']]
+  ['js/features/visual/neon-horizon.js', ['drawNeonHorizonMode(', 'function terrainHeight(', 'function drawStars(', 'const punchWave =', 'const rowCount = width < 800 ? 24 : 34']],
+  ['js/features/visual/pulse-line.js', ['drawPulseLineMode(', 'waveformPath(', 'drawParticleTicks(', 'const flareX =']],
+  ['js/features/visual/chroma-spectrum.js', ['drawChromaSpectrumMode(', 'const PEAKS = new WeakMap()', 'const barCount = mobile ? 34 : 64', 'const points = []']]
 ];
 for (const [file, required] of premium) {
   const source = read(file);
@@ -48,4 +48,4 @@ for (const required of ['function readSpectrum(target)', 'analyser.getByteFreque
 
 const bridge = read('js/features/visual/visual-engine.js').trim();
 assert.equal(bridge, "export { createVisualController } from './visual-engine-live.js';");
-console.log('Audio Lab keeps shared-FFT live reactivity and exposes the Build 122 premium visual pack.');
+console.log('Audio Lab keeps shared-FFT live reactivity and exposes the Build 123 premium detail pass.');
