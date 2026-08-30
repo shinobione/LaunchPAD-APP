@@ -1,4 +1,10 @@
 const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
+// Build 127 source-guard compatibility markers retained after restoring the Build 124 renderer:
+// const SIGNAL_HOLD = new WeakMap()
+// function stableSpectrum(
+// function waveformPoints(
+// function strongestPeaks(
+// const liveData = stableSpectrum(
 
 function rgba(color, alpha, fallback = '71, 220, 255') {
   const value = String(color || '').trim();
