@@ -1,5 +1,4 @@
 const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
-const SIGNAL_HOLD = new WeakMap();
 
 function rgba(color, alpha, fallback = '71, 220, 255') {
   const value = String(color || '').trim();
@@ -11,65 +10,30 @@ function rgba(color, alpha, fallback = '71, 220, 255') {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function stableSpectrum(context, data, time) {
-  let state = SIGNAL_HOLD.get(context);
-  if (!state || state.buffer.length !== data.length) {
-    state = { buffer: new Uint8Array(data.length), lastActive: -Infinity, scratch: new Uint8Array(data.length) };
-    SIGNAL_HOLD.set(context, state);
-  }
-  let peak = 0;
-  for (let i = 0; i < data.length; i += 1) peak = Math.max(peak, data[i] || 0);
-  if (peak > 4) {
-    state.buffer.set(data);
-    state.lastActive = time;
-    return data;
-  }
-  const age = time - state.lastActive;
-  if (age >= 0 && age < .58) {
-    const decay = Math.pow(1 - age / .58, 1.45);
-    for (let i = 0; i < state.buffer.length; i += 1) state.scratch[i] = Math.round(state.buffer[i] * decay);
-    return state.scratch;
-  }
-  return data;
-}
-
 function readBin(data, t) {
   if (!data?.length) return 0;
-  const position = clamp(t) * (data.length - 1);
-  const index = Math.floor(position);
-  const next = Math.min(data.length - 1, index + 1);
-  const mix = position - index;
-  return (((data[index] || 0) * (1 - mix)) + ((data[next] || 0) * mix)) / 255;
+  const index = Math.max(0, Math.min(data.length - 1, Math.round(t * (data.length - 1))));
+  return (data[index] || 0) / 255;
 }
 
-function waveformPoints(width, centerY, data, amplitude, time, energy, bass, mid, high, punch) {
-  const count = Math.min(300, Math.max(140, Math.floor(width / 7)));
+function tracePoints(width, centerY, data, amplitude, time, energy, punch) {
+  const count = Math.min(220, Math.max(96, Math.floor(width / 10)));
   const points = [];
   for (let i = 0; i < count; i += 1) {
     const t = i / (count - 1);
-    const a = readBin(data, t);
-    const b = readBin(data, clamp(t + .008));
-    const c = readBin(data, clamp(t - .008));
-    const raw = a * .58 + b * .21 + c * .21;
-    const shaped = Math.pow(raw, 1.72);
-    const lowBias = Math.pow(1 - t, 1.65) * bass * .16;
-    const transientWindow = Math.pow(Math.max(0, Math.sin(t * Math.PI * 9 - time * .58)), 12);
-    const transient = transientWindow * punch * (.16 + shaped * .18);
-    const envelope = clamp((shaped + lowBias + transient) * (.82 + energy * .62));
-    const primary = Math.sin(t * 31 + time * (1.7 + energy * .45));
-    const secondary = Math.sin(t * 71 - time * (1.02 + mid * .55));
-    const tertiary = Math.sin(t * 143 + time * (2.8 + high * 1.5));
-    const carrier = primary * .64 + secondary * .26 + tertiary * .10;
-    const asym = Math.sin(t * 5.4 + time * .34) * mid * .1;
-    const micro = Math.sin(t * 197 - time * 3.4) * high * shaped * .045;
-    const quiet = Math.sin(t * 18 + time * .63) * .0045;
-    const y = centerY + (carrier * envelope + asym * shaped + micro + quiet) * amplitude;
-    points.push([t * width, y, shaped]);
+    const raw = readBin(data, t);
+    const near = readBin(data, clamp(t + .012));
+    const shaped = Math.pow(raw * .76 + near * .24, 1.7);
+    const calm = Math.sin(time * 2.2 + t * 28) * .012 + Math.sin(time * .72 - t * 10) * .009;
+    const attack = shaped * (0.72 + energy * .72 + punch * .28);
+    const localized = Math.pow(Math.max(0, Math.sin(t * Math.PI * 6 + time * .55)), 4) * shaped * .18;
+    const y = centerY - (attack + localized + calm) * amplitude;
+    points.push([t * width, y]);
   }
   return points;
 }
 
-function strokeWave(context, points, style, width, alpha = 1) {
+function strokeTrace(context, points, style, width, alpha = 1) {
   context.globalAlpha = alpha;
   context.strokeStyle = style;
   context.lineWidth = width;
@@ -81,108 +45,94 @@ function strokeWave(context, points, style, width, alpha = 1) {
   context.globalAlpha = 1;
 }
 
-function strongestPeaks(points, count = 7) {
-  return [...points].filter((_, index) => index % 5 === 0).sort((a, b) => b[2] - a[2]).slice(0, count);
-}
-
 export function drawPulseLineMode(context, width, height, data, accent, accent2, time, features = {}) {
   const bass = clamp(features.bass || 0);
   const mid = clamp(features.mid || 0);
   const high = clamp(features.high || 0);
   const energy = clamp(features.energy || 0);
   const punch = clamp(features.punch || features.kick || 0);
-  const liveData = stableSpectrum(context, data, time);
   const centerY = height * .5;
-  const amplitude = height * (.145 + bass * .31 + punch * .21);
+  const amplitude = height * (.16 + bass * .28 + punch * .16);
 
   const background = context.createLinearGradient(0, 0, 0, height);
-  background.addColorStop(0, '#010207');
-  background.addColorStop(.38, '#02070e');
-  background.addColorStop(.5, '#04131d');
-  background.addColorStop(.62, '#02070e');
-  background.addColorStop(1, '#010106');
+  background.addColorStop(0, '#01050a');
+  background.addColorStop(.44, '#020912');
+  background.addColorStop(.56, '#03111b');
+  background.addColorStop(1, '#010308');
   context.fillStyle = background;
   context.fillRect(0, 0, width, height);
 
-  const horizontalAura = context.createLinearGradient(0, centerY - height * .26, 0, centerY + height * .26);
-  horizontalAura.addColorStop(0, rgba(accent, 0));
-  horizontalAura.addColorStop(.34, rgba(accent, .016));
-  horizontalAura.addColorStop(.45, rgba(accent, .07 + energy * .045));
-  horizontalAura.addColorStop(.5, 'rgba(210,247,255,.16)');
-  horizontalAura.addColorStop(.55, rgba(accent, .07 + energy * .045));
-  horizontalAura.addColorStop(.66, rgba(accent, .016));
-  horizontalAura.addColorStop(1, rgba(accent, 0));
-  context.fillStyle = horizontalAura;
-  context.fillRect(0, centerY - height * .27, width, height * .54);
+  const beam = context.createLinearGradient(0, centerY - height * .16, 0, centerY + height * .16);
+  beam.addColorStop(0, rgba(accent, 0));
+  beam.addColorStop(.28, rgba(accent, .035 + energy * .035));
+  beam.addColorStop(.46, rgba(accent, .13 + energy * .07));
+  beam.addColorStop(.5, 'rgba(225,250,255,.22)');
+  beam.addColorStop(.54, rgba(accent, .13 + energy * .07));
+  beam.addColorStop(.72, rgba(accent, .035 + energy * .035));
+  beam.addColorStop(1, rgba(accent, 0));
+  context.fillStyle = beam;
+  context.fillRect(0, centerY - height * .18, width, height * .36);
 
-  const aura = context.createRadialGradient(width * .5, centerY, 0, width * .5, centerY, width * .57);
-  aura.addColorStop(0, rgba(accent, .13 + energy * .07));
-  aura.addColorStop(.28, rgba(accent, .065));
-  aura.addColorStop(.72, rgba(accent, .014));
-  aura.addColorStop(1, rgba(accent, 0));
-  context.fillStyle = aura;
-  context.fillRect(0, centerY - height * .36, width, height * .72);
+  const halo = context.createRadialGradient(width * .48, centerY, 0, width * .48, centerY, width * .58);
+  halo.addColorStop(0, rgba(accent, .19 + energy * .08));
+  halo.addColorStop(.42, rgba(accent, .055));
+  halo.addColorStop(1, rgba(accent, 0));
+  context.fillStyle = halo;
+  context.fillRect(0, centerY - height * .25, width, height * .5);
 
-  const points = waveformPoints(width, centerY, liveData, amplitude, time, energy, bass, mid, high, punch);
-  const color = context.createLinearGradient(0, 0, width, 0);
-  color.addColorStop(0, rgba(accent, .88));
-  color.addColorStop(.18, 'rgba(65,222,255,.99)');
-  color.addColorStop(.42, 'rgba(143,241,255,1)');
-  color.addColorStop(.5, 'rgba(246,254,255,1)');
-  color.addColorStop(.58, 'rgba(145,241,255,1)');
-  color.addColorStop(.82, 'rgba(64,218,255,.99)');
-  color.addColorStop(1, rgba(accent, .86));
+  const points = tracePoints(width, centerY, data, amplitude, time, energy, punch);
+  const cyan = context.createLinearGradient(0, 0, width, 0);
+  cyan.addColorStop(0, rgba(accent, .82));
+  cyan.addColorStop(.3, 'rgba(134,240,255,.98)');
+  cyan.addColorStop(.5, 'rgba(244,253,255,1)');
+  cyan.addColorStop(.72, 'rgba(112,228,255,.98)');
+  cyan.addColorStop(1, rgba(accent, .82));
 
-  strokeWave(context, points, color, 54 + punch * 24, .015 + energy * .01);
-  strokeWave(context, points, color, 34 + punch * 18, .028 + energy * .018);
-  strokeWave(context, points, color, 20 + punch * 11, .055 + energy * .025);
-  strokeWave(context, points, color, 10 + punch * 5, .13 + energy * .045);
-  strokeWave(context, points, color, 4.8 + punch * 1.8, .34 + energy * .08);
-  strokeWave(context, points, color, 1.8, .98);
-  strokeWave(context, points, 'rgba(248,254,255,.995)', .62, 1);
+  strokeTrace(context, points, cyan, 34 + punch * 14, .035 + energy * .02);
+  strokeTrace(context, points, cyan, 18 + punch * 9, .07 + energy * .035);
+  strokeTrace(context, points, cyan, 8 + punch * 3, .2 + energy * .06);
+  strokeTrace(context, points, cyan, 2.1, .95);
+  strokeTrace(context, points, 'rgba(248,254,255,.98)', .9, .95);
 
-  const ghost = points.map(([x, y, shaped]) => [x, centerY + (centerY - y) * .28, shaped]);
-  strokeWave(context, ghost, color, 1.15, .08 + high * .07);
-  const echo = points.map(([x, y, shaped]) => [x, centerY + (y - centerY) * .72 + Math.sin(x * .018 + time * 1.2) * 2, shaped]);
-  strokeWave(context, echo, rgba(accent2 || accent, .55), .9, .055 + mid * .045);
+  context.globalAlpha = .16 + high * .16;
+  const reflection = points.map(([x, y]) => [x, centerY + (centerY - y) * .72]);
+  strokeTrace(context, reflection, cyan, 1.15, .22 + high * .14);
+  context.globalAlpha = 1;
 
-  strongestPeaks(points, width < 800 ? 4 : 7).forEach(([x, y, shaped], index) => {
-    if (shaped < .22) return;
-    const radius = 10 + shaped * (26 + punch * 18);
-    const bloom = context.createRadialGradient(x, y, 0, x, y, radius);
-    bloom.addColorStop(0, `rgba(255,255,255,${.12 + shaped * .18})`);
-    bloom.addColorStop(.18, rgba(accent, .12 + shaped * .16));
-    bloom.addColorStop(1, rgba(accent, 0));
-    context.fillStyle = bloom;
-    context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
-    if (index % 2 === 0) {
-      context.globalAlpha = .18 + high * .22;
-      context.strokeStyle = 'rgba(235,252,255,.85)';
-      context.lineWidth = .7;
-      context.beginPath();
-      context.moveTo(x, y - 5 - shaped * 8);
-      context.lineTo(x, y + 5 + shaped * 8);
-      context.stroke();
-      context.globalAlpha = 1;
-    }
-  });
-
-  const baseline = context.createLinearGradient(0, 0, width, 0);
-  baseline.addColorStop(0, 'rgba(126,226,255,0)');
-  baseline.addColorStop(.1, rgba(accent, .28));
-  baseline.addColorStop(.5, 'rgba(236,252,255,.72)');
-  baseline.addColorStop(.9, rgba(accent, .28));
-  baseline.addColorStop(1, 'rgba(126,226,255,0)');
-  context.strokeStyle = baseline;
-  context.lineWidth = .55;
+  context.strokeStyle = 'rgba(236,252,255,.86)';
+  context.lineWidth = .8;
   context.beginPath();
   context.moveTo(0, centerY);
   context.lineTo(width, centerY);
   context.stroke();
 
-  const vignette = context.createRadialGradient(width * .5, centerY, width * .1, width * .5, centerY, width * .74);
+  const pulseCount = width < 800 ? 22 : 44;
+  for (let i = 0; i < pulseCount; i += 1) {
+    const t = (i + .5) / pulseCount;
+    const raw = readBin(data, t);
+    if (raw < .18) continue;
+    const x = t * width;
+    const heightPx = 4 + Math.pow(raw, 1.8) * (12 + high * 24);
+    context.globalAlpha = .18 + raw * .45;
+    context.fillStyle = i % 5 === 0 ? 'rgba(255,255,255,.95)' : rgba(accent, .9);
+    context.fillRect(x, centerY - heightPx * .5, 1, heightPx);
+  }
+  context.globalAlpha = 1;
+
+  const transientX = ((time * (.11 + energy * .06 + high * .05)) % 1) * width;
+  const transient = context.createRadialGradient(transientX, centerY, 0, transientX, centerY, Math.max(70, width * .075));
+  transient.addColorStop(0, `rgba(255,255,255,${.38 + punch * .5})`);
+  transient.addColorStop(.15, rgba(accent, .28 + punch * .28));
+  transient.addColorStop(.5, rgba(accent, .07));
+  transient.addColorStop(1, rgba(accent, 0));
+  context.fillStyle = transient;
+  context.globalAlpha = .35 + high * .28;
+  context.fillRect(transientX - width * .08, centerY - height * .18, width * .16, height * .36);
+  context.globalAlpha = 1;
+
+  const vignette = context.createRadialGradient(width * .5, centerY, width * .08, width * .5, centerY, width * .72);
   vignette.addColorStop(0, 'rgba(0,0,0,0)');
-  vignette.addColorStop(1, 'rgba(0,0,0,.58)');
+  vignette.addColorStop(1, 'rgba(0,0,0,.54)');
   context.fillStyle = vignette;
   context.fillRect(0, 0, width, height);
 }
