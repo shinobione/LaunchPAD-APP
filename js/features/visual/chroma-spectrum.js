@@ -1,5 +1,6 @@
 const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
 const PEAKS = new WeakMap();
+const ERROR_STATE = new WeakMap();
 
 function rgba(color, alpha, fallback = '74, 220, 255') {
   const value = String(color || '').trim();
@@ -63,7 +64,7 @@ function drawRearField(context, width, height, data, baseline, maxHeight, energy
   context.globalAlpha = 1;
 }
 
-export function drawChromaSpectrumMode(context, width, height, data, accent, accent2, time, features = {}) {
+function drawChromaSpectrumFrame(context, width, height, data, accent, accent2, time, features = {}) {
   const energy = clamp(features.energy || 0);
   const bass = clamp(features.bass || 0);
   const mid = clamp(features.mid || 0);
@@ -196,4 +197,47 @@ export function drawChromaSpectrumMode(context, width, height, data, accent, acc
   vignette.addColorStop(1, 'rgba(0,0,0,.5)');
   context.fillStyle = vignette;
   context.fillRect(0, 0, width, height);
+}
+
+function drawSafeFallback(context, width, height, data, accent) {
+  context.globalAlpha = 1;
+  context.globalCompositeOperation = 'source-over';
+  context.shadowBlur = 0;
+  context.fillStyle = '#050611';
+  context.fillRect(0, 0, width, height);
+  const baseline = height * .62;
+  const count = width < 760 ? 48 : 96;
+  const gap = 1.2;
+  const barWidth = Math.max(1, (width * .88 - gap * (count - 1)) / count);
+  const startX = width * .06;
+  context.fillStyle = rgba(accent, .9);
+  for (let i = 0; i < count; i += 1) {
+    const t = i / Math.max(1, count - 1);
+    const value = Math.pow(sample(data, t), 1.5);
+    const h = Math.max(1, value * height * .28);
+    context.fillRect(startX + i * (barWidth + gap), baseline - h, barWidth, h);
+  }
+}
+
+export function drawChromaSpectrumMode(context, width, height, data, accent, accent2, time, features = {}) {
+  context.save();
+  try {
+    drawChromaSpectrumFrame(context, width, height, data, accent, accent2, time, features);
+    ERROR_STATE.delete(context);
+  } catch (error) {
+    context.restore();
+    context.save();
+    drawSafeFallback(context, width, height, data, accent);
+    const previous = ERROR_STATE.get(context) || 0;
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    if (now - previous > 2000) {
+      ERROR_STATE.set(context, now);
+      console.error('[AudioLAB] Chroma Spectrum renderer isolated after failure:', error);
+    }
+    if (typeof document !== 'undefined') {
+      document.documentElement.dataset.audioLabRendererError = 'creep-signal';
+    }
+  } finally {
+    context.restore();
+  }
 }
