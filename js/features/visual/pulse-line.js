@@ -5,6 +5,7 @@ const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
 // function waveformPoints(
 // function strongestPeaks(
 // const liveData = stableSpectrum(
+// const echo = points.map(
 
 function rgba(color, alpha, fallback = '71, 220, 255') {
   const value = String(color || '').trim();
