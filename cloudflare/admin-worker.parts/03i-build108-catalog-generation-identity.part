@@ -1,0 +1,105 @@
+
+const BUILD108_CATALOG_OPERATION_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function build108CatalogOperationId(value) {
+  const operationId = String(value || "").trim().toLowerCase();
+  if (!BUILD108_CATALOG_OPERATION_ID_PATTERN.test(operationId)) {
+    throw new Error("INPUT_operationId UUID invalide.");
+  }
+  return operationId;
+}
+
+const writeCatalogIndexBeforeBuild108 = writeCatalogIndex;
+writeCatalogIndex = async function writeCatalogIndexWithGenerationIdentity(bucket, options = {}) {
+  const generationId = String(options?.generationId || "").trim().toLowerCase();
+  const index = await writeCatalogIndexBeforeBuild108(bucket);
+  if (!generationId) return index;
+
+  const identifiedIndex = {
+    ...index,
+    generationId,
+  };
+
+  await bucket.put(CATALOG_INDEX_KEY, JSON.stringify(identifiedIndex, null, 2) + "\n", {
+    httpMetadata: {
+      contentType: "application/json; charset=utf-8",
+      cacheControl: "public, max-age=60, stale-while-revalidate=300",
+    },
+    customMetadata: {
+      kind: "catalog-index",
+      generatedAt: identifiedIndex.generatedAt || "",
+      count: String(identifiedIndex.count ?? 0),
+      ...(typeof identifiedIndex.albumCount === "number" ? { albumCount: String(identifiedIndex.albumCount) } : {}),
+      generationId,
+    },
+  });
+
+  return identifiedIndex;
+};
+
+async function build108ReadCatalogProjectionState(bucket) {
+  const object = await bucket.get(CATALOG_INDEX_KEY);
+  if (!object) {
+    return {
+      present: false,
+      valid: false,
+      schemaVersion: null,
+      generatedAt: null,
+      generationId: null,
+      count: null,
+    };
+  }
+
+  try {
+    const index = JSON.parse(await object.text());
+    const count = Number(index?.count);
+    return {
+      present: true,
+      valid: index?.schemaVersion === 1 && Array.isArray(index?.tracks),
+      schemaVersion: Number.isFinite(Number(index?.schemaVersion)) ? Number(index.schemaVersion) : null,
+      generatedAt: typeof index?.generatedAt === "string" ? index.generatedAt : null,
+      generationId: typeof index?.generationId === "string" && index.generationId.trim() ? index.generationId.trim().toLowerCase() : null,
+      count: Number.isFinite(count) ? count : null,
+    };
+  } catch {
+    return {
+      present: true,
+      valid: false,
+      schemaVersion: null,
+      generatedAt: null,
+      generationId: null,
+      count: null,
+    };
+  }
+}
+
+const listTracksBeforeBuild108 = listTracks;
+listTracks = async function listTracksWithCatalogGenerationIdentity(env) {
+  const [trackResponse, catalogProjection] = await Promise.all([
+    listTracksBeforeBuild108(env),
+    build108ReadCatalogProjectionState(env.MEDIA_BUCKET),
+  ]);
+  const payload = await trackResponse.json();
+  return jsonResponse({
+    ...payload,
+    catalogProjection,
+  }, trackResponse.status);
+};
+
+rebuildStudioCatalog = async function rebuildStudioCatalogWithGenerationIdentity(request, env, user) {
+  const payload = await readStudioPhase4JsonPayload(request, STUDIO_CATALOG_REBUILD_INTENT);
+  if (payload.confirm !== "REBUILD") throw new Error("INPUT_Confirmation REBUILD requise.");
+  const operationId = build108CatalogOperationId(payload.operationId);
+  const index = await writeCatalogIndex(env.MEDIA_BUCKET, { generationId: operationId });
+  if (index.generationId !== operationId) throw new Error("SAVE_VERIFY_Identité de génération catalogue non vérifiée.");
+
+  return jsonResponse({
+    ok: true,
+    rebuilt: true,
+    operationId,
+    catalogGenerationId: index.generationId,
+    catalogGeneratedAt: index.generatedAt || null,
+    catalogCount: index.count,
+    authenticatedEmail: user.email || null,
+  });
+};
