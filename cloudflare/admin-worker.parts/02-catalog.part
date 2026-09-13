@@ -264,7 +264,9 @@ async function writeCatalogIndex(bucket) {
 
   const tracks = (await Promise.all(manifests
     .filter(manifest => manifest.status === "published")
-    .map(async manifest => {
+    .map(async canonicalManifest => {
+      // Creation causality belongs only to the private canonical Track read model.
+      const { creationOperationId, ...manifest } = canonicalManifest;
       const lyricsFilename = manifest.assets?.lyrics;
       if (!lyricsFilename) {
         return { ...manifest, lyricsAvailable: false, timestampsAvailable: false };
