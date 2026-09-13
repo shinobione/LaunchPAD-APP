@@ -24,7 +24,10 @@ function normalizeAlbumManifest(input) {
   const type = ALBUM_TYPE_VALUES.has(String(input?.type || "").toLowerCase())
     ? String(input.type).toLowerCase()
     : "album";
-  const year = Number.isInteger(Number(input?.year)) ? Number(input.year) : null;
+  const rawYear = input?.year;
+  const year = rawYear === null || rawYear === undefined || rawYear === ""
+    ? null
+    : (Number.isInteger(Number(rawYear)) ? Number(rawYear) : null);
   const trackIds = [...new Set((Array.isArray(input?.trackIds) ? input.trackIds : [])
     .map(trackId => slugify(trackId))
     .filter(Boolean))];
