@@ -80,7 +80,9 @@ const env = { MEDIA_BUCKET: bucket };
 const user = { email: 'build114@test.invalid' };
 
 function createRequest(id, fields = {}, operation = operationId) {
-  const payload = { intent: 'album-create-v1', album: { id, title: fields.title || 'Identity Album', type: fields.type || 'album' } };
+  const album = { id, title: fields.title || 'Identity Album', type: fields.type || 'album' };
+  if (Object.prototype.hasOwnProperty.call(fields, 'year')) album.year = fields.year;
+  const payload = { intent: 'album-create-v1', album };
   if (operation !== null) payload.operationId = operation;
   return new Request('https://tm.invalid/api/studio/albums', {
     method: 'POST',
@@ -94,15 +96,22 @@ for (const invalid of ['', false, 1, {}, [], operationId + ' ', ' ' + operationI
   assert.equal(bucket.objects.size, 0, 'Invalid Album identity must not write anything');
 }
 
-const created = await worker.createStudioAlbum(createRequest('identity-album'), env, user);
+assert.equal(worker.normalizeAlbumManifest({ id: 'null-year-normalization', title: 'Null Year', type: 'album', status: 'draft', year: null, trackIds: [], assets: {} }).year, null, 'Canonical Album normalization must preserve an explicit null year instead of coercing it to 0');
+
+const created = await worker.createStudioAlbum(createRequest('identity-album', { year: null }), env, user);
 assert.equal(created.status, 201);
 const payload = await created.json();
 assert.equal(payload.operationId, operationId);
 assert.equal(payload.album.creationOperationId, operationId);
-assert.equal((await worker.readAlbumManifest(bucket, 'identity-album')).creationOperationId, operationId);
+assert.equal(payload.album.year, null, 'Create response must preserve a blank Album year as null');
+const createdCanonical = await worker.readAlbumManifest(bucket, 'identity-album');
+assert.equal(createdCanonical.creationOperationId, operationId);
+assert.equal(createdCanonical.year, null, 'Canonical R2 reread must preserve a blank Album year as null');
 const privateRead = await (await worker.getAlbumReadModel('identity-album', env)).json();
 assert.equal(privateRead.album.manifest.creationOperationId, operationId);
+assert.equal(privateRead.album.manifest.year, null, 'Private canonical Album read model must preserve a blank year as null');
 assert.equal(worker.normalizeAlbumManifest(payload.album).creationOperationId, operationId);
+assert.equal(worker.normalizeAlbumManifest(payload.album).year, null);
 
 for (const id of [operationId, otherId]) {
   const duplicate = await worker.createStudioAlbum(createRequest('identity-album', {}, id), env, user);
@@ -119,6 +128,7 @@ const saved = await worker.saveStudioAlbumMetadata('identity-album', new Request
 }), env, user);
 assert.equal(saved.status, 200);
 assert.equal((await worker.readAlbumManifest(bucket, 'identity-album')).creationOperationId, operationId, 'Later Album writes must preserve creation evidence');
+assert.equal((await worker.readAlbumManifest(bucket, 'identity-album')).year, null, 'Later Album writes must keep a blank year canonical as null');
 
 const legacy = await (await worker.createStudioAlbum(createRequest('legacy-album', { title: 'Legacy Album' }, null), env, user)).json();
 assert.equal(legacy.created, true);
@@ -131,4 +141,4 @@ assert.equal(Object.hasOwn(canonicalLegacy, 'creationOperationId'), false);
 const publishedProjectionSource = worker.buildPublishedAlbumProjection.toString();
 assert.equal(publishedProjectionSource.includes('creationOperationId'), false, 'Public Album projection must not publish private creation evidence');
 
-console.log('Build114 LaunchPAD PASS: TM 5.25 / bridge 1.15 stores immutable private Album creation operation identity, preserves it across later writes, keeps legacy clients compatible and does not expose the identity in public Album projection.');
+console.log('Build114 LaunchPAD PASS: TM 5.25 / bridge 1.15 stores immutable private Album creation operation identity, preserves explicit null Album years without coercing them to 0, keeps legacy clients compatible and does not expose the identity in public Album projection.');
