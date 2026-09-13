@@ -284,6 +284,8 @@ async function saveTrack(slug, request, env, user) {
   const manifest = normalizeManifest({
     ...existing,
     ...metadata,
+    // Standalone metadata must never supply or replace Studio creation evidence.
+    creationOperationId: existing?.creationOperationId,
     slug,
     updatedAt: new Date().toISOString(),
     updatedBy: String(user.email || "authorized-user"),
@@ -442,4 +444,5 @@ async function importGithubTrack(slug, request, env, user) {
 
   const manifest = normalizeManifest({
     ...entry,
+    creationOperationId: existing?.creationOperationId,
     assets,

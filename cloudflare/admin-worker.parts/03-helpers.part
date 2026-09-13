@@ -73,6 +73,8 @@ function normalizeManifest(input) {
     },
     migration: input?.migration || null,
     createdAt: input?.createdAt || new Date().toISOString(),
+    // Private immutable creation evidence; absent on legacy Tracks.
+    ...(typeof input?.creationOperationId === "string" ? { creationOperationId: input.creationOperationId } : {}),
     updatedAt: input?.updatedAt || new Date().toISOString(),
     updatedBy: cleanNullable(input?.updatedBy),
   };

@@ -98,6 +98,11 @@ function studioPhase4NextManifest(existing, user, assetPatch = null) {
 
 async function createStudioTrack(request, env, user) {
   const payload = await readStudioPhase4JsonPayload(request, STUDIO_TRACK_CREATE_INTENT);
+  // Optional only for old clients; never coerce, trim or regenerate supplied evidence.
+  const operationId = payload.operationId;
+  if (operationId !== undefined && (typeof operationId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(operationId))) {
+    throw new Error("INPUT_operationId UUID v4 invalide.");
+  }
   const slug = slugify(payload.slug || "");
   if (!slug || slug !== String(payload.slug || "").trim()) throw new Error("INPUT_Slug canonique invalide.");
   const existing = await readManifest(env.MEDIA_BUCKET, slug);
@@ -109,6 +114,7 @@ async function createStudioTrack(request, env, user) {
   const now = new Date().toISOString();
   const manifest = normalizeManifest({
     ...patch,
+    ...(operationId !== undefined ? { creationOperationId: operationId } : {}),
     slug,
     status: "draft",
     assets: { audio: null, cover: null, thumbnail: null, lyrics: null, video: null },
@@ -125,9 +131,11 @@ async function createStudioTrack(request, env, user) {
     const index = await writeCatalogIndex(env.MEDIA_BUCKET);
     const reread = await readManifest(env.MEDIA_BUCKET, slug);
     if (!reread || reread.updatedAt !== manifest.updatedAt || reread.slug !== slug) throw new Error("SAVE_VERIFY_Manifest créé non vérifié.");
+    if (operationId !== undefined && reread.creationOperationId !== operationId) throw new Error("SAVE_VERIFY_Identité de création non vérifiée.");
     return jsonResponse({
       ok: true,
       created: true,
+      ...(operationId !== undefined ? { operationId } : {}),
       trackId: slug,
       track: reread,
       catalogRebuilt: true,
