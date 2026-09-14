@@ -64,7 +64,7 @@ async function deleteStudioTrack(slug, request, env, user) {
 
   const scoped = await listAllObjects(env.MEDIA_BUCKET, trackPrefix(slug));
   const backupToken = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + "-" + Math.random().toString(16).slice(2);
-  const backupPrefix = `_studio-backups/${slug}/whole-delete-${backupToken}/`;
+  const backupPrefix = \`_studio-backups/\${slug}/whole-delete-\${backupToken}/\`;
   const backups = [];
   let objectsDeleted = 0;
 
