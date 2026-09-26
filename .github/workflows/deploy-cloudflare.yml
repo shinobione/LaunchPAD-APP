@@ -71,6 +71,9 @@ jobs:
 
       - name: Checkout selected main revision
         uses: actions/checkout@v4
+        with:
+          # The mandatory Tracks parity gate archives a pinned historical baseline.
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
