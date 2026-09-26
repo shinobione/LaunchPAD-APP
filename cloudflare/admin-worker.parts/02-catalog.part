@@ -174,14 +174,32 @@ function getMigrationManifestUrl(env) {
   return String(env.MIGRATION_MANIFEST_URL || DEFAULT_MIGRATION_MANIFEST_URL);
 }
 
-async function buildCanonicalTrackSummaries(objects, bucket) {
+// Collection-local evidence only: never shared with another request or a write.
+function createTrackCollectionReadContext(objects) {
+  const objectsBySlug = new Map();
+  for (const object of objects) {
+    if (!object.key.startsWith(TRACKS_PREFIX)) continue;
+    // Include every ancestor to retain the existing prefix semantics even for
+    // historical nested manifest keys. Preserve list order and object metadata.
+    for (let slash = object.key.indexOf("/", TRACKS_PREFIX.length); slash !== -1; slash = object.key.indexOf("/", slash + 1)) {
+      const slug = object.key.slice(TRACKS_PREFIX.length, slash);
+      if (!objectsBySlug.has(slug)) objectsBySlug.set(slug, []);
+      objectsBySlug.get(slug).push(object);
+    }
+  }
+  return { manifests: new Map(), objectsBySlug };
+}
+
+async function buildCanonicalTrackSummaries(objects, bucket, readContext = null) {
   const manifestObjects = objects.filter(object => object.key.endsWith("/" + MANIFEST_NAME));
   const tracks = [];
   for (const object of manifestObjects) {
     const slug = object.key.slice(TRACKS_PREFIX.length, -(MANIFEST_NAME.length + 1));
     const manifest = await readManifest(bucket, slug);
+    if (readContext) readContext.manifests.set(slug, manifest);
     if (!manifest) continue;
-    const scoped = objects.filter(item => item.key.startsWith(trackPrefix(slug)));
+    const scoped = readContext ? readContext.objectsBySlug.get(slug) || []
+      : objects.filter(item => item.key.startsWith(trackPrefix(slug)));
     const state = assetStateFromObjects(scoped, manifest);
     tracks.push({
       slug,

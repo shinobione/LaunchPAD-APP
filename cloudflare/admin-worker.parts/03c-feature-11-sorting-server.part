@@ -51,10 +51,10 @@ function feature11ServerSortTracks(list) {
 }
 
 var feature11ServerBuildCanonicalTrackSummaries = buildCanonicalTrackSummaries;
-buildCanonicalTrackSummaries = async function buildCanonicalTrackSummariesV53(objects, bucket) {
-  var summaries = await feature11ServerBuildCanonicalTrackSummaries(objects, bucket);
+buildCanonicalTrackSummaries = async function buildCanonicalTrackSummariesV53(objects, bucket, readContext = null) {
+  var summaries = await feature11ServerBuildCanonicalTrackSummaries(objects, bucket, readContext);
   var enriched = await Promise.all(summaries.map(async function(summary, index) {
-    var manifest = await readManifest(bucket, summary.slug);
+    var manifest = readContext ? readContext.manifests.get(summary.slug) : await readManifest(bucket, summary.slug);
     if (!manifest) return summary;
     return Object.assign({}, summary, {
       releaseDate: manifest.releaseDate || null,

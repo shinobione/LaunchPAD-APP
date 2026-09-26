@@ -2,9 +2,9 @@
 
 Installable music PWA for the SHINOBIWAN catalog: playback, Albums, synchronized lyrics, Audio Lab visuals, favorites, queues, Track DNA, Canvas/Studio experiences and shareable track cards.
 
-## Backend candidate — CPU corrective slice 1
+## Backend candidate — CPU corrective slice 3
 
-Opt-in `GET /api/studio/albums?view=canonical` preserves canonical Album fields/totals while skipping historical migration reconstruction. Default/full reads retain migration review data. This is a Draft PR candidate from backend main `4867a2f` (TM v5.28 / bridge v1.18); no deployment or real-user acceptance is claimed. The older backend versions below are historical. See [scope, baseline receipts, tests and local performance evidence](docs/CPU-SLICE1-ALBUMS-LEAN-READ.md). Frontend opt-in and production verification require a later authorized slice.
+Canonical Tracks collection reads reuse normalized manifests and indexed object evidence within each request. Source baseline: `4dd420bd612555cdb972897b080549aacf408fa6` (merged slice 1, TM v5.28 / bridge v1.18); Studio slice 2 is merged and Pages-deployed. This slice stops at Draft PR + exact-head CI, with no deployment or real-user acceptance. See [audit, compatibility, local performance and validation receipt](docs/CPU-SLICE3-TRACKS-READ.md). The overall CPU incident remains open; historical state below is not this candidate's deployment evidence.
 
 ## Current production / accepted state
 

@@ -112,7 +112,7 @@ export function token(overrides = {}) {
   return `${data}.${crypto.sign('RSA-SHA256', Buffer.from(data), privateKey).toString('base64url')}`;
 }
 
-export function loadWorker(file) {
+export function loadWorker(file, extraSource = '') {
   const calls = { migration: 0, summaries: 0, stateTokens: 0, errors: [], network: [] };
   const context = vm.createContext({
     Request, Response, Headers, URL, TextEncoder, TextDecoder, Uint8Array, atob, btoa,
@@ -133,18 +133,18 @@ export function loadWorker(file) {
     buildCanonicalAlbumSummaries = async (...args) => { __calls.summaries++; return originalSummaries(...args); };
     const originalToken = studioAlbumMigrationStateToken;
     studioAlbumMigrationStateToken = async (...args) => { __calls.stateTokens++; return originalToken(...args); };
-  `, context, { filename: file });
+  ` + extraSource, context, { filename: file });
   return {
     calls,
     forbidMigration() {
       vm.runInContext('buildStudioLegacyAlbumMigrationDryRun = () => { __calls.migration++; throw new Error("Migration forbidden"); };', context);
     },
-    async request(bucket, { query = '', origin = studioOrigin, jwt = token(), method = 'GET', body } = {}) {
+    async request(bucket, { pathname = '/api/studio/albums', query = '', origin = studioOrigin, jwt = token(), method = 'GET', body } = {}) {
       const headers = {};
       if (origin !== null) headers.origin = origin;
       if (jwt !== null) headers['cf-access-jwt-assertion'] = jwt;
       if (body !== undefined) headers['content-type'] = 'text/plain;charset=UTF-8';
-      return context.__worker.fetch(new Request(`https://worker.example.invalid/api/studio/albums${query}`,
+      return context.__worker.fetch(new Request(`https://worker.example.invalid${pathname}${query}`,
         { method, headers, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) }),
       { MEDIA_BUCKET: bucket, TEAM_DOMAIN: teamDomain, POLICY_AUD: audience });
     },
