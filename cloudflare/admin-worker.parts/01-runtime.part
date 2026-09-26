@@ -211,8 +211,9 @@ async function listTracks(env) {
     listAllObjects(env.MEDIA_BUCKET, LEGACY_PREFIX),
   ]);
 
-  const canonicalBase = await buildCanonicalTrackSummaries(canonicalObjects, env.MEDIA_BUCKET);
-  const canonicalTracks = await enrichTrackSummariesQuality(canonicalBase, canonicalObjects, env.MEDIA_BUCKET);
+  const readContext = createTrackCollectionReadContext(canonicalObjects);
+  const canonicalBase = await buildCanonicalTrackSummaries(canonicalObjects, env.MEDIA_BUCKET, readContext);
+  const canonicalTracks = await enrichTrackSummariesQuality(canonicalBase, canonicalObjects, env.MEDIA_BUCKET, readContext);
   const legacyGroups = groupLegacyObjects(legacyObjects);
   const legacyTracks = [...legacyGroups.values()].map(group => legacySummary(group));
 

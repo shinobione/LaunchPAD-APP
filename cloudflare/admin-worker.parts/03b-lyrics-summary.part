@@ -9,11 +9,12 @@ function lyricsStatusFromQuality(track, report) {
   return "unsynced";
 }
 
-enrichTrackSummariesQuality = async function enrichTrackSummariesQualityV51(tracks, objects, bucket) {
+enrichTrackSummariesQuality = async function enrichTrackSummariesQualityV51(tracks, objects, bucket, readContext = null) {
   return Promise.all(tracks.map(async track => {
-    const manifest = await readManifest(bucket, track.slug);
+    const manifest = readContext ? readContext.manifests.get(track.slug) : await readManifest(bucket, track.slug);
     if (!manifest) return track;
-    const scoped = objects.filter(object => object.key.startsWith(trackPrefix(track.slug)));
+    const scoped = readContext ? readContext.objectsBySlug.get(track.slug) || []
+      : objects.filter(object => object.key.startsWith(trackPrefix(track.slug)));
     const quality = await inspectTrackQuality(bucket, manifest, scoped);
     const lyricsStatus = lyricsStatusFromQuality(track, quality);
     return {
