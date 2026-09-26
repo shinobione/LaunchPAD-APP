@@ -366,6 +366,18 @@ async function applyStudioLegacyAlbumMigration(request, env, user) {
   }
 }
 
+// Explicit daily read: reuse canonical projection without historical migration work.
+// The default/full contract remains the migration review entry point.
+async function listStudioAlbumCollection(request, env) {
+  const views = new URL(request.url).searchParams.getAll("view");
+  if (views.length > 1 || (views.length === 1 && !["canonical", "full"].includes(views[0]))) {
+    throw new Error("INPUT_Vue de collection Album invalide.");
+  }
+  return views[0] === "canonical"
+    ? listAlbumsBeforeC25EMigration(env)
+    : listAlbums(env);
+}
+
 const listAlbumsBeforeC25EMigration = listAlbums;
 listAlbums = async function listAlbumsWithC25EMigrationDryRun(env) {
   const response = await listAlbumsBeforeC25EMigration(env);

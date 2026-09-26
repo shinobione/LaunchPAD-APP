@@ -152,7 +152,7 @@ assert.ok(built.includes('write: ["metadata", "lyrics", "lyrics-sync", "sonictra
 assert.ok(built.includes('manage: ["track-create", "assets", "catalog-rebuild", "album-create", "album-metadata", "album-membership", "album-move", "album-assets"]'), 'Studio health must expose Album management separately.');
 
 for (const routeCall of [
-  'await listAlbums(env)',
+  'await listStudioAlbumCollection(request, env)',
   'await getAlbumReadModel(studioAlbumReadRoute[1], env)',
   'await createStudioAlbum(request, env, user)',
   'await saveStudioAlbumMetadata(studioAlbumMetadataSaveRoute[1], request, env, user)',

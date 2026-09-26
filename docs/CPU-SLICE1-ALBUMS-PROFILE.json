@@ -1,0 +1,216 @@
+{
+  "runtime": "v24.19.0",
+  "platform": "win32/x64",
+  "repetitions": 7,
+  "baselineBundle": "dist/albums-baseline.mjs",
+  "caveat": "Node process CPU includes mock R2 filtering/sorting, JWT verification, instrumentation, serialization and GC. It is not Worker invocation CPU or evidence of Workers Free compliance. No live R2/Worker calls.",
+  "results": [
+    {
+      "fixture": "small",
+      "albums": 7,
+      "tracks": 84,
+      "mode": "baseline-full",
+      "objectGets": 98,
+      "listPages": {
+        "albums/": 2,
+        "tracks/": 1
+      },
+      "traversals": {
+        "albums/": 2,
+        "tracks/": 1
+      },
+      "listedObjects": 558,
+      "summaryBuilds": 2,
+      "migrationBuilds": 1,
+      "stateTokens": 3,
+      "payloadBytes": 41962,
+      "writes": 0,
+      "localMedianWallMs": 5.434,
+      "localMedianProcessCpuMs": 0
+    },
+    {
+      "fixture": "small",
+      "albums": 7,
+      "tracks": 84,
+      "mode": "candidate-full",
+      "objectGets": 98,
+      "listPages": {
+        "albums/": 2,
+        "tracks/": 1
+      },
+      "traversals": {
+        "albums/": 2,
+        "tracks/": 1
+      },
+      "listedObjects": 558,
+      "summaryBuilds": 2,
+      "migrationBuilds": 1,
+      "stateTokens": 3,
+      "payloadBytes": 41962,
+      "writes": 0,
+      "localMedianWallMs": 5.323,
+      "localMedianProcessCpuMs": 0
+    },
+    {
+      "fixture": "small",
+      "albums": 7,
+      "tracks": 84,
+      "mode": "candidate-canonical",
+      "objectGets": 7,
+      "listPages": {
+        "albums/": 1,
+        "tracks/": 0
+      },
+      "traversals": {
+        "albums/": 1,
+        "tracks/": 0
+      },
+      "listedObjects": 27,
+      "summaryBuilds": 1,
+      "migrationBuilds": 0,
+      "stateTokens": 0,
+      "payloadBytes": 12287,
+      "writes": 0,
+      "localMedianWallMs": 0.874,
+      "localMedianProcessCpuMs": 0
+    },
+    {
+      "fixture": "medium",
+      "albums": 50,
+      "tracks": 1000,
+      "mode": "baseline-full",
+      "objectGets": 1100,
+      "listPages": {
+        "albums/": 2,
+        "tracks/": 6
+      },
+      "traversals": {
+        "albums/": 2,
+        "tracks/": 1
+      },
+      "listedObjects": 6398,
+      "summaryBuilds": 2,
+      "migrationBuilds": 1,
+      "stateTokens": 3,
+      "payloadBytes": 406095,
+      "writes": 0,
+      "localMedianWallMs": 61.099,
+      "localMedianProcessCpuMs": 63
+    },
+    {
+      "fixture": "medium",
+      "albums": 50,
+      "tracks": 1000,
+      "mode": "candidate-full",
+      "objectGets": 1100,
+      "listPages": {
+        "albums/": 2,
+        "tracks/": 6
+      },
+      "traversals": {
+        "albums/": 2,
+        "tracks/": 1
+      },
+      "listedObjects": 6398,
+      "summaryBuilds": 2,
+      "migrationBuilds": 1,
+      "stateTokens": 3,
+      "payloadBytes": 406095,
+      "writes": 0,
+      "localMedianWallMs": 56.522,
+      "localMedianProcessCpuMs": 62
+    },
+    {
+      "fixture": "medium",
+      "albums": 50,
+      "tracks": 1000,
+      "mode": "candidate-canonical",
+      "objectGets": 50,
+      "listPages": {
+        "albums/": 1,
+        "tracks/": 0
+      },
+      "traversals": {
+        "albums/": 1,
+        "tracks/": 0
+      },
+      "listedObjects": 199,
+      "summaryBuilds": 1,
+      "migrationBuilds": 0,
+      "stateTokens": 0,
+      "payloadBytes": 98885,
+      "writes": 0,
+      "localMedianWallMs": 7.246,
+      "localMedianProcessCpuMs": 15
+    },
+    {
+      "fixture": "large",
+      "albums": 120,
+      "tracks": 2400,
+      "mode": "baseline-full",
+      "objectGets": 2640,
+      "listPages": {
+        "albums/": 2,
+        "tracks/": 15
+      },
+      "traversals": {
+        "albums/": 2,
+        "tracks/": 1
+      },
+      "listedObjects": 15358,
+      "summaryBuilds": 2,
+      "migrationBuilds": 1,
+      "stateTokens": 3,
+      "payloadBytes": 969972,
+      "writes": 0,
+      "localMedianWallMs": 172.823,
+      "localMedianProcessCpuMs": 218
+    },
+    {
+      "fixture": "large",
+      "albums": 120,
+      "tracks": 2400,
+      "mode": "candidate-full",
+      "objectGets": 2640,
+      "listPages": {
+        "albums/": 2,
+        "tracks/": 15
+      },
+      "traversals": {
+        "albums/": 2,
+        "tracks/": 1
+      },
+      "listedObjects": 15358,
+      "summaryBuilds": 2,
+      "migrationBuilds": 1,
+      "stateTokens": 3,
+      "payloadBytes": 969972,
+      "writes": 0,
+      "localMedianWallMs": 173.887,
+      "localMedianProcessCpuMs": 172
+    },
+    {
+      "fixture": "large",
+      "albums": 120,
+      "tracks": 2400,
+      "mode": "candidate-canonical",
+      "objectGets": 120,
+      "listPages": {
+        "albums/": 1,
+        "tracks/": 0
+      },
+      "traversals": {
+        "albums/": 1,
+        "tracks/": 0
+      },
+      "listedObjects": 479,
+      "summaryBuilds": 1,
+      "migrationBuilds": 0,
+      "stateTokens": 0,
+      "payloadBytes": 237161,
+      "writes": 0,
+      "localMedianWallMs": 28.049,
+      "localMedianProcessCpuMs": 31
+    }
+  ]
+}
