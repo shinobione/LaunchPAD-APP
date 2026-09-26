@@ -1,5 +1,9 @@
 # LaunchPAD roadmap
 
+## Active backend slice — 2026-09-26
+
+CPU corrective slice 1 adds an explicitly selected canonical Albums collection read; default migration review/apply stays compatible. Candidate baseline is backend main `4867a2f`, TM v5.28 / bridge v1.18. [Implementation and validation receipt](docs/CPU-SLICE1-ALBUMS-LEAN-READ.md). Stop at Draft PR and exact-head CI; no merge, deployment, frontend change or R2 mutation. Next: review this candidate, then separately authorize consumer integration and production CPU validation. Historical public-UX roadmap entries below do not supersede this backend checkpoint.
+
 > Current candidate build: `2026.08.11.94` — release `phase-ux-c3-c3-real-route-transitions-20260811`.
 > Accepted LaunchPAD baseline remains Build 90 until C3-C real-user acceptance.
 

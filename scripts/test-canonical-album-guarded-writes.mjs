@@ -94,7 +94,7 @@ for (const required of [
   'studioAlbumAssetDeleteMatch(url.pathname)',
   'assertStudioAlbumOperationRequest(request, "json")',
   'assertStudioAlbumOperationRequest(request, "upload")',
-  'await listAlbums(env)',
+  'await listStudioAlbumCollection(request, env)',
   'await getAlbumReadModel(studioAlbumReadRoute[1], env)',
   'await createStudioAlbum(request, env, user)',
   'await saveStudioAlbumMetadata(studioAlbumMetadataSaveRoute[1], request, env, user)',
