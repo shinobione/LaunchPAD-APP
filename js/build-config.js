@@ -1,10 +1,10 @@
 (() => {
   const config = Object.freeze({
-    id: '20260829-audiolab-reactivity-aurora-build127',
-    cache: 'shinobi-launchpad-v127',
-    revision: 'audiolab-reactivity-aurora',
-    display: '2026.08.29.127',
-    release: 'audiolab-reactivity-aurora-20260829'
+    id: '20260928-gsmtc-track-artwork-build128',
+    cache: 'shinobi-launchpad-v128',
+    revision: 'gsmtc-track-artwork',
+    display: '2026.09.28.128',
+    release: 'gsmtc-track-artwork-20260928'
   });
 
   globalThis.SHINOBIWAN_BUILD = config;
