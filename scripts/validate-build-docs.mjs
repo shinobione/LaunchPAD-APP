@@ -54,7 +54,8 @@ const candidateDocs = new Map([
   ['audiolab-reference-led-20260829','docs/BUILD124-AUDIOLAB-REFERENCE-LED.md'],
   ['audiolab-strict-reference-20260829','docs/BUILD125-AUDIOLAB-STRICT-REFERENCE.md'],
   ['audiolab-premium-polish-prism-20260829','docs/BUILD126-AUDIOLAB-PREMIUM-POLISH-PRISM.md'],
-  ['audiolab-reactivity-aurora-20260829','docs/BUILD127-AUDIOLAB-REACTIVITY-AURORA.md']
+  ['audiolab-reactivity-aurora-20260829','docs/BUILD127-AUDIOLAB-REACTIVITY-AURORA.md'],
+  ['gsmtc-track-artwork-20260928','docs/BUILD128-WINDOWS-MEDIA-ARTWORK.md']
 ]);
 const livingReleaseDocs = candidateDocs.has(release)
   ? [candidateDocs.get(release)]
