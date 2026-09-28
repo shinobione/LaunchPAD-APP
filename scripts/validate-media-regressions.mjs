@@ -8,10 +8,22 @@ const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a
 if (icon.length < 1024 || !icon.subarray(0, 8).equals(pngSignature)) fail('Android media artwork must be a real PNG file.');
 
 const mediaSession = read('js/features/media-session.js');
-for (const required of ['artwork: MEDIA_ARTWORK','assets/app-icon-neon-192.png','assets/app-icon-neon-512.png',"type: 'image/png'"]) {
+for (const required of [
+  'artwork: artworkForTrack(track)',
+  'track?.cover || track?.fullCover',
+  'return [{ src: url.href }]',
+  'artwork: MEDIA_ARTWORK',
+  'assets/app-icon-neon-192.png',
+  'assets/app-icon-neon-512.png',
+  "type: 'image/png'"
+]) {
   if (!mediaSession.includes(required)) fail(`Media Session is missing ${required}.`);
 }
 if (mediaSession.includes('assets/pwa-icon-512.png')) fail('Media Session still references the retired circular app icon.');
+const appMain = read('js/app-main.js');
+for (const required of ["'loadedmetadata', 'durationchange', 'seeked', 'ratechange'", 'mediaSession.updatePosition(true)']) {
+  if (!appMain.includes(required)) fail(`Media Session timeline refresh is missing ${required}.`);
+}
 
 const remoteCatalog = read('js/core/remote-catalog.js');
 for (const required of [
