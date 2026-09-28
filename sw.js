@@ -1,3 +1,4 @@
+// Build 128: refresh the offline shell when track-specific GSMTC artwork support ships.
 importScripts('./js/build-config.js');
 const RELEASE = globalThis.SHINOBIWAN_BUILD?.release || 'pwa-update-prompt-dev';
 const VERSION = `${globalThis.SHINOBIWAN_BUILD?.cache || 'shinobi-launchpad-dev'}-${RELEASE}`;
