@@ -522,6 +522,12 @@ audio.addEventListener('timeupdate', () => {
   mediaSession.updatePosition();
 });
 
+// Refresh the Windows/Android timeline when duration becomes known or a seek
+// lands, even if it remains inside the same integer second.
+for (const eventName of ['loadedmetadata', 'durationchange', 'seeked', 'ratechange']) {
+  audio.addEventListener(eventName, () => mediaSession.updatePosition(true));
+}
+
 audio.addEventListener('play', () => mediaSession.updatePlaybackState());
 audio.addEventListener('pause', () => mediaSession.updatePlaybackState());
 audio.addEventListener('ended', () => playNext({ ended: true }));
